@@ -71,7 +71,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 ![Tooltip di evoluzione](docs/screens/evo-hint.jpg)
 
 ### 🔴 Gemma rossa (accumulo esperienza)
-Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più lontane si fondono in un'unica gemma rossa** che accumula l'XP e riduce il lag. La gemma resta **sempre appena fuori dallo schermo** (se ti allontani, ti segue lungo lo stesso lato) e una **freccia rossa ai bordi** mostra la direzione e quanta esperienza contiene. Raccoglila camminandoci contro (o con il Magnete) per ricevere tutto l'XP in una volta.
+Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più lontane si fondono in un'unica gemma rossa** che accumula l'XP e riduce il lag. La gemma resta **sempre appena fuori dallo schermo** (se ti allontani, ti segue lungo lo stesso lato) (nessun indicatore: sta a te scoprire da che parte). Raccoglila camminandoci contro (o con il Magnete) per ricevere tutto l'XP in una volta.
 
 ### 🫘 Borsa Senzu
 - Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.

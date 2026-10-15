@@ -473,18 +473,6 @@ class Renderer{
     const F=(sz,wt)=>(wt||700)+' '+Math.round(sz*U)+'px "Rajdhani",sans-serif';
     const txt=(s,x,y,col,al,font)=>{ctx.font=font;ctx.textAlign=al||'left';ctx.lineWidth=3*U;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(s,x,y);ctx.fillStyle=col||'#fff';ctx.fillText(s,x,y);};
     const m=10*U;
-    /* red XP gem: edge arrow pointing at the accumulated experience just off screen */
-    if(g.rg&&!g.trial){
-      const r=g.rg,sx=(r.x-cx)*this.Z,sy=(r.y-cy)*this.Z,pad=34*U;
-      if(sx<pad||sx>W-pad||sy<pad||sy>H-pad){
-        const ax=clamp(sx,pad,W-pad),ay=clamp(sy,pad+30*U,H-pad),an=Math.atan2(sy-H/2,sx-W/2),pu=1+.1*Math.sin(g.rt*6);
-        ctx.save();ctx.translate(ax,ay);ctx.rotate(an);ctx.scale(pu,pu);
-        ctx.fillStyle='#ff5a3d';ctx.strokeStyle='#3a0a05';ctx.lineWidth=2.5*U;ctx.beginPath();ctx.moveTo(13*U,0);ctx.lineTo(-7*U,-9*U);ctx.lineTo(-3*U,0);ctx.lineTo(-7*U,9*U);ctx.closePath();ctx.stroke();ctx.fill();
-        ctx.restore();
-        const lx=clamp(ax-Math.cos(an)*30*U,40*U,W-40*U),ly=clamp(ay-Math.sin(an)*22*U,40*U,H-14*U);
-        txt(fmtN(r.v*g.S.xp)+' XP',lx,ly,'#ffb09a','center',F(12));
-      }
-    }
     /* xp bar */
     ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,W,11*U);
     const xr=clamp(g.xp/g.need,0,1);ctx.fillStyle='#4ac8ff';ctx.fillRect(0,0,W*xr,11*U);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(0,0,W*xr,3*U);

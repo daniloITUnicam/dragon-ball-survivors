@@ -63,7 +63,7 @@ All keys can be rebound in **Settings → Controls**.
 ![Evolution tooltip](docs/screens/evo-hint.jpg)
 
 ### 🔴 Red gem (XP accumulator)
-When too many experience gems crowd the map (over 90), the **farthest ones merge into a single red gem** that stores their XP and cuts lag. The gem **always stays just off-screen** (if you walk away it follows along the same side) and a **red edge arrow** shows its direction and how much XP it holds. Walk into it (or use the Magnet) to collect everything at once.
+When too many experience gems crowd the map (over 90), the **farthest ones merge into a single red gem** that stores their XP and cuts lag. The gem **always stays just off-screen** (if you walk away it follows along the same side) (there is no indicator: finding it is up to you). Walk into it (or use the Magnet) to collect everything at once.
 
 ### 🫘 Senzu bag
 - A **Senzu Bean** card can show up in the level-up menu (only there, **rarely**, about 1 level-up in 10): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
