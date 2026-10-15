@@ -19,6 +19,6 @@ Da quel momento: `git push` → il sito si aggiorna da solo in circa un minuto.
 - **Server tuo (VPS)**: copia `dist/dragon-ball-survivors.html` come `index.html` in una cartella servita da nginx/Caddy; con uno script `git pull && python3 build.py && cp dist/*.html /var/www/gioco/index.html` (o un webhook) ottieni lo stesso flusso.
 
 ## Cose da sapere
-- **Musica**: i file `assets/menu.mp3` e `assets/namek.mp3` non sono nel repository (diritti d'autore). Con la build automatica il gioco esce **senza musica** di menù/Namek, ma con tutti gli effetti sonori. Se hai i diritti, puoi aggiungerli al repo (rimuovendoli da `.gitignore`) oppure usare musica libera da licenza.
+- **Musica**: `assets/menu.mp3` e `assets/namek.mp3` (generate con Suno) sono nel repository, quindi la build automatica le incorpora e il sito ha l'audio completo. Il file HTML finale pesa circa 8 MB: la prima apertura può richiedere qualche secondo.
 - **Salvataggi**: oggi stanno nel `localStorage` del browser, quindi sono legati al **dominio** e al **dispositivo**. Cambiare dominio = ripartire da zero (è possibile esportare/importare, se lo aggiungiamo). Per salvataggi in cloud servirà il sistema di login (rimandato).
 - **Login futuro**: richiederà un backend (o un servizio tipo Supabase/Firebase) oltre all'hosting statico; il resto della pipeline resta uguale.

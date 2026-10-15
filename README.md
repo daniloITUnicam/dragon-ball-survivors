@@ -80,7 +80,7 @@ Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più l
 ![Carta Senzu](docs/screens/senzu-card.jpg)
 
 ### 🎵 Musica di Namek
-Il pianeta **Namek** ha una traccia dedicata, in **loop** per tutta la durata dello stage (durante i boss torna la musica sintetizzata e poi riprende da dove era). Il file `assets/namek.mp3` non è nel repository (vedi `assets/README.md`).
+Il pianeta **Namek** ha una traccia dedicata, in **loop** per tutta la durata dello stage (durante i boss torna la musica sintetizzata e poi riprende da dove era). Le tracce (menu e Namek) sono state generate con **Suno** e sono incluse in `assets/` (vedi `assets/README.md`).
 
 ### ⚡ Trasformazioni e Kaioken
 - **Trasformazioni spettacolari**: durante la carica il tempo rallenta, il personaggio è invulnerabile e l'aura si espande; al rilascio parte un'**onda d'urto che attraversa tutto lo stage** (respinge, stordisce e danneggia i nemici, cancella i proiettili nemici) con effetti di luce, fulmini e suono dedicato.
@@ -343,7 +343,7 @@ python3 build.py --check      # crea dist/dragon-ball-survivors.html e controlla
 
 Apri `dist/dragon-ball-survivors.html` in un browser moderno (consigliato Chrome/Edge/Firefox): è **autosufficiente**, funziona anche offline (i font Google sono opzionali, c'è un fallback).
 
-Per la **musica del menu** metti il tuo file in `assets/menu.mp3` (vedi [assets/README.md](assets/README.md)); senza il file viene usata una musica sintetizzata.
+Per la **musica del menu** è già inclusa in `assets/menu.mp3` (vedi [assets/README.md](assets/README.md)); per cambiarla sostituisci il file; se manca viene usata una musica sintetizzata.
 
 **Pubblicarlo con GitHub Pages**: dopo `python3 build.py`, copia `dist/dragon-ball-survivors.html` in `docs/index.html` (o usa una GitHub Action) e abilita Pages su `main` / cartella `docs`.
 

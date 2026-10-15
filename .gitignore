@@ -1,7 +1,4 @@
 node_modules/
 dist/_bundle.js
 .DS_Store
-# assets/menu.mp3 is intentionally NOT versioned (see assets/README.md)
-assets/menu.mp3
 dist/
-assets/namek.mp3

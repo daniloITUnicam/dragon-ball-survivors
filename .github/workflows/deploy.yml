@@ -30,7 +30,6 @@ jobs:
         run: |
           mkdir site
           cp dist/dragon-ball-survivors.html site/index.html
-          # la musica non è nel repo (licenza): se la aggiungi tu come file in assets/ viene incorporata
           [ -f CNAME ] && cp CNAME site/CNAME || true
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3

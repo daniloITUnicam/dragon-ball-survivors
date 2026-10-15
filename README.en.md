@@ -72,7 +72,7 @@ When too many experience gems crowd the map (over 90), the **farthest ones merge
 ![Senzu card](docs/screens/senzu-card.jpg)
 
 ### 🎵 Namek music
-**Planet Namek** has its own track, **looping** for the whole stage (during bosses the synthesised boss music takes over, then it resumes where it left off). `assets/namek.mp3` is not in the repository (see `assets/README.md`).
+**Planet Namek** has its own track, **looping** for the whole stage (during bosses the synthesised boss music takes over, then it resumes where it left off). The tracks (menu and Namek) were generated with **Suno** and are included in `assets/` (see `assets/README.md`).
 
 ### ⚡ Transformations and Kaioken
 - **Spectacular transformations**: time slows during the charge, the character is invulnerable and the aura expands; on release a **shockwave sweeps the whole stage** (knocks back, stuns and damages enemies, clears enemy bullets) with light, lightning and a dedicated sound.
@@ -332,7 +332,7 @@ python3 build.py --check      # builds dist/dragon-ball-survivors.html and synta
 
 Open `dist/dragon-ball-survivors.html` in a modern browser. It is **self-contained** and works offline (Google Fonts are optional, there is a fallback).
 
-For the **menu music** drop your own file at `assets/menu.mp3` (see [assets/README.md](assets/README.md)); without it a synthesised track is used.
+For the **menu music** it is already included at `assets/menu.mp3` (see [assets/README.md](assets/README.md)); replace the file to change it; if it is missing a synthesised track is used.
 
 **Hosting on GitHub Pages**: after `python3 build.py`, copy `dist/dragon-ball-survivors.html` to `docs/index.html` and enable Pages on `main` / `docs`.
 
