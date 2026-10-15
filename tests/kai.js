@@ -1,0 +1,12 @@
+const {X,bot}=require('./sim.js');
+const audio=new Proxy({},{get:()=>()=>{}});const mem={};const save=new X.SaveData({getItem:k=>mem[k]||null,setItem:(k,v)=>{mem[k]=v;}});
+const g=new X.Game({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true},{save,audio,progress:new X.Progress(save,()=>{}),tr:o=>typeof o==='string'?o:o.it,onEnd:()=>{}});
+g.sb.god=true;g.sb.nospawn=true;
+console.log('avail before',g.kaiAvail);g.setLevel(14);for(let i=0;i<120;i++)g.update(1/30);
+console.log('avail',g.kaiAvail,'xform',!!g.xform,'form',g.formsUnlocked,'shocks',g.shocks.length);
+const base={m:g.S.might,s:g.S.spd,c:g.S.cd};g.p.hp=g.p.maxHp=300;
+g.toggleKaioken();console.log('x10 might',(g.S.might/base.m).toFixed(2),'spd',(g.S.spd/base.s).toFixed(2),'cd',(g.S.cd/base.c).toFixed(2));
+let h0=g.p.hp;for(let i=0;i<30;i++)g.update(1/30);console.log('drain/s x10',(h0-g.p.hp).toFixed(2));
+g.toggleKaioken();console.log('x20 might',(g.S.might/base.m).toFixed(2));h0=g.p.hp;for(let i=0;i<30;i++)g.update(1/30);console.log('drain/s x20',(h0-g.p.hp).toFixed(2));
+for(let i=0;i<30*40;i++)g.update(1/30);console.log('auto off? kai=',g.kai,'hp',Math.round(g.p.hp),'/',g.p.maxHp);
+g.p.hp=g.p.maxHp;g.toggleKaioken();g.toggleKaioken();g.toggleKaioken();console.log('cycle back to off kai=',g.kai);

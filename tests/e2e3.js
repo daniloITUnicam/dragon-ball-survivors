@@ -1,0 +1,21 @@
+const puppeteer=require('/opt/npm-tools/node_modules/puppeteer');
+const path=require('path');
+(async()=>{
+  const b=await puppeteer.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',headless:'shell',args:['--no-sandbox']});
+  const p=await b.newPage();await p.setViewport({width:1280,height:720});
+  const errs=[];p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('console',m=>{if(m.type()==='error'&&!/fonts|ERR_|net::/i.test(m.text()))errs.push('CONSOLE '+m.text());});
+  await p.goto('file://'+path.resolve('dist/dragon-ball-survivors.html'));
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(500);
+  await p.evaluate(()=>{const d=__app.save.d;for(const k of ['sai','bomb','sol','gun','rap','ssol','fsol','app','raditz'])d.seen[k]=1;d.zenny=3000;__app.ui.show('main');__app.ui.push('glossary');});await sleep(300);
+  await p.screenshot({path:'tests/s3_gloss.png'});
+  await p.evaluate(()=>{__app.ui.show('main');__app.ui.sel.peek='trunks';__app.ui.push('stages');__app.ui.push('chars');});await sleep(300);
+  await p.screenshot({path:'tests/s3_buy.png'});
+  const before=await p.evaluate(()=>__app.save.d.zenny);
+  await p.evaluate(()=>{document.querySelector('[data-fid=buychar]').click();});await sleep(200);
+  console.log('zenny',before,'->',await p.evaluate(()=>__app.save.d.zenny),'unlocked trunks:',await p.evaluate(()=>__app.save.d.unlocked.includes('trunks')));
+  await p.evaluate(()=>{__app.ui.show('main');__app.ui.push('shop');});await sleep(300);await p.screenshot({path:'tests/s3_shop.png'});
+  await p.evaluate(()=>{__app.save.d.settings.sandbox=true;__app.startGame({stage:0,char:'vegeta',diff:'normal',x2:false,sandbox:true});__app.game.sb.god=true;for(const id of ['ssol','fsol','app','dino','scud','sol'])__app.game.spawnEnemyById(id,3);});await sleep(1500);
+  await p.screenshot({path:'tests/s3_enemies.png'});
+  await p.evaluate(()=>__app.pause());await sleep(200);await p.evaluate(()=>{__app.ui.push('glossary');});await sleep(300);
+  console.log(errs.length?errs.join('\n'):'NO JS ERRORS');await b.close();
+})().catch(e=>{console.error('FAIL',e);process.exit(1);});

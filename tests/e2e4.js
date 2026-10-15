@@ -1,0 +1,20 @@
+const puppeteer=require('/opt/npm-tools/node_modules/puppeteer');
+const path=require('path');
+(async()=>{
+  const b=await puppeteer.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',headless:'shell',args:['--no-sandbox']});
+  const p=await b.newPage();await p.setViewport({width:1280,height:720});
+  const errs=[];p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('console',m=>{if(m.type()==='error'&&!/fonts|ERR_|net::/i.test(m.text()))errs.push('CONSOLE '+m.text());});
+  await p.goto('file://'+path.resolve('dist/dragon-ball-survivors.html'));
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(500);
+  await p.evaluate(()=>{__app.save.d.maxForm={goku:2};__app.ui.show('main');__app.ui.push('stages');__app.ui.push('chars');});await sleep(300);await p.screenshot({path:'tests/s4_forms.png'});
+  await p.evaluate(()=>{__app.save.d.settings.sandbox=true;__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;g.run.coins=150;g.spawnEnemyById('sai',20);g.feat.push({kind:'chamber',x:120,y:20,t:0,ttl:95,used:false,dead:false});});await sleep(700);await p.screenshot({path:'tests/s4_door.png'});
+  await p.evaluate(()=>{__app.game.startTrial();});await sleep(2500);await p.screenshot({path:'tests/s4_train.png'});
+  await p.evaluate(()=>{__app.game.trial.t=__app.game.trial.dur-.1;});await sleep(900);
+  console.log('state after training:',await p.evaluate(()=>__app.state),'modal:',await p.evaluate(()=>__app.game.modal&&__app.game.modal.type));
+  await p.screenshot({path:'tests/s4_shop.png'});
+  await p.evaluate(()=>{document.querySelector('.trialcards .card').click();});await sleep(300);
+  console.log('coins after buying 1st:',await p.evaluate(()=>__app.game.run.coins),'form',await p.evaluate(()=>__app.game.formsUnlocked));
+  await p.evaluate(()=>{document.querySelector('[data-back]').click();});await sleep(500);
+  console.log('after leaving: state',await p.evaluate(()=>__app.state),'trial',await p.evaluate(()=>__app.game.trial),'enemies back',await p.evaluate(()=>__app.game.en.length));
+  console.log(errs.length?errs.join('\n'):'NO JS ERRORS');await b.close();
+})().catch(e=>{console.error('FAIL',e);process.exit(1);});
