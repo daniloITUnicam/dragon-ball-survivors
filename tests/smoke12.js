@@ -1,0 +1,11 @@
+const pp=require('/opt/npm-tools/node_modules/puppeteer');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox']});
+const pg=await b.newPage();await pg.setViewport({width:1200,height:760});const errs=[];pg.on('pageerror',e=>errs.push('PE '+e.message));
+await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(800);
+await pg.evaluate(()=>{window.__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true,pet:'dende'});const g=window.__app.game;g.sb.god=true;g.sb.nospawn=true;const p=g.p;
+ for(let i=0;i<260;i++){const a=Math.random()*6.283,d=120+Math.random()*700;g.dropGem(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d,1+Math.floor(Math.random()*3));}});
+await wait(700);await pg.screenshot({path:'/tmp/o/s12_arrow.png'});
+await pg.evaluate(()=>{const g=window.__app.game,r=g.rg;g.p.x=r.x-120*Math.cos(Math.atan2(r.y-g.p.y,r.x-g.p.x));g.p.y=r.y-120*Math.sin(Math.atan2(r.y-g.p.y,r.x-g.p.x));g.rg.att=false;});
+await wait(100);await pg.screenshot({path:'/tmp/o/s12_near.png'});
+console.log(errs.join('\n')||'noerr');await b.close();})();

@@ -1,4 +1,6 @@
 const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
+/* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
+const GEM_CAP=90,GEM_KEEP=55;
 const XP_MUL=.5,BOSS_HP_MUL=.95,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.1,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
@@ -10,7 +12,7 @@ class Game{
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
-    this.en=[];this.pr=[];this.eb=[];this.gm=[];this.loot=[];this.feat=[];this.chests=[];this.fx=[];this.tx=[];
+    this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.feat=[];this.chests=[];this.fx=[];this.tx=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;
@@ -437,7 +439,33 @@ class Game{
     if(e.ai==='split'&&e.def.minion){for(let i=0;i<2;i++)this.en.push(this.mkEnemy(ENEMIES[e.def.minion],e.x+rnd(-14,14),e.y+rnd(-14,14)));}
     if(this.has('vamp'))this.heal(.4);
   }
-  dropGem(x,y,v){if(this.gm.length>380){this.addXp(v);return;}this.gm.push({x,y,v,att:false});}
+  dropGem(x,y,v){if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
+  /* distance from the player to the screen edge along an angle (just off screen = this + a small margin) */
+  edgeDist(a){const hw=this.vw/2+30,hh=this.vh/2+30,c=Math.abs(Math.cos(a))||1e-6,s=Math.abs(Math.sin(a))||1e-6;return Math.min(hw/c,hh/s);}
+  /* accumulate XP into the red gem (created just outside the screen, towards where the gems were) */
+  rgAdd(v,x,y){
+    const p=this.p;
+    if(!this.rg){const a=Math.atan2(y-p.y,x-p.x),d=this.edgeDist(a);this.rg={x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,v:0,att:false,t:0,n:0};}
+    this.rg.v+=v;this.rg.n++;
+  }
+  mergeGems(){
+    const p=this.p,list=this.gm.filter(g=>!g.att&&!g.dead).map(g=>({g,d:Math.hypot(g.x-p.x,g.y-p.y)})).sort((a,b)=>b.d-a.d);
+    let n=this.gm.length-GEM_KEEP;
+    for(const o of list){if(n<=0)break;o.g.dead=true;this.rgAdd(o.g.v,o.g.x,o.g.y);n--;}
+  }
+  updateRedGem(dt){
+    const r=this.rg;if(!r)return;const p=this.p;r.t+=dt;
+    const dx=p.x-r.x,dy=p.y-r.y,d=Math.hypot(dx,dy)||1,a=Math.atan2(r.y-p.y,r.x-p.x),ed=this.edgeDist(a);
+    /* it always stays just beyond the screen edge: if you walk away it is pulled back along the same direction */
+    if(!r.att&&d>ed+120){r.x=p.x+Math.cos(a)*(ed+10);r.y=p.y+Math.sin(a)*(ed+10);}
+    if(d<this.S.magnet*.6)r.att=true;
+    if(r.att){const sp=420+d;r.x+=dx/d*sp*dt;r.y+=dy/d*sp*dt;}
+    if(d<18){
+      this.addXp(r.v);this.audio.sfx('lvl');this.audio.sfx('gem');
+      this.floatText(p.x,p.y-60,'+'+fmtN(r.v*this.S.xp)+' XP',2);this.ring(p.x,p.y,90,'#ff5a3d',.5);this.burst(p.x,p.y-16,24,'#ff5a3d');this.pillar(p.x,p.y,'#ff5a3d',.6);
+      this.rg=null;
+    }
+  }
   dropLoot(e){
     const L=this.S.luck,S=this.stage;
     this.dropGem(e.x,e.y,e.def.xp*this.stageXp()*XP_MUL*this.earlyXp());
@@ -457,7 +485,7 @@ class Game{
     switch(l.k){
       case'coin':this.addZenny(l.v);this.audio.sfx('coin');break;
       case'heal':this.heal(p.maxHp*.3);this.audio.sfx('senzu');this.ring(p.x,p.y,40,'#8be07a',.4);break;
-      case'magnet':for(const g of this.gm)g.att=true;this.audio.sfx('pickup');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
+      case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;this.audio.sfx('pickup');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
       case'dmg':this.buffs.dmg=12;this.recalc();this.audio.sfx('pickup');this.floatText(p.x,p.y-50,this.env.tr(T('Danni +15% (12s)','Damage +15% (12s)')),2);break;
       case'haste':this.buffs.haste=10;this.recalc();this.audio.sfx('pickup');this.floatText(p.x,p.y-50,this.env.tr(T('Fuoco rapido (10s)','Rapid fire (10s)')),2);break;
       case'xp':this.addXp(l.v*.7);this.audio.sfx('pickup');break;
@@ -1024,6 +1052,8 @@ class Game{
   }
   updatePickups(dt){
     const p=this.p,S=this.S;
+    if(this.gm.length>GEM_CAP)this.mergeGems();
+    this.updateRedGem(dt);
     for(const g of this.gm){
       const dx=p.x-g.x,dy=p.y-g.y,d=Math.hypot(dx,dy);
       if(d<S.magnet)g.att=true;

@@ -62,6 +62,9 @@ All keys can be rebound in **Settings → Controls**.
 ![In-game Grimoire](docs/screens/grimoire-pause.jpg)
 ![Evolution tooltip](docs/screens/evo-hint.jpg)
 
+### 🔴 Red gem (XP accumulator)
+When too many experience gems crowd the map (over 90), the **farthest ones merge into a single red gem** that stores their XP and cuts lag. The gem **always stays just off-screen** (if you walk away it follows along the same side) and a **red edge arrow** shows its direction and how much XP it holds. Walk into it (or use the Magnet) to collect everything at once.
+
 ### 🫘 Senzu bag
 - A **Senzu Bean** card can show up in the level-up menu (only there, **rarely**, about 1 level-up in 10): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
 - Eat one in-game with **H** (or the **on-screen button** next to the pet and ability buttons) to recover **40%** HP; it is never wasted at full health.
@@ -318,6 +321,7 @@ node tests/boss.js            # boss power-ups, slams
 node tests/boss2.js           # boss signature attacks, spawn rules
 node tests/spirit.js          # Room of Spirit and Time
 node tests/senzu.js           # Senzu bag
+node tests/gems.js            # red XP gem
 node tests/sim.js             # simulation with all characters
 node tests/death.js 0 normal 6 goku     # balance: stage, difficulty, runs, character
 # e2e/smoke (need puppeteer + a browser): e2e*.js, smoke5.js, smoke6.js, smoke7.js

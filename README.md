@@ -70,6 +70,9 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 ![Grimorio in partita](docs/screens/grimoire-pause.jpg)
 ![Tooltip di evoluzione](docs/screens/evo-hint.jpg)
 
+### 🔴 Gemma rossa (accumulo esperienza)
+Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più lontane si fondono in un'unica gemma rossa** che accumula l'XP e riduce il lag. La gemma resta **sempre appena fuori dallo schermo** (se ti allontani, ti segue lungo lo stesso lato) e una **freccia rossa ai bordi** mostra la direzione e quanta esperienza contiene. Raccoglila camminandoci contro (o con il Magnete) per ricevere tutto l'XP in una volta.
+
 ### 🫘 Borsa Senzu
 - Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.
 - Si mangia in partita con **H** (o dal **pulsante a schermo** accanto a quelli del pet e dell'abilità) e cura il **40%** della vita; non si spreca a vita piena.
@@ -340,6 +343,7 @@ node tests/boss.js            # potenziamento dei boss, schianti
 node tests/boss2.js           # attacchi firmati dei boss, regole di spawn
 node tests/spirit.js          # stanza dello Spirito e del Tempo
 node tests/senzu.js           # borsa Senzu
+node tests/gems.js            # gemma rossa (accumulo XP)
 node tests/sim.js             # simulazione con tutti i personaggi
 node tests/death.js 0 normal 6 goku     # bilanciamento: stage, difficoltà, partite, personaggio
 node tests/lvfull.js "1,2,5,10" normal  # ritmo di livelli e forme
