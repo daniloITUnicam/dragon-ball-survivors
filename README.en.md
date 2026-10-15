@@ -134,6 +134,10 @@ New form lines: Chiaotzu, Turles, Demons (Dabura, King Piccolo), Special Force (
 
 ![New characters](docs/screens/new-characters.jpg)
 
+**🎨 Clearer level-up cards.** Every upgrade card now has a **colour that tells what it does** (🔴 damage, 🔵 speed, 🟢 health/healing, 🟡 cooldown, 🟣 pickup, 🩵 experience, 🟠 area, ⚪ armor) with a **large faint background icon** (sword = damage, heart = health, bolt = speed, clock = cooldown, shield = armor, magnet = pickup, star = experience) and a plain-language effect chip (e.g. “+15% damage”). Techniques list one line per changed stat (Damage 10.5→13…).
+
+**🌐 Hosting.** New guide [`docs/HOSTING.md`](docs/HOSTING.md) (Italian) and a GitHub Actions workflow to publish the game on your own domain on every push.
+
 ### 👥 New characters (first wave)
 Sparking! ZERO-style roster additions: **Broly** (all forms), **Zamasu**, **Fused Zamasu**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Android 21**. More **canonical** forms:
 - **Frieza**: Second → Third → Final → 100% → **Golden Frieza** → **Black Frieza**.

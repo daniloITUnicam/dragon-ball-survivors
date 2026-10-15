@@ -1,0 +1,24 @@
+# Pubblicare il gioco sul tuo dominio
+
+Il gioco è **un solo file HTML statico** (`dist/dragon-ball-survivors.html`): non serve nessun server applicativo, qualsiasi hosting di file statici va bene.
+
+## Opzione consigliata: GitHub Pages + dominio tuo (gratis, deploy a ogni push)
+
+1. **Crea il repository** su GitHub e fai il primo push (`git remote add origin ...` e `git push -u origin main`; il ramo deve chiamarsi `main`).
+2. Nel repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Il workflow `.github/workflows/deploy.yml` è già incluso: a ogni push compila e pubblica il gioco.
+3. **Dominio personalizzato**: crea nella radice del repo un file `CNAME` con una sola riga, il tuo dominio (es. `gioco.tuodominio.it`), poi in *Settings → Pages → Custom domain* inseriscilo.
+4. **DNS** (dal pannello del tuo registrar):
+   - sottodominio (`gioco.tuodominio.it`): record **CNAME** → `<tuo-utente>.github.io`
+   - dominio principale (`tuodominio.it`): quattro record **A** → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (e opzionalmente i quattro **AAAA** indicati nella documentazione GitHub)
+5. Dopo che il DNS si è propagato (da pochi minuti a qualche ora) attiva **Enforce HTTPS** nelle impostazioni di Pages.
+
+Da quel momento: `git push` → il sito si aggiorna da solo in circa un minuto.
+
+## Alternative equivalenti
+- **Cloudflare Pages** / **Netlify**: collega il repo, comando di build `python3 build.py`, cartella di output `dist` (rinomina o aggiungi una regola per servire `dragon-ball-survivors.html` come indice). Domini personalizzati e HTTPS inclusi.
+- **Server tuo (VPS)**: copia `dist/dragon-ball-survivors.html` come `index.html` in una cartella servita da nginx/Caddy; con uno script `git pull && python3 build.py && cp dist/*.html /var/www/gioco/index.html` (o un webhook) ottieni lo stesso flusso.
+
+## Cose da sapere
+- **Musica**: i file `assets/menu.mp3` e `assets/namek.mp3` non sono nel repository (diritti d'autore). Con la build automatica il gioco esce **senza musica** di menù/Namek, ma con tutti gli effetti sonori. Se hai i diritti, puoi aggiungerli al repo (rimuovendoli da `.gitignore`) oppure usare musica libera da licenza.
+- **Salvataggi**: oggi stanno nel `localStorage` del browser, quindi sono legati al **dominio** e al **dispositivo**. Cambiare dominio = ripartire da zero (è possibile esportare/importare, se lo aggiungiamo). Per salvataggi in cloud servirà il sistema di login (rimandato).
+- **Login futuro**: richiederà un backend (o un servizio tipo Supabase/Firebase) oltre all'hosting statico; il resto della pipeline resta uguale.

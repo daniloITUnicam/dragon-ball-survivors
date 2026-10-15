@@ -266,3 +266,18 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 @keyframes logofloat{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-6px) rotate(.6deg)}}
 @media (prefers-reduced-motion:reduce){.logoimg{animation:none}}
 @media (max-height:620px){.logoimg{max-height:28vh}}
+
+/* ---- upgrade cards: colour + faint background icon tell the effect (red damage, blue speed, green healing ...) ---- */
+.ic{display:inline-flex;width:1.15em;height:1.15em;color:var(--c,#fff);flex:none}
+.ic svg{width:100%;height:100%}
+.card.opt{overflow:hidden}
+.card.opt.cat{border-color:color-mix(in srgb,var(--fc) 70%,#10233a);background:linear-gradient(165deg,color-mix(in srgb,var(--fc) 24%,var(--panel)),var(--panel) 72%)}
+.card.opt.cat:hover,.card.opt.cat:focus-visible{border-color:var(--orange)}
+.card.opt.cat::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--fc);opacity:.9}
+.card.opt>*{position:relative;z-index:1}
+.card.opt>.bgic{position:absolute;z-index:0;left:50%;bottom:-14px;margin-left:-70px;width:140px;height:140px;opacity:.2;transform:rotate(-8deg);pointer-events:none;display:block}
+.bgic .ic{width:100%;height:100%;color:var(--fc)}
+.fx{display:flex;flex-direction:column;gap:4px;align-items:center;margin:2px 0}
+.fxi{display:inline-flex;align-items:center;background:rgba(0,0,0,.28);border-left:3px solid var(--c);border-radius:6px;padding:3px 9px;font-size:14px;color:var(--ink);text-align:left}
+.fxi b{font-weight:700}
+@media (max-width:700px){.fx{align-items:flex-start}.card.opt>.bgic{width:100px;height:100px;margin-left:-50px}}

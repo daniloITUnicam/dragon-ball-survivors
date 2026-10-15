@@ -142,6 +142,10 @@ Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Spe
 
 ![Nuovi personaggi](docs/screens/new-characters.jpg)
 
+**🎨 Carte di level-up più leggibili.** Ogni carta di potenziamento ha ora un **colore che indica cosa fa** (🔴 danno, 🔵 velocità, 🟢 salute/cura, 🟡 ricarica, 🟣 raccolta, 🩵 esperienza, 🟠 area, ⚪ armatura) con una **grande icona sfumata sullo sfondo** (spada = danno, cuore = salute, fulmine = velocità, orologio = ricarica, scudo = armatura, magnete = raccolta, stella = esperienza) e un riquadro con l'effetto in chiaro (es. «+15% danno»). Le tecniche mostrano una riga per ogni statistica che cambia (Danno 10,5→13…).
+
+**🌐 Hosting.** Nuova guida [`docs/HOSTING.md`](docs/HOSTING.md) e workflow GitHub Actions per pubblicare il gioco sul proprio dominio a ogni push.
+
 ### 👥 Nuovi personaggi (prima ondata)
 Dallo stile di *Sparking! ZERO*: **Broly** (con tutte le forme), **Zamasu**, **Zamasu Fuso**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Androide 21**.
 Forme più **canoniche**:
