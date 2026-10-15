@@ -596,7 +596,14 @@ class Renderer{
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;
       if(sxp>20&&sxp<W-20&&syp>20&&syp<H-20)continue;
       const a=Math.atan2(ty3-(p.y-14),tx3-p.x),r=Math.min(W,H)/2-30*U,ex=W/2+Math.cos(a)*Math.min(r*W/H*.9,W/2-26*U),ey=H/2+Math.sin(a)*Math.min(r,H/2-26*U);
-      ctx.save();ctx.translate(ex,ey);ctx.rotate(a);ctx.fillStyle=col;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(12*U,0);ctx.lineTo(-8*U,-9*U);ctx.lineTo(-4*U,0);ctx.lineTo(-8*U,9*U);ctx.closePath();ctx.fill();ctx.restore();
+      /* big, glowing, outlined arrow that pulses; the distance sits next to it */
+      const pu=1+.13*Math.sin(g.rt*6+tx3*.01),k2=1.75*pu,dist=Math.hypot(tx3-p.x,ty3-p.y);
+      GLOW.at(ctx,ex,ey,34*U*pu,col,.7);
+      ctx.save();ctx.translate(ex,ey);ctx.rotate(a);ctx.scale(k2,k2);
+      ctx.beginPath();ctx.moveTo(12*U,0);ctx.lineTo(-8*U,-9*U);ctx.lineTo(-4*U,0);ctx.lineTo(-8*U,9*U);ctx.closePath();
+      ctx.lineJoin='round';ctx.lineWidth=4.5*U;ctx.strokeStyle='#0a0f1c';ctx.stroke();ctx.lineWidth=1.6*U;ctx.strokeStyle='#ffffff';ctx.stroke();
+      ctx.fillStyle=col;ctx.globalAlpha=1;ctx.fill();ctx.restore();
+      txt(Math.round(dist/10)+'m',clamp(ex-Math.cos(a)*34*U,26*U,W-26*U),clamp(ey-Math.sin(a)*26*U+4*U,18*U,H-8*U),'#ffffff','center',F(12));
     }
     /* altar prompt */
     for(const f of g.feat)if((f.kind==='altar'||f.kind==='chamber'||f.kind==='totem')&&f.near&&!f.used){
