@@ -23,7 +23,7 @@ class Game{
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;
-    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.bombT=rnd(90,150);this.bombEnd=0;this.shootOn=false;this.shootT=rnd(60,100);this.shootEnd=0;this.bz=[];this.seenT=1;this.newSeen=false;
+    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.bombT=rnd(90,150);this.bombEnd=0;this.shootOn=false;this.shootT=rnd(60,100);this.shootEnd=0;this.bz=[];this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     for(const id of this.C.start)this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
@@ -105,7 +105,7 @@ class Game{
     const pool=this.upgradePool();
     if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id))pool.push({type:'w',id,lv:0});
     shuffle(pool);
-    const sz=this.senzu<SENZU_MAX&&Math.random()<.24;
+    const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
     const need=this.neededPass().filter(id=>pool.some(o=>o.type==='p'&&o.id===id));
     if(need.length&&Math.random()<.55){const nid=pick(need),i=pool.findIndex(o=>o.type==='p'&&o.id===nid);if(i>2){const t=pool[i];pool.splice(i,1);pool.unshift(t);}}
@@ -507,11 +507,12 @@ class Game{
   hpMul(){return ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
   dmgMul(){return ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
+  get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   spawnCap(){const pr=Math.min(1,this.prog());return Math.round(24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7));}
   spawnRate(){return(1+11*Math.pow(Math.min(1,this.prog()),1.35))*this.stageMul(this.stage.spawn)*this.D.spawn;}
   mkEnemy(def,x,y){
-    const hp=def.hp*this.hpMul();
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*ENEMY_SPD_MUL,armor:(def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0,dmg:def.dmg*this.dmgMul(),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+    const fb=this.finalOn,hp=def.hp*this.hpMul()*(fb?1.35:1);   /* final boss fight: tougher crowd that hits a bit softer */
+    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*ENEMY_SPD_MUL,armor:((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0),dmg:def.dmg*this.dmgMul()*(fb?.85:1),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0};
   }
   rosterPick(){
@@ -547,8 +548,8 @@ class Game{
   spawnBoss(id,final){
     const bd=BOSSES[id],p=this.p,a=rnd(0,TAU),d=this.viewR+60;
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},p.x+Math.cos(a)*d,p.y+Math.sin(a)*d);
-    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1);
-    Object.assign(e,{ai:'boss',boss:true,bd,final:!!final,armor:1.2+1.2*this.sd+(final?1.5:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul(),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0});
+    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1);
+    Object.assign(e,{ai:'boss',boss:true,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0});
     this.en.push(e);this.bossAlive++;this.bossHit=false;
     this.say(this.env.tr(bd.n)+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
@@ -559,6 +560,7 @@ class Game{
     if(e.sparring)pat=bd.pats[Math.floor(Math.random()*bd.pats.length)];
     const zd=e.sparring?Math.max(d*1.1,p.maxHp*(.2+.05*Math.min(2,this.trialN))):d*1.1;
     if(e.tf>=1&&Math.random()<.42){const ex=['slam','nova','lance','storm'];pat=ex[Math.floor(Math.random()*(e.tf>=2?4:2))];}
+    if(!e.sparring&&!this.trial){const ext=this.bossExt(bd,e.final);if(Math.random()<(e.final?.3:.2)+.08*e.phase+.05*e.tf)pat=ext[Math.floor(Math.random()*ext.length)];}
     const sh=(a,s,r,c)=>this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:d,life:6,c:c||bd.c,bs:1});
     switch(pat){
       case'aim':sh(aim,230);break;
@@ -576,8 +578,34 @@ class Game{
       case'sweep':{const dx=Math.cos(aim),dy=Math.sin(aim);for(let i=1;i<=6;i++)this.bz.push({x:e.x+dx*i*105,y:e.y+dy*i*105,r:62,t:0,dur:.7+i*.13,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
       case'nova':{const n=24,o=rnd(0,TAU);for(let i=0;i<n;i++){if(i%8<2)continue;sh(o+i/n*TAU,175,8);}break;}
       case'lance':e.dashT=.9;for(let i=-3;i<=3;i++)sh(aim+i*.13,300,6);break;
+      /* signature attacks of each boss (area / pattern attacks) */
+      case'wall':{const px=-Math.sin(aim),py=Math.cos(aim),gap=Math.floor(rnd(-3,4));this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Muro di ki!','Ki wall!')),1);
+        for(let o=-5;o<=5;o++){if(Math.abs(o-gap)<=1)continue;this.eb.push({x:e.x+px*o*38,y:e.y-e.r+py*o*38,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:8,dmg:d,life:7,c:bd.c,bs:1});}break;}
+      case'crossbeam':{const o=rnd(0,TAU);this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raggi incrociati!','Cross beams!')),1);
+        for(let k=0;k<4;k++)for(let i=1;i<=6;i++)this.bz.push({x:e.x+Math.cos(o+k*Math.PI/2)*i*100,y:e.y+Math.sin(o+k*Math.PI/2)*i*100,r:54,t:0,dur:.85+i*.09,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
+      case'rush':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Lampo!','Flash step!')),1);this.ring(e.x,e.y,60,bd.c,.4);
+        const a=rnd(0,TAU);e.x=p.x+Math.cos(a)*170;e.y=p.y+Math.sin(a)*170;this.ring(e.x,e.y,60,'#ffffff',.4);this.burst(e.x,e.y-e.r,16,bd.c);
+        const a2=Math.atan2(p.y-18-e.y,p.x-e.x);for(let i=-2;i<=2;i++)sh(a2+i*.2,250,7);this.audio.sfx('leap');break;}
+      case'homing':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Sfere a ricerca!','Seeker orbs!')),1);
+        for(let i=0;i<4;i++){const a=aim+(i-1.5)*.55;this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:9,dmg:d,life:5.5,c:'#ffffff',bs:1,hm:2.4});}break;}
+      case'vortex':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Vortice!','Vortex!')),1);this.vortex={x:e.x,y:e.y,t:0,dur:1.4,R:300,col:bd.c};this.bz.push({x:e.x,y:e.y,r:150,t:0,dur:1.4,dmg:zd*1.1,c:bd.c});this.audio.sfx('xcharge');break;}
+      case'encircle':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Cerchio mortale!','Death circle!')),1);
+        for(let i=0;i<8;i++){const a=i/8*TAU+rnd(0,.3);this.bz.push({x:p.x+Math.cos(a)*135,y:p.y+Math.sin(a)*135,r:62,t:0,dur:1.15,dmg:zd,c:bd.c});}this.audio.sfx('warn');break;}
       case'storm':{e.spin+=.4;for(let i=0;i<5;i++)sh(e.spin+i*TAU/5,175,6);sh(aim,300,8);break;}
     }
+  }
+  bossExt(bd,final){
+    const POOL=['wall','crossbeam','rush','homing','vortex','encircle'];
+    if(final)return POOL;
+    const i=Math.max(0,Object.keys(BOSSES).indexOf(bd.id));
+    return[POOL[i%6],POOL[(i+2)%6],POOL[(i+4)%6]];
+  }
+  updateVortex(dt){
+    const v=this.vortex;if(!v)return;v.t+=dt;const p=this.p,dx=v.x-p.x,dy=v.y-p.y,d=Math.hypot(dx,dy)||1;
+    if(d<v.R){const f=(70+90*(v.t/v.dur))*dt;p.x+=dx/d*f;p.y+=dy/d*f;}
+    for(let k=0;k<3&&this.fx.length<470;k++){const a=rnd(0,TAU),r=rnd(120,v.R);this.fx.push({x:v.x+Math.cos(a)*r,y:v.y+Math.sin(a)*r*.7,vx:-Math.cos(a)*r*1.6,vy:-Math.sin(a)*r*1.1,l:.5,m:.5,c:k%2?v.col:'#ffffff',s:rnd(2,4)});}
+    this.shake=Math.max(this.shake,.08);
+    if(v.t>=v.dur)this.vortex=null;
   }
   /* ---------- boss power-up when the fight drags on ---------- */
   startBossXform(e){
@@ -672,13 +700,15 @@ class Game{
     if(this.bers>0)this.updateBerserk(dt);else if(this.bersCd>0)this.bersCd-=dt;
     this.updatePet(dt);
     if(this.xform)this.updateXform(rdt);
+    if(this.vortex)this.updateVortex(dt);
     if(this.shocks.length)this.updateShocks(dt);
 
     /* director */
     if(!this.sb.nospawn&&!inTrial){
-      const fin=this.finalSpawned?.5:1;
+      /* boss fights: slightly fewer enemies; the final boss brings a bigger crowd instead */
+      const fin=this.finalOn?1.5:this.bossAlive>0?.7:1;
       this.spAcc+=this.spawnRate()*fin*dt;
-      const cap=this.spawnCap();
+      const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1));
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*this.TS;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=40;this.spawnPack();}
@@ -877,6 +907,7 @@ class Game{
         }
       }
       const tr=b.tr||(b.tr=[]);tr.push([b.x,b.y]);if(tr.length>8)tr.shift();
+      if(b.hm>0){b.hm-=dt;const ca=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);let da=Math.atan2(p.y-14-b.y,p.x-b.x)-ca;da=Math.atan2(Math.sin(da),Math.cos(da));const na=ca+clamp(da,-2.3*dt,2.3*dt);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp;}
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
       if(b.life<=0){b.dead=true;continue;}
       for(const e of this.en){

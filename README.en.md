@@ -63,7 +63,7 @@ All keys can be rebound in **Settings → Controls**.
 ![Evolution tooltip](docs/screens/evo-hint.jpg)
 
 ### 🫘 Senzu bag
-- A **Senzu Bean** card can show up in the level-up menu (only there): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
+- A **Senzu Bean** card can show up in the level-up menu (only there, **rarely**, about 1 level-up in 10): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
 - Eat one in-game with **H** (or the **on-screen button** next to the pet and ability buttons) to recover **40%** HP; it is never wasted at full health.
 
 ![Senzu card](docs/screens/senzu-card.jpg)
@@ -186,6 +186,10 @@ If you take **too long** (about 85 s, then 70 s) to beat a boss, it **transforms
 
 ![Boss powering up](docs/screens/boss-powerup.jpg)
 ![Slam zone](docs/screens/slam-zone.jpg)
+
+**Signature boss attacks.** Every boss now has 3 extra special attacks (the final boss has all 6) chosen from: **Ki wall** (a wall of shots with a gap), **Cross beams** (four lines of telegraphed blasts), **Flash step** (teleports next to you and fires a fan), **Seeker orbs** (homing orbs), **Vortex** (pulls you in before exploding) and **Death circle** (eight blasts closing in around you). Attacks are always telegraphed by red circles or visible projectiles.
+
+**During boss fights:** normal enemies spawn a bit less (−30% rate, −20% cap). In the **final boss** fight the crowd **grows** instead (+50% rate, +30% cap) and enemies have **more HP and armor** but hit a bit softer (−15%); the final boss has **+30% HP**, **more armor** and deals **−10% damage**.
 
 ### 🔊 Reworked audio
 New **electric Kamehameha** (crackling charge, distorted release), tougher "anime-style" sounds for Ki and every weapon, dedicated **evolution** effects, an **aura wind** during transformations, and sounds for every ability and enemy move.
@@ -311,6 +315,7 @@ node tests/bers.js            # Broly's Berserk
 node tests/totem.js           # one-time totem + 8 powers
 node tests/abil.js            # every ability of the 41 characters
 node tests/boss.js            # boss power-ups, slams
+node tests/boss2.js           # boss signature attacks, spawn rules
 node tests/spirit.js          # Room of Spirit and Time
 node tests/senzu.js           # Senzu bag
 node tests/sim.js             # simulation with all characters

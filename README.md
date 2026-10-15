@@ -71,7 +71,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 ![Tooltip di evoluzione](docs/screens/evo-hint.jpg)
 
 ### 🫘 Borsa Senzu
-- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.
+- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.
 - Si mangia in partita con **H** (o dal **pulsante a schermo** accanto a quelli del pet e dell'abilità) e cura il **40%** della vita; non si spreca a vita piena.
 
 ![Carta Senzu](docs/screens/senzu-card.jpg)
@@ -195,6 +195,10 @@ Se impieghi **troppo tempo** (circa 85 s, poi 70 s) a sconfiggere un boss, quest
 
 ![Boss che si potenzia](docs/screens/boss-powerup.jpg)
 ![Zona di schianto](docs/screens/slam-zone.jpg)
+
+**Attacchi firmati dei boss.** Ogni boss ha ora 3 attacchi speciali in più (il boss finale li ha tutti e 6), scelti tra: **Muro di ki** (una parete di colpi con un varco), **Raggi incrociati** (quattro linee di esplosioni con avvertimento), **Lampo** (si teletrasporta vicino a te e spara a ventaglio), **Sfere a ricerca** (orbe che ti inseguono), **Vortice** (ti risucchia verso di lui prima di esplodere) e **Cerchio mortale** (otto esplosioni che si chiudono attorno a te). Gli attacchi sono sempre segnalati da cerchi rossi o proiettili visibili.
+
+**Durante i boss:** i nemici normali spawnano un po' meno (−30% di ritmo, −20% di massimo). Nel **boss finale** invece la folla **aumenta** (+50% ritmo, +30% massimo) e i nemici hanno **più vita e armatura** ma infliggono un po' meno danni (−15%); il boss finale ha **+30% vita**, **più armatura** e infligge **−10% di danni**.
 
 ### 🔊 Audio rinnovato
 Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più "da anime" per Ki e per tutte le armi, effetti dedicati alle **evoluzioni**, **vento d'aura** nelle trasformazioni e suoni per ogni abilità e mossa nemica.
@@ -333,6 +337,7 @@ node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullab
 node tests/totem.js           # totem unico + 8 poteri
 node tests/abil.js            # tutte le abilità dei 41 personaggi
 node tests/boss.js            # potenziamento dei boss, schianti
+node tests/boss2.js           # attacchi firmati dei boss, regole di spawn
 node tests/spirit.js          # stanza dello Spirito e del Tempo
 node tests/senzu.js           # borsa Senzu
 node tests/sim.js             # simulazione con tutti i personaggi
