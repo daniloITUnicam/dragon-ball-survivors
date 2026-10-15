@@ -44,7 +44,7 @@ class Sprites{
   static flashOf(sp){
     const c=document.createElement('canvas');c.width=sp.c.width;c.height=sp.c.height;const g=c.getContext('2d');
     g.drawImage(sp.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#ffffff';g.fillRect(0,0,c.width,c.height);
-    return{c,ox:sp.ox,oy:sp.oy,s:sp.s};
+    return{c,ox:sp.ox,oy:sp.oy,s:sp.s,px:sp.px};
   }
   static circ(R,cx,cy,r,col){for(let y=-r;y<=r;y++){const hw=Math.sqrt(r*r-y*y);R(cx-hw,cy+y,hw*2,1,col);}}
 
@@ -78,11 +78,17 @@ class Sprites{
     let s=m.get(k);
     if(!s){
       if(flash){const b=Sprites.player(key,cfg,frame,false,ex);s=Sprites.flashOf(b);}
-      else s=Sprites.paint(36,48,18,47,R=>Sprites.humanArt(R,cfg,frame,ex));
+      else{
+        /* an imported sprite sheet (assets/sprites) wins; otherwise the HD procedural painter */
+        const id=Sprites.sheetFor&&Sprites.sheetFor(key);
+        s=(id&&Sprites.sheetFrame(id,frame))||Sprites.paintHD(36,48,18,47,R=>Sprites.humanArt(R,cfg,frame,ex,true),Sprites.PS);
+      }
       m.set(k,s);
     }
     return s;
   }
+  /* multiplier callers apply on top of (u / Sprites.S) because sprites can be painted at different pixel densities */
+  static pk(sp){return Sprites.S/(sp.s||Sprites.S);}
 
   /* frames: 0 idle, 1-4 walk cycle, 5 attack wind-up, 6 attack thrust */
   static pose(f){
@@ -334,5 +340,5 @@ class Sprites{
     R(-8+lx*.5,-47+ps.bob,4,3,fur2);R(4+lx*.5,-47+ps.bob,4,3,fur2);
   }
 }
-Sprites.S=5;
+Sprites.S=5;Sprites.PS=6;   /* PS: pixel density of playable characters (HD painter) */
 Sprites.FR=7;

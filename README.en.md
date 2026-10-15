@@ -100,6 +100,8 @@ Broly has an exclusive ability on the same key (`R`): he **loses control for 10 
 
 ![Berserk](docs/screens/berserk.jpg)
 
+**🖼️ HD playable sprites + custom sprite sheets.** Playable characters now use the same HD pipeline as enemies and bosses (finer pixels, coloured outline, rim light and core shadow). You can also **replace the art with your own PNG sprite sheets** (base form and transformations, with walk and attack frames): put the files in `assets/sprites/` and rebuild. Guide and blank template in [`docs/SPRITES.md`](docs/SPRITES.md) (Italian).
+
 ### 🆕 Third wave of updates: arcade sounds, HD sprites and 16 new characters
 
 **🕹️ Arcade menu sounds.** Every button now has an **arcade-style, loud and clearly audible** sound (square-wave "chip" tones): a *tick* when you hover or move with keyboard/pad, a *coin-blip* on click, a descending run of notes for **Back**, a **fanfare** for **Start**, a *ding* for purchases and a *buzz* when you press a disabled button. It applies to every HTML button (menus, pause, level-up, modals) and follows the SFX volume.

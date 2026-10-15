@@ -140,7 +140,7 @@ class MenuBg{
     let ex=a.ex;if(!ex&&seg==='idle')ex=null;
     if(!ex&&(this.t+a.ph)%4.3>4.15)ex='blink';
     const cfg=cfgForForm(c,a.form),key='bg:'+c.id+':'+a.form;
-    const sp=Sprites.player(key,cfg,frame,false,ex);
+    const sp=Sprites.player(key,cfg,frame,false,ex),kp=k*Sprites.pk(sp);
     const bob=seg==='run'?-Math.abs(Math.sin((this.t+a.ph)*9))*1.2*a.s:(seg==='idle'||seg==='transform'?Math.sin((this.t+a.ph)*3)*1.2:0);
     const au=a.form>=0?a.line[a.form].aura:null,cy=a.y-26*a.s*.5;
     ctx.setTransform(Z,0,0,Z,0,0);
@@ -152,8 +152,8 @@ class MenuBg{
     if(seg==='ability'&&!a.fired)GLOW.at(ctx,a.x,cy,(20+a.chg*60)*a.s*.55,a.ab.c,.7);
     if(a.buff>0)GLOW.at(ctx,a.x,cy,70*a.s*.55,a.ab.c,.6);
     if(a.flash>0)GLOW.at(ctx,a.x,cy,150*a.s*.55,'#ffffff',a.flash*2);
-    if(a.clones>0)for(const o of[-1,1]){ctx.save();ctx.globalAlpha=.5*alpha*Math.min(1,a.clones*2);ctx.translate(a.x+o*34*a.s*.6,a.y);ctx.scale(a.face*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();GLOW.at(ctx,a.x+o*34*a.s*.6,cy,30*a.s*.5,a.ab.c,.3);}
-    ctx.save();ctx.globalAlpha=alpha;ctx.translate(a.x,a.y+bob);ctx.scale(a.face*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();
+    if(a.clones>0)for(const o of[-1,1]){ctx.save();ctx.globalAlpha=.5*alpha*Math.min(1,a.clones*2);ctx.translate(a.x+o*34*a.s*.6,a.y);ctx.scale(a.face*kp,kp);ctx.imageSmoothingEnabled=!sp.px;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();GLOW.at(ctx,a.x+o*34*a.s*.6,cy,30*a.s*.5,a.ab.c,.3);}
+    ctx.save();ctx.globalAlpha=alpha;ctx.translate(a.x,a.y+bob);ctx.scale(a.face*kp,kp);ctx.imageSmoothingEnabled=!sp.px;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;
     if(a.barrier>0){ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.5*Math.min(1,a.barrier*2);ctx.strokeStyle=a.ab.c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(a.x,cy,36*a.s*.55,0,TAU);ctx.stroke();ctx.restore();}
     /* lightning while charging a transformation */
     if(seg==='transform'&&a.chg>0&&a.chg<1){
@@ -185,7 +185,7 @@ class MenuBg{
         ctx.fillStyle='rgba(255,255,255,.95)';ctx.fillRect(x0,f.y-w*.35,len*grow,w*.7);
         ctx.restore();GLOW.at(ctx,f.x,f.y,w*3.2,f.col,.9);
       }
-      else if(f.t==='ghost'){const a=f.ref;if(!a)continue;const sp=Sprites.player('bg:'+a.c.id+':'+a.form,cfgForForm(a.c,a.form),6,false,null),kk=(a.c.u||1.95)/Sprites.S*a.s*1.05;ctx.save();ctx.globalAlpha=(1-k)*.45;ctx.translate(f.x,f.y);ctx.scale(f.face*kk,kk);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}
+      else if(f.t==='ghost'){const a=f.ref;if(!a)continue;const sp=Sprites.player('bg:'+a.c.id+':'+a.form,cfgForForm(a.c,a.form),6,false,null),kk=(a.c.u||1.95)/Sprites.S*a.s*1.05*Sprites.pk(sp);ctx.save();ctx.globalAlpha=(1-k)*.45;ctx.translate(f.x,f.y);ctx.scale(f.face*kk,kk);ctx.imageSmoothingEnabled=!sp.px;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;}
     }
   }
   draw(dt){

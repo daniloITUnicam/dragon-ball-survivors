@@ -148,6 +148,8 @@ Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Spe
 
 **☁️ Account e salvataggi cloud (opzionale).** Con un progetto [Supabase](https://supabase.com) gratuito il gioco ha **login/registrazione** (email + password, Google opzionale, reset password) e **salva i progressi per account**, sincronizzati su ogni dispositivo. Si può sempre giocare **come ospite**; se al primo accesso esistono progressi sia sul dispositivo sia nel cloud, il gioco chiede quale usare. Guida completa: [`docs/SUPABASE.md`](docs/SUPABASE.md) (schema SQL in [`supabase/schema.sql`](supabase/schema.sql)).
 
+**🖼️ Sprite dei personaggi in HD + spritesheet personalizzati.** I personaggi giocabili usano ora lo stesso motore HD di nemici e boss (pixel più fini, contorno colorato, luce di bordo e ombra). In più puoi **sostituire la grafica con i tuoi spritesheet PNG** (forma base e trasformazioni, con camminata e attacco): metti i file in `assets/sprites/` e ricompila. Guida e modello vuoto in [`docs/SPRITES.md`](docs/SPRITES.md).
+
 ### 👥 Nuovi personaggi (prima ondata)
 Dallo stile di *Sparking! ZERO*: **Broly** (con tutte le forme), **Zamasu**, **Zamasu Fuso**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Androide 21**.
 Forme più **canoniche**:

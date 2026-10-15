@@ -241,12 +241,12 @@ class Renderer{
     this.hud(g,dt,cx,cy);
   }
   drawPlayer(g,t){
-    const ctx=this.ctx,p=g.p,u=(g.C.u||1.95),k=u/Sprites.S;
+    const ctx=this.ctx,p=g.p,u=(g.C.u||1.95);
     const frame=g.cast?6:p.atk>0?(p.atk>.17?5:6):p.mv?1+((t*10)|0)%4:0,flash=p.inv>0&&((t*20)|0)%2===0&&p.inv<.45;
     let ex=null;
     if(g.emo&&g.emoT>0)ex=g.emo;else if(!g.cast&&!(p.atk>0)&&(g.rt%4.3)>4.17)ex='blink';
     const xf=g.xform,old=xf&&!xf.released?xf.old:null,pcc=old?old.pc:g.pc,pck=old?old.key:g.pcKey;
-    const sp=Sprites.player(pck,pcc,frame,false,ex);
+    const sp=Sprites.player(pck,pcc,frame,false,ex),k=u/(sp.s||Sprites.S);
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(p.x,p.y,7*u,2.4*u,0,0,TAU);ctx.fill();
     if(xf){
       const rt=g.rt,ch=xf.released?1:xf.t/xf.rel,ak=xf.released?1+Math.max(0,1-(xf.t-xf.rel)/(xf.dur-xf.rel))*1.7:.35+ch*2.1;
@@ -288,13 +288,14 @@ class Renderer{
       if(g.abBuf){const f2=1+Math.sin(t*16)*.08;GLOW.at(ctx,p.x,p.y-24,58*f2,ab.c,.55);GLOW.at(ctx,p.x,p.y-24,30*f2,'#ffffff',.25);}
       if(g.critT>0)GLOW.at(ctx,p.x,p.y-24,50,ab.c,.5);
       if(g.shieldT>0){const a2=Math.min(1,g.shieldT*2);ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55*a2;const gr=ctx.createRadialGradient(p.x,p.y-22,6,p.x,p.y-22,40);gr.addColorStop(0,hexA(ab.c,.05));gr.addColorStop(.8,hexA(ab.c,.35));gr.addColorStop(1,hexA('#ffffff',.8));ctx.fillStyle=gr;ctx.beginPath();ctx.arc(p.x,p.y-22,40,0,TAU);ctx.fill();ctx.restore();}
-      if(g.clones){for(const q of g.clones){if(q.x===undefined)continue;const s2=Sprites.player(pck,pcc,frame,false,null);ctx.save();ctx.globalAlpha=.55;ctx.translate(q.x,q.y);ctx.scale(p.face*k,k);ctx.drawImage(s2.c,-s2.ox,-s2.oy);ctx.restore();GLOW.at(ctx,q.x,q.y-22,26,ab.c,.35);}}
+      if(g.clones){for(const q of g.clones){if(q.x===undefined)continue;const s2=Sprites.player(pck,pcc,frame,false,null);ctx.save();ctx.globalAlpha=.55;ctx.translate(q.x,q.y);ctx.scale(p.face*k,k);ctx.imageSmoothingEnabled=!s2.px;ctx.drawImage(s2.c,-s2.ox,-s2.oy);ctx.restore();ctx.imageSmoothingEnabled=false;GLOW.at(ctx,q.x,q.y-22,26,ab.c,.35);}}
     }
     const bob=p.mv?-Math.abs(Math.sin(t*9))*1.2:0;
     ctx.save();ctx.translate(p.x,p.y+bob);ctx.scale(p.face*k,k);
     if(p.inv>0&&p.inv<.45)ctx.globalAlpha=.55;
+    ctx.imageSmoothingEnabled=!sp.px;
     ctx.drawImage((flash?Sprites.player(pck,pcc,frame,true,ex):sp).c,-sp.ox,-sp.oy);
-    ctx.restore();
+    ctx.restore();ctx.imageSmoothingEnabled=false;
     if(g.emo&&g.emoT>0)this.drawEmote(g.emo,p.x+13,p.y-58*(u/1.95)-8-Math.sin(g.rt*8)*1.5,t);
     if(g.cast){
       const c=g.cast,kk=clamp(c.t/c.dur,0,1),a=c.a,ca=Math.cos(a),sa=Math.sin(a),d=9+9*kk,hx=p.x+ca*d,hy=p.y-17+sa*d;

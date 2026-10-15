@@ -51,6 +51,7 @@ class App{
     cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
     this.applySettings();
     this.ui.show('main');
+    Sprites.loadPack(()=>{const t=this.ui.top;if(this.state==='menu'&&t&&(t.name==='chars'||t.name==='main'))this.ui.rebuild(true);});
     this.cloud.start();
     requestAnimationFrame(n=>this.loop(n));
   }

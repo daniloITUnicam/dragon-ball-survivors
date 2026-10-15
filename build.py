@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','world','config','save','cloud','game','sprites','sprites_hd','menubg','audio','input','renderer','uiicons','ui','ui2','ui_account','grimoire','app']
+ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','world','config','save','cloud','game','sprites','sprites_hd','sheets','menubg','audio','input','renderer','uiicons','ui','ui2','ui_account','grimoire','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -27,6 +27,30 @@ js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _lo
 _nk = ROOT/'assets'/'namek.mp3'
 if _nk.exists():
     js = js.replace('__NAMEK_MP3__', base64.b64encode(_nk.read_bytes()).decode())
+# ---- optional sprite sheets: assets/sprites/<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
+import struct
+_sd = pathlib.Path(os.environ.get('DBS_SPRITES') or (ROOT/'assets'/'sprites'))
+_pack = {}
+if _sd.is_dir():
+    _ov = {}
+    if (_sd/'sprites.json').exists():
+        _ov = json.loads((_sd/'sprites.json').read_text(encoding='utf8'))
+    for f in sorted(_sd.glob('*.png')):
+        sid = f.stem
+        if not re.fullmatch(r'[a-z0-9]+(_\d+)?', sid):
+            print('sprites: skipped', f.name, '(name must be <id>.png or <id>_<n>.png, lowercase)'); continue
+        raw = f.read_bytes()
+        if raw[:8] != b'\x89PNG\r\n\x1a\n':
+            print('sprites: skipped', f.name, '(not a PNG)'); continue
+        w, h = struct.unpack('>II', raw[16:24])
+        e = dict(_ov.get('default', {})); e.update(_ov.get(sid, {}))
+        cols = e.get('cols', 7)
+        if not e.get('fw') and w % cols:
+            print(f'sprites: WARNING {f.name}: width {w} is not a multiple of {cols} frames')
+        e['u'] = 'data:image/png;base64,' + base64.b64encode(raw).decode()
+        _pack[sid] = e
+        print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
+js = js.replace('__SPRITE_PACK__', json.dumps(_pack, separators=(',', ':')))
 css = (ROOT/'src/css/style.css').read_text(encoding='utf8')
 html = (ROOT/'src/index.html').read_text(encoding='utf8')
 glyphs = re.search(r"GLYPHS='([^']+)'", js).group(1)
