@@ -158,38 +158,80 @@ class AudioSys{
     o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);
     g.gain.setValueAtTime(vol||.04,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(this.sfxG);o.start(t);o.stop(t+d+.02);
   }
+  /* ---- anime-style synth helpers ---- */
+  distCurve(){if(!this._dc){const n=256,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*4.5);}this._dc=c;}return this._dc;}
+  /* crackling electricity: gated high noise + distorted buzz */
+  elec(dur,vol,delay,rate,buzz){
+    if(!this.ctx||this.s.sfx<=0)return;
+    const c=this.ctx,t=c.currentTime+(delay||0),env=(g,v)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.03);g.gain.setValueAtTime(v,t+dur*.55);g.gain.exponentialRampToValueAtTime(.0001,t+dur);};
+    const s=c.createBufferSource();s.buffer=this.nbuf;s.loop=true;
+    const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=1600;
+    const am=c.createGain();am.gain.value=0;
+    const lfo=c.createOscillator();lfo.type='square';
+    for(let i=0;i*.045<dur;i++)lfo.frequency.setValueAtTime((rate||70)*(.55+Math.random()*1.0),t+i*.045);
+    const lg=c.createGain();lg.gain.value=.5;lfo.connect(lg);lg.connect(am.gain);
+    const g=c.createGain();env(g,vol);
+    s.connect(hp);hp.connect(am);am.connect(g);g.connect(this.sfxG);s.start(t);lfo.start(t);s.stop(t+dur+.05);lfo.stop(t+dur+.05);
+    if(buzz!==0){
+      const o=c.createOscillator(),ws=c.createWaveShaper(),bp=c.createBiquadFilter(),g2=c.createGain();
+      o.type='sawtooth';o.frequency.setValueAtTime(buzz||95,t);o.frequency.linearRampToValueAtTime((buzz||95)*1.35,t+dur);ws.curve=this.distCurve();
+      bp.type='bandpass';bp.frequency.value=1100;bp.Q.value=1.4;env(g2,vol*.55);
+      o.connect(ws);ws.connect(bp);bp.connect(g2);g2.connect(this.sfxG);o.start(t);o.stop(t+dur+.05);
+    }
+  }
+  /* aura wind: band-passed noise sweeping with a slow flutter, like the anime power-up */
+  wind(dur,vol,f0,f1,delay,q){
+    if(!this.ctx||this.s.sfx<=0)return;
+    const c=this.ctx,t=c.currentTime+(delay||0),s=c.createBufferSource();s.buffer=this.nbuf;s.loop=true;
+    const bp=c.createBiquadFilter();bp.type='bandpass';bp.Q.value=q||1.1;bp.frequency.setValueAtTime(f0,t);bp.frequency.exponentialRampToValueAtTime(Math.max(60,f1),t+dur);
+    const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+Math.min(.5,dur*.3));g.gain.setValueAtTime(vol,t+dur*.7);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    const lfo=c.createOscillator(),lg=c.createGain();lfo.frequency.value=6.5;lg.gain.value=vol*.35;lfo.connect(lg);lg.connect(g.gain);
+    s.connect(bp);bp.connect(g);g.connect(this.sfxG);s.start(t);lfo.start(t);s.stop(t+dur+.05);lfo.stop(t+dur+.05);
+  }
+  /* deep impact: pitch-dropping sine + low noise thud */
+  thump(vol,f,dur,delay){this.toneAt(f,dur,'sine',vol,-f*.65,delay||0);this.noise(dur*.6,vol*.8,700,70,delay||0);}
+  /* distorted energy sweep */
+  zap(f0,f1,dur,vol,delay){
+    if(!this.ctx||this.s.sfx<=0)return;
+    const c=this.ctx,t=c.currentTime+(delay||0),o=c.createOscillator(),o2=c.createOscillator(),ws=c.createWaveShaper(),g=c.createGain();
+    o.type='sawtooth';o2.type='square';ws.curve=this.distCurve();
+    o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
+    o2.frequency.setValueAtTime(f0*1.5,t);o2.frequency.exponentialRampToValueAtTime(Math.max(30,f1*1.5),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+Math.min(.04,dur/4));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(ws);o2.connect(ws);ws.connect(g);g.connect(this.sfxG);o.start(t);o2.start(t);o.stop(t+dur+.03);o2.stop(t+dur+.03);
+  }
   sfx(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     const T=(f,d,ty,v,s)=>this.tone(f,d,ty,v,s);
     switch(n){
-      case'shot':T(880,.08,'square',.02,-440);break;
-      case'hit':T(170,.06,'triangle',.035,-90);break;
+      case'shot':this.zap(2100,520,.09,.03);this.toneAt(3200,.05,'square',.012,-1800,0);this.noise(.05,.03,9000,2500,0);break;
+      case'hit':T(190,.07,'triangle',.04,-110);this.noise(.04,.035,6000,900,0);break;
       case'pop':T(300,.1,'square',.025,-200);break;
       case'gem':T(1100,.05,'sine',.03,300);break;
       case'coin':T(1500,.07,'square',.025,500);break;
-      case'kame':T(180,.45,'sawtooth',.045,700);break;
-      case'boom':T(110,.45,'sawtooth',.08,-70);break;
+      case'kame':this.zap(240,1500,.35,.05);this.elec(.45,.07,0,85);this.thump(.08,110,.4);break;
+      case'boom':this.thump(.13,150,.5);this.noise(.5,.12,2600,90,0);break;
       case'hurt':T(130,.18,'square',.06,-60);break;
       case'boss':T(70,.7,'sawtooth',.08,40);break;
-      case'flare':T(1500,.4,'sine',.05,-1000);break;
-      case'slash':T(700,.12,'sawtooth',.035,-450);break;
+      case'flare':this.toneAt(2600,.5,'sine',.06,-2000,0);this.toneAt(1300,.5,'triangle',.03,-900,0);this.noise(.35,.08,12000,3000,0);this.elec(.3,.04,0,120,0);break;
+      case'slash':this.noise(.14,.06,7500,1800,0);this.toneAt(1400,.12,'sawtooth',.03,-1000,0);this.toneAt(3400,.1,'triangle',.02,-600,.02);break;
       case'fuse':T(900,.5,'square',.02,600);break;
       case'lvl':[392,523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.16,'square',.035,0,i*.06));this.toneAt(300,.5,'sawtooth',.03,900,0);this.noise(.4,.04,6000,800,.05);break;
-      case'kameCharge':[190,230,270,310].forEach((f,i)=>{this.toneAt(f,.13,'sawtooth',.05,f*.25,i*.12);this.toneAt(f*2,.13,'triangle',.025,f*.3,i*.12);});this.toneAt(500,.5,'sine',.03,700,0);break;
-      case'kameChargeEvo':[210,260,310,370,440].forEach((f,i)=>{this.toneAt(f,.12,'sawtooth',.05,f*.3,i*.1);this.toneAt(f*2,.12,'square',.02,f*.4,i*.1);});this.toneAt(600,.55,'sine',.04,1000,0);break;
-      case'kameFire':this.noise(.8,.14,5000,300,0);this.toneAt(230,.8,'sawtooth',.09,-150,0);this.toneAt(120,.9,'square',.05,-60,0);this.toneAt(460,.5,'triangle',.04,-200,0);break;
-      case'kameFireEvo':this.noise(1.4,.24,9000,160,0);this.noise(.5,.2,2400,90,0);this.toneAt(58,1.3,'sine',.2,-26,0);this.toneAt(90,1.2,'sawtooth',.11,-50,0);this.toneAt(180,1.3,'sawtooth',.1,-110,0);this.toneAt(260,1.1,'square',.06,-150,0);this.toneAt(900,.9,'triangle',.05,-500,.04);for(let i=0;i<14;i++)this.toneAt(1800+Math.random()*2600,.04,'square',.03,-900,i*.055);break;
-      case'spirit':for(let i=0;i<18;i++)this.toneAt(900+i*70+Math.random()*300,.05,'square',.02,0,i*.045);this.toneAt(120,.9,'sawtooth',.04,500,0);break;
-      case'thunder':this.noise(1.1,.22,4000,120,0);this.toneAt(70,1,'sine',.12,-30,0);this.toneAt(1400,.18,'sawtooth',.06,-1200,0);break;
+      case'kameCharge':this.zap(110,900,1.0,.05);this.elec(1.0,.05,0,60,80);this.wind(1.0,.04,300,2600,0,1.6);for(let i=0;i<7;i++)this.toneAt(900+i*180,.07,'square',.014,500,.25+i*.1);break;
+      case'kameChargeEvo':this.zap(90,1300,1.15,.06);this.elec(1.15,.07,0,50,70);this.wind(1.2,.05,250,3200,0,1.4);this.thump(.1,70,1.1,.05);for(let i=0;i<9;i++)this.toneAt(800+i*210,.07,'square',.016,600,.2+i*.1);break;
+      case'kameFire':this.thump(.2,130,.55);this.zap(260,1700,.5,.07);this.elec(1.25,.12,0,90,100);this.wind(1.2,.07,500,3000,0,.9);this.noise(.8,.12,6000,400,0);this.toneAt(1900,.5,'triangle',.03,-900,.05);break;
+      case'kameFireEvo':this.thump(.3,90,.9);this.thump(.18,170,.5,.04);this.zap(200,2100,.7,.09);this.zap(90,900,1.3,.07,.1);this.elec(1.7,.16,0,75,70);this.elec(1.2,.1,.15,130,140);this.wind(1.6,.09,400,3800,0,.8);this.noise(1.3,.16,9000,200,0);[880,1320,1760].forEach((f,i)=>this.toneAt(f,.9,'triangle',.025,-200,.06+i*.04));break;
+      case'spirit':for(let i=0;i<14;i++)this.toneAt(700+i*95+Math.random()*260,.07,'square',.016,300,i*.06);this.zap(100,800,1.0,.045);this.wind(1.0,.04,500,3500,0,1.3);this.elec(.8,.03,.1,60,0);break;
+      case'thunder':this.thump(.2,95,.9);this.noise(1.1,.22,4000,120,0);this.elec(.55,.14,0,95,110);this.toneAt(1600,.2,'sawtooth',.05,-1400,0);break;
       case'buy':[1320,1760,2093].forEach((f,i)=>this.toneAt(f,.14,'triangle',.05,0,i*.07));this.noise(.08,.04,9000,3000,0);break;
       case'senzu':T(500,.2,'sine',.05,500);break;
       case'pickup':T(660,.12,'triangle',.05,330);break;
       case'ball':[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;
       case'chest':this.noise(.25,.05,3000,500,0);[523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.2,'triangle',.05,0,.12+i*.08));break;
       case'evolve':[330,440,554,659,880,1108,1318].forEach((f,i)=>{this.toneAt(f,.28,'sawtooth',.035,0,i*.075);this.toneAt(f*2,.2,'sine',.03,0,i*.075+.02);});this.noise(.9,.07,5000,500,0);break;
-      case'transform':this.noise(1.6,.16,300,5000,0);this.toneAt(60,1.4,'sawtooth',.1,800,0);this.toneAt(90,1.4,'square',.04,500,0);[392,494,587].forEach(f=>this.toneAt(f,.9,'sawtooth',.045,0,1.2));this.noise(.5,.12,6000,400,1.25);break;
+      case'transform':this.wind(1.7,.12,250,3800,0,1);this.zap(60,700,1.4,.07);this.elec(1.4,.05,0,60,70);this.thump(.25,65,.9,1.2);this.noise(.5,.14,6000,400,1.25);this.wind(2.0,.08,3200,220,1.25,.9);break;
       case'broly':{
         this.noise(1.6,.3,400,5000,0);this.noise(.5,.25,1800,200,.05);
         this.toneAt(52,1.6,'sine',.28,-18,0);this.toneAt(78,1.5,'sawtooth',.13,-30,0);
@@ -203,11 +245,25 @@ class AudioSys{
           o.connect(bp);bp.connect(g);g.connect(this.sfxG);o.start(t);lf.start(t);o.stop(t+1.85);lf.stop(t+1.85);
         }
         break;}
-      case'kaioken':this.noise(.5,.14,300,3500,0);this.toneAt(70,.5,'sawtooth',.1,260,0);this.toneAt(140,.45,'square',.05,300,0);this.toneAt(700,.25,'triangle',.04,700,.12);break;
-      case'kaioken2':this.noise(.8,.22,200,6000,0);this.toneAt(50,.8,'sawtooth',.13,500,0);this.toneAt(100,.7,'square',.07,500,0);this.toneAt(900,.35,'sawtooth',.05,900,.1);this.toneAt(1400,.3,'triangle',.04,1000,.2);break;
-      case'xcharge':this.noise(1.0,.13,200,4200,0);this.toneAt(48,1.0,'sawtooth',.09,520,0);this.toneAt(96,1.0,'square',.04,700,0);this.toneAt(300,1.0,'triangle',.04,1500,0);for(let i=0;i<9;i++)this.toneAt(500+i*130,.1,'square',.018,300,i*.1);break;
-      case'xburst':this.noise(1.1,.26,9000,120,0);this.toneAt(55,1.1,'sine',.24,-34,0);this.toneAt(110,.9,'sawtooth',.1,-60,0);[392,494,587,784].forEach((f,i)=>this.toneAt(f,.9,'sawtooth',.04,0,.05+i*.02));break;
-      case'xburst2':this.noise(1.6,.32,12000,90,0);this.noise(.4,.22,2600,80,0);this.toneAt(42,1.6,'sine',.3,-24,0);this.toneAt(84,1.3,'sawtooth',.13,-50,0);this.toneAt(160,1.2,'square',.07,-90,0);[330,440,554,659,880,1108].forEach((f,i)=>this.toneAt(f,1.3,'sawtooth',.04,0,.04+i*.03));this.toneAt(1760,.9,'sine',.04,-900,.1);break;
+      case'kaioken':this.wind(.9,.1,300,3000,0,1.1);this.zap(80,420,.55,.06);this.elec(.5,.05,.05,70,60);this.thump(.12,75,.5,.1);break;
+      case'kaioken2':this.wind(1.2,.14,250,4200,0,1);this.zap(60,640,.8,.08);this.elec(.8,.08,0,60,60);this.thump(.2,60,.8,.1);this.toneAt(1000,.3,'sawtooth',.04,900,.1);break;
+      case'xcharge':this.wind(1.9,.12,250,3800,0,1.0);this.wind(1.9,.07,120,1400,0,2.0);this.zap(60,640,1.8,.07);this.thump(.12,55,1.7);this.elec(1.7,.05,.2,55,70);for(let i=0;i<12;i++)this.toneAt(500+i*130,.1,'square',.016,300,i*.14);break;
+      case'xburst':this.thump(.3,70,1.0);this.noise(1.1,.26,9000,120,0);this.elec(.9,.14,0,100,120);this.wind(2.6,.1,2800,260,.05,.9);this.wind(2.4,.05,1500,150,.1,2);[392,494,587,784].forEach((f,i)=>this.toneAt(f,.9,'sawtooth',.04,0,.05+i*.02));break;
+      case'xburst2':this.thump(.36,52,1.5);this.thump(.2,110,.7,.05);this.noise(1.6,.32,12000,90,0);this.elec(1.5,.17,0,85,90);this.elec(1.0,.1,.2,140,160);this.wind(3.2,.13,3400,200,.05,.8);this.wind(3.0,.07,1800,120,.1,2);[330,440,554,659,880,1108].forEach((f,i)=>this.toneAt(f,1.1,'sawtooth',.036,0,.05+i*.02));break;
+      /* character ability sounds */
+      case'abBeam':this.thump(.22,120,.5);this.zap(300,1900,.4,.07);this.elec(.9,.13,0,90,100);this.wind(.9,.06,600,3200,0,.9);break;
+      case'abNova':this.thump(.3,85,.8);this.noise(.7,.18,6000,160,0);this.wind(1.0,.09,3000,300,0,.9);this.elec(.5,.08,0,100,0);break;
+      case'abHeal':[523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.35,'sine',.04,0,i*.08));this.wind(.9,.03,800,2600,0,2);break;
+      case'abDash':this.noise(.22,.1,9000,1200,0);this.zap(1500,300,.18,.04);this.toneAt(500,.1,'triangle',.04,-300,.05);break;
+      case'abClone':[0,.07,.14].forEach((d,i)=>{this.toneAt(900+i*250,.12,'square',.03,-500,d);this.noise(.08,.05,8000,1500,d);});this.wind(.5,.04,1200,3000,.1,2);break;
+      case'abPower':this.wind(.9,.1,300,3500,0,1.1);this.zap(100,700,.7,.06);this.elec(.7,.07,0,70,70);this.toneAt(660,.4,'triangle',.04,700,.2);break;
+      case'abBarrier':this.toneAt(520,.7,'sine',.05,300,0);this.toneAt(1040,.6,'triangle',.03,200,.03);this.noise(.5,.04,5000,1500,0);this.elec(.4,.03,0,150,0);break;
+      case'abAbsorb':this.noise(.8,.12,500,5000,0);this.zap(1400,200,.8,.05);this.wind(.9,.06,3500,300,0,1.3);break;
+      case'abTime':this.toneAt(1760,.08,'square',.03,0,0);this.toneAt(1320,.08,'square',.03,0,.12);this.toneAt(70,1.6,'sine',.1,-20,.2);this.wind(1.4,.07,2600,200,.2,1.5);break;
+      case'abErase':this.thump(.3,60,1.1);this.zap(1900,70,.9,.08);this.elec(1.0,.12,0,100,60);this.wind(1.2,.07,600,3000,0,.8);this.noise(.7,.14,9000,200,0);break;
+      case'leap':this.noise(.25,.08,3000,900,0);this.toneAt(300,.2,'triangle',.03,400,0);break;
+      case'land':this.thump(.1,110,.3);break;
+      case'warn':this.toneAt(880,.1,'square',.03,0,0);this.toneAt(880,.1,'square',.03,0,.16);break;
       case'trinket':[784,988,1175,1568].forEach((f,i)=>this.toneAt(f,.2,'sine',.05,0,i*.07));this.noise(.2,.03,9000,4000,.05);break;
       case'shrine':T(440,.3,'sine',.05,440);break;
       case'click':T(520,.05,'square',.02,100);break;

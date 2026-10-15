@@ -31,6 +31,7 @@ class App{
     const cv=this.canvas;
     cv.addEventListener('pointerdown',e=>{
       if(this.state==='play'&&this.renderer.petBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.petBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.usePet();return;}}
+      if(this.state==='play'&&this.renderer.abBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.abBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useAbility();return;}}
       if(e.pointerType==='mouse'||this.state!=='play'||this.joy.on)return;
       const k=this.renderer.W/innerWidth;
       this.joy={on:true,id:e.pointerId,ox:e.clientX*k,oy:e.clientY*k,x:0,y:0};this.renderer.joy=this.joy;

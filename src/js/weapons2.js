@@ -17,9 +17,9 @@ Object.assign(WS,{
 });
 /* second evolutions hit a bit softer than the classic x1.5 */
 class NW extends Weapon{
-  get dm(){return(this.evo?1+.03*(this.g.formIdx+1):1)*(this.evo>=2?1.28:1);}
-  get e2c(){return this.evo>=2?.88:1;}
-  get e2a(){return this.evo>=2?1.15:1;}
+  get dm(){return(this.evo?1+.03*(this.g.formIdx+1):1)*this.tier;}
+  get e2c(){return(this.evo>=2?.88:1)*(1-.015*this.lvB);}
+  get e2a(){return(this.evo>=2?1.15:1)*(1+.02*this.lvB);}
   get e2n(){return this.evo>=2?1:0;}
   area(){return this.g.S.area*this.e2a;}
   cdv(){return this.st.cd[this.L]*this.g.S.cd*this.e2c;}

@@ -165,6 +165,7 @@ class UI{
       h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},
         h('span',null,'HP '+C.hp),h('span',null,this.t('stSpeed')+' x'+C.spd),h('span',null,this.t('stPower')+' x'+C.might)),
+      (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',null,ab.cd+'s'):null),h('p',null,this.tr(ab.d))):null;})(),
       h('div',{class:'formsList'},h('span',{class:'lbl'},this.t('forms')),
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
       this.petPicker(),startBtn);

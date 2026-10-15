@@ -1,7 +1,7 @@
 'use strict';
 /* ====== Weapon classes. Tables have 6 entries: levels 1-5 + evolved ====== */
 const WS={
-  ki:{cd:[.85,.8,.7,.62,.52,.42],n:[1,2,2,3,4,6],dmg:[7,8,9.5,10.5,12,15],pi:[0,0,1,1,2,4]},
+  ki:{cd:[.8,.72,.64,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[10,12,14,16,19,23],pi:[0,0,0,0,0,0]},
   kame:{cd:[3.8,3.4,3,2.8,2.5,2.2],dmg:[7,8.5,10.5,13,16.5,22],wid:[30,36,40,46,52,64],len:[380,420,440,520,560,680]},
   disc:{n:[2,2,3,3,4,6],r:[80,85,95,100,110,125],dmg:[11,12.5,14,16,19,25],spd:[2.6,2.8,3,3.2,4,4.4]},
   spirit:{cd:[11,10,8.5,8,7,6.5],dmg:[62,78,95,120,155,210],rad:[110,125,135,160,185,230]},
@@ -77,18 +77,21 @@ const VFX={
 
 class Weapon{
   constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];}
-  get L(){return this.evo?5:this.lv-1;}
+  get L(){return this.evo?5:Math.min(4,this.lv-1);}
+  /* every tier has 5 levels: base (table), evolution 1 and evolution 2 (each level of an evolution: damage, cooldown, area) */
+  get lvB(){return this.evo?Math.max(0,this.lv-1):0;}
+  get tier(){return this.evo>=2?1.1+.05*this.lvB:this.evo?.8+.05*this.lvB:1;}
   get st(){return WS[this.id];}
   get color(){return this.g.formColor||this.def.c;}
-  get maxed(){return this.lv>=5;}
+  get maxed(){return this.lv>=WMAX;}
   /* evolved weapons scale with the active transformation */
-  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*(this.evo>=2?1.5:1);}
-  get e2c(){return this.evo>=2?.85:1;}
-  get e2a(){return this.evo>=2?1.2:1;}
+  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*this.tier;}
+  get e2c(){return(this.evo>=2?.85:1)*(1-.015*this.lvB);}
+  get e2a(){return(this.evo>=2?1.2:1)*(1+.02*this.lvB);}
   get e2n(){return this.evo>=2?2:0;}
   get evoName(){return this.evo>=2?this.def.evo2:this.def.evo;}
-  upgrade(){if(this.lv<5)this.lv++;}
-  evolve(){this.lv=5;this.evo=(this.evo||0)+1;}
+  upgrade(){if(this.lv<WMAX)this.lv++;}
+  evolve(){this.lv=1;this.evo=(this.evo||0)+1;}
   update(dt){}
   draw(ctx){}
   static create(g,id){const C={ki:KiWeapon,kame:KameWeapon,disc:DiscWeapon,spirit:SpiritWeapon,aura:AuraWeapon,flare:FlareWeapon,slash:SlashWeapon,homing:HomingWeapon,dbeam:DeathBeamWeapon,barrage:BarrageWeapon}[id]||NEWW[id];return new C(g,id);}
@@ -100,10 +103,11 @@ class KiWeapon extends Weapon{
     this.cd-=dt;if(this.cd>0)return;
     const t=g.nearest(p.x,p.y,640);
     if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-p.y,t.x-p.x),n=s.n[L]+g.S.proj+this.e2n;
+    /* few shots on purpose: 1 -> 3 before evolving, 4 once evolved; a single pierce only on the 2nd evolution */
+    const base=Math.atan2(t.y-p.y,t.x-p.x),n=s.n[L],pi=this.evo>=2?1:0;
     for(let i=0;i<n;i++){
       const a=base+(i-(n-1)/2)*.17;
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi:s.pi[L],life:1.5,hit:[],c:this.color});
+      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi,life:1.5,hit:[],c:this.color});
     }
     g.audio.sfx('shot');this.cd=s.cd[L]*g.S.cd*this.e2c;
   }
@@ -199,7 +203,7 @@ class DiscWeapon extends Weapon{
 class SpiritWeapon extends Weapon{
   constructor(g,id){super(g,id);this.bombs=[];this.burns=[];}
   /* sphere gets bigger with every level; the evolutions are much bigger still */
-  get sizeK(){return this.evo>=2?1.3:this.evo?1.15:1;}
+  get sizeK(){return(this.evo>=2?1.3:this.evo?1.15:1)*(1+.04*this.lvB);}
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.cd-=dt;

@@ -34,7 +34,7 @@ A *Vampire Survivors*-style game inspired by Dragon Ball: you move, your weapons
 | Pause | `Esc` or `P` | Start |
 | Interact (altars, totems, time chamber) | `E` or `F` | A |
 | Companion ability | `Q` or `Left Shift` (or tap the bottom-left button) | X |
-| **Kaioken x10/x20** (Saiyan line) · **Berserk** (Broly) | `R` or `X` | Y |
+| **Character ability** (Kaioken, Berserk, beams, clones…) | `R` or `X` · on-screen button | Y |
 | Debug (FPS…) | `F2` or `` ` `` | Select |
 
 All keys can be rebound in **Settings → Controls**.
@@ -81,26 +81,49 @@ Sparking! ZERO-style roster additions: **Broly** (all forms), **Zamasu**, **Fuse
 ### 🐾 Companions (pets)
 Pick a helper by **race** before each run. It follows you, **collects nearby XP gems** and has an **active ability** (`Q`) on a cooldown:
 
-| Companion | Race | Ability | Cooldown |
+| Companion | Race | Ability (heavily nerfed) | Cooldown |
 |---|---|---|---|
-| Dende | Namekian | **Healing**: restores 30% HP | 42 s |
-| Mini Shenron | Dragon | **Magic gather**: pulls all gems and gives bonus XP | 55 s |
-| Mini Droid | Android | **Energy shield**: invulnerable for 3.5 s | 55 s |
-| Bubbles | Earth animal | **Lucky banana**: zenny and +12% luck for 40 s | 50 s |
-| Mini Buu | Majin | **Candy beam**: stuns nearby enemies for 2.5 s | 38 s |
-| Saibaman | Saiyan (plant) | **Self-destruct**: area explosion | 30 s |
+| Dende | Namekian | **Healing**: restores 7% HP | 42 s |
+| Mini Shenron | Dragon | **Magic gather**: pulls gems within 300 px and gives a small XP bonus (3%) | 55 s |
+| Mini Droid | Android | **Energy shield**: invulnerable for 0.9 s | 55 s |
+| Bubbles | Earth animal | **Lucky banana**: a few zenny and +3% luck for 40 s | 50 s |
+| Mini Buu | Majin | **Candy beam**: stuns very close enemies for 0.6 s (0.2 s on bosses) | 38 s |
+| Saibaman | Saiyan (plant) | **Self-destruct**: small area explosion | 30 s |
+
+Pet abilities were **cut by at least three quarters**: they help, but no longer decide the run.
 
 ### 🌀 Spirit Bomb upgrade
 - The sphere **grows larger with every weapon level** and larger still in the **two evolutions** (the impact area grows too).
 - On the evolutions, when the sphere lands: **the ground shakes** (repeated screen tremors and shockwaves), **glowing cracks** open and the area **burns for 5-7 seconds**, dealing **modest** damage over time (about 11-13% of the sphere's damage every half second).
 
 ### 🍀 Luck, totems and trinkets
-- **Luck Totems** appear on the map (press `E`). Choose: **+luck on every level up** or **XP ×2 but +50% damage taken** (150 s).
-- **Trinket rarities** (Common, Rare, Epic, Legendary): no longer all legendary; luck shifts odds toward higher rarities.
+- The **Totem** appears **only once per run** (press `E`) and offers **3 random powers out of 8**:
+
+| Totem | Effect |
+|---|---|
+| Luck | +1% luck on every level-up for the rest of the run |
+| Risk | XP ×2 but +50% damage taken for 150 s |
+| Vitality | +15% max HP, +0.4 HP/s and an instant 30% heal |
+| Fury | +12% damage but cooldowns 8% slower |
+| Wealth | +35% zenny and +25% pickup range |
+| Guardian | a barrier blocks one hit, recharges every 25 s |
+| Storm | every 22 s lightning hits up to 4 nearby enemies |
+| Spirit | every 35 s a pulse heals 6% and stuns nearby enemies |
+
+- **Trinket rarities** (Common, Rare, Epic, Legendary): luck shifts odds toward higher rarities.
 - **Every boss drops a chest with 4 trinkets, pick 1**; with luck the choices grow **up to 10**.
 
 ![Trinket pick](docs/screens/trinket-pick.jpg)
 ![Totem](docs/screens/totem.jpg)
+
+### 🎯 Unique abilities for every character
+Each character has an **active ability** (key `R` or the **on-screen button** next to the pet button, showing name, cooldown and state). The Kaioken (Goku) and Berserk (Broly) buttons live there. There are **16 different mechanics**, tuned not to be too strong:
+
+![Ability button](docs/screens/ability-button.jpg)
+
+Kaioken ×10/×20 · Berserk · Power beam · Ki nova · Regeneration · Blind · Invulnerable dash · Clones (3, they shoot) · Critical eye (+35% crit) · Barrier · Absorb · Time stop (1.8 s) · Erase · Rewind (recover 6 s of lost HP) · Jackpot · Temporary power-up.
+
+Abilities are described in the character panel.
 
 ### 🌍 Environment: traps and healing zones
 Levels now contain (not too often) **passive healing zones** (3% max HP/s) and **spike traps** that cycle on and off and hurt **both you and enemies**.
@@ -109,9 +132,35 @@ Levels now contain (not too often) **passive healing zones** (3% max HP/s) and *
 ![Trap](docs/screens/trap.jpg)
 
 ### 🕰️ Expanded Room of Spirit and Time
-Now **1 minute** long, with a **larger arena**, **obstacles** (pillars) and **3 buttons** that trigger **traps hurting the boss** (and you, if you stay in range). Afterwards you can spend coins in an upgrade shop.
+Now **1 minute** long, with a **larger arena**, **obstacles** (pillars) and **3 buttons** that trigger **traps hurting the boss** (and you, if you stay in range).
+- The boss has a **health bar** and **substantial area attacks** (red warning zones: slam, nova, meteors, bursts, waves).
+- Afterwards you can spend coins in a shop: **upgrades already bought or free disappear** from the list and, **if you have taken them all, the shop closes** and you leave the rift.
 
 ![Room of Spirit and Time](docs/screens/spirit-room.jpg)
+
+### ⚔️ Weapons: 5 levels → evolution → 5 levels → second evolution
+- Every weapon has **5 levels**; at max, the chest **evolves** it and it restarts at 1 for **another 5 levels** (then the second evolution, after a Hard win).
+- Each evolution level adds little: **+5% damage, −1.5% cooldown, +2% area** (no runaway numbers).
+- **Ki Blast**: far fewer shots (1 to 3 before evolving, 4 at most) and **+1 pierce only on the second evolution**.
+- **Spirit Bomb**, **Kamehameha** and the other beams have new sound effects (see below).
+
+### 👹 Tougher enemies, shooter waves and new moves
+- More **HP** for all enemies and bosses, and **much higher damage** (at the start of a run without shop upgrades they no longer hit for 8–9).
+- Ranged enemies are **no longer scattered through the whole run**: they come in **1-minute waves** every 2–3 minutes, with a warning, then retreat.
+- New **moves**:
+  - **Leap** (wolves, raptors): crouch, jump in an arc and land with a shockwave.
+  - **Slam** (brutes, dinosaurs, colossi…): they stop, a **red circle** warns you, then an area blast.
+  - **Zig-zag** (cells, ghosts, pterodactyls…): a weaving approach.
+- After a transformation there is now **time to see the animation** (about 4 s) before the level-up.
+
+### 🔥 Bosses power up
+If you take **too long** (about 85 s, then 70 s) to beat a boss, it **transforms**: it charges with an aura and flames, releases a **shockwave**, **heals 30%** (22% the second time), gets stronger and faster and **learns new attacks** (slam, nova, lance, storm, meteors, bursts). Up to twice per boss; it is invulnerable while charging.
+
+![Boss powering up](docs/screens/boss-powerup.jpg)
+![Slam zone](docs/screens/slam-zone.jpg)
+
+### 🔊 Reworked audio
+New **electric Kamehameha** (crackling charge, distorted release), tougher "anime-style" sounds for Ki and every weapon, dedicated **evolution** effects, an **aura wind** during transformations, and sounds for every ability and enemy move.
 
 ### ⚖️ Balance
 - **All damage power-ups are time-limited** (e.g. pickups +15% for 12 s, shrines 30 s).
@@ -131,7 +180,7 @@ Now **1 minute** long, with a **larger arena**, **obstacles** (pillars) and **3 
 
 ### Combat and weapons
 - **Auto-attack**: each weapon has its own behaviour (projectiles, beams, orbits, fire zones, chain lightning, meteors…).
-- Carry **up to 5 weapons** and **5 different passives**, each **up to level 5**.
+- Carry **up to 5 weapons** and **5 different passives**, each **up to level 5** (weapons then evolve and get another 5 levels per evolution).
 - **23 weapons**: Ki Blast, Kamehameha, Destructo Disc, Spirit Bomb, Kaioken (aura), Solar Flare, Sword, Homing Orbs, Piercing Beam, Rebel Javelin, Double Sunday, Break Cannon, Elegant Dance, Ginyu Boomerang, Hellzone Grenade, Time Skip, Power Impact, Sphere of Destruction, Angelic Bolt, Fusion Meteor, Big Bang Kamehameha, Dynamite Kick, Ki Barrage.
 - **Evolutions**: a maxed weapon can evolve (via chest). A **second evolution** per weapon unlocks by clearing a stage on **Hard** with a character that starts with that weapon.
 - Weapons **unlock** into the level-up pool by clearing a stage or reaching level 50 with a character that starts with it.
@@ -231,6 +280,10 @@ docs/screens/         screenshots used in this README
 node tests/check_i18n.js      # translations in all languages
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk
+node tests/totem.js           # one-time totem + 8 powers
+node tests/abil.js            # every ability of the 41 characters
+node tests/boss.js            # boss power-ups, slams
+node tests/spirit.js          # Room of Spirit and Time
 node tests/sim.js             # simulation with all characters
 node tests/death.js 0 normal 6 goku     # balance: stage, difficulty, runs, character
 # e2e/smoke (need puppeteer + a browser): e2e*.js, smoke5.js, smoke6.js, smoke7.js

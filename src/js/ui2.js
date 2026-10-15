@@ -79,7 +79,7 @@ Object.assign(UI.prototype,{
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
     const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},glyph(w.def.k,w.color),
-      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)),pips(w.lv,5),
+      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
     const kr=(k,v)=>h('div',{class:'krow'},h('span',null,t(k)),h('b',null,v));
     const stats=[kr('stHp',Math.round(p.hp)+' / '+p.maxHp),kr('stPower','x'+S.might.toFixed(2)),kr('stSpeed','x'+S.spd.toFixed(2)),kr('stCooldown','x'+S.cd.toFixed(2)),
@@ -112,7 +112,7 @@ Object.assign(UI.prototype,{
   },
   /* ---------- modals (level up / chest / wish) ---------- */
   describe(o){
-    if(o.type==='w'){const w=WEAPONS[o.id];return{k:w.k,c:w.c,n:w.n,tag:o.lv?this.t('weaponLv',{n:o.lv+1}):this.t('newWeapon'),d:(o.lv&&wsDelta(o.id,o.lv-1,o.lv))||w.d};}
+    if(o.type==='w'){const w=WEAPONS[o.id];return{k:w.k,c:w.c,n:w.n,tag:o.lv?this.t('weaponLv',{n:o.lv+1}):this.t('newWeapon'),d:(((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo?T('+5% danno · −1,5% ricarica · +2% area','+5% damage · −1.5% cooldown · +2% area'):o.lv&&wsDelta(o.id,o.lv-1,o.lv))||w.d};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;return{k:p.k,c:p.c,n:p.n,tag:(o.lv?this.t('passLv',{n:o.lv+1}):this.t('newPass'))+' · '+this.t('passSlots',{a:o.lv?used:used+1,b:MAX_PASSIVES}),d:p.d};}
     if(o.type==='z')return{k:'金',c:'#ffd23f',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
     return{k:'豆',c:'#8be07a',n:T('Senzu','Senzu'),tag:this.t('heal'),d:T('Recuperi il 40% della salute.','Recover 40% HP.')};
@@ -143,21 +143,25 @@ Object.assign(UI.prototype,{
       const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
       el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs));
     }else if(m.type==='totem'){
-      const W=[{k:'運',c:'#8be07a',n:this.t('totemLuckN'),d:this.t('totemLuckD')},{k:'怒',c:'#ff7a3a',n:this.t('totemRiskN'),d:this.t('totemRiskD')}];
+      const W=(m.opts||['luck','risk']).map(id=>TOTEMS.find(t=>t.id===id)).filter(Boolean);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('totemTitle')),h('p',{class:'sub'},this.t('totemSub')),
-        h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:T(w.n,w.n),tag:'🗿',d:T(w.d,w.d)},i,()=>{this.sfx('shrine');this.app.resolveModal(i);}))));
+        h('div',{class:'cards'},W.map((w,i)=>{
+          const lk=w.id==='luck'||w.id==='risk';
+          return this.card({k:w.k,c:w.c,n:lk?T(this.t(w.id==='luck'?'totemLuckN':'totemRiskN'),this.t(w.id==='luck'?'totemLuckN':'totemRiskN')):w.n,tag:'🗿',d:lk?T(this.t(w.id==='luck'?'totemLuckD':'totemRiskD'),this.t(w.id==='luck'?'totemLuckD':'totemRiskD')):w.d},i,()=>{this.sfx('shrine');this.app.resolveModal(i);});
+        })));
     }else if(m.type==='trial'){
       const NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health')},STEP={might:.10,spd:.10,cd:.08,hp:.12};
       const cards=m.offers.map((o,i)=>{
+        if(o.sold)return null;   /* bought / free upgrades disappear */
         let info;
         if(o.kind==='form'){const e=LINES[g.C.line||'saiyan'][g.formsUnlocked];info={k:'変',c:e.aura,n:e.n,tag:this.t('trialForm'),d:T('Sblocchi subito la prossima trasformazione.','Unlock the next transformation right away.')};}
         else if(o.kind==='weapon'){const w=WEAPONS[o.wid];info={k:w.k,c:w.c,n:w.n,tag:this.t('trialWeapon'),d:T('+1 livello a quest\'arma.','+1 level for this weapon.')};}
         else{const p=Math.round(STEP[o.a]*100),q=Math.round(STEP[o.b]*135);info={k:'力',c:'#c9a0ff',n:T('Scambio statistica','Stat swap'),tag:this.t('trialSwap'),d:T('-'+p+'% '+NAMES[o.a].it+'  →  +'+q+'% '+NAMES[o.b].it,'-'+p+'% '+NAMES[o.a].en+'  →  +'+q+'% '+NAMES[o.b].en)};}
         const ok=!o.sold&&(m.freePick||g.run.coins>=o.price);
-        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');this.openModal(g.modal,g);}else this.sfx('hit');});
+        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('hit');});
         el.disabled=!ok;if(!ok)el.classList.add('locked');
         return el;
-      });
+      }).filter(Boolean);
       el=h('div',{class:'screen modal'},h('h2',null,this.t('trialShopTitle')),h('p',{class:'sub'},m.freePick?this.t('trialFreeDesc'):this.t('trialShopDesc',{n:Math.floor(g.run.coins)})),
         h('div',{class:'cards trialcards'},cards),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(0);}},this.t('trialLeave'))));
@@ -229,7 +233,7 @@ Object.assign(UI.prototype,{
     this.sbEl.append(h('div',{class:'sbhead'},h('b',null,'SANDBOX'),close),
       row(this.t('sbLevel'),b('+1',()=>g.setLevel(g.lvl+1)),b('+5',()=>g.setLevel(g.lvl+5)),b('+10',()=>g.setLevel(g.lvl+10)),b('+50',()=>g.setLevel(g.lvl+50))),
       row(this.t('sbForm'),frm,b('OK',()=>{const i=+frm.value;if(i<=g.formIdx)return;g.formsUnlocked=Math.max(g.formsUnlocked,i+1);g.formIdx=i;g.recalc();})),
-      row(this.t('sbWeapon'),wsel,b('+',()=>{const id=wsel.value,had=g.weapons.has(id),w=g.addWeapon(id);if(had)w.upgrade();g.recalc();}),b('max',()=>{const w=g.addWeapon(wsel.value);w.lv=5;}),b('★',()=>{const w=g.addWeapon(wsel.value);w.lv=5;g.evolveWeapon(wsel.value);})),
+      row(this.t('sbWeapon'),wsel,b('+',()=>{const id=wsel.value,had=g.weapons.has(id),w=g.addWeapon(id);if(had)w.upgrade();g.recalc();}),b('max',()=>{const w=g.addWeapon(wsel.value);w.lv=WMAX;}),b('★',()=>{const w=g.addWeapon(wsel.value);w.lv=WMAX;g.evolveWeapon(wsel.value);})),
       row(this.t('sbTrinket'),tsel,b('+',()=>g.addTrinket(tsel.value)),b('rnd',()=>{const id=g.rollTrinket();if(id)g.addTrinket(id);})),
       row(this.t('sbEnemy'),esel,b('x1',()=>g.spawnEnemyById(esel.value,1)),b('x10',()=>g.spawnEnemyById(esel.value,10)),b('x50',()=>g.spawnEnemyById(esel.value,50))),
       row(this.t('sbBoss'),bsel,b('go',()=>g.spawnBoss(bsel.value,false)),b(this.t('sbKillAll'),()=>{for(const e of g.en)if(!e.boss&&!e.dead)g.damageEnemy(e,1e12);})),

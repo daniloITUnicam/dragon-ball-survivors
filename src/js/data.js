@@ -1,7 +1,7 @@
 'use strict';
 /* ====== Static game data (bilingual strings use T(it,en)) ====== */
 const T=(it,en)=>({it,en});
-const GLYPHS='金豆変力復気波円玉炎光剣追砲槍双舞環焔時衝滅雷星爆蹴乱命速引修鎧学眼袋耳雲杖心輪鏡盾龍怒運猿鬼守癒';
+const GLYPHS='金豆変力復気波円玉炎光剣追砲槍双舞環焔時衝滅雷星爆蹴乱命速引修鎧学眼袋耳雲杖心輪鏡盾龍怒運猿鬼守癒分吸戻狂界疾破福閃';
 const DMG_NERF=.92;
 const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
 
@@ -38,6 +38,7 @@ const WEAPONS={
   barrage:{n:T('Raffica di Ki','Ki Barrage'),d:T('Raffica di colpi a ventaglio.','Fan of rapid shots.'),evo:T('Raffica Ultra','Ultra Barrage'),evoD:T('Sedici colpi per raffica.','Sixteen shots per burst.'),evo2:T('Raffica Infinita','Infinite Barrage'),evo2D:T('Raffica quasi continua.','Nearly continuous barrage.'),k:'乱',c:'#ffdd55'}
 };
 const MAX_WEAPONS=5;
+const WMAX=5;    /* every tier (base, evolution 1, evolution 2) has 5 levels; the evolution needs the current tier at level 5 */
 const MAX_PASSIVES=5;   /* max different secondary upgrades per run (each up to level 5) */
 
 const PASS={
@@ -234,21 +235,21 @@ const ENEMIES={
   ssol:{n:T('Soldato Saiyan','Saiyan Soldier'),hp:15,r:11,spd:72,dmg:9,xp:2,ai:'chase',sp:H({skin:'#f0b48c',outfit:'#3a3a4a',legs:'#3a3a4a',armor:'#b88a3a',shoulder:'#b88a3a',hair:'#15121c',hs:'vegeta',boot:'#b88a3a'},1.6)},
   fsol:{n:T('Soldato di Freezer','Frieza Soldier'),hp:11,r:11,spd:52,dmg:7,xp:3,ai:'ranged',shoot:{cd:3.2,spd:200,n:2,sp:.2},sp:H({skin:'#6ad0d0',outfit:'#2f3a8a',legs:'#2f3a8a',armor:'#c8c8e0',shoulder:'#c8c8e0',hs:'bald',scouter:true,pointy:true,boot:'#c8c8e0'},1.6)},
   app:{n:T('Appule','Appule'),hp:26,r:12,spd:70,dmg:12,xp:4,ai:'charge',sp:H({skin:'#9a5ad0',outfit:'#c8a0f0',legs:'#7a3ab0',armor:'#e8e0f0',shoulder:'#f2c230',hair:'#f2c230',hs:'horns',pointy:true,boot:'#f2c230'},1.7)},
-  dino:{n:T('Dinosauro','Dinosaur'),hp:52,r:16,spd:58,dmg:16,xp:6,ai:'charge',sp:{k:'beast',u:2.1,pal:['#4a8a3a','#2f5a24','#cfe0a0']}},
+  dino:{n:T('Dinosauro','Dinosaur'),hp:52,r:16,spd:58,dmg:16,xp:6,ai:'slam',sp:{k:'beast',u:2.1,pal:['#4a8a3a','#2f5a24','#cfe0a0']}},
   scud:{n:T('Soldato Scudiero','Shield Soldier'),hp:48,r:15,spd:50,dmg:13,xp:5,ai:'tank',sp:H({skin:'#b0b8c8',outfit:'#4a5a78',legs:'#4a5a78',armor:'#8a94a4',shoulder:'#c8c8d8',hs:'bald',wide:true,scouter:true,boot:'#2a2a3a'},1.9)},
-  rap:{n:T('Raptor','Raptor'),hp:20,r:13,spd:70,dmg:10,xp:3,ai:'charge',sp:{k:'beast',u:1.5}},
-  bru:{n:T('Brutale','Brute'),hp:110,r:20,spd:46,dmg:16,xp:10,ai:'tank',sp:H({skin:'#e87aa8',outfit:'#e87aa8',legs:'#d9689a',armor:'#f2d36a',shoulder:'#f2d36a',hair:'#c0396b',hs:'horns',wide:true,boot:'#f2d36a'},2.3)},
+  rap:{n:T('Raptor','Raptor'),hp:20,r:13,spd:70,dmg:10,xp:3,ai:'leap',sp:{k:'beast',u:1.5}},
+  bru:{n:T('Brutale','Brute'),hp:110,r:20,spd:46,dmg:16,xp:10,ai:'slam',sp:H({skin:'#e87aa8',outfit:'#e87aa8',legs:'#d9689a',armor:'#f2d36a',shoulder:'#f2d36a',hair:'#c0396b',hs:'horns',wide:true,boot:'#f2d36a'},2.3)},
   sol2:{n:T('Guerriero d\'Elite','Elite Warrior'),hp:30,r:12,spd:72,dmg:11,xp:3,ai:'chase',sp:H({skin:'#e8b0a0',outfit:'#b03a3a',legs:'#b03a3a',armor:'#2a2a3a',shoulder:'#f2c230',hs:'bald',scouter:true,boot:'#2a2a3a'},1.6)},
   snp:{n:T('Cecchino','Sniper'),hp:20,r:11,spd:46,dmg:9,xp:3,ai:'ranged',shoot:{cd:3,spd:270,n:2,sp:.12},sp:H({skin:'#9ad6c0',outfit:'#2a6a5a',legs:'#2a6a5a',armor:'#cfe8e0',hs:'horns',hair:'#2a6a5a',scouter:true,boot:'#cfe8e0'},1.6)},
   bomb2:{n:T('Saibaman Blu','Blue Saibaman'),hp:14,r:12,spd:106,dmg:38,xp:3,ai:'explode',rad:96,fuse:.8,sp:{k:'saiba',u:1.7,pal:['#5a9af0','#2f5db0','#0b1a40','#ffd23f']}},
   tel:{n:T('Spadaccino Lampo','Blink Swordsman'),hp:26,r:11,spd:66,dmg:13,xp:4,ai:'blink',sp:H({skin:'#cfe8b0',outfit:'#3ba35a',legs:'#3ba35a',belt:'#f2c230',hair:'#3ba35a',hs:'long',sword:true,boot:'#f2c230'},1.6)},
-  dod:{n:T('Bruto Rosa','Pink Brute'),hp:160,r:20,spd:42,dmg:20,xp:12,ai:'tank',sp:H({skin:'#ff8fb8',outfit:'#ff8fb8',legs:'#e0709a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#ff4a80',hs:'horns',wide:true,boot:'#2a2a3a'},2.4)},
-  cel:{n:T('Cell Jr.','Cell Jr.'),hp:34,r:13,spd:92,dmg:12,xp:5,ai:'chase',sp:{k:'celljr',u:1.7}},
+  dod:{n:T('Bruto Rosa','Pink Brute'),hp:160,r:20,spd:42,dmg:20,xp:12,ai:'slam',sp:H({skin:'#ff8fb8',outfit:'#ff8fb8',legs:'#e0709a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#ff4a80',hs:'horns',wide:true,boot:'#2a2a3a'},2.4)},
+  cel:{n:T('Cell Jr.','Cell Jr.'),hp:34,r:13,spd:92,dmg:12,xp:5,ai:'weave',sp:{k:'celljr',u:1.7}},
   and:{n:T('Androide','Android'),hp:60,r:12,spd:70,dmg:14,xp:6,ai:'chase',sp:H({skin:'#d6dbe4',outfit:'#4a5a78',legs:'#4a5a78',armor:'#8a94a4',shoulder:'#8a94a4',hs:'bald',eye:'#ff3b3b',scouter:true,boot:'#2a2a3a'},1.6)},
   drn:{n:T('Drone','Drone'),hp:30,r:12,spd:60,dmg:11,xp:5,ai:'hover',fly:true,shoot:{cd:2.2,spd:230,n:1,sp:0},sp:{k:'drone',u:1.6}},
   kam:{n:T('Androide Kamikaze','Kamikaze Android'),hp:30,r:12,spd:110,dmg:46,xp:5,ai:'explode',rad:104,fuse:.75,sp:{k:'saiba',u:1.7,robot:true,pal:['#9aa4b4','#5a6a88','#1a1a2a','#ff3b3b']}},
   gol:{n:T('Corazzato','Armored Golem'),hp:260,r:22,spd:40,dmg:24,xp:16,ai:'tank',sp:{k:'golem',u:2.2}},
-  gho:{n:T('Spettro','Wraith'),hp:50,r:12,spd:64,dmg:15,xp:7,ai:'chase',alpha:.8,sp:{k:'ghost',u:1.6}},
+  gho:{n:T('Spettro','Wraith'),hp:50,r:12,spd:64,dmg:15,xp:7,ai:'weave',alpha:.8,sp:{k:'ghost',u:1.6}},
   gel:{n:T('Gelatina Rosa','Pink Jelly'),hp:70,r:16,spd:52,dmg:14,xp:8,ai:'split',minion:'gelm',sp:{k:'blob',u:1.9,pal:['#ff8fc8','#d9609e','#4a1030']}},
   gelm:{n:T('Gelatina Piccola','Small Jelly'),hp:20,r:10,spd:80,dmg:9,xp:2,ai:'chase',sp:{k:'blob',u:1.2,pal:['#ff8fc8','#d9609e','#4a1030']}},
   dem:{n:T('Demone','Demon'),hp:90,r:14,spd:72,dmg:18,xp:9,ai:'chase',sp:H({skin:'#d94a4a',outfit:'#4a1a3a',legs:'#4a1a3a',armor:'#2a2a3a',hair:'#2a2a3a',hs:'horns',boot:'#2a2a3a'},1.7)},
@@ -256,23 +257,23 @@ const ENEMIES={
   orb:{n:T('Sfera del Vuoto','Void Orb'),hp:70,r:12,spd:60,dmg:16,xp:9,ai:'hover',fly:true,shoot:{cd:2.4,spd:260,n:3,sp:.2},sp:{k:'orb',u:1.6}},
   war:{n:T('Guerriero dell\'Universo','Universe Warrior'),hp:130,r:14,spd:76,dmg:22,xp:11,ai:'chase',sp:H({skin:'#b0b8c8',outfit:'#c84a2a',legs:'#c84a2a',armor:'#e8e0d0',shoulder:'#e8e0d0',hs:'horns',hair:'#e8e0d0',boot:'#2a2a3a'},1.75)},
   ang:{n:T('Angelo Servitore','Attendant Angel'),hp:80,r:12,spd:48,dmg:18,xp:10,ai:'ranged',shoot:{cd:2.6,spd:300,n:3,sp:.16},sp:H({skin:'#e8d8f0',outfit:'#f4f1ea',legs:'#f4f1ea',belt:'#8a4fc0',hair:'#c9a0ff',hs:'long',boot:'#8a4fc0'},1.65)},
-  col:{n:T('Colosso','Colossus'),hp:420,r:24,spd:44,dmg:30,xp:24,ai:'tank',sp:{k:'golem',u:2.5,pal:['#8a6aa0','#6a4a80','#ffb13b']}},
+  col:{n:T('Colosso','Colossus'),hp:420,r:24,spd:44,dmg:30,xp:24,ai:'slam',sp:{k:'golem',u:2.5,pal:['#8a6aa0','#6a4a80','#ffb13b']}},
   ass:{n:T('Assassino','Assassin'),hp:90,r:12,spd:80,dmg:24,xp:10,ai:'charge',sp:H({skin:'#6a5a7a',outfit:'#1a1a2a',legs:'#1a1a2a',belt:'#ff3b3b',hs:'bald',eye:'#ff3b3b',boot:'#1a1a2a'},1.7)},
   fus:{n:T('Majin Kamikaze','Kamikaze Majin'),hp:60,r:14,spd:112,dmg:58,xp:10,ai:'explode',rad:118,fuse:.7,sp:{k:'saiba',u:1.95,pal:['#d890e0','#a05ac0','#3a0a40','#ffe24d']}},
-  pter:{n:T('Pterodattilo','Pterodactyl'),hp:9,r:11,spd:84,dmg:7,xp:2,ai:'chase',fly:true,sp:{k:'bird',u:1.6,pal:['#8a9a5a','#5a6a38','#e8d890','#d94a3a']}},
-  wolf:{n:T('Lupo del Deserto','Desert Wolf'),hp:13,r:12,spd:92,dmg:8,xp:2,ai:'charge',sp:{k:'beast',u:1.45,pal:['#9a8a78','#5a4a3a','#e8dcc8']}},
+  pter:{n:T('Pterodattilo','Pterodactyl'),hp:9,r:11,spd:84,dmg:7,xp:2,ai:'weave',fly:true,sp:{k:'bird',u:1.6,pal:['#8a9a5a','#5a6a38','#e8d890','#d94a3a']}},
+  wolf:{n:T('Lupo del Deserto','Desert Wolf'),hp:13,r:12,spd:92,dmg:8,xp:2,ai:'leap',sp:{k:'beast',u:1.45,pal:['#9a8a78','#5a4a3a','#e8dcc8']}},
   rrs:{n:T('Soldato Red Ribbon','Red Ribbon Soldier'),hp:12,r:11,spd:54,dmg:6,xp:2,ai:'ranged',shoot:{cd:2.6,spd:200,n:1,sp:0},sp:H({skin:'#e8c0a0',outfit:'#6a7a3a',legs:'#6a7a3a',armor:'#b02a2a',shoulder:'#b02a2a',hs:'bald',boot:'#3a3a2a',gloves:'#3a3a2a'},1.55)},
   cave:{n:T('Cavernicolo','Caveman'),hp:34,r:13,spd:56,dmg:10,xp:3,ai:'chase',sp:H({skin:'#d8a078',outfit:'#a8743a',legs:'#a8743a',hair:'#3a2a1a',hs:'long',beard:true,boot:'#6a4a2a'},1.7)},
-  sair:{n:T('Saibaman Rosso','Red Saibaman'),hp:9,r:10,spd:78,dmg:7,xp:2,ai:'chase',sp:H({skin:'#d8664a',outfit:'#b04a3a',legs:'#b04a3a',hair:'#7a2a1a',hs:'horns',spots:true,boot:'#7a2a1a'},1.35)},
+  sair:{n:T('Saibaman Rosso','Red Saibaman'),hp:9,r:10,spd:78,dmg:7,xp:2,ai:'weave',sp:H({skin:'#d8664a',outfit:'#b04a3a',legs:'#b04a3a',hair:'#7a2a1a',hs:'horns',spots:true,boot:'#7a2a1a'},1.35)},
   ninja:{n:T('Ninja Murasaki','Murasaki Ninja'),hp:18,r:11,spd:68,dmg:9,xp:3,ai:'blink',sp:H({skin:'#e8c0a0',outfit:'#4a2a7a',legs:'#4a2a7a',belt:'#ff3b3b',hair:'#2a1a4a',hs:'bald',boot:'#2a1a4a',mask:true},1.55)},
   nam:{n:T('Guerriero Namecciano','Namekian Warrior'),hp:24,r:12,spd:66,dmg:12,xp:4,ai:'chase',sp:H({skin:'#79c24d',outfit:'#f4f1ea',legs:'#6a3d9a',belt:'#6a3d9a',hair:'#79c24d',hs:'antenna',pointy:true,boot:'#6a3d9a'},1.65)},
   nam2:{n:T('Lanciere Namecciano','Namekian Lancer'),hp:46,r:12,spd:52,dmg:13,xp:5,ai:'ranged',shoot:{cd:2.8,spd:240,n:3,sp:.18},sp:H({skin:'#5aa83a',outfit:'#2a6a4a',legs:'#2a6a4a',belt:'#f2c230',hair:'#5aa83a',hs:'antenna',pointy:true,boot:'#f2c230'},1.65)},
   fsol2:{n:T('Cannoniere di Freezer','Frieza Cannoneer'),hp:44,r:13,spd:46,dmg:14,xp:5,ai:'ranged',shoot:{cd:3.4,spd:170,n:6,ring:true},sp:H({skin:'#a07ad8',outfit:'#2f3a8a',legs:'#2f3a8a',armor:'#c8c8e0',shoulder:'#f2c230',hs:'horns',hair:'#f2c230',scouter:true,wide:true,boot:'#c8c8e0'},1.75)},
   pter2:{n:T('Pterodattilo di Fuoco','Fire Pterodactyl'),hp:44,r:12,spd:76,dmg:13,xp:5,ai:'hover',fly:true,shoot:{cd:2.4,spd:220,n:2,sp:.2},sp:{k:'bird',u:1.85,pal:['#d9603a','#8a2a1a','#ffd23f','#ffffff']}},
-  wolf2:{n:T('Lupo Nero','Black Wolf'),hp:40,r:13,spd:98,dmg:13,xp:4,ai:'charge',sp:{k:'beast',u:1.65,pal:['#3a3a4a','#1a1a24','#9a4aff']}},
-  wolf3:{n:T('Lupo Meccanico','Mecha Wolf'),hp:62,r:13,spd:100,dmg:15,xp:6,ai:'charge',sp:{k:'beast',u:1.7,pal:['#9aa4b4','#5a6a88','#ff3b3b']}},
+  wolf2:{n:T('Lupo Nero','Black Wolf'),hp:40,r:13,spd:98,dmg:13,xp:4,ai:'leap',sp:{k:'beast',u:1.65,pal:['#3a3a4a','#1a1a24','#9a4aff']}},
+  wolf3:{n:T('Lupo Meccanico','Mecha Wolf'),hp:62,r:13,spd:100,dmg:15,xp:6,ai:'leap',sp:{k:'beast',u:1.7,pal:['#9aa4b4','#5a6a88','#ff3b3b']}},
   rrs2:{n:T('Elite Red Ribbon','Red Ribbon Elite'),hp:48,r:12,spd:58,dmg:13,xp:5,ai:'ranged',shoot:{cd:2.8,spd:260,n:3,sp:.14},sp:H({skin:'#e8c0a0',outfit:'#2a2a3a',legs:'#2a2a3a',armor:'#b02a2a',shoulder:'#b02a2a',hs:'bald',scouter:true,boot:'#1a1a22',gloves:'#1a1a22'},1.65)},
-  cave2:{n:T('Cavernicolo Gigante','Giant Caveman'),hp:150,r:19,spd:48,dmg:20,xp:11,ai:'tank',sp:H({skin:'#c8906a',outfit:'#8a5a2a',legs:'#8a5a2a',hair:'#2a1a0a',hs:'long',beard:true,wide:true,boot:'#5a3a1a'},2.3)},
+  cave2:{n:T('Cavernicolo Gigante','Giant Caveman'),hp:150,r:19,spd:48,dmg:20,xp:11,ai:'slam',sp:H({skin:'#c8906a',outfit:'#8a5a2a',legs:'#8a5a2a',hair:'#2a1a0a',hs:'long',beard:true,wide:true,boot:'#5a3a1a'},2.3)},
   ninja2:{n:T('Ninja Ombra','Shadow Ninja'),hp:70,r:11,spd:76,dmg:20,xp:9,ai:'blink',sp:H({skin:'#6a5a7a',outfit:'#14141c',legs:'#14141c',belt:'#9a4aff',hs:'bald',eye:'#9a4aff',boot:'#14141c',mask:true},1.7)}
 };
 
@@ -330,10 +331,10 @@ const STAGES=[
  {id:1,n:T('Pianura Saiyan','Saiyan Plains'),theme:'plains',time:480,hp:1,spawn:1,xp:1,zenny:1,music:1,
   roster:[['sai',0,10,240],['pter',0,6,280],['wolf',20,6,320],['bomb',40,3],['sol',50,6],['rrs',65,5,380],['cave',95,3.5],['ssol',105,4],['gun',135,3],['sair',150,4],['ninja',190,2.5],['fsol',220,2],['rap',220,3],['app',280,2],['bru',300,1.5],['dino',340,1.6],['scud',380,1.4]],
   bosses:[['raditz',100],['nappa',210],['vegeta',340],['ape',480,1]]},
- {id:2,n:T('Pianeta Namek','Planet Namek'),theme:'namek',time:600,hp:1.2,spawn:1.05,xp:1.5,zenny:1.4,music:2,
+ {id:2,n:T('Pianeta Namek','Planet Namek'),theme:'namek',time:600,hp:1.4,spawn:1.05,xp:1.5,zenny:1.4,music:2,
   roster:[['nam',0,8,300],['sol',0,6,150],['fsol',0,5,260],['bomb',0,3,240],['sol2',70,7],['wolf2',90,4],['snp',65,3],['pter2',90,3],['bomb2',100,4],['fsol2',130,3.5],['nam2',150,4],['tel',160,3],['dod',240,1.8]],
   bosses:[['ginew',190],['dodoria',300],['zarbon',420],['freezer',600,1]]},
- {id:3,n:T('Rovine degli Androidi','Android Ruins'),theme:'waste',time:720,hp:1.5,spawn:1.1,xp:1.8,zenny:1.9,music:3,
+ {id:3,n:T('Rovine degli Androidi','Android Ruins'),theme:'waste',time:720,hp:1.4,spawn:1.1,xp:1.8,zenny:1.9,music:3,
   roster:[['sai',0,6,100],['rrs',0,6,200],['bomb2',0,3,240],['sol2',36,6,250],['and',100,7],['wolf3',150,4],['cel',120,6],['rrs2',170,5],['drn',156,3.5],['ninja2',180,3],['kam',205,4],['gol',300,1.6]],
   bosses:[['gero',210],['c17',340],['c16',480],['cell',720,1]]},
  {id:4,n:T('Dimensione di Bu','Buu\'s Dimension'),theme:'other',time:840,hp:1.9,spawn:1.15,xp:2.1,zenny:2.1,music:4,
@@ -343,7 +344,7 @@ const STAGES=[
   roster:[['sol',0,8,120],['sai',0,6,90],['sol2',30,6,210],['dem',220,4,400],['gho',240,4,400],['ninja2',190,3],['war',240,7],['wolf3',260,3],['ass',320,4],['orb',380,3.5],['ang',440,3],['fus',500,3],['col',600,1.6]],
   bosses:[['dyspo',230],['bergamo',310],['basil',380],['lavender',440],['kale',510],['hit',600],['toppo',730],['jiren',900,1]]},
  {id:6,n:T('Isola di Muten','Roshi\'s Island'),theme:'beach',time:480,dif:.4,req:0,hp:1.05,spawn:1,xp:1.3,zenny:1.2,music:6,
-  roster:[['wolf',0,6,200],['pter',0,6,220],['rrs',0,7,300],['sai',20,4,200],['sol',60,5],['ninja',100,4],['cave',130,3],['gun',150,4],['rrs2',200,4],['pter2',220,3],['ninja2',300,3],['app',330,2]],
+  roster:[['wolf',0,4,200],['pter',0,6,220],['rrs',0,7,300],['sai',20,4,200],['sol',60,5],['ninja',100,4],['cave',130,3],['gun',150,4],['rrs2',200,4],['pter2',220,3],['ninja2',300,3],['app',330,2]],
   bosses:[['tao',130],['tenshin',260],['jackie',380],['kingpiccolo',480,1]]},
  {id:7,n:T('Pianeta Vegeta','Planet Vegeta'),theme:'redrock',time:600,dif:1.5,req:1,hp:1.3,spawn:1.05,xp:1.6,zenny:1.6,music:7,
   roster:[['ssol',0,8,250],['sair',0,6,200],['wolf2',40,4],['bomb',60,3,260],['cave',80,4,240],['sol2',90,5],['dino',130,3],['rap',150,3],['fsol',170,4],['cave2',220,3],['bomb2',240,3],['ssol',250,4],['app',300,3],['dod',380,1.6]],
@@ -387,15 +388,90 @@ const TRINKETS=[
 
 /* ---------- Pets: a companion per race. Passive: collects XP gems; active: one ability on a cooldown ---------- */
 const PETS=[
- {id:'dende',k:'命',c:'#8be07a',race:T('Namecciano','Namekian'),n:T('Dende','Dende'),ab:T('Guarigione','Healing'),d:T('Recuperi il 30% della salute.','Restore 30% of your HP.'),cd:42,sp:{k:'human',u:1.2,cfg:{skin:'#79c24d',outfit:'#f4f1ea',legs:'#6a3d9a',belt:'#e8c040',hair:'#79c24d',hs:'antenna',pointy:true,boot:'#5a3a8a',cape:'#f4f1ea'}}},
- {id:'shenron',k:'龍',c:'#59d070',race:T('Drago','Dragon'),n:T('Mini Shenron','Mini Shenron'),ab:T('Raccolta Magica','Magic Gather'),d:T('Attira tutta l\'esperienza a terra e dà un bonus di XP.','Pulls in all XP gems and grants bonus XP.'),cd:55,sp:{k:'pdragon',u:1.55}},
- {id:'droid',k:'盾',c:'#8ad8ff',race:T('Androide','Android'),n:T('Mini Droide','Mini Droid'),ab:T('Scudo Energetico','Energy Shield'),d:T('Sei invulnerabile per 3,5 secondi.','You are invulnerable for 3.5 seconds.'),cd:55,sp:{k:'drone',u:1.35}},
- {id:'bubbles',k:'猿',c:'#ffd23f',race:T('Animale della Terra','Earth Animal'),n:T('Bubbles','Bubbles'),ab:T('Banana Fortunata','Lucky Banana'),d:T('Zenny a terra e +12% fortuna per 40 secondi.','Drops zenny and +12% luck for 40 seconds.'),cd:50,sp:{k:'pmonkey',u:1.55}},
- {id:'buu',k:'鬼',c:'#ff9ec7',race:T('Majin','Majin'),n:T('Mini Bu','Mini Buu'),ab:T('Raggio Caramella','Candy Beam'),d:T('Stordisce i nemici vicini per 2,5 secondi.','Stuns nearby enemies for 2.5 seconds.'),cd:38,sp:{k:'human',u:1.2,cfg:{skin:'#ff9ec7',outfit:'#f2f0e8',legs:'#f2f0e8',belt:'#222',hair:'#ff9ec7',hs:'antenna',boot:'#222',wide:true}}},
- {id:'saibaman',k:'爆',c:'#ff7a3a',race:T('Saiyan (pianta)','Saiyan (plant)'),n:T('Saibaman','Saibaman'),ab:T('Autodistruzione','Self-Destruct'),d:T('Esplode infliggendo danni ad area.','Explodes for area damage.'),cd:30,sp:{k:'saiba',u:1.4,pal:['#6ac04a','#3f8a2e','#10260f','#ff4a2a']}}
+ {id:'dende',k:'命',c:'#8be07a',race:T('Namecciano','Namekian'),n:T('Dende','Dende'),ab:T('Guarigione','Healing'),d:T('Recuperi il 7% della salute.','Restore 7% of your HP.'),cd:42,sp:{k:'human',u:1.2,cfg:{skin:'#79c24d',outfit:'#f4f1ea',legs:'#6a3d9a',belt:'#e8c040',hair:'#79c24d',hs:'antenna',pointy:true,boot:'#5a3a8a',cape:'#f4f1ea'}}},
+ {id:'shenron',k:'龍',c:'#59d070',race:T('Drago','Dragon'),n:T('Mini Shenron','Mini Shenron'),ab:T('Raccolta Magica','Magic Gather'),d:T('Attira l\'esperienza vicina e dà un piccolo bonus di XP.','Pulls in nearby XP gems and grants a small XP bonus.'),cd:55,sp:{k:'pdragon',u:1.55}},
+ {id:'droid',k:'盾',c:'#8ad8ff',race:T('Androide','Android'),n:T('Mini Droide','Mini Droid'),ab:T('Scudo Energetico','Energy Shield'),d:T('Sei invulnerabile per 0,9 secondi.','You are invulnerable for 0.9 seconds.'),cd:55,sp:{k:'drone',u:1.35}},
+ {id:'bubbles',k:'猿',c:'#ffd23f',race:T('Animale della Terra','Earth Animal'),n:T('Bubbles','Bubbles'),ab:T('Banana Fortunata','Lucky Banana'),d:T('Qualche zenny a terra e +3% fortuna per 40 secondi.','A few zenny and +3% luck for 40 seconds.'),cd:50,sp:{k:'pmonkey',u:1.55}},
+ {id:'buu',k:'鬼',c:'#ff9ec7',race:T('Majin','Majin'),n:T('Mini Bu','Mini Buu'),ab:T('Raggio Caramella','Candy Beam'),d:T('Stordisce i nemici molto vicini per 0,6 secondi.','Stuns very close enemies for 0.6 seconds.'),cd:38,sp:{k:'human',u:1.2,cfg:{skin:'#ff9ec7',outfit:'#f2f0e8',legs:'#f2f0e8',belt:'#222',hair:'#ff9ec7',hs:'antenna',boot:'#222',wide:true}}},
+ {id:'saibaman',k:'爆',c:'#ff7a3a',race:T('Saiyan (pianta)','Saiyan (plant)'),n:T('Saibaman','Saibaman'),ab:T('Autodistruzione','Self-Destruct'),d:T('Esplode infliggendo pochi danni ad area.','Explodes for light area damage.'),cd:30,sp:{k:'saiba',u:1.4,pal:['#6ac04a','#3f8a2e','#10260f','#ff4a2a']}}
 ];
 
 /* ---------- Shop (permanent, all characters) ---------- */
+/* Totem: appears once per run. Three random powers are offered, pick one. Mild on purpose. */
+const TOTEMS=[
+ {id:'luck',k:'運',c:'#8be07a',n:T('Totem della Fortuna','Totem of Luck'),d:T('+1% fortuna a ogni livello, per tutta la partita.','+1% luck on every level-up for the rest of the run.')},
+ {id:'risk',k:'怒',c:'#ff7a3a',n:T('Totem del Rischio','Totem of Risk'),d:T('Esperienza x2, ma subisci il 50% di danni in più per 150 secondi.','XP x2, but you take 50% more damage for 150 seconds.')},
+ {id:'vigor',k:'命',c:'#ff6b8a',n:T('Totem della Vitalità','Totem of Vitality'),d:T('+15% salute massima, +0,4 salute/s e cura immediata del 30%.','+15% max HP, +0.4 HP/s and an instant 30% heal.')},
+ {id:'fury',k:'力',c:'#ff9d1c',n:T('Totem della Furia','Totem of Fury'),d:T('+12% danno, ma ricarica +8% più lenta.','+12% damage, but cooldowns are 8% slower.')},
+ {id:'wealth',k:'金',c:'#ffd23f',n:T('Totem della Ricchezza','Totem of Wealth'),d:T('+35% zenny e +25% raccolta.','+35% zenny and +25% pickup range.')},
+ {id:'guard',k:'守',c:'#8ad8ff',n:T('Totem Guardiano','Guardian Totem'),d:T('Una barriera blocca un colpo, poi si ricarica ogni 25s.','A barrier blocks one hit, then recharges every 25s.')},
+ {id:'storm',k:'雷',c:'#cfe8ff',n:T('Totem della Tempesta','Storm Totem'),d:T('Ogni 22s un fulmine colpisce fino a 4 nemici vicini.','Every 22s lightning strikes up to 4 nearby enemies.')},
+ {id:'spirit',k:'癒',c:'#9affc8',n:T('Totem dello Spirito','Spirit Totem'),d:T('Ogni 35s un impulso cura il 6% e stordisce i nemici vicini.','Every 35s a pulse heals 6% and stuns nearby enemies.')},
+];
+/* ---------- Character abilities: one per character, key R (or the on-screen button next to the pet) ---------- */
+const ABIL_DESC={
+  kaioken:()=>T('Kaioken x10 / x20: danno ×2 / ×4, ma perdi 4 / 8 salute al secondo. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×2 / ×4, but you lose 4 / 8 HP per second. Press again to switch or stop.'),
+  berserk:()=>T('Berserk: 10 secondi fuori controllo, comandi invertiti, attacchi casuali. Non annullabile.','Berserk: 10 seconds out of control, inverted controls, random attacks. Cannot be cancelled.'),
+  beam:v=>T('Raggio potente nella direzione del nemico più vicino: colpisce tutto in linea.','A powerful beam toward the nearest enemy: hits everything in line.'),
+  nova:v=>T('Esplosione di ki attorno a te: danni ad area e respinge i nemici.','A ki blast around you: area damage that pushes enemies back.'),
+  regen:v=>T('Rigenera il '+Math.round(14*v)+'% della salute in 6 secondi.','Regenerates '+Math.round(14*v)+'% of your HP over 6 seconds.'),
+  blind:v=>T('Acceca e stordisce i nemici vicini per 1,7 secondi.','Blinds and stuns nearby enemies for 1.7 seconds.'),
+  dash:v=>T('Scatto in avanti, invulnerabile, che colpisce chi attraversi.','A forward dash, invulnerable, that hits whoever you pass through.'),
+  clones:v=>T('Tre cloni ti affiancano per 10 secondi e sparano al nemico più vicino.','Three clones fight beside you for 10 seconds, shooting the nearest enemy.'),
+  crit:v=>T('+35% probabilità di critico per 8 secondi.','+35% critical chance for 8 seconds.'),
+  barrier:v=>T('Barriera: invulnerabile per 1,5 secondi.','Barrier: invulnerable for 1.5 seconds.'),
+  absorb:v=>T('Assorbi energia dai nemici vicini: danni e cura fino al 12% della salute.','Absorb energy from nearby enemies: damage and heal up to 12% HP.'),
+  timestop:v=>T('Ferma il tempo: i nemici sullo schermo restano bloccati per 1,8 secondi.','Stops time: enemies on screen are frozen for 1.8 seconds.'),
+  erase:v=>T('Cancella una parte della vita dei nemici vicini (poco sui boss).','Erases part of nearby enemies\' HP (little on bosses).'),
+  rewind:v=>T('Riavvolge il tempo: recuperi la salute persa negli ultimi 6 secondi.','Rewinds time: recover the HP you lost in the last 6 seconds.'),
+  jackpot:v=>T('Monete, una piccola cura e un po\' di fortuna per 30 secondi.','Coins, a small heal and a bit of luck for 30 seconds.'),
+  buff:v=>T('Potenziamento per 8 secondi: danno'+(v.m?' +'+Math.round(v.m*100)+'%':'')+(v.s?', velocità +'+Math.round(v.s*100)+'%':'')+(v.tk?' (subisci +'+Math.round(v.tk*100)+'% di danni)':'')+'.','Power-up for 8 seconds: damage'+(v.m?' +'+Math.round(v.m*100)+'%':'')+(v.s?', speed +'+Math.round(v.s*100)+'%':'')+(v.tk?' (you take +'+Math.round(v.tk*100)+'% damage)':'')+'.')
+};
+const MECH_K={kaioken:'界',berserk:'狂',beam:'閃',nova:'爆',regen:'癒',blind:'光',dash:'疾',clones:'分',crit:'眼',barrier:'盾',absorb:'吸',timestop:'時',erase:'破',rewind:'戻',jackpot:'福',buff:'力'};
+const AB=(m,c,it,en,cd,v)=>({m,c,n:T(it,en),cd,v:v===undefined?1:v,k:MECH_K[m],d:ABIL_DESC[m](v===undefined?1:v)});
+const ABIL={
+  goku:AB('kaioken','#ff3b2f','Kaioken','Kaioken',0),
+  vegeta:AB('beam','#6a8aff','Final Flash','Final Flash',40,1),
+  piccolo:AB('regen','#8be07a','Rigenerazione Namecciana','Namekian Regeneration',55,1),
+  krillin:AB('blind','#fff7b0','Taiyoken','Solar Flare',50),
+  trunks:AB('nova','#8ab4ff','Fendente Furioso','Furious Slash',38,.9),
+  yamcha:AB('dash','#ffb13b','Pugno Zanna di Lupo','Wolf Fang Fist',22,1),
+  tien:AB('clones','#ffe9a0','Multiforma','Multi-Form',55),
+  gohan:AB('crit','#c8a0ff','Potenziale Nascosto','Hidden Potential',50),
+  muten:AB('beam','#59c8ff','Kamehameha del Maestro','Master\'s Kamehameha',42,.9),
+  goten:AB('dash','#ffd23f','Scatto Fulmineo','Lightning Dash',22,.8),
+  c18:AB('barrier','#8ad8ff','Barriera Energetica','Energy Barrier',50),
+  broly:AB('berserk','#8aff3a','Berserk','Berserk',0),
+  freezer:AB('nova','#c9a0ff','Supernova Mortale','Death Nova',42,1.1),
+  cell:AB('absorb','#6fbf4a','Assorbimento','Absorption',50,1),
+  bu:AB('regen','#ff9ec7','Rigenerazione Elastica','Elastic Regeneration',55,1.1),
+  gotenks:AB('clones','#c8a0ff','Fantasmi Kamikaze','Super Ghost Kamikaze',55),
+  vegito:AB('beam','#8af0ff','Lama Spirituale','Spirit Blade',38,1.1),
+  satan:AB('jackpot','#ffd23f','Colpo di Fortuna','Lucky Strike',60,1),
+  raditz:AB('beam','#d9a27a','Doppio Sunday','Double Sunday',45,.85),
+  nappa:AB('nova','#c97d2e','Esplosione Saiyan','Saiyan Blast',40,.95),
+  ginyu:AB('barrier','#8a4fc0','Posa Ginyu','Ginyu Pose',55),
+  zarbon:AB('buff','#7fe0a0','Mostro Zarbon','Monster Zarbon',55,{m:.25,s:.15}),
+  bardock:AB('buff','#ffb13b','Rivolta Saiyan','Saiyan Revolt',55,{m:.3}),
+  c17:AB('barrier','#f2a03a','Barriera Perfetta','Perfect Barrier',48),
+  c16:AB('beam','#7aa05a','Cannone Oculare','Eye Cannon',45,.9),
+  cooler:AB('nova','#ff7a3a','Supernova Cooler','Cooler Supernova',42,1),
+  toppo:AB('nova','#ff9d1c','Sfera della Giustizia','Sphere of Justice',38,1),
+  hit:AB('timestop','#c43a3a','Salto Temporale','Time Skip',70),
+  kefla:AB('buff','#ff8a3a','Fusione Furiosa','Furious Fusion',55,{m:.3,s:.1}),
+  beerus:AB('erase','#b06aff','Hakai','Hakai',70,1),
+  jiren:AB('dash','#ff4a4a','Pugno Inarrestabile','Unstoppable Fist',24,1.1),
+  whis:AB('rewind','#9ad8ff','Riavvolgimento','Rewind',85),
+  gogeta:AB('beam','#59c8ff','Big Bang Kamehameha','Big Bang Kamehameha',48,1.25),
+  dyspo:AB('dash','#c43a3a','Velocità Suprema','Supreme Speed',18,.9),
+  caulifla:AB('nova','#ff7ac0','Onda Saiyan','Saiyan Wave',36,.9),
+  gero:AB('regen','#cfd8e0','Energia Infinita','Infinite Energy',55,.9),
+  c21:AB('absorb','#ff9ec7','Appetito Insaziabile','Insatiable Hunger',50,1),
+  kale:AB('buff','#8aff3a','Furia Incontrollata','Uncontrolled Fury',60,{m:.5,tk:.3}),
+  zamasu:AB('beam','#8be07a','Lama di Giudizio','Blade of Judgment',44,1),
+  black:AB('dash','#ff6b8a','Lama di Ki','Ki Blade Dash',22,1),
+  fzamasu:AB('erase','#cfe8ff','Giudizio Divino','Divine Judgment',75,.9),
+};
 const SHOP=[
  {id:'gold',k:'金',n:T('Avidità','Greed'),d:T('+10% zenny per livello.','+10% zenny per level.'),max:6,base:90,g:1.5},
  {id:'exp',k:'学',n:T('Studio','Study'),d:T('+5% esperienza per livello.','+5% experience per level.'),max:6,base:100,g:1.5},
@@ -472,7 +548,7 @@ for(const id of Object.keys(WEAPONS)){
 for(const k in ENEMIES)ENEMIES[k].id=k;
 for(const k in BOSSES)BOSSES[k].id=k;
 /* ---- glossary texts ---- */
-const AI_TEXT={chase:T('Insegue il giocatore','Chases the player'),ranged:T('Spara da lontano','Shoots from a distance'),charge:T('Carica a tutta velocità','Charges at full speed'),explode:T('Si fa esplodere','Self-destructs'),blink:T('Si teletrasporta','Teleports'),split:T('Si divide alla morte','Splits when defeated'),tank:T('Lento e resistente','Slow and tough'),hover:T('Fluttua e spara','Hovers and shoots'),boss:T('Boss con attacchi a proiettili','Boss with bullet patterns')};
+const AI_TEXT={chase:T('Insegue il giocatore','Chases the player'),ranged:T('Spara da lontano','Shoots from a distance'),charge:T('Carica a tutta velocità','Charges at full speed'),explode:T('Si fa esplodere','Self-destructs'),blink:T('Si teletrasporta','Teleports'),split:T('Si divide alla morte','Splits when defeated'),tank:T('Lento e resistente','Slow and tough'),hover:T('Fluttua e spara','Hovers and shoots'),leap:T('Salta in avanti e atterra con un\'onda d\'urto','Leaps forward and lands with a shockwave'),slam:T('Batte il suolo: cerchio rosso, poi esplosione','Stomps the ground: red circle, then a blast'),weave:T('Avanza a zig-zag','Approaches in a zig-zag'),boss:T('Boss con attacchi a proiettili','Boss with bullet patterns')};
 const ENEMY_DESC={
 
  pter:T('Rettile volante: svolazza veloce e ti punta.','Flying reptile: flutters fast and dives at you.'),

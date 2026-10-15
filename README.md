@@ -42,7 +42,7 @@ Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, 
 | Pausa | `Esc` o `P` | Start |
 | Interagire (altari, totem, stanza del tempo) | `E` o `F` | A |
 | Abilità del compagno | `Q` o `Shift sinistro` (o tocca il pulsante in basso a sinistra) | X |
-| **Kaioken x10/x20** (linea Saiyan) · **Berserk** (Broly) | `R` o `X` | Y |
+| **Abilità del personaggio** (Kaioken, Berserk, raggi, cloni…) | `R` o `X` · pulsante a schermo | Y |
 | Debug (FPS ecc.) | `F2` o `` ` `` | Select |
 
 Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
@@ -90,26 +90,49 @@ I **prezzi di sblocco sono molto più alti** (da 8.000 a 300.000 zenny): oltre a
 ### 🐾 Compagni (pet)
 Prima di ogni partita scegli un aiutante in base alla **razza**. Segue il giocatore, **raccoglie le gemme di esperienza vicine** e ha un'**abilità attiva** (`Q`) con ricarica:
 
-| Compagno | Razza | Abilità | Ricarica |
+| Compagno | Razza | Abilità (potenziata verso il basso) | Ricarica |
 |---|---|---|---|
-| Dende | Namecciano | **Cura**: ripristina il 30% della vita | 42 s |
-| Mini Shenron | Drago | **Raccolta magica**: attira tutte le gemme e dà XP bonus | 55 s |
-| Mini Droid | Androide | **Scudo di energia**: invulnerabile per 3,5 s | 55 s |
-| Bubbles | Animale della Terra | **Banana fortunata**: zenny e +12% fortuna per 40 s | 50 s |
-| Mini Buu | Majin | **Raggio caramella**: stordisce i nemici vicini per 2,5 s | 38 s |
-| Saibaman | Saiyan (pianta) | **Autodistruzione**: esplosione ad area | 30 s |
+| Dende | Namecciano | **Cura**: ripristina il 7% della vita | 42 s |
+| Mini Shenron | Drago | **Raccolta magica**: attira le gemme entro 300 px e dà un piccolo bonus XP (3%) | 55 s |
+| Mini Droid | Androide | **Scudo di energia**: invulnerabile per 0,9 s | 55 s |
+| Bubbles | Animale della Terra | **Banana fortunata**: qualche zenny e +3% fortuna per 40 s | 50 s |
+| Mini Buu | Majin | **Raggio caramella**: stordisce i nemici molto vicini per 0,6 s (0,2 s sui boss) | 38 s |
+| Saibaman | Saiyan (pianta) | **Autodistruzione**: piccola esplosione ad area | 30 s |
+
+Le abilità dei pet sono state **ridimensionate di almeno tre quarti**: aiutano, ma non risolvono più la partita.
 
 ### 🌀 Genkidama potenziata
 - La sfera **diventa più grande a ogni livello** dell'arma e ancora di più nelle **due evoluzioni** (più grande anche l'area d'impatto).
 - Nelle evoluzioni, quando la sfera cade: **il terreno trema** (scosse ripetute dello schermo e onde d'urto), si aprono **crepe incandescenti** e la zona **brucia per 5-7 secondi** infliggendo danno nel tempo **contenuto** (circa il 11-13% del danno della sfera ogni mezzo secondo).
 
 ### 🍀 Fortuna, totem e trinket
-- **Totem della Fortuna** compaiono sulla mappa (premi `E`). Scegli: **+fortuna a ogni level up** oppure **XP ×2 ma danni subiti +50%** (per 150 s).
-- **Trinket con rarità** (Comune, Raro, Epico, Leggendario): non sono più tutti leggendari. La fortuna sposta le probabilità verso le rarità alte.
+- Il **Totem** compare **una sola volta per partita** (premi `E`) e ti offre **3 poteri a caso su 8**:
+
+| Totem | Effetto |
+|---|---|
+| Fortuna | +1% fortuna a ogni level up, per tutta la partita |
+| Rischio | XP ×2 ma +50% danni subiti per 150 s |
+| Vitalità | +15% salute massima, +0,4 HP/s e cura immediata del 30% |
+| Furia | +12% danno ma ricarica +8% più lenta |
+| Ricchezza | +35% zenny e +25% raccolta |
+| Guardiano | una barriera blocca un colpo, si ricarica ogni 25 s |
+| Tempesta | ogni 22 s un fulmine colpisce fino a 4 nemici vicini |
+| Spirito | ogni 35 s un impulso cura il 6% e stordisce i vicini |
+
+- **Trinket con rarità** (Comune, Raro, Epico, Leggendario): la fortuna sposta le probabilità verso le rarità alte.
 - **Ogni boss lascia un forziere con 4 trinket tra cui scegliere 1**; con la fortuna le opzioni salgono **fino a 10**.
 
 ![Scelta del trinket](docs/screens/trinket-pick.jpg)
 ![Totem](docs/screens/totem.jpg)
+
+### 🎯 Abilità uniche per ogni personaggio
+Ogni personaggio ha una **abilità attiva** (tasto `R` o **pulsante a schermo** accanto a quello del pet, con nome, ricarica e stato). I pulsanti per Kaioken (Goku) e Berserk (Broly) sono lì. Sono **16 meccaniche** diverse, tarate per non essere troppo forti:
+
+![Pulsante abilità](docs/screens/ability-button.jpg)
+
+Kaioken ×10/×20 · Berserk · Raggio potente · Nova di ki · Rigenerazione · Accecamento · Scatto invulnerabile · Cloni (3, sparano) · Occhio critico (+35% crit) · Barriera · Assorbimento · Fermo tempo (1,8 s) · Cancellazione · Riavvolgimento (recupera 6 s di vita persa) · Jackpot · Potenziamento temporaneo.
+
+Le abilità sono descritte nel pannello del personaggio.
 
 ### 🌍 Ambiente: trappole e zone di cura
 Nei livelli compaiono (non troppo spesso) **zone di cura passiva** (3% della vita massima al secondo) e **trappole a punte** che si attivano a intervalli e danneggiano **sia te sia i nemici**. Imparare a posizionarsi diventa parte della strategia.
@@ -118,9 +141,35 @@ Nei livelli compaiono (non troppo spesso) **zone di cura passiva** (3% della vit
 ![Trappola](docs/screens/trap.jpg)
 
 ### 🕰️ Stanza dello Spirito e del Tempo ampliata
-Ora dura **1 minuto**, con **arena più grande**, **ostacoli** (pilastri) e **3 pulsanti** da calpestare che attivano **trappole che danneggiano il boss** (ma anche te, se resti nel raggio). Alla fine puoi spendere le monete in un negozio di potenziamenti.
+Ora dura **1 minuto**, con **arena più grande**, **ostacoli** (pilastri) e **3 pulsanti** da calpestare che attivano **trappole che danneggiano il boss** (ma anche te, se resti nel raggio).
+- Il boss ha la **barra di vita** e **attacchi ad area sostanziali** (zone rosse di avvertimento: schianto, nova, meteore, raffiche, onde).
+- Alla fine puoi spendere le monete in un negozio: gli **upgrade già acquistati o gratuiti spariscono** dalla lista e, **se li hai presi tutti, il negozio si chiude** e esci dal rift.
 
 ![Stanza dello Spirito e del Tempo](docs/screens/spirit-room.jpg)
+
+### ⚔️ Armi: 5 livelli → evoluzione → 5 livelli → seconda evoluzione
+- Ogni arma ha **5 livelli**; al massimo, il forziere la **evolve** e riparte da 1 per **altri 5 livelli** (e poi la seconda evoluzione, dopo una vittoria in Difficile).
+- Ogni livello delle evoluzioni dà poco: **+5% danno, −1,5% ricarica, +2% area** (niente numeri esagerati).
+- **Colpo di Ki**: molti meno proiettili (da 1 a 3 prima dell'evoluzione, 4 al massimo) e **perforazione +1 solo nella seconda evoluzione**.
+- La **Genkidama**, il **Kamehameha** e gli altri raggi hanno nuovi effetti sonori (vedi sotto).
+
+### 👹 Nemici più duri, ondate di tiratori e mosse nuove
+- Più **vita** per tutti i nemici e i boss, e **danni molto più alti** (a inizio partita senza negozio non fanno più 8-9 punti).
+- I nemici da distanza **non sono più sparsi per tutta la partita**: arrivano in **ondate di 1 minuto** ogni 2-3 minuti, con avvertimento; poi spariscono.
+- Nuove **mosse**:
+  - **Salto** (lupi, raptor): si accovacciano, saltano in arco e atterrano con un'onda d'urto.
+  - **Schianto** (bruti, dinosauri, colossi…): fermi, un **cerchio rosso** avvisa e poi esplodono ad area.
+  - **Zig-zag** (cellule, fantasmi, pterodattili…): avanzano in modo ondeggiante.
+- Dopo il passaggio di trasformazione c'è ora **il tempo di vedere l'animazione** (circa 4 s) prima del level up.
+
+### 🔥 I boss si potenziano
+Se impieghi **troppo tempo** (circa 85 s, poi 70 s) a sconfiggere un boss, questo **si trasforma**: si carica con aura e fiamme, rilascia un'**onda d'urto**, **recupera il 30%** (22% la seconda volta) della vita, diventa più forte e veloce e **impara nuovi attacchi** (schianto, nova, lancia, tempesta, meteore, raffiche). Fino a 2 volte per boss; è invulnerabile durante la carica.
+
+![Boss che si potenzia](docs/screens/boss-powerup.jpg)
+![Zona di schianto](docs/screens/slam-zone.jpg)
+
+### 🔊 Audio rinnovato
+Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più "da anime" per Ki e per tutte le armi, effetti dedicati alle **evoluzioni**, **vento d'aura** nelle trasformazioni e suoni per ogni abilità e mossa nemica.
 
 ### ⚖️ Bilanciamento
 - **Tutti i potenziamenti che aumentano il danno sono a tempo** (es. oggetti raccolti +15% per 12 s, altari 30 s).
@@ -140,7 +189,7 @@ Ora dura **1 minuto**, con **arena più grande**, **ostacoli** (pilastri) e **3 
 
 ### Combattimento e armi
 - **Attacco automatico**: ogni arma ha il suo comportamento (proiettili, raggi, orbite, zone di fuoco, fulmini a catena, meteore…).
-- Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5**.
+- Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5** (le armi poi si evolvono e hanno altri 5 livelli per evoluzione).
 - **23 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite, Raffica di Ki.
 - **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Una **seconda evoluzione** per arma si sblocca completando uno stage in **Difficile** con un personaggio che parte con quell'arma.
 - Le armi si **sbloccano** nella pool dei level up completando uno stage o raggiungendo il livello 50 con un personaggio che parte con quell'arma.
@@ -253,6 +302,10 @@ Test headless in Node (simulano partite complete con un bot) e test end-to-end c
 node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)
+node tests/totem.js           # totem unico + 8 poteri
+node tests/abil.js            # tutte le abilità dei 41 personaggi
+node tests/boss.js            # potenziamento dei boss, schianti
+node tests/spirit.js          # stanza dello Spirito e del Tempo
 node tests/sim.js             # simulazione con tutti i personaggi
 node tests/death.js 0 normal 6 goku     # bilanciamento: stage, difficoltà, partite, personaggio
 node tests/lvfull.js "1,2,5,10" normal  # ritmo di livelli e forme

@@ -216,3 +216,10 @@ select{border:3px solid var(--ink2);font-weight:700}
 .split>.detail{flex:0 0 330px;position:sticky;top:0}
 @media (max-width:900px){.split{flex-wrap:wrap}.split>.detail{flex:1 1 100%;position:static}}
 .detail .petbox{margin:2px 0}.detail .pet{min-width:0;padding:3px 6px 4px}.detail .pet canvas{width:36px;height:36px}.detail .pet b{font-size:11px}.detail .pet .nopet{width:36px;height:36px;font-size:18px}.detail .pets{gap:6px}.detail>.btn.primary{align-self:stretch}
+
+.abbox{margin:8px 0;padding:8px 10px;border:1px solid color-mix(in srgb,var(--c) 55%,transparent);border-radius:8px;background:color-mix(in srgb,var(--c) 10%,rgba(0,0,0,.25))}
+.abbox .lbl{opacity:.8;font-size:.8em;letter-spacing:.04em}
+.abbox .abrow{display:flex;align-items:center;gap:8px;margin-top:2px}
+.abbox .abrow b{color:var(--c);font-size:1.05em}
+.abbox .abrow i{margin-left:auto;opacity:.7;font-style:normal;font-size:.85em}
+.abbox p{margin:4px 0 0;font-size:.88em;opacity:.9;line-height:1.3}
