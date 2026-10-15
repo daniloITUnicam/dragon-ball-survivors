@@ -108,7 +108,41 @@ Broly ha un'abilità esclusiva sullo stesso tasto del Kaioken (`R`): **perde il 
 
 ![Berserk](docs/screens/berserk.jpg)
 
-### 👥 Nuovi personaggi (41 in totale)
+### 🆕 Terza ondata di novità: suoni arcade, sprite HD e 16 nuovi personaggi
+
+**🕹️ Suoni arcade nei menù.** Ogni pulsante ha ora un suono **in stile arcade, forte e ben udibile** (onde quadre "chip"): un *tick* quando ci passi sopra o ti sposti con tastiera/pad, un *coin-blip* al clic, una discesa di note per **Indietro**, una **fanfara** per **Avvia partita**, un *ding* per gli acquisti e un *buzz* quando provi a usare un pulsante disattivato. Il suono vale per tutti i pulsanti HTML (menù, pausa, level up, modali) e usa il volume degli effetti.
+
+**🎨 Sprite dei nemici e dei boss in alta definizione.** Tutti i nemici, i boss e i compagni sono ora disegnati su una griglia di pixel **più fine** (da 6 a 10 pixel per unità, scelta in base alla dimensione a schermo) con un nuovo passaggio di rifinitura: **contorno colorato** (non più nero piatto), **luce di bordo** in alto a sinistra, **ombra di nucleo** in basso a destra e sfumature morbide. Le creature sono state **ridisegnate da zero** con molto più dettaglio: Saibaman (denti, orecchie, sfera-bomba), Cell Jr., drone con propulsori, gelatine lucide, sfera del vuoto con occhio, spettro incappucciato, **Corazzato/Colosso** a piastre con nucleo luminoso, **lupi** (anche il lupo meccanico), **Raptor** e **Dinosauro** (tirannosauro) distinti, **pterodattili** con ali membranose e il **Scimmione Gigante** muscoloso. I nemici umanoidi hanno **teste arrotondate**, occhi con palpebre e riflessi, rivetti sulle armature, fibbie e ciocche di capelli.
+
+![Nemici in HD](docs/screens/enemies-hd.jpg)
+![Glossario](docs/screens/glossary-hd.jpg)
+
+**👥 16 nuovi personaggi giocabili (57 in totale)**, ognuno con arma/e iniziali, abilità, linea di trasformazioni, prezzo e condizione di sblocco propri:
+
+| Personaggio | Parte con | Abilità | Sblocco |
+|---|---|---|---|
+| **Videl** | Calcio Dinamite + Ki | Calcio Volante (scatto) | Livello 18 in una partita |
+| **Bulma** | Colpo di Ki | Invenzione Geniale (più monete del Colpo di Fortuna) | Evolvi un'arma in una partita |
+| **Yajirobe** | Spada | Scorta di Senzu (cura) · **parte con 1 Senzu in borsa** | 5.000 nemici in totale |
+| **Great Saiyaman** | Raffica di Ki | Posa Eroica (critici) | Completa lo Stage 3 |
+| **Chiaotzu** | Raggio Perforante | Paralisi Psichica (stordisce) | Stage 6 in Difficile |
+| **Recoome** | Cannone d'Impatto | Calcio Recoome (scatto) · gigante | Completa lo Stage 2 |
+| **Guldo** | Salto Temporale | Fermatempo | 15 boss in totale |
+| **Turles** | Meteora + Ki | Frutto dell'Albero (assorbe) | Completa lo Stage 7 |
+| **Nail** | Lancia Ribelle | Spirito Guerriero (potenziamento) | 2.500 nemici in una partita |
+| **Re Kaioh** | Kaioken | Allenamento (potenziamento) | 4 trasformazioni in una partita |
+| **Pan** | Sfere Eccentriche + Danza | Sangue Saiyan (potenziamento) | 5 trasformazioni in una partita |
+| **Dabura** | Spada + Granata Infernale | Onda Demoniaca (nova) | 60 boss in totale |
+| **Mr. Popo** | Fulmine Angelico | Scudo del Genio (barriera) | 80.000 nemici in totale |
+| **Uub** | Kamehameha + Sfere | Raggio Puro | Stage 4 in Difficile |
+| **Frost** | Raggio Perforante + Fulmine | Raggio Mortale (nova) | Completa uno stage in modalità ×2 |
+| **Re Piccolo** | Sfera della Distruzione | Rigenerazione Demoniaca · gigante | 250 boss in totale |
+
+Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Speciale (Recoome, Guldo), Re Kaioh, Frost e Uub; Videl, Pan, Bulma, Yajirobe e Mr. Popo usano la linea Umana, Nail quella Namecciana, il Great Saiyaman quella Saiyan. Nuovi stili di capelli: codini, caschetto e cresta.
+
+![Nuovi personaggi](docs/screens/new-characters.jpg)
+
+### 👥 Nuovi personaggi (prima ondata)
 Dallo stile di *Sparking! ZERO*: **Broly** (con tutte le forme), **Zamasu**, **Zamasu Fuso**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Androide 21**.
 Forme più **canoniche**:
 - **Freezer**: Seconda forma → Terza → Forma finale → 100% → **Golden Frieza** → **Black Frieza**.
@@ -232,7 +266,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 
 ### Esperienza, livelli e trasformazioni
 - Ogni livello propone carte (arma, potenziamento, ecc.).
-- Ogni personaggio ha una **linea di trasformazioni** (Saiyan, Namecciano, Umano, Androide, Freezer, Cell, Broly, Zamasu, Goku Black, Zamasu Fuso, Caulifla, Kale, Pride Troopers, Dei, Majin): fino a **8 forme** (Ultra Istinto alla fine di alcune linee).
+- Ogni personaggio ha una **linea di trasformazioni** (Saiyan, Namecciano, Umano, Androide, Freezer, Cell, Broly, Zamasu, Goku Black, Zamasu Fuso, Caulifla, Kale, Pride Troopers, Dei, Majin, più le linee dei personaggi della terza ondata): fino a **8 forme** (Ultra Istinto alla fine di alcune linee).
 - Le forme scattano ai livelli **14, 24, 36, 50, 66, 84, 104, 128** e dànno bonus a danno, velocità, ricarica, armatura, rigenerazione e riduzione dei danni, oltre a un nuovo aspetto e colore dell'aura.
 - Nella Stanza dello Spirito e del Tempo si può **comprare in anticipo** la forma successiva, ma solo se hai raggiunto almeno il 70% del livello richiesto.
 
@@ -283,15 +317,15 @@ Ogni stage ha **nemici dedicati** (47 tipi totali, ciascuno con IA diversa: inse
 
 | Linea di forme | Personaggi |
 |---|---|
-| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock |
-| Namecciano | Piccolo |
-| Umano | Crilin, Yamcha, Tensing, Muten, Mr. Satan |
+| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock, Great Saiyaman |
+| Namecciano | Piccolo, Nail |
+| Umano | Crilin, Yamcha, Tensing, Muten, Mr. Satan, Videl, Bulma, Yajirobe, Pan, Mr. Popo |
 | Androide | C-18, C-17, C-16, Dr. Gero, Androide 21 |
 | Freezer | Freezer, Cooler, Capitan Ginyu, Zarbon |
 | Cell · Majin | Cell · Majin Bu |
 | Pride Troopers | Toppo, Hit, Jiren, Dyspo |
 | Dei | Beerus, Whis |
-| Linee dedicate | Broly, Zamasu, Zamasu Fuso, Goku Black, Caulifla, Kale |
+| Linee dedicate | Broly, Zamasu, Zamasu Fuso, Goku Black, Caulifla, Kale, Chiaotzu, Turles, Dabura e Re Piccolo (Demoni), Recoome e Guldo (Squadra Speciale), Re Kaioh, Frost, Uub |
 
 ---
 
@@ -322,7 +356,8 @@ src/js/
   world.js            terreno, ostacoli, zone di cura e trappole
   save.js             salvataggio, progressione, obiettivi, impostazioni
   game.js             logica di gioco (senza DOM) + MapDirector (eventi, totem, stanza)
-  sprites.js          sprite procedurali (con espressioni)
+  sprites.js          sprite procedurali dei personaggi (con espressioni)
+  sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
   audio.js            effetti sonori sintetizzati e musica
   input.js renderer.js ui.js ui2.js app.js   input, rendering, interfaccia e ciclo principale
 tests/                simulazioni e test con puppeteer
@@ -338,7 +373,11 @@ node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)
 node tests/totem.js           # totem unico + 8 poteri
-node tests/abil.js            # tutte le abilità dei 41 personaggi
+node tests/abil.js            # tutte le abilità dei 57 personaggi
+node tests/newchars.js        # i 16 nuovi personaggi: dati, sblocchi, Senzu di Yajirobe, run complete
+node tests/ui_sfx.js          # suoni arcade dei pulsanti (hover, clic, indietro) - richiede puppeteer
+node tests/sheet_hd.js en out.png   # anteprima di tutti gli sprite nemici (anche: boss, o chiavi separate da virgola)
+node tests/shot_enemies.js out.png  # screenshot in partita con tutti i nemici
 node tests/boss.js            # potenziamento dei boss, schianti
 node tests/boss2.js           # attacchi firmati dei boss, regole di spawn
 node tests/spirit.js          # stanza dello Spirito e del Tempo

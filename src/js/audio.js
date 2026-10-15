@@ -210,8 +210,9 @@ class AudioSys{
   }
   sfx(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
+    if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
     const T=(f,d,ty,v,s)=>this.tone(f,d,ty,v,s);
     switch(n){
       case'shot':this.zap(2100,520,.09,.03);this.toneAt(3200,.05,'square',.012,-1800,0);this.noise(.05,.03,9000,2500,0);break;
@@ -233,7 +234,7 @@ class AudioSys{
       case'kameFireEvo':this.thump(.3,90,.9);this.thump(.18,170,.5,.04);this.zap(200,2100,.7,.09);this.zap(90,900,1.3,.07,.1);this.elec(1.7,.16,0,75,70);this.elec(1.2,.1,.15,130,140);this.wind(1.6,.09,400,3800,0,.8);this.noise(1.3,.16,9000,200,0);[880,1320,1760].forEach((f,i)=>this.toneAt(f,.9,'triangle',.025,-200,.06+i*.04));break;
       case'spirit':for(let i=0;i<14;i++)this.toneAt(700+i*95+Math.random()*260,.07,'square',.016,300,i*.06);this.zap(100,800,1.0,.045);this.wind(1.0,.04,500,3500,0,1.3);this.elec(.8,.03,.1,60,0);break;
       case'thunder':this.thump(.2,95,.9);this.noise(1.1,.22,4000,120,0);this.elec(.55,.14,0,95,110);this.toneAt(1600,.2,'sawtooth',.05,-1400,0);break;
-      case'buy':[1320,1760,2093].forEach((f,i)=>this.toneAt(f,.14,'triangle',.05,0,i*.07));this.noise(.08,.04,9000,3000,0);break;
+      case'buy':this.sfx('uiBuy');break;
       case'senzu':T(500,.2,'sine',.05,500);break;
       case'pickup':T(660,.12,'triangle',.05,330);break;
       case'ball':[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;
@@ -274,7 +275,24 @@ class AudioSys{
       case'warn':this.toneAt(880,.1,'square',.03,0,0);this.toneAt(880,.1,'square',.03,0,.16);break;
       case'trinket':[784,988,1175,1568].forEach((f,i)=>this.toneAt(f,.2,'sine',.05,0,i*.07));this.noise(.2,.03,9000,4000,.05);break;
       case'shrine':T(440,.3,'sine',.05,440);break;
-      case'click':T(520,.05,'square',.02,100);break;
+      /* ---- arcade menu sounds: bright square-wave chip blips, deliberately loud so they cut through the music ---- */
+      case'uiMove':this.toneAt(1568,.045,'square',.085,0,0);this.toneAt(2349,.05,'square',.06,0,.035);this.toneAt(784,.05,'triangle',.05,0,0);break;
+      case'click':case'uiClick':
+        this.toneAt(784,.07,'square',.13,0,0);this.toneAt(1175,.2,'square',.12,0,.065);
+        this.toneAt(392,.09,'triangle',.09,0,0);this.toneAt(2349,.16,'square',.03,0,.07);this.noise(.03,.05,9000,3000,0);break;
+      case'uiBack':
+        this.toneAt(740,.07,'square',.12,0,0);this.toneAt(494,.07,'square',.12,0,.06);this.toneAt(330,.16,'square',.12,0,.12);
+        this.toneAt(165,.2,'triangle',.09,0,.12);break;
+      case'uiStart':
+        [523,659,784,1046,1318,1568].forEach((f,i)=>{this.toneAt(f,.11,'square',.12,0,i*.055);this.toneAt(f/2,.11,'triangle',.08,0,i*.055);});
+        this.toneAt(1568,.42,'square',.12,0,.34);this.toneAt(2093,.42,'square',.07,0,.34);this.toneAt(784,.42,'triangle',.09,0,.34);
+        this.zap(200,1800,.3,.05);this.noise(.5,.06,9000,1500,.34);break;
+      case'uiBuy':
+        [1319,1568,2093].forEach((f,i)=>{this.toneAt(f,.09,'square',.12,0,i*.06);this.toneAt(f*1.5,.09,'square',.04,0,i*.06);});
+        this.toneAt(2637,.32,'square',.1,0,.18);this.toneAt(1319,.32,'triangle',.08,0,.18);this.noise(.12,.05,12000,4000,.16);break;
+      case'uiErr':
+        this.toneAt(196,.11,'square',.14,0,0);this.toneAt(147,.22,'square',.14,-20,.11);this.toneAt(98,.3,'sawtooth',.07,0,.05);break;
+      case'uiTab':this.toneAt(988,.05,'square',.11,0,0);this.toneAt(1480,.12,'square',.1,0,.045);this.toneAt(494,.08,'triangle',.07,0,0);break;
       case'ach':[659,784,988,1318].forEach((f,i)=>setTimeout(()=>T(f,.18,'triangle',.05),i*90));break;
     }
   }

@@ -25,6 +25,25 @@ class UI{
     this.app=app;this.root=document.getElementById('ui');this.toastBox=document.getElementById('toasts');
     this.stack=[];this.sel={stage:0,diff:app.save.d.diff||'normal',x2:false,char:app.save.d.lastChar||'goku'};
     this.modalEl=null;this.sbEl=document.getElementById('sandbox');
+    this.bindArcadeSounds();
+  }
+  /* Arcade sounds for every DOM button (menus, modals, pause, level-up cards). Individual handlers may still
+     call sfx() with a specific sound; the generic click only fires when none was played in the same instant. */
+  bindArcadeSounds(){
+    const au=()=>this.app.audio,btnOf=e=>e.target&&e.target.closest?e.target.closest('button'):null;
+    document.addEventListener('pointerover',e=>{
+      const b=btnOf(e);if(!b||b.disabled||e.pointerType==='touch')return;
+      if(e.relatedTarget&&b.contains(e.relatedTarget))return;
+      au().sfx('uiMove');
+    });
+    document.addEventListener('pointerdown',e=>{
+      const b=btnOf(e);if(b&&b.disabled)au().sfx('uiErr');
+    });
+    document.addEventListener('click',e=>{
+      const b=btnOf(e);if(!b||b.disabled)return;
+      const a=au();if(performance.now()-(a.lastUi||0)<45)return;
+      a.sfx(b.dataset.back!==undefined?'uiBack':b.classList.contains('primary')?'uiClick':b.classList.contains('tab')?'uiTab':'uiClick');
+    });
   }
   get t(){return this.app.t;}
   tr(o){return this.app.i18n.t(o);}
@@ -68,7 +87,7 @@ class UI{
       const a=document.activeElement;
       if(a&&root.contains(a)&&a.tagName==='BUTTON'&&!this.confirmGuard){a.click();}
     }
-    if(inp.pressed('cancel')){const b=root.querySelector('[data-back]');if(b){this.sfx();b.click();}}
+    if(inp.pressed('cancel')){const b=root.querySelector('[data-back]');if(b){this.sfx('uiBack');b.click();}}
   }
   nav(dir,root){
     const a=document.activeElement;
@@ -89,13 +108,13 @@ class UI{
       else if(dir==='up'&&dy<-6){ok=true;sc=-dy+Math.abs(dx)*2.2;}
       if(ok&&sc<bs){bs=sc;best=e;}
     }
-    if(best){best.focus({preventScroll:false});best.scrollIntoView({block:'nearest'});this.sfx('click');}
+    if(best){best.focus({preventScroll:false});best.scrollIntoView({block:'nearest'});this.sfx('uiMove');}
   }
 
   /* ================= SCREENS ================= */
   header(titleKey,backFn){
     return h('div',{class:'hdr'},
-      h('button',{class:'btn small alt','data-back':true,onclick:()=>{this.sfx();(backFn||(()=>this.pop()))();}},'← '+this.t('back')),
+      h('button',{class:'btn small alt','data-back':true,onclick:()=>{this.sfx('uiBack');(backFn||(()=>this.pop()))();}},'← '+this.t('back')),
       h('h2',null,this.t(titleKey)),
       h('div',{class:'zen'},zAmt(this.save.zenny)));
   }
@@ -160,7 +179,7 @@ class UI{
       C.price?h('button',{class:'btn small'+(d.zenny>=C.price?'':' alt'),disabled:d.zenny<C.price,'data-fid':'buychar',onclick:()=>{
         if(this.app.progress.buyChar(C.id)){this.sfx('buy');sel.char=C.id;sel.peek=null;this.toast({type:'info',msg:this.t('charBought',{c:this.tr(C.n)})});this.rebuild();}
       }},(()=>{const pt=this.t('buyChar',{n:'\u0001'}).split('\u0001');return[pt[0],zAmt(C.price),pt[1]||''];})()):null):null;
-    const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx();d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet});}},this.t('start'));
+    const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx('uiStart');d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet});}},this.t('start'));
     const detail=h('div',{class:'detail'},
       h('div',{class:'preview'},big),
       h('h3',null,this.tr(C.n)),h('p',null,this.tr(C.d)),lock,
@@ -197,8 +216,8 @@ class UI{
       if(a.pet){
         const dy=Math.round(Math.sin(t*3+a.seed*9)*1.5),fr=hot?1+((t*8)|0)%4:0,key=fr+':'+dy;
         if(key===a.key)continue;a.key=key;
-        const g=a.cv.getContext('2d');g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);
-        const sp=Sprites.forSp(a.pet.sp,fr,false);g.translate(a.w/2,a.base+dy);g.scale(a.k,a.k);g.drawImage(sp.c,-sp.ox,-sp.oy);continue;
+        const g=a.cv.getContext('2d');g.imageSmoothingEnabled=true;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);
+        const sp=Sprites.forSp(a.pet.sp,fr,false),kk=a.k*Sprites.S/(sp.s||Sprites.S);g.translate(a.w/2,a.base+dy);g.scale(kk,kk);g.drawImage(sp.c,-sp.ox,-sp.oy);continue;
       }
       let form=-1;if(a.big&&a.forms>0)form=Math.floor(t/3.2)%(a.forms+1)-1;
       const po=charPose(t,a.seed,hot),dy=Math.round(po.dy),key=a.open?po.f+':'+(po.ex||'')+':'+dy+':'+form+(a.big&&po.fx?':'+((t*20)|0):''):'x';
@@ -219,7 +238,7 @@ class UI{
     const got=ids.filter(k=>seen[k]).length;
     const cur=ids.includes(gs[tab])?gs[tab]:ids[0],def=defs[cur],isSeen=!!seen[cur];
     const draw=(cv,sp,vis)=>{
-      const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
+      const g=cv.getContext('2d');g.imageSmoothingEnabled=true;
       const spr=Sprites.forSp(sp,0,false),k=Math.min((cv.width/2-4)/Math.max(spr.ox,spr.c.width-spr.ox),(cv.height-10)/spr.oy);
       g.save();g.translate(cv.width/2,cv.height-6);g.scale(k,k);g.drawImage(spr.c,-spr.ox,-spr.oy);g.restore();
       if(!vis){g.globalCompositeOperation='source-atop';g.fillStyle='#0b1a2b';g.fillRect(0,0,cv.width,cv.height);}
@@ -238,7 +257,7 @@ class UI{
       h('div',{class:'krow'},h('span',null,this.t('glossSpeed')),h('b',null,def.spd)),
       h('div',{class:'krow'},h('span',null,this.t('glossStages')),h('b',null,stages))
     ]:[h('p',null,this.t('glossHint'))];
-    const tabs=['enemies','bosses'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'gt'+k,onclick:()=>{this.sfx();this.top.args={tab:k};this.rebuild();}},this.t(k==='enemies'?'glossEnemies':'glossBosses')));
+    const tabs=['enemies','bosses'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'gt'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t(k==='enemies'?'glossEnemies':'glossBosses')));
     return h('div',null,this.header('glossary'),
       h('div',{class:'row tabs'},tabs),h('p',{class:'sub'},this.t('glossSeen',{a:got,b:ids.length})),
       h('div',{class:'split'},h('div',{class:'grid chars gl'},cards),

@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path');
 const SRC=path.join(__dirname,'..','src','js');
 let code='';for(const f of ['util','data','weapons','weapons2','world','save','game'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
-code+='\nglobalThis.__X={ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon};';
+code+='\nglobalThis.__X={LINES,ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon};';
 (0,eval)(code);
 const X=globalThis.__X;
 function mem(){const m={};return{getItem:k=>m[k]||null,setItem:(k,v)=>{m[k]=v;}};}

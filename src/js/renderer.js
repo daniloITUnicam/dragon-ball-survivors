@@ -135,6 +135,7 @@ class Renderer{
 
   /* ---------- game ---------- */
   draw(g,dt){
+    Sprites.warmStep();
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p;
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
@@ -318,11 +319,11 @@ class Renderer{
     }
   }
   drawEnemy(e,t){
-    const ctx=this.ctx,def=e.boss?e.bd:e.def,sd=def.sp,u=sd.u||def.u||1.6,k=u/Sprites.S;
+    const ctx=this.ctx,def=e.boss?e.bd:e.def,sd=def.sp,u=sd.u||def.u||1.6;
     const frame=e.atk>0?(e.atk>.18?5:6):(e.fuse>0?5:(e.st===2&&e.ai==='charge')?6:1+((t*8+e.ph)|0)%4);
     const fuseFlash=e.fuse>0&&((e.fuse*12)|0)%2===0,warn=(e.st===1&&e.ai==='charge')||(e.xf&&!e.xf.released&&((t*14)|0)%2===0)||(e.st===1&&(e.ai==='slam'||e.ai==='leap')&&((t*16)|0)%2===0);
     const flash=e.fl>0||fuseFlash||warn;
-    const sp=Sprites.forSp(sd,frame,flash);
+    const sp=Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
     ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();
     if(e.boss){
@@ -343,7 +344,7 @@ class Renderer{
     const fly=def.fly||(e.def&&e.def.fly),bob=fly?Math.sin(t*4+e.ph)*3-8:0;
     ctx.save();ctx.translate(e.x,e.y+bob-zo);ctx.scale(e.face*k*bsz*sqx,k*bsz*sqy);
     if(e.def&&e.def.alpha)ctx.globalAlpha=e.def.alpha;
-    ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
     if(e.stun>0){ctx.fillStyle='#fff7b0';for(let i=0;i<3;i++){const a=t*6+i*TAU/3;ctx.fillRect(e.x+Math.cos(a)*10-1.5,e.y-e.r*2.4+Math.sin(a)*3,3,3);}}
     if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2*clamp(e.hp/e.max,0,1),3);}
   }
@@ -421,9 +422,9 @@ class Renderer{
     ctx.restore();
   }
   drawPet(q,t,g){
-    const ctx=this.ctx,d=q.d,sd=d.sp,k=(sd.u||1.4)/Sprites.S,mv=Math.abs(q.x-(q.px===undefined?q.x:q.px))>.2;
+    const ctx=this.ctx,d=q.d,sd=d.sp,mv=Math.abs(q.x-(q.px===undefined?q.x:q.px))>.2;
     q.px=q.x;
-    const fr=q.act>0?6:mv?1+((t*9)|0)%4:0,sp=Sprites.forSp(sd,fr,q.fl>0&&((t*20)|0)%2===0);
+    const fr=q.act>0?6:mv?1+((t*9)|0)%4:0,sp=Sprites.forSp(sd,fr,q.fl>0&&((t*20)|0)%2===0),k=(sd.u||1.4)/(sp.s||Sprites.S);
     const fly=d.id==='shenron'||d.id==='droid'||d.id==='buu',bob=fly?Math.sin(t*4+q.t)*3-8:Math.abs(Math.sin(q.t*(mv?9:2)))*(mv?-2:-.8);
     ctx.fillStyle='rgba(0,0,0,.26)';ctx.beginPath();ctx.ellipse(q.x,q.y,7,2.4,0,0,TAU);ctx.fill();
     if(q.cd<=0)GLOW.at(ctx,q.x,q.y-12+bob,20+3*Math.sin(t*5),d.c,.45);

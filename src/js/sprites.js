@@ -44,25 +44,26 @@ class Sprites{
   static flashOf(sp){
     const c=document.createElement('canvas');c.width=sp.c.width;c.height=sp.c.height;const g=c.getContext('2d');
     g.drawImage(sp.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#ffffff';g.fillRect(0,0,c.width,c.height);
-    return{c,ox:sp.ox,oy:sp.oy};
+    return{c,ox:sp.ox,oy:sp.oy,s:sp.s};
   }
   static circ(R,cx,cy,r,col){for(let y=-r;y<=r;y++){const hw=Math.sqrt(r*r-y*y);R(cx-hw,cy+y,hw*2,1,col);}}
 
   static build(kind,sp,f){
+    const S=Sprites.hdS(sp.u||1.6),P=(W,H,ox,oy,fn)=>Sprites.paintHD(W,H,ox,oy,fn,S),HD=Sprites.hd;
     switch(kind){
-      case'human':return Sprites.paint(36,48,18,47,R=>Sprites.humanArt(R,sp.cfg,f));
-      case'pdragon':return Sprites.paint(30,24,15,23,R=>Sprites.pdragonArt(R,f));
-      case'pmonkey':return Sprites.paint(24,26,12,25,R=>Sprites.pmonkeyArt(R,f));
-      case'saiba':return Sprites.paint(24,32,12,31,R=>Sprites.saibaArt(R,sp.pal,f,sp.robot));
-      case'celljr':return Sprites.paint(22,32,11,31,R=>Sprites.cellJrArt(R,f));
-      case'beast':return Sprites.paint(46,28,23,27,R=>Sprites.beastArt(R,f,sp.pal));
-      case'ghost':return Sprites.paint(22,32,11,31,R=>Sprites.ghostArt(R,f));
-      case'drone':return Sprites.paint(24,24,12,23,R=>Sprites.droneArt(R,f));
-      case'golem':return Sprites.paint(40,46,20,45,R=>Sprites.golemArt(R,sp.pal,f));
-      case'blob':return Sprites.paint(24,24,12,23,R=>Sprites.blobArt(R,sp.pal,f));
-      case'orb':return Sprites.paint(28,28,14,27,R=>Sprites.orbArt(R,f));
-      case'ape':return Sprites.paint(60,52,30,51,R=>Sprites.apeArt(R,f));
-      case'bird':return Sprites.paint(40,30,20,24,R=>Sprites.birdArt(R,sp.pal,f));
+      case'human':return P(36,48,18,47,R=>Sprites.humanArt(R,sp.cfg,f,null,true));
+      case'pdragon':return P(30,24,15,23,R=>Sprites.pdragonArt(R,f));
+      case'pmonkey':return P(24,26,12,25,R=>Sprites.pmonkeyArt(R,f));
+      case'saiba':return P(26,34,13,33,R=>HD.saiba(R,sp.pal,f,sp.robot));
+      case'celljr':return P(24,34,12,33,R=>HD.celljr(R,f));
+      case'beast':return sp.v==='trex'?P(60,46,30,45,R=>HD.trex(R,f,sp.pal)):sp.v==='raptor'?P(46,32,23,31,R=>HD.raptor(R,f,sp.pal)):P(52,32,26,31,R=>HD.wolf(R,f,sp.pal,sp.eye,sp.mech));
+      case'ghost':return P(24,34,12,33,R=>HD.ghost(R,f));
+      case'drone':return P(30,32,15,29,R=>HD.drone(R,f));
+      case'golem':return P(42,52,21,51,R=>HD.golem(R,sp.pal,f));
+      case'blob':return P(26,26,13,24,R=>HD.blob(R,sp.pal,f));
+      case'orb':return P(30,30,15,28,R=>HD.orb(R,f));
+      case'ape':return P(72,56,36,55,R=>HD.ape(R,f));
+      case'bird':return P(44,34,22,28,R=>HD.bird(R,sp.pal,f));
     }
     return Sprites.paint(10,10,5,9,R=>R(-4,-8,8,8,'#f0f'));
   }
@@ -112,7 +113,7 @@ class Sprites{
     R(-4.4,-18.6,8.8,7,fc);R(-3.4,-16.2,1.6,1.9,'#111');R(1.8,-16.2,1.6,1.9,'#111');R(-2.8,-15.8,.6,.6,'#fff');R(2.4,-15.8,.6,.6,'#fff');
     R(-1.6,-13.4,3.2,2,'#c8987a');R(-1,-12.6,2,.8,'#7a3a2a');R(-.6,-14.2,1.2,.8,'#7a5a42');
   }
-  static humanArt(R0,c,f,ex){
+  static humanArt(R0,c,f,ex,hq){
     const sh=shadeHex,ps=Sprites.pose(f),wd=c.wide?2.4:0,by=ps.bob;
     const R=(x,y,w,h,col)=>R0(x,y+by,w,h,col),RB=R0;           /* RB: no body bob (feet stay planted) */
     const skin=c.skin,skD=sh(skin,-.2),skL=sh(skin,.18),out=c.outfit,outD=sh(out,-.25),outL=sh(out,.18),lg=c.legs||out,lgD=sh(lg,-.26),bt=c.boot||'#222';
@@ -126,6 +127,7 @@ class Sprites{
       const x=s2?.8+wd/2:-4.6-wd/2,r=s2?ps.r:ps.l,ex=ps.atk===2?(s2?1.2:-1):ps.atk===1?(s2?-.6:.8):0;
       RB(x+ex,-6.4-r,3.8,4.4,lg);RB(x+ex+2.6,-6.4-r,1.2,4.4,lgD);
       RB(x+ex-.5,-3.2-r,4.8,3.2,bt);RB(x+ex-.5,-3.2-r,4.8,1,c.bootTop||sh(bt,.32));RB(x+ex+3.6,-2.2-r,.9,2.2,sh(bt,-.32));RB(x+ex-.2,-.8-r,4.4,.8,sh(bt,-.2));
+      if(hq){RB(x+ex+.4,-6.2-r,.7,2.6,sh(lg,.24));RB(x+ex+.2,-4.2-r,3.4,.5,lgD);RB(x+ex+.6,-1.6-r,.8,.6,sh(bt,.5));RB(x+ex+2.4,-1.6-r,.8,.6,sh(bt,.5));}
     }
     /* back arm (behind torso) */
     const sl=c.sleeve||c.under||out,gl=c.gloves||skin;
@@ -145,6 +147,15 @@ class Sprites{
     if(c.emblem){R(X(-4.8),-14,3.8,3.8,'#f4f1ea');R(X(-4),-13.2,.8,1.8,'#222');R(X(-3),-13.2,1.8,.8,'#222');R(X(-3),-11.7,1.8,.8,'#222');}
     R(X(-5.4)-wd,-8,10.8+2*wd,2.2,c.belt||outD);if(c.belt){R(X(2.4),-6.2,1.8,4.2,c.belt);R(X(-5.4)-wd,-8,10.8+2*wd,.6,sh(c.belt,.3));}
     if(c.spots){R(X(-3),-13,2,2,'#222');R(X(2.4),-9.4,2,2,'#222');}
+    if(hq){
+      R(X(-5.4)-wd,-15.4,10.8+2*wd,.7,sh(out,.3));
+      if(!c.armor){R(X(-.2),-13.4,.5,5.4,outD);R(X(-4.4)-wd,-11.4,3.4,.5,outD);R(X(1),-11.4,3.4,.5,outD);R(X(-4.8)-wd,-9.2,2.4,.5,outL);R(X(2.4)+wd,-9.2,2.4,.5,outL);}
+      else{const ar=c.armor;R(X(-5)-wd,-12.2,10+2*wd,.5,sh(ar,-.3));R(X(-.3),-15,.6,6.4,sh(ar,-.3));
+        R(X(-4.2)-wd,-14.4,.8,.8,sh(ar,.5));R(X(3.4)+wd,-14.4,.8,.8,sh(ar,.5));R(X(-4.2)-wd,-10.4,.8,.8,sh(ar,-.45));R(X(3.4)+wd,-10.4,.8,.8,sh(ar,-.45));
+        R(X(-5)-wd,-15,10+2*wd,.6,sh(ar,.4));}
+      if(c.belt){const bk='#e8c860';R(X(-1.2),-8.1,2.4,2.2,bk);R(X(-.6),-7.5,1.2,1,sh(bk,-.4));R(X(-1.2),-8.1,2.4,.5,sh(bk,.4));}
+      else R(X(-.4),-7.6,.8,.9,outL);
+    }
     arm(true);
     if(c.shoulder){R(X(-9.6)-wd,-16.4,5,3.6,c.shoulder);R(X(4.6)+wd,-16.4,5,3.6,c.shoulder);R(X(-9.6)-wd,-13.4,5,.8,sh(c.shoulder,-.3));R(X(4.6)+wd,-13.4,5,.8,sh(c.shoulder,-.3));R(X(-9.6)-wd,-16.4,5,.8,sh(c.shoulder,.3));R(X(4.6)+wd,-16.4,5,.8,sh(c.shoulder,.3));}
     /* head: big chibi head */
@@ -152,7 +163,11 @@ class Sprites{
     H(-1.8,-16.4,3.6,2,skD);
     H(-8.6,-23.6,1.6,3.4,skin);H(7.2,-23.6,1.6,3.4,skD);
     if(c.pointy){H(-11.2,-26,3.4,2.6,skin);H(8.2,-26,3.4,2.6,skD);H(-11.2,-26,3.4,.7,skL);}
-    H(-7.4,-29,14.8,13.4,skin);H(4.6,-29,2.8,13.4,skD);H(-7.4,-29,1.6,13.4,skL);H(-6,-17.4,12,1.8,skD);
+    if(hq){
+      H(-7.4,-27.8,14.8,9.8,skin);H(-6.4,-29,12.8,1.4,skin);H(-5,-29.4,10,.6,skin);
+      H(4.6,-27.8,2.8,9.8,skD);H(4.6,-29,1.8,1.4,skD);H(-7.4,-27.8,1.6,9.8,skL);H(-6.4,-29,1.2,1.4,skL);
+      H(-6.8,-18.2,13.6,.8,skin);H(5.2,-18.2,1.6,.8,skD);H(-6,-17.4,12,.8,skD);H(-5,-16.6,10,.8,skD);H(-3.6,-15.9,7.2,.6,sh(skD,-.15));
+    }else{H(-7.4,-29,14.8,13.4,skin);H(4.6,-29,2.8,13.4,skD);H(-7.4,-29,1.6,13.4,skL);H(-6,-17.4,12,1.8,skD);}
     H(-5.8,-19.4,2.2,1.2,'#ff8a7a88');H(3.6,-19.4,2.2,1.2,'#ff8a7a88');
     const brow=(c.hs&&c.hs!=='bald'&&c.hair)?sh(c.hair,-.35):'#2a1a14',eyc=c.eye||'#1a1a22',ay=ps.atk===2?-.6:0;
     const dk='#1a1216',mo='#5a1a1a';
@@ -187,9 +202,15 @@ class Sprites{
       else{H(-6,-26.2,5,1.1,brow);H(1,-26.2,5,1.1,brow);}
       H(-.5,-20.8,1,1,skD);
       if(ps.atk===2)H(-1.6,-19,3.2,1.8,'#5a1a1a');else H(-1.4,-18.8,2.8,.8,'#7a2a2a');
+      if(hq){
+        H(-5.8,-24.7+ay,5.2,.6,dk);H(.6,-24.7+ay,5.2,.6,dk);H(-5.6,-20.2+ay,4.8,.4,skD);H(.8,-20.2+ay,4.8,.4,skD);
+        H(-3.4,-22.6+ay,.8,.8,sh(eyc,.5));H(2.6,-22.6+ay,.8,.8,sh(eyc,.5));H(-4.4,-21+ay,3,.5,sh(eyc,-.3));H(1.6,-21+ay,3,.5,sh(eyc,-.3));
+        H(-.3,-22,.7,1.4,skD);H(-1.8,-17.8,3.6,.4,sh(skin,-.3));H(-6.4,-21,.7,1.8,skD);H(6,-21,.7,1.8,skD);
+        H(-6.4,-19.4,1.4,.7,'#ff8a7a66');H(5,-19.4,1.4,.7,'#ff8a7a66');H(-7.4,-27.8,14.8,.6,skL);
+      }
     }
     if(c.mask){H(-7.4,-21.6,14.8,5.4,out);H(-7.4,-21.6,14.8,.8,sh(out,.25));}
-    if(c.scouter){H(.8,-26,5.4,4.4,'#7dff9a99');H(1,-26,5.4,1.2,'#d8ffe4');H(6.4,-27,1.1,6,'#444');H(7.2,-22.4,1.4,1.4,'#444');}
+    if(c.scouter){if(hq){H(.8,-26,5.4,4.4,'#1d4a30aa');H(1.2,-25.6,.8,3.4,'#e8fff0');H(3.2,-24.8,2,.5,'#e8fff0');}H(.8,-26,5.4,4.4,'#7dff9a99');H(1,-26,5.4,1.2,'#d8ffe4');H(6.4,-27,1.1,6,'#444');H(7.2,-22.4,1.4,1.4,'#444');}
     if(c.shades){H(-6.4,-25,12.8,3.4,'#111');H(-5.8,-24.6,4,.9,'#556');H(1.6,-24.6,4,.9,'#556');}
     if(c.beard){const bc=c.beardC||'#f4f1ea';H(-5.6,-20,11.2,5.4,bc);H(-5.6,-20,11.2,1,sh(bc,.3));H(-5.6,-16.6,11.2,.9,sh(bc,-.2));H(-2,-19.2,4,.9,'#9a6a5a');}
     if(c.stache){H(-5,-20.6,10,1.8,c.stache);H(-5,-20.6,2,3,c.stache);H(3,-20.6,2,3,c.stache);}
@@ -202,8 +223,21 @@ class Sprites{
       case'long':H(-7.8,-32,15.6,4.2,h);H(-9.6,-31,3.4,17,h);H(6.2,-31,3.4,17,h);H(-5.6,-37,3.2,6,h);H(-1.6,-38.6,3.6,7.6,h);H(2.6,-37,3.2,6,h);H(-1.4,-37.6,1,5,hl);H(6.6,-26,2.8,10,hd);break;
       case'afro':H(-10.4,-42,20.8,9,h);H(-11.6,-37,23.2,8,h);H(-10,-30.6,3.6,4,h);H(6.4,-30.6,3.6,4,h);H(-7,-44,14,3,h);H(-8,-43,3,3,hl);H(2,-40,6,5,hd);break;
       case'horns':H(-6.4,-36.4,2.8,7,h);H(3.6,-36.4,2.8,7,h);H(-5.8,-38.4,1.6,2.4,h);H(4.2,-38.4,1.6,2.4,h);H(-6.4,-36.4,.8,6,hl);break;
+      case'twin':H(-7.8,-32,15.6,4.4,h);H(-8.4,-31,2.6,6,h);H(5.8,-31,2.6,6,h);H(-6,-30,12,2,h);H(-2.6,-31,5.2,2.8,h);H(-12.4,-31.4,4.6,2.6,h);H(-13.6,-29.2,3.2,7.6,h);H(-12.8,-22,2.2,2.4,h);H(7.8,-31.4,4.6,2.6,h);H(10.4,-29.2,3.2,7.6,h);H(10.6,-22,2.2,2.4,h);H(-.6,-31.6,1,4,hl);H(-13.2,-29,.8,6,hl);break;
+      case'bob':H(-7.8,-32,15.6,4.4,h);H(-9.2,-31,3.6,10.4,h);H(5.6,-31,3.6,10.4,h);H(-6.6,-30,13.2,2.2,h);H(-3,-31,6,3.4,h);H(-7.8,-31,1,9,hl);H(6.6,-26,2.4,5,hd);break;
+      case'mohawk':H(-7.8,-31.6,15.6,3.4,h);H(-8,-30,1.8,3.2,h);H(6.2,-30,1.8,3.2,h);H(-1.6,-36.4,3.2,5.4,h);H(-1,-39.8,2,4,h);H(-.4,-38.6,.8,5,hl);break;
       case'antenna':H(-4.8,-36.4,1.8,7.4,h);H(3,-36.4,1.8,7.4,h);H(-5.4,-37.8,1,1.8,h);H(4.4,-37.8,1,1.8,h);H(-4.8,-36.4,.6,7,hl);break;
       case'trunks':H(-7.8,-32.6,15.6,4.2,h);H(-8.6,-31,3.4,9,h);H(-6,-36,4,4,h);H(-1.6,-37.6,4.2,5,h);H(3,-36,4.4,4.2,h);H(-6.4,-30.6,6,2.8,h);H(-1.6,-36.6,1,4,hl);H(4.4,-34,2.6,4,hd);break;
+    }
+    if(hq&&h&&c.hs&&c.hs!=='bald'){
+      for(let i=0;i<5;i++)H(-6+i*3,-31.4,.6,1.4+(i%2)*1.2,i%2?hl:hd);
+      if(c.hs==='goku'){H(-2.6,-37,.6,6,hd);H(2.4,-38,.6,7,hd);H(7.4,-34,.6,4,hd);H(-8.2,-34,.6,4,hl);H(-5,-36,.6,4,hd);}
+      else if(c.hs==='vegeta'){H(-4.2,-38,.6,6,hd);H(.8,-42,.6,9,hd);H(4.4,-38,.6,6,hl);H(-3,-41,.5,4,hl);}
+      else if(c.hs==='long'){H(-8.6,-27,.6,10,hl);H(-7.2,-24,.6,8,hd);H(7.2,-27,.6,10,hd);H(8.4,-22,.6,6,hl);H(-3,-36,.6,4,hd);H(1.6,-37,.6,5,hd);}
+      else if(c.hs==='afro'){for(let i=0;i<6;i++)H(-9+i*3.2,-40+(i%2)*3,1.2,1.2,i%2?hl:hd);}
+      else if(c.hs==='trunks'){H(-4,-35,.6,4,hd);H(1,-36.4,.6,4,hd);H(4,-34.6,.6,3,hl);H(-7.4,-27,.6,5,hd);}
+      else if(c.hs==='horns'){H(4,-35,.5,4,hd);H(-5.2,-35.4,.5,4,hl);}
+      else if(c.hs==='antenna'){H(3.4,-35,.5,5,hd);H(-4.4,-35,.4,4,hl);}
     }
     if(c.ears){H(-7.4,-38.4,3.8,7,c.skin);H(3.6,-38.4,3.8,7,c.skin);H(-6.6,-37.4,2,5,sh(c.skin,-.35));H(4.4,-37.4,2,5,sh(c.skin,-.35));H(-7.4,-38.4,3.8,.9,sh(c.skin,.2));}
     if(c.band){H(-7.6,-29.2,15.2,2.2,c.band);H(-7.6,-29.2,15.2,.6,sh(c.band,.3));}

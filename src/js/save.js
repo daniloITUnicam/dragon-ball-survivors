@@ -34,7 +34,7 @@ class Progress{
   get d(){return this.save.d;}
   runCtx(g,win){
     const s=this.d.stats;
-    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,sid:g.stageIdx,x2:g.x2,
+    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
       totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills)};
   }
   statsView(g){

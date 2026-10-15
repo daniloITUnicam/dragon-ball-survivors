@@ -100,7 +100,41 @@ Broly has an exclusive ability on the same key (`R`): he **loses control for 10 
 
 ![Berserk](docs/screens/berserk.jpg)
 
-### 👥 New characters (41 total)
+### 🆕 Third wave of updates: arcade sounds, HD sprites and 16 new characters
+
+**🕹️ Arcade menu sounds.** Every button now has an **arcade-style, loud and clearly audible** sound (square-wave "chip" tones): a *tick* when you hover or move with keyboard/pad, a *coin-blip* on click, a descending run of notes for **Back**, a **fanfare** for **Start**, a *ding* for purchases and a *buzz* when you press a disabled button. It applies to every HTML button (menus, pause, level-up, modals) and follows the SFX volume.
+
+**🎨 High-definition enemy and boss sprites.** All enemies, bosses and companions are now painted on a **finer pixel grid** (6 to 10 pixels per unit, chosen from their on-screen size) with a new finishing pass: a **coloured outline** (no more flat black), a **rim light** at the top-left, a **core shadow** at the bottom-right and soft gradients. The creatures were **redrawn from scratch** with far more detail: Saibamen (teeth, ears, bomb gem), Cell Jr., a drone with thrusters, glossy jellies, the void orb with its eye, a hooded wraith, plated **Golem/Colossus** with a glowing core, **wolves** (the mecha wolf too), distinct **Raptor** and **Dinosaur** (tyrannosaur), **pterodactyls** with membranous wings and a muscular **Great Ape**. Humanoid enemies get **rounded heads**, eyes with eyelids and glints, rivets on armour, buckles and hair strands.
+
+![HD enemies](docs/screens/enemies-hd.jpg)
+![Glossary](docs/screens/glossary-hd.jpg)
+
+**👥 16 new playable characters (57 total)**, each with its own starting weapon(s), ability, transformation line, price and unlock condition:
+
+| Character | Starts with | Ability | Unlock |
+|---|---|---|---|
+| **Videl** | Dynamite Kick + Ki | Flying Kick (dash) | Level 18 in a run |
+| **Bulma** | Ki Blast | Genius Invention (more coins than Lucky Strike) | Evolve a weapon in a run |
+| **Yajirobe** | Sword | Senzu Stash (heal) · **starts with 1 Senzu in the bag** | 5,000 enemies in total |
+| **Great Saiyaman** | Ki Barrage | Heroic Pose (crits) | Clear Stage 3 |
+| **Chiaotzu** | Piercing Beam | Psychic Paralysis (stun) | Stage 6 on Hard |
+| **Recoome** | Break Cannon | Recoome Kick (dash) · giant | Clear Stage 2 |
+| **Guldo** | Time Skip | Time Freeze | 15 bosses in total |
+| **Turles** | Meteor + Ki | Fruit of the Tree (absorb) | Clear Stage 7 |
+| **Nail** | Rebel Javelin | Warrior Spirit (power-up) | 2,500 enemies in one run |
+| **King Kai** | Kaioken | King Kai Training (power-up) | 4 transformations in a run |
+| **Pan** | Homing Orbs + Elegant Dance | Saiyan Blood (power-up) | 5 transformations in a run |
+| **Dabura** | Sword + Hellzone Grenade | Demon Wave (nova) | 60 bosses in total |
+| **Mr. Popo** | Angelic Bolt | Genie's Shield (barrier) | 80,000 enemies in total |
+| **Uub** | Kamehameha + Orbs | Pure Beam | Stage 4 on Hard |
+| **Frost** | Piercing Beam + Bolt | Death Beam (nova) | Clear a stage with the x2 modifier |
+| **King Piccolo** | Sphere of Destruction | Demon Regeneration · giant | 250 bosses in total |
+
+New form lines: Chiaotzu, Turles, Demons (Dabura, King Piccolo), Special Force (Recoome, Guldo), King Kai, Frost and Uub; Videl, Pan, Bulma, Yajirobe and Mr. Popo use the Human line, Nail the Namekian one, Great Saiyaman the Saiyan one. New hair styles: pigtails, bob and mohawk.
+
+![New characters](docs/screens/new-characters.jpg)
+
+### 👥 New characters (first wave)
 Sparking! ZERO-style roster additions: **Broly** (all forms), **Zamasu**, **Fused Zamasu**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Android 21**. More **canonical** forms:
 - **Frieza**: Second → Third → Final → 100% → **Golden Frieza** → **Black Frieza**.
 - **Cell**: Semi-Perfect → **Perfect** → Super Perfect → **Golden Cell** → **Black Cell**.
@@ -223,7 +257,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 
 ### Experience, levels and transformations
 - Each level offers cards (weapon, upgrade, etc.).
-- Every character has a **transformation line** (Saiyan, Namekian, Human, Android, Frieza, Cell, Broly, Zamasu, Goku Black, Fused Zamasu, Caulifla, Kale, Pride Troopers, Gods, Majin): up to **8 forms** (Ultra Instinct at the end of some lines).
+- Every character has a **transformation line** (Saiyan, Namekian, Human, Android, Frieza, Cell, Broly, Zamasu, Goku Black, Fused Zamasu, Caulifla, Kale, Pride Troopers, Gods, Majin, plus the third-wave lines): up to **8 forms** (Ultra Instinct at the end of some lines).
 - Forms trigger at levels **14, 24, 36, 50, 66, 84, 104, 128** and grant damage, speed, cooldown, armor, regen and damage-reduction bonuses, plus a new look and aura colour.
 - In the Room of Spirit and Time you can **buy the next form early**, but only once you reach at least 70% of its required level.
 
@@ -272,15 +306,15 @@ Each stage has **dedicated enemies** (47 types in total, with different AI: chas
 
 | Form line | Characters |
 |---|---|
-| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock |
-| Namekian | Piccolo |
-| Human | Krillin, Yamcha, Tien, Master Roshi, Mr. Satan |
+| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock, Great Saiyaman |
+| Namekian | Piccolo, Nail |
+| Human | Krillin, Yamcha, Tien, Master Roshi, Mr. Satan, Videl, Bulma, Yajirobe, Pan, Mr. Popo |
 | Android | Android 18, 17, 16, Dr. Gero, Android 21 |
 | Frieza | Frieza, Cooler, Captain Ginyu, Zarbon |
 | Cell · Majin | Cell · Majin Buu |
 | Pride Troopers | Toppo, Hit, Jiren, Dyspo |
 | Gods | Beerus, Whis |
-| Dedicated lines | Broly, Zamasu, Fused Zamasu, Goku Black, Caulifla, Kale |
+| Dedicated lines | Broly, Zamasu, Fused Zamasu, Goku Black, Caulifla, Kale, Chiaotzu, Turles, Dabura and King Piccolo (Demons), Recoome and Guldo (Special Force), King Kai, Frost, Uub |
 
 ---
 
@@ -304,7 +338,7 @@ For the **menu music** drop your own file at `assets/menu.mp3` (see [assets/READ
 build.py              bundler: merges src/ into a single HTML
 src/index.html        page
 src/css/style.css     styles
-src/js/               data, i18n, weapons, world, save, game logic, sprites, audio, input, renderer, UI, app
+src/js/               data, i18n, weapons, world, save, game logic, sprites (+ sprites_hd: HD pipeline for enemies/bosses), audio, input, renderer, UI, app
 tests/                simulations and puppeteer tests
 docs/screens/         screenshots used in this README
 ```
@@ -316,7 +350,11 @@ node tests/check_i18n.js      # translations in all languages
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk
 node tests/totem.js           # one-time totem + 8 powers
-node tests/abil.js            # every ability of the 41 characters
+node tests/abil.js            # every ability of the 57 characters
+node tests/newchars.js        # the 16 new characters: data, unlocks, Yajirobe's Senzu, full runs
+node tests/ui_sfx.js          # arcade button sounds (hover, click, back) - needs puppeteer
+node tests/sheet_hd.js en out.png   # preview every enemy sprite (also: boss, or comma-separated keys)
+node tests/shot_enemies.js out.png  # in-game screenshot with every enemy
 node tests/boss.js            # boss power-ups, slams
 node tests/boss2.js           # boss signature attacks, spawn rules
 node tests/spirit.js          # Room of Spirit and Time

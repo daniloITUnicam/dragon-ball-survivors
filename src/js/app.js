@@ -70,6 +70,9 @@ class App{
     this.audio.unlock();this.audio.play('stage'+STAGES[o.stage].id);
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
     this.joy.on=false;
+    const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
+    for(const b of st.bosses)if(BOSSES[b[0]])defs.push(BOSSES[b[0]].sp);
+    Sprites._wq=[];Sprites.warm(defs);
   }
   pause(){if(this.state!=='play')return;this.state='pause';this.ui.show('pause');}
   resume(){if(this.state!=='pause')return;this.ui.clear();this.state='play';}

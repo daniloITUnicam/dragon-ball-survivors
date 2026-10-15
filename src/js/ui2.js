@@ -49,7 +49,7 @@ Object.assign(UI.prototype,{
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
         toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps')];
     }else body=this.controlsPanel();
-    const tabs=['general','audio','video','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx();this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
+    const tabs=['general','audio','video','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
     return h('div',null,this.header('settings'),h('div',{class:'row tabs'},tabs),h('div',{class:'settings'},body));
   },
   controlsPanel(){
@@ -93,7 +93,7 @@ Object.assign(UI.prototype,{
     const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id);return h('div',{class:'prow'},glyph(tr.k,RARITY[tr.r].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[tr.r].c},this.tr(tr.n)+' · '+this.tr(RARITY[tr.r].n)),h('div',{class:'cd'},this.tr(tr.d))));});
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabs=h('div',{class:'row tabs'},
-      ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx();this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
+      ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
     const btns=h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
         this.btn('glossary',()=>this.push('glossary'),'alt'),
@@ -166,7 +166,7 @@ Object.assign(UI.prototype,{
         else if(o.kind==='weapon'){const w=WEAPONS[o.wid];info={k:w.k,c:w.c,n:w.n,tag:this.t('trialWeapon'),d:T('+1 livello a quest\'arma.','+1 level for this weapon.')};}
         else{const p=Math.round(STEP[o.a]*100),q=Math.round(STEP[o.b]*135);info={k:'力',c:'#c9a0ff',n:T('Scambio statistica','Stat swap'),tag:this.t('trialSwap'),d:T('-'+p+'% '+NAMES[o.a].it+'  →  +'+q+'% '+NAMES[o.b].it,'-'+p+'% '+NAMES[o.a].en+'  →  +'+q+'% '+NAMES[o.b].en)};}
         const ok=!o.sold&&(m.freePick||g.run.coins>=o.price);
-        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('hit');});
+        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('uiErr');});
         el.disabled=!ok;if(!ok)el.classList.add('locked');
         return el;
       }).filter(Boolean);

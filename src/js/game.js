@@ -18,7 +18,7 @@ class Game{
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;
     this.run={bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,t:0,counted:false,cleared:false};
-    this.balls=0;this.senzu=0;this.senzuCd=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;
     this.TS=1;this.CR=this.x2?2:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=130*this.TS;this.packT=40;this.bossQ=this.stage.bosses.map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false}));
@@ -253,7 +253,7 @@ class Game{
         const old=this.hpHist.length?this.hpHist[0].hp:p.hp,gain=Math.min(p.maxHp*.4,Math.max(p.maxHp*.05,old-p.hp));
         this.heal(gain);this.flash=.3;this.flashC='#cfe8ff';this.ring(p.x,p.y,200,c,.7);this.ring(p.x,p.y,120,'#ffffff',.5);this.audio.sfx('abTime');break;}
       case'jackpot':
-        for(let i=0;i<12;i++)this.loot.push({k:'coin',x:p.x+rnd(-60,60),y:p.y+rnd(-40,40),v:Math.round(4*(1+this.t/500)),t:0});
+        for(let i=0,n=Math.round(12*(+v||1));i<n;i++)this.loot.push({k:'coin',x:p.x+rnd(-60,60),y:p.y+rnd(-40,40),v:Math.round(4*(1+this.t/500)),t:0});
         this.heal(p.maxHp*.06);this.luckT=Math.max(this.luckT,30);this.recalc();this.pillar(p.x,p.y,c,.8);this.burst(p.x,p.y-12,24,c);this.audio.sfx('coin');break;
       case'buff':this.abBuf=Object.assign({t:8},v);this.recalc();this.pillar(p.x,p.y,c,1);this.ring(p.x,p.y,130,c,.6);this.burst(p.x,p.y-14,28,c);this.audio.sfx('abPower');break;
     }

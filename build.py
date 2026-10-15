@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','world','save','game','sprites','menubg','audio','input','renderer','ui','ui2','grimoire','app']
+ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','world','save','game','sprites','sprites_hd','menubg','audio','input','renderer','ui','ui2','grimoire','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64
 _mp3 = ROOT/'assets'/'menu.mp3'
