@@ -50,6 +50,8 @@
     clResolve:['Risolvi il conflitto','Resolve the conflict','Resolver el conflicto','Résoudre le conflit','Konflikt lösen','Resolver o conflito'],
     clLoginCta:['Accedi / Registrati','Log in / Sign up','Entrar / Registrarse','Connexion / Inscription','Anmelden / Registrieren','Entrar / Cadastrar'],
     clCloudBadge:['Cloud','Cloud','Nube','Cloud','Cloud','Nuvem'],
+    streamerMode:['Modalità streamer','Streamer mode','Modo streamer','Mode streamer','Streamer-Modus','Modo streamer'],
+    streamerDesc:['Nasconde la tua email (e il campo email nel login) per non mostrarla in diretta.','Hides your email (and the email field on the login form) so it is not shown on stream.','Oculta tu correo (y el campo de correo del inicio de sesión) para no mostrarlo en directo.','Masque ton e-mail (et le champ e-mail de la connexion) pour ne pas l\'afficher en direct.','Verbirgt deine E-Mail (und das E-Mail-Feld beim Login), damit sie nicht im Stream erscheint.','Oculta seu e-mail (e o campo de e-mail do login) para não aparecer na transmissão.'],
     upgTag:['Potenziamento','Upgrade','Mejora','Amélioration','Verbesserung','Melhoria'],
     wpnTag:['Tecnica','Technique','Técnica','Technique','Technik','Técnica'],
     pickTitle:['Scegli un cimelio','Choose a trinket','Elige una reliquia','Choisis une relique','Wähle ein Relikt','Escolha uma relíquia'],

@@ -37,6 +37,17 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   const A=[...mock.users.values()][0];
   ok(mock.saves.has(A.id),'pristine save uploaded on first login');
   await pg.screenshot({path:OUT+'/cl_in.png'});
+  /* streamer mode masks the e-mail; the menu button never shows it */
+  await click('astreamer');
+  ok(!(await text()).includes('mario@x.io'),'streamer mode hides the e-mail on the account screen');
+  await pg.screenshot({path:OUT+'/cl_streamer.png'});
+  await click('astreamer');
+  ok((await text()).includes('mario@x.io'),'streamer mode off shows it again');
+  await pg.click('[data-back]');await wait(400);
+  const btn=await pg.$eval('.cloudbtn',e=>e.innerText);
+  ok(!btn.includes('mario')&&btn.includes('☁'),'menu button shows only cloud + status icon: '+JSON.stringify(btn));
+  await pg.screenshot({path:OUT+'/cl_menu_in.png'});
+  await click('mcloud');
   /* progress -> upload after debounce */
   await app(()=>{const a=window.__app;a.save.d.zenny=500;a.save.d.unlocked.push('trunks');a.save.d.stats.runs=3;a.save.write();});
   await wait(5200);

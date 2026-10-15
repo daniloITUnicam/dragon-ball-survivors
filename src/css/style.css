@@ -302,3 +302,6 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .acct .btn{max-width:100%}
 .main>.cloudbtn{position:fixed;top:12px;right:14px;z-index:6;font-size:14px;padding:6px 14px;min-width:0;width:auto}
 @media (max-width:700px){.main>.cloudbtn{top:8px;right:8px;font-size:12px;padding:5px 10px}}
+.afield input.hide{-webkit-text-security:disc;text-security:disc;letter-spacing:.12em}
+.streamerbtn.on{border-color:#ff5a8a;color:#ffd0dc}
+.main>.cloudbtn.on.ok{border-color:#5fd35f}.main>.cloudbtn.on.offline,.main>.cloudbtn.on.error{border-color:#ffc233}.main>.cloudbtn.on.conflict{border-color:#ff7a5a}

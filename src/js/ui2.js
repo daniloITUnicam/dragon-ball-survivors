@@ -47,6 +47,7 @@ Object.assign(UI.prototype,{
       body=[select(this.t('lang'),'lang',LANGS),
         toggle(this.t('fullscreen'),'fullscreen'),
         toggle(this.t('showFps'),'fps'),toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
+        toggle(this.t('streamerMode'),'streamer',this.t('streamerDesc')),
         toggle(this.t('sandboxOpt'),'sandbox',this.t('sandboxOptDesc')),
         row(this.t('resetSave'),h('button',{class:'btn small bad','data-fid':'reset',onclick:()=>{
           if(this.resetArm){this.app.save.reset();this.app.applySettings();this.resetArm=false;this.toast({type:'info',msg:this.t('resetDone')});this.show('main');}

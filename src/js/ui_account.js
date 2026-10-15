@@ -25,15 +25,22 @@ Object.assign(UI.prototype,{
   /* small "☁" button for the main menu */
   cloudMenuBtn(){
     const c=this.app.cloud;if(!c||!c.enabled)return null;
-    const em=c.email.length>22?c.email.slice(0,20)+'…':c.email;
-    return h('button',{class:'btn alt cloudbtn'+(c.signedIn?' on':''),'data-fid':'mcloud',onclick:()=>{this.sfx();this.push('account');}},
-      '☁ '+(c.signedIn?em+' '+this.cloudIcon():this.t('clLoginCta')));
+    return h('button',{class:'btn alt cloudbtn'+(c.signedIn?' on '+c.status:''),'data-fid':'mcloud',title:c.signedIn?this.cloudStatusText():this.t('clLoginCta'),'aria-label':this.t('clAccount')+(c.signedIn?': '+this.cloudStatusText():''),
+      onclick:()=>{this.sfx();this.push('account');}},
+      c.signedIn?'☁ '+this.cloudIcon():'☁ '+this.t('clLoginCta'));
+  },
+  /* e-mail as shown on screen: fully masked in streamer mode */
+  maskEmail(e){return this.save.settings.streamer?'•••••••@•••••••.•••':e;},
+  streamerToggle(){
+    const s=this.save.settings,on=!!s.streamer;
+    return h('button',{class:'btn small alt streamerbtn'+(on?' on':''),'data-fid':'astreamer',onclick:()=>{this.sfx();s.streamer=!on;this.app.save.write();this.rebuild(true);}},
+      '🎥 '+this.t('streamerMode')+': '+this.t(on?'on':'off'));
   },
   screen_account(){
     const c=this.app.cloud,st=this.acct||(this.acct={tab:'login',email:'',pw:'',pw2:'',msg:null,busy:false});
     const say=(k,text)=>{st.msg=text?{k,text}:null;st.busy=false;if(this.top&&this.top.name==='account')this.rebuild(true);};
     const field=(id,type,label,key,ac)=>h('label',{class:'afield'},h('span',null,label),
-      h('input',{type,'data-fid':id,autocomplete:ac,value:st[key]||'',autocapitalize:'off',spellcheck:'false',
+      h('input',{type,class:(key==='email'&&this.save.settings.streamer)?'hide':null,'data-fid':id,autocomplete:ac,value:st[key]||'',autocapitalize:'off',spellcheck:'false',
         oninput:e=>{st[key]=e.target.value;},
         onkeydown:e=>{if(e.key==='Enter'){e.preventDefault();go();}}}));
     const msg=st.msg?h('div',{class:'amsg '+st.msg.k,role:'status'},st.msg.text):null;
@@ -59,7 +66,7 @@ Object.assign(UI.prototype,{
       const cf=c.status==='conflict';
       return h('div',{class:'acct'},this.header('clAccount'),
         h('div',{class:'accard'},
-          h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'aemail'},'☁ '+c.email),
+          h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'aemail'},'☁ '+this.maskEmail(c.email)),
           h('div',{class:'ast '+c.status},this.cloudIcon()+' '+this.cloudStatusText()),
           c.lastSync?h('div',{class:'lbl'},this.t('clLast',{t:new Date(c.lastSync).toLocaleTimeString()})):null,
           h('p',{class:'sub'},this.t('clAutoNote'))),
@@ -67,7 +74,8 @@ Object.assign(UI.prototype,{
         h('div',{class:'row'},
           cf?h('button',{class:'btn primary','data-fid':'aresolve',onclick:()=>{this.sfx();this.push('cloudConflict');}},this.t('clResolve'))
             :h('button',{class:'btn','data-fid':'async',disabled:c.status==='syncing',onclick:()=>{this.sfx();c.sync();}},this.t('clSyncNow')),
-          h('button',{class:'btn alt','data-fid':'alogout',onclick:async()=>{this.sfx();st.msg=null;await c.signOut();}},this.t('clLogout'))));
+          h('button',{class:'btn alt','data-fid':'alogout',onclick:async()=>{this.sfx();st.msg=null;await c.signOut();}},this.t('clLogout'))),
+        h('div',{class:'row'},this.streamerToggle()));
     }
     /* ----- signed out: login / sign up ----- */
     const reg=st.tab==='register',tabBtn=(id,key)=>h('button',{class:'btn small tab'+(st.tab===id?'':' alt'),'data-fid':'atab'+id,onclick:()=>{this.sfx('uiTab');st.tab=id;st.msg=null;st.pw2='';this.rebuild(true);}},this.t(key));
@@ -100,6 +108,7 @@ Object.assign(UI.prototype,{
         h('div',{class:'row'},h('button',{type:'button',class:'btn primary','data-fid':'asubmit',disabled:st.busy,onclick:()=>{this.sfx();go();}},st.busy?'…':this.t(reg?'clRegister':'clLogin'))),
         !reg?h('div',{class:'row'},h('button',{type:'button',class:'btn small alt','data-fid':'aforgot',disabled:st.busy,onclick:()=>{this.sfx();forgot();}},this.t('clForgot'))):null),
       c.cfg.google?h('div',{class:'row'},h('button',{class:'btn gbtn','data-fid':'agoogle',onclick:()=>{this.sfx();c.google();}},'G  '+this.t('clGoogle'))):null,
+      h('div',{class:'row'},this.streamerToggle()),
       h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'aguest','data-back':true,onclick:()=>{this.sfx('uiBack');this.pop();}},this.t('clGuest'))));
   },
   /* guest progress and cloud progress differ: let the player choose */
