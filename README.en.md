@@ -138,6 +138,8 @@ New form lines: Chiaotzu, Turles, Demons (Dabura, King Piccolo), Special Force (
 
 **🌐 Hosting.** New guide [`docs/HOSTING.md`](docs/HOSTING.md) (Italian) and a GitHub Actions workflow to publish the game on your own domain on every push.
 
+**☁️ Accounts and cloud saves (optional).** With a free [Supabase](https://supabase.com) project the game offers **log in / sign up** (email + password, optional Google, password reset) and **per-account cloud saves** synced across devices. You can always play **as a guest**; if both the device and the cloud already hold progress at first login, the game asks which one to keep. Full guide (Italian): [`docs/SUPABASE.md`](docs/SUPABASE.md); SQL schema in [`supabase/schema.sql`](supabase/schema.sql).
+
 ### 👥 New characters (first wave)
 Sparking! ZERO-style roster additions: **Broly** (all forms), **Zamasu**, **Fused Zamasu**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Android 21**. More **canonical** forms:
 - **Frieza**: Second → Third → Final → 100% → **Golden Frieza** → **Black Frieza**.

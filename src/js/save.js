@@ -10,6 +10,7 @@ class SaveData{
     const nl=(typeof navigator!=='undefined'&&(navigator.language||'en').slice(0,2).toLowerCase())||'en',lang=['it','es','fr','de','pt'].includes(nl)?nl:'en';
     return{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(10).fill(0),x2:new Array(10).fill(0),
+      updated:0,cloud:{uid:''},
       diff:'normal',pet:'dende',lastChar:'goku',lastStage:0,best:{},ach:{},shop:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,sandbox:false,fullscreen:false},
@@ -20,10 +21,22 @@ class SaveData{
     };
   }
   load(){
-    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const d=deepMerge(this.defaults(),JSON.parse(raw));if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;for(const k of['clears','x2'])while(d[k].length<10)d[k].push(0);return d;}}catch(e){}
+    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw)return this.normalize(JSON.parse(raw));}catch(e){}
     return this.defaults();
   }
-  write(){try{this.storage&&this.storage.setItem(SaveData.KEY,JSON.stringify(this.d));}catch(e){}}
+  /* merge a stored/cloud object over the defaults and repair old formats */
+  normalize(obj){
+    const d=deepMerge(this.defaults(),obj);
+    if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
+    for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
+    for(const k of['clears','x2'])while(d[k].length<10)d[k].push(0);
+    return d;
+  }
+  write(){
+    if(!this.silent)this.d.updated=Date.now();
+    try{this.storage&&this.storage.setItem(SaveData.KEY,JSON.stringify(this.d));}catch(e){}
+    if(!this.silent&&this.onWrite)try{this.onWrite();}catch(e){}
+  }
   get shop(){return this.d.shop;}
   get settings(){return this.d.settings;}
   reset(){this.d=this.defaults();this.write();}

@@ -21,6 +21,9 @@ class Input{
       if(!down)return;e.preventDefault();e.stopPropagation();
       this.finishRebind(e.code==='Escape'?null:e.code);return;
     }
+    /* typing in a text field (login form): the game must not treat letters/Backspace/Enter as menu or move keys */
+    const tg=e.target,typing=tg&&tg.tagName==='INPUT'&&/^(text|email|password)$/.test(tg.type||'text');
+    if(typing&&e.code!=='Escape'&&e.code!=='ArrowUp'&&e.code!=='ArrowDown'){if(!down)this.keys.delete(e.code);return;}
     if(down){
       this.keys.add(e.code);this.latch.add(e.code);this.mode='kb';
       const t=e.target&&e.target.tagName;

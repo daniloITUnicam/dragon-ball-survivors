@@ -121,6 +121,7 @@ class UI{
   screen_main(){
     const d=this.save,s=d.settings;
     return h('div',{class:'main'},
+      this.cloudMenuBtn(),
       h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors')),
       h('div',{class:'menu'},
         this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),

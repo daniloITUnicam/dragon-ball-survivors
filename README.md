@@ -146,6 +146,8 @@ Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Spe
 
 **🌐 Hosting.** Nuova guida [`docs/HOSTING.md`](docs/HOSTING.md) e workflow GitHub Actions per pubblicare il gioco sul proprio dominio a ogni push.
 
+**☁️ Account e salvataggi cloud (opzionale).** Con un progetto [Supabase](https://supabase.com) gratuito il gioco ha **login/registrazione** (email + password, Google opzionale, reset password) e **salva i progressi per account**, sincronizzati su ogni dispositivo. Si può sempre giocare **come ospite**; se al primo accesso esistono progressi sia sul dispositivo sia nel cloud, il gioco chiede quale usare. Guida completa: [`docs/SUPABASE.md`](docs/SUPABASE.md) (schema SQL in [`supabase/schema.sql`](supabase/schema.sql)).
+
 ### 👥 Nuovi personaggi (prima ondata)
 Dallo stile di *Sparking! ZERO*: **Broly** (con tutte le forme), **Zamasu**, **Zamasu Fuso**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Androide 21**.
 Forme più **canoniche**:
@@ -363,6 +365,8 @@ src/js/
   sprites.js          sprite procedurali dei personaggi (con espressioni)
   sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
   audio.js            effetti sonori sintetizzati e musica
+  cloud.js            account e sincronizzazione salvataggi (Supabase)
+  ui_account.js       schermate login / registrazione / conflitto
   input.js renderer.js ui.js ui2.js app.js   input, rendering, interfaccia e ciclo principale
 tests/                simulazioni e test con puppeteer
 docs/screens/         screenshot usati in questo README

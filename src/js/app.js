@@ -11,6 +11,8 @@ class App{
     this.canvas=document.getElementById('c');
     this.renderer=new Renderer(this.canvas,this.save);
     this.ui=new UI(this);
+    this.cloud=new Cloud(this.save,ev=>this.onCloud(ev));
+    this.cloud.isPlaying=()=>this.state==='play'||this.state==='modal';
     this.game=null;this.state='menu';this.last=performance.now();this.hintT=0;this.trackT=0;this.lastOpts=null;
     this.joy={on:false,id:-1,ox:0,oy:0,x:0,y:0};
   }
@@ -49,7 +51,17 @@ class App{
     cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
     this.applySettings();
     this.ui.show('main');
+    this.cloud.start();
     requestAnimationFrame(n=>this.loop(n));
+  }
+  /* cloud events: refresh the open menu and surface conflicts / password reset */
+  onCloud(ev){
+    const ui=this.ui,top=ui&&ui.top&&ui.top.name;
+    if(ev.type==='conflict'){if(this.state==='menu'&&top!=='cloudConflict')ui.push('cloudConflict');return;}
+    if(ev.type==='recovery'){if(top!=='account')ui.push('account');return;}
+    if(ev.type==='hashError'){ui.toast({type:'info',msg:this.cloud.hashErr});return;}
+    if(ev.type==='applied')this.applySettings();
+    if(top==='main'||top==='account'||(ev.type==='applied'&&this.state==='menu'))ui.rebuild(true);
   }
   applySettings(){
     const s=this.save.d.settings;

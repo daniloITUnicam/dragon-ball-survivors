@@ -282,3 +282,23 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .fxi b{font-weight:700}
 @media (max-width:700px){.fx{align-items:flex-start}.card.opt>.bgic{width:100px;height:100px;margin-left:-50px}}
 .card.opt .cn .lvt{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:10px;font-size:.62em;font-weight:700;letter-spacing:.04em;vertical-align:.18em;background:rgba(0,0,0,.4);color:var(--fc,#ffd23f);border:1px solid var(--fc,#ffd23f);white-space:nowrap}
+
+/* ---- account / login ---- */
+.acct{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:460px;margin:0 auto}
+.acct>.hdr{width:100%}
+.aform{display:flex;flex-direction:column;gap:10px;width:100%}
+.afield{display:flex;flex-direction:column;gap:4px;text-align:left;font-size:14px;color:var(--mute)}
+.afield input{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:3px solid var(--line);background:#0b1a2b;color:var(--ink);outline:none;width:100%;box-sizing:border-box}
+.afield input:focus{border-color:var(--orange)}
+.amsg{padding:8px 10px;border-radius:8px;font-size:14px;text-align:left;border-left:4px solid}
+.amsg.err{background:rgba(255,90,74,.14);border-color:#ff5a4a;color:#ffc9c2}
+.amsg.ok{background:rgba(95,211,95,.14);border-color:#5fd35f;color:#c8f5c8}
+.accard{width:100%;box-sizing:border-box;padding:14px;border:3px solid var(--line);border-radius:12px;background:var(--panel);text-align:left;display:flex;flex-direction:column;gap:4px}
+.aemail{font-size:18px;font-weight:700;word-break:break-all}
+.ast{font-weight:700}.ast.ok{color:#5fd35f}.ast.syncing{color:#4aa8ff}.ast.offline,.ast.error{color:#ffc233}.ast.conflict{color:#ff7a5a}
+.gbtn{background:#fff;color:#222;border-color:#cfd6df}
+.cloudbtn.on{border-color:#4aa8ff}
+.card.opt.conflict{min-height:0;cursor:default;gap:10px}
+.acct .btn{max-width:100%}
+.main>.cloudbtn{position:fixed;top:12px;right:14px;z-index:6;font-size:14px;padding:6px 14px;min-width:0;width:auto}
+@media (max-width:700px){.main>.cloudbtn{top:8px;right:8px;font-size:12px;padding:5px 10px}}
