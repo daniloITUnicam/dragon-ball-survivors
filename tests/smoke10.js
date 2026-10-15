@@ -1,0 +1,13 @@
+const pp=require('/opt/npm-tools/node_modules/puppeteer');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox']});
+const pg=await b.newPage();await pg.setViewport({width:1200,height:760});const errs=[];pg.on('pageerror',e=>errs.push('PE '+e.message));
+await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(800);
+await pg.evaluate(()=>{window.__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true,pet:'dende'});const g=window.__app.game;g.sb.god=true;g.sb.nospawn=true;g.senzu=2;g.p.hp=40;g.modal={type:'level',options:[{type:'h'},{type:'p',id:'might',lv:0},{type:'h'}]};});
+await wait(900);await pg.screenshot({path:'/tmp/o/s10_card.png'});
+await pg.evaluate(()=>{window.__app.resolveModal(0);});await wait(400);
+console.log('bag',await pg.evaluate(()=>window.__app.game.senzu));
+await pg.keyboard.press('KeyH');await wait(500);
+console.log('after H: bag',await pg.evaluate(()=>window.__app.game.senzu),'hp',await pg.evaluate(()=>Math.round(window.__app.game.p.hp)));
+await pg.screenshot({path:'/tmp/o/s10_hud.png',clip:{x:0,y:560,width:420,height:200}});
+console.log(errs.join('\n')||'noerr');await b.close();})();

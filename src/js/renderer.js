@@ -126,17 +126,7 @@ class Renderer{
     }
   }
   /* ---------- menu background ---------- */
-  drawMenuBg(dt,themeIdx){
-    const ctx=this.ctx;this.menuT+=dt;ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
-    const theme=STAGES[themeIdx||0].theme,vw=this.W/this.Z,vh=this.H/this.Z,cx=this.menuT*22,cy=Math.sin(this.menuT*.2)*70;
-    ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
-    this.terrain(cx,cy,vw,vh,this.menuT,theme);
-    for(let i=0;i<26;i++){
-      const x=cx+((i*131+this.menuT*14)%vw),y=cy+((i*97+Math.sin(this.menuT+i)*30+this.menuT*(8+i%5))%vh);
-      ctx.fillStyle='rgba(255,255,255,'+(.2+.2*Math.sin(this.menuT*2+i))+')';ctx.fillRect(x,y,2,2);
-    }
-    ctx.setTransform(1,0,0,1,0,0);this.vignette(.55);
-  }
+  drawMenuBg(dt){if(!this.menuBg)this.menuBg=new MenuBg(this);this.menuBg.draw(dt);}
   vignette(a){
     const ctx=this.ctx;
     if(!this.vign||this.vign.a!==a){const r=Math.hypot(this.W,this.H)/2,g=ctx.createRadialGradient(this.W/2,this.H/2,r*.45,this.W/2,this.H/2,r);g.addColorStop(0,'rgba(4,12,24,0)');g.addColorStop(1,'rgba(4,12,24,'+a+')');this.vign={g,a};}
@@ -494,7 +484,10 @@ class Renderer{
       txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(21,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       {const pw=(sz-6*U)/WMAX;for(let i=0;i<WMAX;i++){ctx.fillStyle=i<w.lv?(w.evo?'#ffd23f':'#fff'):'rgba(255,255,255,.2)';ctx.fillRect(ix+3*U+i*pw,wy+sz-4*U,pw-1.2*U,2.4*U);}}
       if(w.evo)txt(w.evo>=2?'★★':'★',ix+sz-7*U,wy+10*U,'#ffd23f','center',F(11));
-      if(w.maxed&&w.evo<g.maxEvo(w.id))txt('!',ix+5*U,wy+10*U,'#ff9d1c','center',F(12));
+      if(w.maxed&&w.evo<g.maxEvo(w.id)){
+        if(g.evoReady(w))txt('!',ix+5*U,wy+10*U,'#ff9d1c','center',F(12));
+        else{const pn=PASS[evoPass(w.id,w.evo)];if(pn)txt(pn.k,ix+7*U,wy+10*U,pn.c,'center',F(11,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
+      }
       ix+=sz+4*U;
     }
     /* trinkets */
@@ -520,6 +513,18 @@ class Renderer{
       if(ready){ctx.globalAlpha=.3+.25*Math.sin(g.rt*6);ctx.strokeStyle=d.c;ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(bx,by,rr+4*U,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
       txt(d.k,bx,by+8*U,ready?d.c:'#9aa6b8','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       txt(ready?'['+(this.keyHints.pet||'Q')+']':Math.ceil(q.cd)+'s',bx,by+rr+13*U,ready?'#fff':'#9aa6b8','center',F(11));
+    }
+    /* Senzu bag button (after the pet and ability buttons) */
+    this.szBtn=null;
+    if(!g.ended){
+      const rr=24*U,bx=m+rr+4*U+(rr*2+12*U)*((g.pet?1:0)+1),by=H-m-rr-8*U,n=g.senzu,ok=n>0&&g.p.hp<g.p.maxHp-.5&&g.senzuCd<=0,col='#8be07a';
+      this.szBtn={x:bx,y:by,r:rr};
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.fill();
+      ctx.lineWidth=3*U;ctx.strokeStyle=n>0?col:'rgba(255,255,255,.3)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.stroke();
+      if(ok){ctx.globalAlpha=.3+.25*Math.sin(g.rt*6);ctx.strokeStyle=col;ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(bx,by,rr+4*U,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
+      txt('豆',bx,by+8*U,n>0?col:'#6a7688','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      for(let i=0;i<SENZU_MAX;i++){ctx.fillStyle=i<n?col:'rgba(255,255,255,.22)';ctx.beginPath();ctx.arc(bx+(i-1)*8*U,by-rr+5*U,2.6*U,0,TAU);ctx.fill();}
+      txt('['+(this.keyHints.senzu||'H')+']',bx,by+rr+13*U,n>0?'#fff':'#9aa6b8','center',F(11));
     }
     /* character ability button (next to the pet button) */
     this.abBtn=null;

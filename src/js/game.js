@@ -16,7 +16,7 @@ class Game{
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;
     this.run={bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,t:0,counted:false,cleared:false};
-    this.balls=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.senzu=0;this.senzuCd=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;
     this.TS=1;this.CR=this.x2?2:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=130*this.TS;this.packT=40;this.bossQ=this.stage.bosses.map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false}));
@@ -88,6 +88,10 @@ class Game{
     this.recalc();return true;
   }
   maxEvo(id){return this.sandbox?2:1+(this.save.we[id]?1:0);}
+  /* a weapon evolves (from a chest) when it is at max level and the matching passive is owned */
+  evoReady(w){return w.maxed&&w.evo<this.maxEvo(w.id)&&(this.sandbox||(this.pass[evoPass(w.id,w.evo)]||0)>0);}
+  /* passives that a maxed weapon is still waiting for */
+  neededPass(){const out=[];for(const w of this.weapons.values()){if(!w.maxed||w.evo>=this.maxEvo(w.id))continue;const p=evoPass(w.id,w.evo);if(p&&!(this.pass[p]>0)&&!out.includes(p))out.push(p);}return out;}
   unlockedW(id){return this.sandbox||!!this.save.wu[id]||this.C.start.includes(id);}
   passCount(){let n=0;for(const k in this.pass)if(this.pass[k]>0)n++;return n;}   /* number of different secondary upgrades */
   upgradePool(){
@@ -101,16 +105,28 @@ class Game{
     const pool=this.upgradePool();
     if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id))pool.push({type:'w',id,lv:0});
     shuffle(pool);
+    const sz=this.senzu<SENZU_MAX&&Math.random()<.24;
+    /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
+    const need=this.neededPass().filter(id=>pool.some(o=>o.type==='p'&&o.id===id));
+    if(need.length&&Math.random()<.55){const nid=pick(need),i=pool.findIndex(o=>o.type==='p'&&o.id===nid);if(i>2){const t=pool[i];pool.splice(i,1);pool.unshift(t);}}
     const out=pool.slice(0,3);
     while(out.length<3)out.push({type:'h'});
+    if(sz&&!out.some(o=>o.type==='h'))out[2]={type:'h'};   /* a Senzu bean sometimes shows up among the level-up cards */
     return out;
   }
   applyOption(o){
     if(o.type==='w'){const w=this.addWeapon(o.id);if(o.lv>0)w.upgrade();}
     else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<5&&(cur>0||this.passCount()<MAX_PASSIVES))this.pass[o.id]=cur+1;else this.heal(this.p.maxHp*.2);}
-    else if(o.type==='h')this.heal(this.p.maxHp*.4);
+    else if(o.type==='h'){if(this.senzu<SENZU_MAX){this.senzu++;this.floatText(this.p.x,this.p.y-48,this.env.tr(T('Senzu in borsa ','Senzu bagged '))+this.senzu+'/'+SENZU_MAX,2);}else this.heal(this.p.maxHp*.4);}
     else if(o.type==='z')this.addZenny(o.v);
     this.recalc();
+  }
+  /* eat a Senzu bean from the bag (key H / on-screen button) */
+  useSenzu(){
+    if(this.ended||this.modal||this.senzu<=0||this.senzuCd>0||this.p.hp>=this.p.maxHp-.5)return false;
+    this.senzu--;this.senzuCd=.8;this.heal(this.p.maxHp*.4);
+    const p=this.p;this.floatText(p.x,p.y-56,this.env.tr(T('Senzu!','Senzu!')),2);this.pillar(p.x,p.y,'#8be07a',.9);this.ring(p.x,p.y,70,'#8be07a',.5);this.burst(p.x,p.y-20,16,'#bfffb0');
+    this.audio.sfx('abHeal');this.emote('happy',1);return true;
   }
   upgradeWeapon(w){w.upgrade();this.recalc();}
   heal(v){this.p.hp=Math.min(this.p.maxHp,this.p.hp+v);}
@@ -143,7 +159,7 @@ class Game{
   rollTrinketList(n){const out=[];for(let i=0;i<n;i++){const id=this.rollTrinket(out);if(!id)break;out.push(id);}return out;}
   /* one reward per chest (evolution has priority, otherwise one normal upgrade); Luck can add a trinket */
   chestRewards(isFinal,boss){
-    const R=[],elig=[...this.weapons.values()].filter(w=>w.maxed&&w.evo<this.maxEvo(w.id));
+    const R=[],elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     if(elig.length)R.push({k:'evo',id:pick(elig).id});
     else{const pool=shuffle(this.upgradePool());if(pool.length)R.push({k:'up',o:pool.pop()});else R.push({k:'zenny',v:Math.round(40*(1+this.sd))});}
     if(boss){
@@ -245,6 +261,7 @@ class Game{
   updateAbility(dt){
     const p=this.p,a=this.abil,c=a.c;
     if(this.abCd>0)this.abCd-=dt;
+    if(this.senzuCd>0)this.senzuCd-=dt;
     /* hp history for Rewind: one sample every half second, last 6 seconds */
     this.histT-=dt;if(this.histT<=0){this.histT=.5;this.hpHist.push({hp:p.hp});if(this.hpHist.length>12)this.hpHist.shift();}
     if(this.regenT>0){this.regenT-=dt;this.heal(this.regenRate*dt);if(this.fx.length<420&&Math.random()<dt*20)this.fx.push({x:p.x+rnd(-14,14),y:p.y-rnd(0,26),vx:rnd(-10,10),vy:-rnd(30,80),l:.6,m:.6,c,s:rnd(2,4)});}

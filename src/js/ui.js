@@ -10,6 +10,7 @@ function h(tag,props,...kids){
   for(const c of kids.flat(3)){if(c===null||c===undefined||c===false)continue;e.append(c.nodeType?c:document.createTextNode(String(c)));}
   return e;
 }
+const LOGO_URL=('__LOGO__'?'data:image/webp;base64,__LOGO__':'');
 const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
 /* zenny coin icon (replaces the plain "Z") */
 function zIcon(){
@@ -101,12 +102,13 @@ class UI{
   screen_main(){
     const d=this.save,s=d.settings;
     return h('div',{class:'main'},
-      h('div',{class:'logo'},h('h1',null,'Dragon Ball:',h('br'),'Survivors'),h('div',{class:'balls'},[1,2,3,4,5,6,7].map(()=>h('i')))),
+      h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors')),
       h('div',{class:'menu'},
         this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),
         this.btn('shop',()=>this.push('shop')),
         this.btn('ach',()=>this.push('ach')),
         this.btn('glossary',()=>this.push('glossary')),
+        h('button',{class:'btn','data-fid':'mgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire')),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         s.sandbox?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
@@ -170,6 +172,7 @@ class UI{
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
       this.petPicker(),startBtn);
     return h('div',null,this.header('chooseChar'),
+      h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire'))),
       h('div',{class:'split'},h('div',{class:'grid chars'},cards),detail));
   }
   /* ---- pet picker (companion shown under the character list) ---- */

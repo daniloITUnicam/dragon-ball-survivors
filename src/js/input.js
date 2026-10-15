@@ -1,6 +1,6 @@
 'use strict';
 /* ====== Input: keyboard + any gamepad (Gamepad API), fully rebindable ====== */
-const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','debug'];
+const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','senzu','debug'];
 const PAD_NAMES=['A / ✕','B / ○','X / □','Y / △','LB / L1','RB / R1','LT / L2','RT / R2','Select / Share','Start / Options','L3','R3','D-Up','D-Down','D-Left','D-Right','Home'];
 class Input{
   constructor(save){

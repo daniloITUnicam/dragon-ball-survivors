@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Dragon Ball: Survivors" width="560"></p>
+
 # Dragon Ball: Survivors
 
 > 🇮🇹 Versione italiana: [README.md](README.md)
@@ -34,6 +36,7 @@ A *Vampire Survivors*-style game inspired by Dragon Ball: you move, your weapons
 | Pause | `Esc` or `P` | Start |
 | Interact (altars, totems, time chamber) | `E` or `F` | A |
 | Companion ability | `Q` or `Left Shift` (or tap the bottom-left button) | X |
+| **Senzu bean** (from the bag) | `H` · on-screen button | LB |
 | **Character ability** (Kaioken, Berserk, beams, clones…) | `R` or `X` · on-screen button | Y |
 | Debug (FPS…) | `F2` or `` ` `` | Select |
 
@@ -42,6 +45,31 @@ All keys can be rebound in **Settings → Controls**.
 ---
 
 ## What's new
+
+### 🖼️ New logo and dynamic menu
+- The text title is replaced by the project's **logo** (`assets/logo.webp`, embedded in the final file).
+- The menu background is now a **fast panoramic fly-over of the stages** (diagonal wipe between them) with **random fighters** that appear, **transform**, use their **abilities** (beams, novas, clones, barriers…), fire ki blasts and **emote**. It is **blurred** so it never fights with the buttons.
+
+![Dynamic menu](docs/screens/menu-dynamic.jpg)
+
+### 📖 Grimoire and recipe-based evolutions
+- A weapon evolves when it is **at max level** *and* you own the **right upgrade** (e.g. **Zenkai + Kamehameha**); the evolution is granted by a **chest**. Every weapon has two recipes (one per evolution).
+- Level-up cards show a **tooltip with icons**: "The «Zenkai» upgrade evolves your «Kamehameha» weapon". On the HUD a maxed weapon shows the icon of the upgrade it still needs (or a **!** when ready). A maxed weapon makes its missing upgrade show up more often.
+- The **second evolution** unlocks by **clearing every stage (Normal or Hard) with that weapon in your build**.
+- **Grimoire**: lists every weapon, evolution and recipe; anything you have not unlocked is **censored**. Open it with **Esc** in-game (*Grimoire* tab), from **character select** and from the **main menu**. It also tracks your cleared stages.
+
+![Grimoire](docs/screens/grimoire.jpg)
+![In-game Grimoire](docs/screens/grimoire-pause.jpg)
+![Evolution tooltip](docs/screens/evo-hint.jpg)
+
+### 🫘 Senzu bag
+- A **Senzu Bean** card can show up in the level-up menu (only there): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
+- Eat one in-game with **H** (or the **on-screen button** next to the pet and ability buttons) to recover **40%** HP; it is never wasted at full health.
+
+![Senzu card](docs/screens/senzu-card.jpg)
+
+### 🎵 Namek music
+**Planet Namek** has its own track, **looping** for the whole stage (during bosses the synthesised boss music takes over, then it resumes where it left off). `assets/namek.mp3` is not in the repository (see `assets/README.md`).
 
 ### ⚡ Transformations and Kaioken
 - **Spectacular transformations**: time slows during the charge, the character is invulnerable and the aura expands; on release a **shockwave sweeps the whole stage** (knocks back, stuns and damages enemies, clears enemy bullets) with light, lightning and a dedicated sound.
@@ -139,7 +167,7 @@ Now **1 minute** long, with a **larger arena**, **obstacles** (pillars) and **3 
 ![Room of Spirit and Time](docs/screens/spirit-room.jpg)
 
 ### ⚔️ Weapons: 5 levels → evolution → 5 levels → second evolution
-- Every weapon has **5 levels**; at max, the chest **evolves** it and it restarts at 1 for **another 5 levels** (then the second evolution, after a Hard win).
+- Every weapon has **5 levels**; at max, the chest **evolves** it and it restarts at 1 for **another 5 levels** (then the second evolution, after clearing every stage with that weapon).
 - Each evolution level adds little: **+5% damage, −1.5% cooldown, +2% area** (no runaway numbers).
 - **Ki Blast**: far fewer shots (1 to 3 before evolving, 4 at most) and **+1 pierce only on the second evolution**.
 - **Spirit Bomb**, **Kamehameha** and the other beams have new sound effects (see below).
@@ -182,7 +210,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 - **Auto-attack**: each weapon has its own behaviour (projectiles, beams, orbits, fire zones, chain lightning, meteors…).
 - Carry **up to 5 weapons** and **5 different passives**, each **up to level 5** (weapons then evolve and get another 5 levels per evolution).
 - **23 weapons**: Ki Blast, Kamehameha, Destructo Disc, Spirit Bomb, Kaioken (aura), Solar Flare, Sword, Homing Orbs, Piercing Beam, Rebel Javelin, Double Sunday, Break Cannon, Elegant Dance, Ginyu Boomerang, Hellzone Grenade, Time Skip, Power Impact, Sphere of Destruction, Angelic Bolt, Fusion Meteor, Big Bang Kamehameha, Dynamite Kick, Ki Barrage.
-- **Evolutions**: a maxed weapon can evolve (via chest). A **second evolution** per weapon unlocks by clearing a stage on **Hard** with a character that starts with that weapon.
+- **Evolutions**: a maxed weapon can evolve (via chest). Each evolution needs **a maxed weapon + a specific upgrade** (see the Grimoire). A **second evolution** per weapon unlocks by **clearing every stage (Normal+) with that weapon in your build**.
 - Weapons **unlock** into the level-up pool by clearing a stage or reaching level 50 with a character that starts with it.
 - **Passives**: Zenkai (+15% damage), Vigor (+20 HP), Swift Flight (+8% speed), Scouter (pickup), Gravity Chamber (−8% cooldown), Battle Armor, Senzu Beans (regen), Meditation (+12% XP).
 
@@ -284,6 +312,7 @@ node tests/totem.js           # one-time totem + 8 powers
 node tests/abil.js            # every ability of the 41 characters
 node tests/boss.js            # boss power-ups, slams
 node tests/spirit.js          # Room of Spirit and Time
+node tests/senzu.js           # Senzu bag
 node tests/sim.js             # simulation with all characters
 node tests/death.js 0 normal 6 goku     # balance: stage, difficulty, runs, character
 # e2e/smoke (need puppeteer + a browser): e2e*.js, smoke5.js, smoke6.js, smoke7.js

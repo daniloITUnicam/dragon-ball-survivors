@@ -223,3 +223,46 @@ select{border:3px solid var(--ink2);font-weight:700}
 .abbox .abrow b{color:var(--c);font-size:1.05em}
 .abbox .abrow i{margin-left:auto;opacity:.7;font-style:normal;font-size:.85em}
 .abbox p{margin:4px 0 0;font-size:.88em;opacity:.9;line-height:1.3}
+
+/* ---- evolution recipe hints + Grimoire ---- */
+.evohint{display:flex;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;border:1px dashed rgba(255,210,63,.6);border-radius:8px;background:rgba(255,210,63,.08);font-size:12px;line-height:1.25;color:#ffe9a0;text-align:left;width:100%}
+.evohint .glyph{font-size:20px;width:26px}
+.evohint .arr{color:var(--gold);font-size:14px}
+.evohint .et{flex:1}
+.evohint.ready{border-style:solid;border-color:var(--gold);background:rgba(255,210,63,.18);animation:pulseG 1.2s infinite alternate}
+@keyframes pulseG{from{box-shadow:0 0 0 rgba(255,210,63,0)}to{box-shadow:0 0 14px rgba(255,210,63,.55)}}
+.grimbody{display:flex;flex-direction:column;gap:10px;width:100%;max-width:1100px;align-items:center}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;align-content:start;max-height:62vh;overflow:auto;padding:4px}
+.wcard{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:3px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font-family:var(--body);cursor:pointer;min-height:96px}
+.wcard .glyph{font-size:30px;width:auto}.wcard b{font-size:13px;text-align:center;line-height:1.1}
+.wcard:hover,.wcard:focus-visible,.wcard.sel{border-color:var(--orange)}
+.wcard.sel{box-shadow:0 5px 0 -2px var(--orange-d)}
+.wcard.locked{opacity:.7}.wcard.locked b{color:#5f7692;letter-spacing:.2em}
+.wst{font-size:11px;color:var(--gold)}
+.glyph.cens{text-shadow:none;opacity:.8}
+.grimdetail{max-height:62vh;overflow:auto;gap:10px}
+.tier{display:flex;gap:10px;align-items:flex-start;padding:8px;border:2px solid var(--line);border-radius:10px;background:var(--panel2)}
+.tier.now{border-color:var(--orange)}.tier.done{border-color:var(--gold)}
+.tier.hide{filter:saturate(.2)}
+.tier .col{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.tier .cl{font-size:12px;font-weight:700;letter-spacing:.05em}
+.censor{background:#0a1320;color:#0a1320;border-radius:3px;user-select:none;letter-spacing:0;box-shadow:0 0 0 2px #0a1320;text-shadow:none}
+.recipe{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px;font-size:12px}
+.rchip{display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.28);border:1px solid var(--c,#456);border-radius:16px;padding:1px 8px 1px 3px}
+.rchip .glyph{font-size:16px;width:20px}.rchip.have{background:rgba(139,224,122,.2)}
+.plus{color:var(--gold);font-weight:700}
+.stprog{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.stprog i{font-style:normal;font-size:11px;padding:1px 6px;border-radius:10px;background:#0b1a2b;color:#5f7692;border:1px solid var(--line)}
+.stprog i.on{background:var(--gold);color:#3a1204;border-color:var(--gold)}
+.cd.gold{color:var(--gold)}
+@media (max-width:700px){.wgrid{max-height:36vh}.grimdetail{max-height:none}}
+
+/* ---- main menu: logo + blurred dynamic background ---- */
+canvas#c{transition:filter .4s}
+canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1.05)}
+.screen.main{background:radial-gradient(ellipse at 50% 40%,rgba(6,12,24,.05),rgba(6,12,24,.5) 80%),linear-gradient(180deg,rgba(6,12,24,.15),rgba(6,12,24,.45))}
+.logo{gap:0}
+.logoimg{width:min(86vw,700px);max-height:38vh;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logofloat 4.5s ease-in-out infinite;pointer-events:none;-webkit-user-drag:none}
+@keyframes logofloat{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-6px) rotate(.6deg)}}
+@media (prefers-reduced-motion:reduce){.logoimg{animation:none}}
+@media (max-height:620px){.logoimg{max-height:28vh}}

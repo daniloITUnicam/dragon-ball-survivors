@@ -39,6 +39,7 @@ const WEAPONS={
 };
 const MAX_WEAPONS=5;
 const WMAX=5;    /* every tier (base, evolution 1, evolution 2) has 5 levels; the evolution needs the current tier at level 5 */
+const SENZU_MAX=3;   /* Senzu bag capacity */
 const MAX_PASSIVES=5;   /* max different secondary upgrades per run (each up to level 5) */
 
 const PASS={
@@ -51,6 +52,16 @@ const PASS={
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
   growth:{n:T('Meditazione','Meditation'),d:T('+12% esperienza.','+12% experience.'),k:'学',c:'#ffe9a0'}
 };
+
+/* Evolution recipes: a weapon at max level + the listed passive (any level) -> next evolution (opened from a chest).
+   [first evolution passive, second evolution passive] */
+const EVO_RECIPE={
+  ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','might'],flare:['magnet','growth'],
+  slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['haste','might'],breaker:['armor','might'],
+  spiral:['speed','regen'],boomer:['magnet','haste'],hellzone:['regen','armor'],chrono:['haste','growth'],shock:['armor','vit'],hakai:['growth','might'],
+  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen'],barrage:['speed','haste']
+};
+const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
 /* ---------- Transformations: every character has an 8 step line ---------- */
 const FORM_TIERS=[
@@ -539,10 +550,10 @@ const ACHIEVEMENTS=[
  A('roster','Tutti in campo','Full Roster','Sblocca tutti i personaggi.','Unlock all characters.',500,s=>s.unlocked>=CHARS.length)
 ];
 
-/* weapons are unlocked by clearing stages with a character that starts with them (Normal: weapon, Hard: second evolution) */
+/* weapons are unlocked by clearing stages with a character that starts with them (second evolution: clear all stages with the weapon) */
 for(const id of Object.keys(WEAPONS)){
   if(id!=='ki')ACHIEVEMENTS.push(A('wu_'+id,'Maestro: '+WEAPONS[id].n.it,'Master: '+WEAPONS[id].n.en,WEAPONS[id].lv50?'Raggiungi il livello 50 con un personaggio che parte con quest\'arma.':'Completa uno stage (Normale+) con un personaggio che parte con quest\'arma.',WEAPONS[id].lv50?'Reach level 50 with a character that starts with this weapon.':'Clear a stage (Normal+) with a character that starts with this weapon.',100,s=>!!s.wu[id]));
-  ACHIEVEMENTS.push(A('we_'+id,'Seconda evoluzione: '+WEAPONS[id].n.it,'Second evolution: '+WEAPONS[id].n.en,'Completa uno stage in Difficile con un personaggio che parte con quest\'arma.','Clear a stage on Hard with a character that starts with this weapon.',200,s=>!!s.we[id]));
+  ACHIEVEMENTS.push(A('we_'+id,'Seconda evoluzione: '+WEAPONS[id].n.it,'Second evolution: '+WEAPONS[id].n.en,'Completa tutti gli stage (Normale+) con quest\'arma nell\'equipaggiamento.','Clear every stage (Normal+) with this weapon in your build.',200,s=>!!s.we[id]));
 }
 
 for(const k in ENEMIES)ENEMIES[k].id=k;

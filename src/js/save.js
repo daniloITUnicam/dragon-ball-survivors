@@ -10,17 +10,17 @@ class SaveData{
     const nl=(typeof navigator!=='undefined'&&(navigator.language||'en').slice(0,2).toLowerCase())||'en',lang=['it','es','fr','de','pt'].includes(nl)?nl:'en';
     return{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(10).fill(0),x2:new Array(10).fill(0),
-      diff:'normal',pet:'dende',lastChar:'goku',lastStage:0,best:{},ach:{},shop:{},trin:{},wu:{ki:1},we:{},seen:{},maxForm:{},
+      diff:'normal',pet:'dende',lastChar:'goku',lastStage:0,best:{},ach:{},shop:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,sandbox:false,fullscreen:false},
       binds:{
-        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ','ShiftLeft'],kaioken:['KeyR','KeyX'],debug:['F2','Backquote']},
-        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],debug:[8]}
+        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ','ShiftLeft'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],debug:['F2','Backquote']},
+        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],debug:[8]}
       }
     };
   }
   load(){
-    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const d=deepMerge(this.defaults(),JSON.parse(raw));for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;for(const k of['clears','x2'])while(d[k].length<10)d[k].push(0);return d;}}catch(e){}
+    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const d=deepMerge(this.defaults(),JSON.parse(raw));if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;for(const k of['clears','x2'])while(d[k].length<10)d[k].push(0);return d;}}catch(e){}
     return this.defaults();
   }
   write(){try{this.storage&&this.storage.setItem(SaveData.KEY,JSON.stringify(this.d));}catch(e){}}
@@ -103,7 +103,11 @@ class Progress{
     g.bank={kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,t:g.t,counted:true,cleared:b.cleared||!!win};
     if(g.diffId!=='easy')for(const id of g.C.start){
       if((win||g.lvl>=50)&&!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}
-      if(win&&g.diffId==='hard'&&!d.we[id]){d.we[id]=1;this.notify({type:'weapon',id,evo2:true});}
+    }
+    /* second evolution: clear every stage (Normal or Hard) with the weapon in your build */
+    if(win&&g.diffId!=='easy')for(const id of g.weapons.keys()){
+      const a=d.wc[id]||(d.wc[id]=[]);if(!a.includes(idx))a.push(idx);
+      if(!d.we[id]&&STAGES.every((_,i)=>a.includes(i))){d.we[id]=1;this.notify({type:'weapon',id,evo2:true});}
     }
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);

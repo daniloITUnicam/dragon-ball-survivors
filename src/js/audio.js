@@ -95,6 +95,9 @@ class MusicEngine{
 
 /* the menu theme is a user-supplied track embedded by build.py (placeholder stays empty in plain src) */
 const MENU_MP3_URI='data:audio/mpeg;base64,__MENU_MP3__';
+/* file tracks: key = track name used by the game ('stage2' = Planet Namek); they loop for as long as the stage lasts */
+const FILE_TRACKS={menu:MENU_MP3_URI,stage2:'data:audio/mpeg;base64,__NAMEK_MP3__'};
+const trackUri=t=>{const u=FILE_TRACKS[t];return u&&u.length>400?u:null;};
 class AudioSys{
   constructor(settings){this.s=settings;this.ctx=null;this.music=null;this.last={};this.wantTrack=null;}
   unlock(){
@@ -117,24 +120,29 @@ class AudioSys{
   }
   play(track){
     this.wantTrack=track;
-    const file=track==='menu'&&MENU_MP3_URI.length>400;
-    if(this.music)this.music.play(file?null:track);
-    this.setFile(file);
+    const uri=trackUri(track);
+    if(this.music)this.music.play(uri?null:track);
+    this.setFile(uri?track:null);
   }
-  setFile(on){
-    this.fileOn=on;
+  /* play the embedded mp3 of a track (looping), fading every other file out; paused files keep their position */
+  setFile(name){
+    this.fileOn=name;
     if(!this.ctx)return;
-    const c=this.ctx;
-    if(on){
-      if(!this.fileEl){
-        const el=new Audio(MENU_MP3_URI);el.loop=true;el.preload='auto';this.fileEl=el;
-        try{const src=c.createMediaElementSource(el);this.fileG=c.createGain();this.fileG.gain.value=0;src.connect(this.fileG);this.fileG.connect(this.musicG);}catch(e){this.fileG=null;}
+    const c=this.ctx;this.files=this.files||{};
+    for(const k in this.files){
+      if(k===name)continue;const f=this.files[k];
+      if(f.on){f.on=false;if(f.g){f.g.gain.cancelScheduledValues(c.currentTime);f.g.gain.setTargetAtTime(0,c.currentTime,.18);}
+        clearTimeout(f.stop);f.stop=setTimeout(()=>{if(!f.on)f.el.pause();},900);}
+    }
+    if(name){
+      let f=this.files[name];
+      if(!f){
+        const el=new Audio(trackUri(name));el.loop=true;el.preload='auto';f=this.files[name]={el,g:null,on:false};
+        try{const src=c.createMediaElementSource(el);f.g=c.createGain();f.g.gain.value=0;src.connect(f.g);f.g.connect(this.musicG);}catch(e){f.g=null;}
       }
-      if(this.fileG){this.fileG.gain.cancelScheduledValues(c.currentTime);this.fileG.gain.setTargetAtTime(1.15,c.currentTime,.35);}
-      const pr=this.fileEl.play();if(pr&&pr.catch)pr.catch(()=>{});
-    }else if(this.fileEl&&this.fileG){
-      this.fileG.gain.cancelScheduledValues(c.currentTime);this.fileG.gain.setTargetAtTime(0,c.currentTime,.18);
-      clearTimeout(this.fileStop);this.fileStop=setTimeout(()=>{if(!this.fileOn)this.fileEl.pause();},900);
+      clearTimeout(f.stop);
+      if(!f.on&&f.g){f.g.gain.cancelScheduledValues(c.currentTime);f.g.gain.setTargetAtTime(name==='menu'?1.15:1.05,c.currentTime,.35);}
+      f.on=true;const pr=f.el.play();if(pr&&pr.catch)pr.catch(()=>{});
     }
   }
   tone(f,d,type,vol,slide){

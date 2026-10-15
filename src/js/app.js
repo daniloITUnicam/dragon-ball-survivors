@@ -32,6 +32,7 @@ class App{
     cv.addEventListener('pointerdown',e=>{
       if(this.state==='play'&&this.renderer.petBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.petBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.usePet();return;}}
       if(this.state==='play'&&this.renderer.abBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.abBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useAbility();return;}}
+      if(this.state==='play'&&this.renderer.szBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.szBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useSenzu();return;}}
       if(e.pointerType==='mouse'||this.state!=='play'||this.joy.on)return;
       const k=this.renderer.W/innerWidth;
       this.joy={on:true,id:e.pointerId,ox:e.clientX*k,oy:e.clientY*k,x:0,y:0};this.renderer.joy=this.joy;
@@ -86,7 +87,7 @@ class App{
   toMenu(){this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
-    for(const a of['interact','pet','kaioken'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
+    for(const a of['interact','pet','kaioken','senzu'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
     this.renderer.keyHints=h;
   }
   loop(now){
@@ -97,6 +98,7 @@ class App{
     const dt=Math.min(.05,(now-this.last)/1000);this.last=now;
     const I=this.input,g=this.game,r=this.renderer;
     I.poll(dt);
+    this.canvas.classList.toggle('bgblur',this.state==='menu');
     this.hintT-=dt;if(this.hintT<=0){this.hintT=.5;this.keyHints();}
     if(this.state==='play'&&g){
       if(I.pressed('pause')){this.pause();}
@@ -106,6 +108,7 @@ class App{
         if(I.pressed('interact'))g.input.interact=true;
         if(I.pressed('pet'))g.usePet();
         if(I.pressed('kaioken'))g.toggleKaioken();
+        if(I.pressed('senzu'))g.useSenzu();
         if(I.pressed('debug')&&g.sandbox)this.ui.toggleSandbox(g);
         g.update(dt);
         this.trackT-=dt;
@@ -118,7 +121,7 @@ class App{
       else this.ui.update();
       r.draw(g,0);
     }else{
-      r.drawMenuBg(dt,this.ui.sel.stage);this.ui.update();this.ui.animate(dt);
+      r.drawMenuBg(dt);this.ui.update();this.ui.animate(dt);
     }
   }
 }

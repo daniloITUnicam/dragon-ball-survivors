@@ -4,3 +4,4 @@ dist/_bundle.js
 # assets/menu.mp3 is intentionally NOT versioned (see assets/README.md)
 assets/menu.mp3
 dist/
+assets/namek.mp3

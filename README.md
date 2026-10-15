@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Dragon Ball: Survivors" width="560"></p>
+
 # Dragon Ball: Survivors
 
 > 🇬🇧 English version: [README.en.md](README.en.md)
@@ -42,6 +44,7 @@ Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, 
 | Pausa | `Esc` o `P` | Start |
 | Interagire (altari, totem, stanza del tempo) | `E` o `F` | A |
 | Abilità del compagno | `Q` o `Shift sinistro` (o tocca il pulsante in basso a sinistra) | X |
+| **Fagiolo Senzu** (dalla borsa) | `H` · pulsante a schermo | LB |
 | **Abilità del personaggio** (Kaioken, Berserk, raggi, cloni…) | `R` o `X` · pulsante a schermo | Y |
 | Debug (FPS ecc.) | `F2` o `` ` `` | Select |
 
@@ -50,6 +53,31 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 ---
 
 ## Novità dell'ultimo aggiornamento
+
+### 🖼️ Nuovo logo e menù dinamico
+- Il titolo testuale è sostituito dal **logo ufficiale del progetto** (`assets/logo.webp`, incorporato nel file finale).
+- Lo sfondo del menù è ora una **panoramica veloce degli stage** (cambio con taglio diagonale) con **personaggi casuali** che compaiono, **si trasformano**, usano le loro **abilità** (raggi, nova, cloni, barriere…), lanciano onde di ki ed **emote**. Il tutto è **sfocato** per non disturbare i pulsanti.
+
+![Menu dinamico](docs/screens/menu-dynamic.jpg)
+
+### 📖 Grimorio ed evoluzioni con ricetta
+- Un'arma evolve quando è **al livello massimo** *e* hai il **potenziamento giusto** (es. **Zenkai + Kamehameha**); l'evoluzione si ottiene da un **forziere**. Ogni arma ha due ricette (una per evoluzione).
+- Nelle carte del level up compare un **tooltip con icone**: "Il potenziamento «Zenkai» evolve l'arma «Kamehameha»". Sull'HUD, un'arma al massimo mostra l'icona del potenziamento che le manca (o un **!** quando è pronta). Se un'arma è al massimo, il potenziamento che le serve compare più spesso.
+- La **seconda evoluzione** si sblocca **completando tutti gli stage (Normale o Difficile) con quell'arma nell'equipaggiamento**.
+- **Grimorio**: elenca tutte le armi, le evoluzioni e le ricette; ciò che non hai sbloccato è **censurato**. Si apre con **Esc** in partita (scheda *Grimorio*), dalla **scelta personaggio** e dal **menù principale**. Mostra anche i progressi sugli stage completati.
+
+![Grimorio](docs/screens/grimoire.jpg)
+![Grimorio in partita](docs/screens/grimoire-pause.jpg)
+![Tooltip di evoluzione](docs/screens/evo-hint.jpg)
+
+### 🫘 Borsa Senzu
+- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.
+- Si mangia in partita con **H** (o dal **pulsante a schermo** accanto a quelli del pet e dell'abilità) e cura il **40%** della vita; non si spreca a vita piena.
+
+![Carta Senzu](docs/screens/senzu-card.jpg)
+
+### 🎵 Musica di Namek
+Il pianeta **Namek** ha una traccia dedicata, in **loop** per tutta la durata dello stage (durante i boss torna la musica sintetizzata e poi riprende da dove era). Il file `assets/namek.mp3` non è nel repository (vedi `assets/README.md`).
 
 ### ⚡ Trasformazioni e Kaioken
 - **Trasformazioni spettacolari**: durante la carica il tempo rallenta, il personaggio è invulnerabile e l'aura si espande; al rilascio parte un'**onda d'urto che attraversa tutto lo stage** (respinge, stordisce e danneggia i nemici, cancella i proiettili nemici) con effetti di luce, fulmini e suono dedicato.
@@ -148,7 +176,7 @@ Ora dura **1 minuto**, con **arena più grande**, **ostacoli** (pilastri) e **3 
 ![Stanza dello Spirito e del Tempo](docs/screens/spirit-room.jpg)
 
 ### ⚔️ Armi: 5 livelli → evoluzione → 5 livelli → seconda evoluzione
-- Ogni arma ha **5 livelli**; al massimo, il forziere la **evolve** e riparte da 1 per **altri 5 livelli** (e poi la seconda evoluzione, dopo una vittoria in Difficile).
+- Ogni arma ha **5 livelli**; al massimo, il forziere la **evolve** e riparte da 1 per **altri 5 livelli** (e poi la seconda evoluzione, dopo aver completato tutti gli stage con quell'arma).
 - Ogni livello delle evoluzioni dà poco: **+5% danno, −1,5% ricarica, +2% area** (niente numeri esagerati).
 - **Colpo di Ki**: molti meno proiettili (da 1 a 3 prima dell'evoluzione, 4 al massimo) e **perforazione +1 solo nella seconda evoluzione**.
 - La **Genkidama**, il **Kamehameha** e gli altri raggi hanno nuovi effetti sonori (vedi sotto).
@@ -191,7 +219,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 - **Attacco automatico**: ogni arma ha il suo comportamento (proiettili, raggi, orbite, zone di fuoco, fulmini a catena, meteore…).
 - Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5** (le armi poi si evolvono e hanno altri 5 livelli per evoluzione).
 - **23 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite, Raffica di Ki.
-- **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Una **seconda evoluzione** per arma si sblocca completando uno stage in **Difficile** con un personaggio che parte con quell'arma.
+- **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Ogni evoluzione richiede **arma al massimo + potenziamento specifico** (vedi Grimorio). Una **seconda evoluzione** per arma si sblocca **completando tutti gli stage (Normale+) con quell'arma nell'equipaggiamento**.
 - Le armi si **sbloccano** nella pool dei level up completando uno stage o raggiungendo il livello 50 con un personaggio che parte con quell'arma.
 - **Passivi**: Zenkai (+15% danno), Vigore (+20 HP), Volo veloce (+8% velocità), Scouter (raccolta), Camera Gravitazionale (−8% ricarica), Armatura, Fagioli Senzu (rigenerazione), Meditazione (+12% XP).
 
@@ -306,6 +334,7 @@ node tests/totem.js           # totem unico + 8 poteri
 node tests/abil.js            # tutte le abilità dei 41 personaggi
 node tests/boss.js            # potenziamento dei boss, schianti
 node tests/spirit.js          # stanza dello Spirito e del Tempo
+node tests/senzu.js           # borsa Senzu
 node tests/sim.js             # simulazione con tutti i personaggi
 node tests/death.js 0 normal 6 goku     # bilanciamento: stage, difficoltà, partite, personaggio
 node tests/lvfull.js "1,2,5,10" normal  # ritmo di livelli e forme

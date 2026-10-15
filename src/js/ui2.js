@@ -73,8 +73,8 @@ Object.assign(UI.prototype,{
       h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'rstb',onclick:()=>{this.sfx();inp.resetBinds();this.rebuild();}},this.t('resetControls')))];
   },
   /* ---------- pause ---------- */
-  screen_pause(){
-    const g=this.app.game,S=g.S,p=g.p,t=k=>this.t(k);
+  screen_pause(a){
+    const tab=(a&&a.tab)||this.lastPauseTab||'run',g=this.app.game,S=g.S,p=g.p,t=k=>this.t(k);
     const none=()=>h('div',{class:'cd'},t('none'));
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
@@ -86,19 +86,21 @@ Object.assign(UI.prototype,{
       kr('stArmor',S.armor.toFixed(1)),kr('stRegen',S.regen.toFixed(1)+'/s'),kr('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')'),kr('stDodge',Math.round(S.dodge*100)+'%'),
       kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+(S.gold*(g.x2?2:1)).toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
     const fe=g.formEntry;
-    const ups=[kr('passSlots',g.passCount()+' / '+MAX_PASSIVES),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
+    const ups=[kr('passSlots',g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'cd'},this.tr(PASS[id].d))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
     const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id);return h('div',{class:'prow'},glyph(tr.k,RARITY[tr.r].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[tr.r].c},this.tr(tr.n)+' · '+this.tr(RARITY[tr.r].n)),h('div',{class:'cd'},this.tr(tr.d))));});
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
-    return h('div',{class:'pausescr'},h('h2',null,this.t('pause')),
-      h('div',{class:'row'},
+    const tabs=h('div',{class:'row tabs'},
+      ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx();this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
+    const btns=h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
         this.btn('glossary',()=>this.push('glossary'),'alt'),
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
-        this.btn('quitMenu',()=>this.app.endRunManually(),'alt')),
-      h('div',{class:'pgrid'},sec('pauseWeapons',weapons),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
+        this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
+    return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
+      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
   },
   /* ---------- sandbox config ---------- */
   screen_sandboxCfg(){
@@ -112,21 +114,27 @@ Object.assign(UI.prototype,{
   },
   /* ---------- modals (level up / chest / wish) ---------- */
   describe(o){
-    if(o.type==='w'){const w=WEAPONS[o.id];return{k:w.k,c:w.c,n:w.n,tag:o.lv?this.t('weaponLv',{n:o.lv+1}):this.t('newWeapon'),d:(((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo?T('+5% danno · −1,5% ricarica · +2% area','+5% damage · −1.5% cooldown · +2% area'):o.lv&&wsDelta(o.id,o.lv-1,o.lv))||w.d};}
-    if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;return{k:p.k,c:p.c,n:p.n,tag:(o.lv?this.t('passLv',{n:o.lv+1}):this.t('newPass'))+' · '+this.t('passSlots',{a:o.lv?used:used+1,b:MAX_PASSIVES}),d:p.d};}
+    if(o.type==='w'){const w=WEAPONS[o.id],g=this.app.game,wp=g&&g.weapons.get(o.id),ev=wp?wp.evo:0,pid=evoPass(o.id,ev);
+      return{k:w.k,c:w.c,n:w.n,tag:o.lv?this.t('weaponLv',{n:o.lv+1}):this.t('newWeapon'),d:(((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo?T('+5% danno · −1,5% ricarica · +2% area','+5% damage · −1.5% cooldown · +2% area'):o.lv&&wsDelta(o.id,o.lv-1,o.lv))||w.d,
+        hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
+    if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
+      const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
+      return{k:p.k,c:p.c,n:p.n,tag:(o.lv?this.t('passLv',{n:o.lv+1}):this.t('newPass'))+' · '+this.t('passSlots',{a:o.lv?used:used+1,b:MAX_PASSIVES}),d:p.d,hints:hints&&hints.length?hints:null};}
     if(o.type==='z')return{k:'金',c:'#ffd23f',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
-    return{k:'豆',c:'#8be07a',n:T('Senzu','Senzu'),tag:this.t('heal'),d:T('Recuperi il 40% della salute.','Recover 40% HP.')};
+    {const gg=this.app.game,n=gg?gg.senzu:0,full=n>=SENZU_MAX;
+      return{k:'豆',c:'#8be07a',n:T('Fagiolo Senzu','Senzu Bean'),tag:this.t('senzuTitle'),d:T(full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}),full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}))};}
   },
   describeReward(r){
-    if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true};}
+    if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
     if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id);return{k:t.k,c:RARITY[t.r].c,n:t.n,tag:this.tr(RARITY[t.r].n),d:t.d};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
-    return h('button',{class:'card opt'+(info.evo?' evo':'')+(extra||''),style:'--d:'+(i*.3)+'s','data-fid':'o'+i,onclick},
-      glyph(info.k,info.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n)),h('div',{class:'cl',style:'color:'+info.c},info.tag),h('div',{class:'cd'},this.tr(info.d))),
+    return h('button',{class:'card opt'+(info.evo?' evo':'')+(extra||''),style:'--d:'+(i*.3)+'s','data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
+      glyph(info.k,info.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n)),h('div',{class:'cl',style:'color:'+info.c},info.tag),h('div',{class:'cd'},this.tr(info.d)),
+        info.hints?info.hints.map(x=>this.evoHint(x.pid,x.wid,x.evo,x.ready)):null),
       i<3&&onclick?h('span',{class:'key'},i+1):null);
   },
   openModal(m,g){
