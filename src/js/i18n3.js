@@ -3,6 +3,8 @@
 (function(){
   const L=['it','en','es','fr','de','pt'];
   const ADD={
+    upgTag:['Potenziamento','Upgrade','Mejora','Amélioration','Verbesserung','Melhoria'],
+    wpnTag:['Tecnica','Technique','Técnica','Technique','Technik','Técnica'],
     pickTitle:['Scegli un cimelio','Choose a trinket','Elige una reliquia','Choisis une relique','Wähle ein Relikt','Escolha uma relíquia'],
     pickSub:['Il boss ha lasciato {n} cimeli: prendine uno. Più fortuna, più scelta.','The boss dropped {n} trinkets: take one. More luck, more choice.','El jefe dejó {n} reliquias: toma una. Más suerte, más opciones.','Le boss a laissé {n} reliques : prends-en une. Plus de chance, plus de choix.','Der Boss ließ {n} Relikte fallen: nimm eins. Mehr Glück, mehr Auswahl.','O chefe deixou {n} relíquias: pegue uma. Mais sorte, mais opções.'],
     pickTag:['Scelta del boss','Boss reward','Premio del jefe','Récompense du boss','Boss-Belohnung','Prêmio do chefe'],

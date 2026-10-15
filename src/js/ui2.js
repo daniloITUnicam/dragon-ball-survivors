@@ -128,11 +128,11 @@ Object.assign(UI.prototype,{
     if(o.type==='w'){const w=WEAPONS[o.id],g=this.app.game,wp=g&&g.weapons.get(o.id),ev=wp?wp.evo:0,pid=evoPass(o.id,ev);
       const evoNow=((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo;
       const fx=evoNow?[{i:'dmg',t:T('+5% danno','+5% damage')},{i:'cd',t:T('−1,5% ricarica','−1.5% cooldown')},{i:'area',t:T('+2% area','+2% area')}]:(o.lv?wsFx(o.id,o.lv-1,o.lv):null);
-      return{k:w.k,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,tag:o.lv?this.t('weaponLv',{n:o.lv+1}):this.t('newWeapon'),d:(fx?null:w.d),
+      return{k:w.k,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
         hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
       const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
-      return{k:p.k,c:p.c,n:p.n,cat:PASS_ICON[o.id],fx:[{i:PASS_ICON[o.id],t:p.d}],tag:(o.lv?this.t('passLv',{n:o.lv+1}):this.t('newPass'))+' · '+this.t('passSlots',{a:o.lv?used:used+1,b:MAX_PASSIVES}),d:null,hints:hints&&hints.length?hints:null};}
+      return{k:p.k,c:p.c,n:p.n,cat:PASS_ICON[o.id],fx:[{i:PASS_ICON[o.id],t:p.d}],lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('upgTag'):this.t('newPass'),d:null,hints:hints&&hints.length?hints:null};}
     if(o.type==='z')return{k:'金',c:'#ffd23f',cat:'coin',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
     {const gg=this.app.game,n=gg?gg.senzu:0,full=n>=SENZU_MAX;
       return{k:'豆',c:'#8be07a',cat:'hp',n:T('Fagiolo Senzu','Senzu Bean'),tag:this.t('senzuTitle'),d:T(full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}),full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}))};}
@@ -149,7 +149,7 @@ Object.assign(UI.prototype,{
     return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(i*.3)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       glyph(info.k,info.c),
-      h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n)),
+      h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+(CAT_COL[x.i]||fc||info.c)},h('b',null,this.tr(x.t))))):null,
         info.d?h('div',{class:'cd'},this.tr(info.d)):null,

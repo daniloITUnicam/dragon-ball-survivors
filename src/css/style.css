@@ -281,3 +281,4 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .fxi{display:inline-flex;align-items:center;background:rgba(0,0,0,.28);border-left:3px solid var(--c);border-radius:6px;padding:3px 9px;font-size:14px;color:var(--ink);text-align:left}
 .fxi b{font-weight:700}
 @media (max-width:700px){.fx{align-items:flex-start}.card.opt>.bgic{width:100px;height:100px;margin-left:-50px}}
+.card.opt .cn .lvt{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:10px;font-size:.62em;font-weight:700;letter-spacing:.04em;vertical-align:.18em;background:rgba(0,0,0,.4);color:var(--fc,#ffd23f);border:1px solid var(--fc,#ffd23f);white-space:nowrap}
