@@ -19,7 +19,7 @@ const GLOW={
     return c;
   },
   at(ctx,x,y,r,col,alpha){
-    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=alpha===undefined?1:alpha;
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=(alpha===undefined?1:alpha)*(FXL.on?.6:1);
     ctx.drawImage(this.spr(col),x-r,y-r,r*2,r*2);ctx.restore();
   }
 };

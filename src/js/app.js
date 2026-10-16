@@ -82,7 +82,7 @@ class App{
   applySettings(){
     const s=this.save.d.settings;
     this.i18n.setLang(s.lang);document.documentElement.lang=s.lang;
-    this.audio.s=s;this.audio.applyVolumes();
+    FXL.on=!!s.reduceFx;this.audio.s=s;this.audio.applyVolumes();
     this.renderer.resize();this.renderer.tt=(k,v)=>this.t(k,v);this.renderer.tr=o=>this.i18n.t(o);
     try{
       if(s.fullscreen&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{s.fullscreen=false;});

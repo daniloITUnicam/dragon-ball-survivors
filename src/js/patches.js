@@ -9,6 +9,18 @@
      bal   balance changes             (section "Bilanciamento / Balance", hidden when empty)
    Every entry is T('italiano','english'). Keep one line per change, written for players, not for programmers. */
 const PATCHES=[
+  {id:'2026-10-16b',date:'2026-10-16',
+    new:[
+      T("Ritmo a ondate: ogni tanto arriva un picco di circa 15 secondi con molti più nemici, seguito da una pausa di 12 secondi con pochi nemici e una pioggia di gemme da raccogliere con calma (in pausa anche le gemme dei nemici valgono +50%). Il picco non parte durante i boss, prima di un'orda o durante le ondate speciali.","Wave rhythm: every now and then a surge of about 15 seconds brings many more enemies, followed by a 12 second breather with few enemies and a shower of gems to collect in peace (during the breather the gems from enemies are worth +50%). A surge never starts during a boss fight, right before a horde or during the special waves."),
+      T("Nemici élite: da 2 a 6 per partita (secondo la durata), più grandi, dorati e molto più resistenti. Una stella dorata sulla barra di avanzamento mostra quando arrivano. Quando ne sconfiggi uno lascia sempre un forziere con un potenziamento e un oggetto garantito, più monete e gemme.","Elite enemies: 2 to 6 per run (depending on its length), bigger, golden and much tougher. A golden star on the progress bar shows when they arrive. When you defeat one it always leaves a chest with an upgrade and a guaranteed trinket, plus coins and gems."),
+      T("Nuova opzione «Effetti ridotti» in Impostazioni > Video: meno particelle, niente scariche elettriche, fiamme e raggi di luce, bagliori, lampi e tremolio più leggeri. Utile se il gioco rallenta o se le luci ti danno fastidio.","New option \"Reduced effects\" in Settings > Video: fewer particles, no electric arcs, flames or light rays, softer glows, flashes and screen shake. Useful if the game lags or bright lights bother you."),
+      T("Nuovo slider «Opacità degli effetti» (0-100%) accanto a «Effetti ridotti»: rende più o meno visibili le tue mosse e i loro effetti (proiettili, raggi, aure, particelle); a 0% sono invisibili. Gli attacchi e le zone di pericolo dei nemici restano sempre ben visibili.","New \"Effect opacity\" slider (0-100%) next to \"Reduced effects\": makes your moves and their effects (projectiles, beams, auras, particles) more or less visible; at 0% they are invisible. Enemy attacks and danger zones always stay clearly visible."),
+      T("Menu principale: titolo più grande e più in alto, con il badge W.I.P. in basso a destra del titolo.","Main menu: a bigger title placed higher up, with the W.I.P. badge at the bottom right of the title.")
+    ],
+    fix:[],
+    bal:[
+      T("Sfera del Drago garantita: ogni 100-270 secondi (secondo la durata della partita) ne compare una sulla mappa, mai due insieme e mai durante un boss. Resta 150 secondi e la freccia ai bordi dello schermo indica dove.","Guaranteed Dragon Ball: every 100-270 seconds (depending on the run length) one appears on the map, never two at once and never during a boss fight. It stays for 150 seconds and the arrow at the screen edge shows where.")
+    ]},
   {id:'2026-10-16',date:'2026-10-16',
     new:[
       T("Aggiornamento automatico: quando esce una nuova versione compare un avviso con un conto alla rovescia di 10 secondi. La partita in corso viene terminata con tutte le monete guadagnate e la pagina si ricarica da sola.","Automatic updates: when a new version is released a notice appears with a 10 second countdown. The run in progress ends with every coin you earned and the page reloads by itself."),

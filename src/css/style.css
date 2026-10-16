@@ -282,11 +282,12 @@ select{border:3px solid var(--ink2);font-weight:700}
 canvas#c{transition:filter .4s}
 canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1.05)}
 .screen.main{background:radial-gradient(ellipse at 50% 40%,rgba(6,12,24,.05),rgba(6,12,24,.5) 80%),linear-gradient(180deg,rgba(6,12,24,.15),rgba(6,12,24,.45))}
-.logo{gap:0}
-.logoimg{width:min(86vw,700px);max-height:38vh;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logofloat 4.5s ease-in-out infinite;pointer-events:none;-webkit-user-drag:none}
+.logo{gap:0;position:relative}
+.screen.main{justify-content:flex-start;padding-top:max(8px,1.2vh)}   /* title and buttons start higher up */
+.logoimg{width:min(94vw,980px);max-height:45vh;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logofloat 4.5s ease-in-out infinite;pointer-events:none;-webkit-user-drag:none}
 @keyframes logofloat{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-6px) rotate(.6deg)}}
 @media (prefers-reduced-motion:reduce){.logoimg{animation:none}}
-@media (max-height:620px){.logoimg{max-height:28vh}}
+@media (max-height:620px){.logoimg{max-height:34vh}}
 
 /* ---- upgrade cards: colour + faint background icon tell the effect (red damage, blue speed, green healing ...) ---- */
 .ic{display:inline-flex;width:1.15em;height:1.15em;color:var(--c,#fff);flex:none}
@@ -321,15 +322,17 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .cloudbtn.on{border-color:#4aa8ff}
 .card.opt.conflict{min-height:0;cursor:default;gap:10px}
 .acct .btn{max-width:100%}
-/* W.I.P. badge: travels back and forth along the right edge (wipx) while hopping with squash and stretch (wipy) and a pulsing glow (wipg) */
-.wip{position:fixed;right:3vw;top:50%;width:min(300px,24vw);margin-top:-80px;z-index:2;pointer-events:none;animation:wipx 3.4s ease-in-out infinite}
+/* W.I.P. badge: sits at the bottom right of the title, swaying a little (wipx) while hopping with squash and stretch (wipy) and a pulsing glow (wipg) */
+.wip{position:absolute;right:-2%;bottom:-8%;width:min(27%,260px);z-index:2;pointer-events:none;animation:wipx 3.4s ease-in-out infinite}
 .wipin{animation:wipy 1.15s cubic-bezier(.3,0,.7,1) infinite;transform-origin:50% 100%}
 .wip img{display:block;width:100%;height:auto;animation:wipg 1.15s ease-in-out infinite;user-select:none;-webkit-user-drag:none}
-@keyframes wipx{0%,100%{transform:translateX(34px) rotate(4deg)}50%{transform:translateX(-46px) rotate(-4deg)}}
+@keyframes wipx{0%,100%{transform:translateX(5px) rotate(4deg)}50%{transform:translateX(-5px) rotate(-3deg)}}
 @keyframes wipy{0%,100%{transform:translateY(0) scale(1.06,.93)}18%{transform:translateY(-8px) scale(.97,1.05)}50%{transform:translateY(-30px) scale(.96,1.06)}82%{transform:translateY(-6px) scale(.98,1.03)}}
 @keyframes wipg{0%,100%{filter:brightness(1) saturate(1.1) drop-shadow(0 0 8px rgba(255,190,50,.55))}50%{filter:brightness(1.35) saturate(1.35) drop-shadow(0 0 22px rgba(255,220,90,.95))}}
-@media (max-width:900px){.wip{width:26vw;top:auto;bottom:14vh;margin-top:0;right:2vw}}
-@media (max-height:560px){.wip{display:none}}
+@media (max-width:1100px){.wip{right:0}}
+@media (max-width:900px){.screen.main{padding-top:max(46px,1.2vh)}}   /* leave room for the patch-notes / account buttons at the top right */
+@media (max-width:600px){.logo{margin-bottom:30px}.wip{right:2%;bottom:-12%;width:28%}}
+@media (max-height:420px){.wip{display:none}}
 @media (prefers-reduced-motion:reduce){.wip,.wipin,.wip img{animation:none}}
 /* top right of the main menu: patch notes + cloud account */
 .mtop{position:fixed;top:12px;right:14px;z-index:6;display:flex;align-items:center;gap:8px}

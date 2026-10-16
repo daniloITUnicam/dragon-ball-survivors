@@ -250,7 +250,7 @@ const Ambient={
     if(pre)p.l=Math.random()*p.m*(kind==='bird'?.0:1);
     this.ps.push(p);this.cnt[kind]=(this.cnt[kind]||0)+1;
   },
-  setCfg(s){this.on=s.ambient!==false;this.wxOn=s.weather!==false;this.dnOn=s.dayNight!==false;this.dnDay=(s.dnDay===undefined?60:+s.dnDay)/100;this.dnLen=+s.dnLen||300;},
+  setCfg(s){FXL.on=!!s.reduceFx;if(FXL.on){this.auto=false;this.lod=Math.min(this.lod,.5);}else if(!this.auto){this.auto=true;this.lod=1;}this.on=s.ambient!==false;this.wxOn=s.weather!==false;this.dnOn=s.dayNight!==false;this.dnDay=(s.dnDay===undefined?60:+s.dnDay)/100;this.dnLen=+s.dnLen||300;},
   /* day/night and weather are pure functions of game time + settings (deterministic, no storage) */
   state(theme,t,dt){
     const c=this.cfg;let nt=0;

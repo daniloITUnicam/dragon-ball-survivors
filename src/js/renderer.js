@@ -56,7 +56,11 @@ function drawShenron(ctx,x,y,s,a){
 const DBALLS_URL=('__DBALLS__'?'data:image/webp;base64,__DBALLS__':'');
 class Renderer{
   constructor(canvas,save){
-    this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;this.W=1;this.H=1;this.Z=1;
+    this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;
+    /* the opacity slider for the player's own effects: while FXL.m<1 every alpha the drawing code sets is scaled by it (see fxBegin/fxEnd) */
+    {const d=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'globalAlpha'),c=this.ctx;
+      if(d&&d.get&&d.set)Object.defineProperty(c,'globalAlpha',{configurable:true,enumerable:true,get(){const v=d.get.call(c);return FXL.m>0&&FXL.m<1?Math.min(1,v/FXL.m):v;},set(v){d.set.call(c,FXL.m<1?v*FXL.m:v);}});}
+this.W=1;this.H=1;this.Z=1;
     this.tiles={};this.decor={};this.vign=null;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
     this.hint=null;this.joy=null;this.keyHints={};this.tr=(x)=>typeof x==='string'?x:x.it;this.tt=(k)=>k;
   }
@@ -207,14 +211,18 @@ class Renderer{
 
   /* ---------- game ---------- */
   /* drop any state a half-finished frame could have left behind (blend mode, alpha, dash, clip stack) */
+  /* the slider is applied with a gentle curve (a^1.7): the additive layers of an effect (glow + core + star) add up past 100%, so a straight scale would look unchanged until very low values */
+  fxBegin(){if(FXL.a>=1)return;FXL.m=Math.pow(FXL.a,1.7);this.ctx.globalAlpha=1;}
+  fxEnd(){if(FXL.m===1)return;FXL.m=1;this.ctx.globalAlpha=1;}
   resetCtx(){const c=this.ctx;try{for(let i=0;i<40;i++)c.restore();}catch(e){}c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.setLineDash([]);c.lineCap='butt';c.lineJoin='miter';c.shadowBlur=0;c.filter='none';}
   draw(g,dt){
     Sprites.warmStep();
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p;
+    FXL.a=s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1);FXL.m=1;
     this.resetCtx();
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
-    let sx=0,sy=0;if(g.shake>0&&s.shake){sx=rnd(-1,1)*g.shake*14;sy=rnd(-1,1)*g.shake*14;}
+    let sx=0,sy=0;if(g.shake>0&&s.shake){sx=rnd(-1,1)*g.shake*(FXL.on?5:14);sy=rnd(-1,1)*g.shake*(FXL.on?5:14);}
     const cx=p.x-g.vw/2+sx,cy=p.y-14-g.vh/2+sy;
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
     const theme=g.stage.theme;
@@ -222,9 +230,10 @@ class Renderer{
     if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else this.terrain(cx,cy,g.vw,g.vh,t,theme);
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
-    for(const w of g.weapons.values())if(w.drawGround)w.drawGround(ctx);
-    ELEC.n=0;
-    const au=g.weapons.get('aura');if(au){au.draw(ctx);au.elecOverlay(ctx);}
+    ELEC.n=0;this.fxBegin();
+    if(FXL.a>0){for(const w of g.weapons.values())if(w.drawGround)w.drawGround(ctx);
+    const au=g.weapons.get('aura');if(au){au.draw(ctx);au.elecOverlay(ctx);}}
+    this.fxEnd();
     /* ground items */
     for(const gm of (g.trial?[]:g.gm)){
       const col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9;
@@ -256,19 +265,22 @@ class Renderer{
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,t);
     }
-    for(const w of g.weapons.values())if(w.draw&&w.id!=='aura'){w.draw(ctx);w.elecOverlay(ctx);}
+    this.fxBegin();if(FXL.a>0)for(const w of g.weapons.values())if(w.draw&&w.id!=='aura'){w.draw(ctx);w.elecOverlay(ctx);}this.fxEnd();
     if(Ambient.on)Ambient.air(ctx,t);
     /* projectiles */
     const elv=ELEC.lvl(g);
-    for(const b of g.pr){
+    this.fxBegin();
+    for(const b of (FXL.a>0?g.pr:[])){
       if(b.tr)VFX.trail(ctx,b.tr,b.r*.9,b.c);
       if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
       else VFX.orb(ctx,b.x,b.y,b.r,b.c,t);
       if(elv)ELEC.pt(ctx,b.x,b.y,b.r*1.5+3,b.c,t,elv,b.x*.13+b.y*.07);
     }
+    this.fxEnd();
     for(const b of g.eb){GLOW.at(ctx,b.x,b.y,b.r*3,b.c,.9);ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*.45,0,TAU);ctx.fill();}
     /* fx */
-    for(const f of g.fx){
+    this.fxBegin();
+    for(const f of (FXL.a>0?g.fx:[])){
       if(f.beam){
         const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
         ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.a);ctx.globalCompositeOperation='lighter';
@@ -304,6 +316,7 @@ class Renderer{
       if(f.ring){const k=1-f.l/f.m;ctx.strokeStyle=f.c;ctx.globalAlpha=1-k;ctx.lineWidth=5*(1-k)+1;ctx.beginPath();ctx.arc(f.x,f.y,f.r*k,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
       else{ctx.fillStyle=f.c;ctx.globalAlpha=clamp(f.l/f.m*1.4,0,1);ctx.fillRect(f.x-f.s/2,f.y-f.s/2,f.s,f.s);ctx.globalAlpha=1;}
     }
+    this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
     /* damage numbers */
@@ -321,7 +334,7 @@ class Renderer{
     if(!g.trial)Ambient.screen(ctx,this.W,this.H,this.U,t);
     if(g.tsT>0){ctx.fillStyle='rgba(215,225,255,'+Math.min(.3,g.tsT*.3)+')';ctx.fillRect(0,0,this.W,this.H);}
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
-    if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
+    if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     this.hud(g,dt,cx,cy);
   }
   drawPlayer(g,t){
@@ -346,6 +359,7 @@ class Renderer{
     }else if(g.dashT>0&&Sprites.sheetHas(pck,8)){frame=Sprites.poseFrame(pck,'dh',1-g.dashT/.26);dashing=true;}
     const sp=Sprites.player(pk2,pc2,frame,false,ex),k=u/(sp.s||Sprites.S);
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(p.x,p.y,7*u,2.4*u,0,0,TAU);ctx.fill();
+    this.fxBegin();
     if(dashing)this.dashTrail(g,pck,pcc,k,t);
     if(xf){
       const rt=g.rt,ch=xf.released?1:xf.t/xf.rel,ak=xf.released?1+Math.max(0,1-(xf.t-xf.rel)/(xf.dur-xf.rel))*1.7:.35+ch*2.1;
@@ -384,6 +398,7 @@ class Renderer{
       if(g.shieldT>0){const a2=Math.min(1,g.shieldT*2);ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55*a2;const gr=ctx.createRadialGradient(p.x,p.y-22,6,p.x,p.y-22,40);gr.addColorStop(0,hexA(ab.c,.05));gr.addColorStop(.8,hexA(ab.c,.35));gr.addColorStop(1,hexA('#ffffff',.8));ctx.fillStyle=gr;ctx.beginPath();ctx.arc(p.x,p.y-22,40,0,TAU);ctx.fill();ctx.restore();}
       if(g.clones){for(const q of g.clones){if(q.x===undefined)continue;const s2=Sprites.player(pck,pcc,frame,false,null);ctx.save();ctx.globalAlpha=.55;ctx.translate(q.x,q.y);ctx.scale(p.face*k,k);ctx.imageSmoothingEnabled=!s2.px;ctx.drawImage(s2.c,-s2.ox,-s2.oy);ctx.restore();ctx.imageSmoothingEnabled=false;GLOW.at(ctx,q.x,q.y-22,26,ab.c,.35);}}
     }
+    this.fxEnd();
     const bob=p.mv&&!sp.px?-Math.abs(Math.sin(t*9))*1.2:0;   /* pack sprites bob inside their own walk frames */
     ctx.save();ctx.translate(p.x,p.y+bob);
     if(g.dying){const dd=g.dying.t,kd=Math.min(1,dd/.6);ctx.rotate(-p.face*(Math.PI/2)*(1-Math.pow(1-kd,3)));ctx.globalAlpha=1-.55*Math.min(1,Math.max(0,(dd-.5)/1.4));}
@@ -403,13 +418,13 @@ class Renderer{
       const c=g.cast,kk=clamp(c.t/c.dur,0,1),a=c.a,ca=Math.cos(a),sa=Math.sin(a),d=9+9*kk,hx=p.x+ca*d,hy=p.y-17+sa*d;
       ctx.lineCap='round';ctx.strokeStyle=g.pc.skin;ctx.lineWidth=3.4;
       if(!sp.px)for(const sd of[-1,1]){ctx.beginPath();ctx.moveTo(p.x+sd*4,p.y-18);ctx.lineTo(hx-sa*sd*2.4,hy+ca*sd*2.4);ctx.stroke();}
-      VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
+      this.fxBegin();VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
       if(c.kind==='kame'){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy,(14+26*kk)*(1+.1*Math.sin(g.rt*19)),c.color,.55*kk+.2);   /* charging ball: pulsing halo and rotating rays */
         for(let i=0;i<8;i++){const aa=g.rt*3+i*TAU/8,r0=5+9*kk,l=(10+16*kk)*(.7+.3*Math.sin(g.rt*17+i));ctx.strokeStyle=hexA('#ffffff',.25+.45*kk);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(hx+Math.cos(aa)*r0,hy+Math.sin(aa)*r0);ctx.lineTo(hx+Math.cos(aa)*(r0+l),hy+Math.sin(aa)*(r0+l));ctx.stroke();}ctx.restore();}
       ctx.save();ctx.globalCompositeOperation='lighter';
       for(let i=0;i<10;i++){const aa=g.rt*7+i*.63,rr=(1-kk)*46+10+((i*13)%7),px=hx+Math.cos(aa)*rr,py=hy+Math.sin(aa)*rr*.8;ctx.globalAlpha=.5+.4*kk;ctx.strokeStyle=i%2?c.color:'#fff';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+(hx-px)*.22,py+(hy-py)*.22);ctx.stroke();}
       ctx.globalAlpha=.35*kk;ctx.strokeStyle=c.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(hx,hy,16+30*(1-kk),0,TAU);ctx.stroke();
-      ctx.restore();
+      ctx.restore();this.fxEnd();
     }
   }
   /* Kaioken: a constant, living red aura (as in the anime) - glow, wavering flame tongues in two layers, a pulsing outline halo, rising sparks and ground rings.
@@ -420,10 +435,11 @@ class Renderer{
     GLOW.at(ctx,p.x,cy,R0*1.85*pul,'#ff1a10',.55);GLOW.at(ctx,p.x,cy,R0*1.15*pul,'#ff4a2a',.7);GLOW.at(ctx,p.x,cy,R0*.62,'#ffc0a0',.28);
     ctx.save();ctx.globalCompositeOperation='lighter';
     /* ground rings expanding outward, continuously */
-    for(let i=0;i<3;i++){const kk=(rt*(x2?1.7:1.2)+i/3)%1,rr=18+R0*1.1*kk;ctx.strokeStyle=hexA('#ff4a3a',(1-kk)*.7);ctx.lineWidth=2.6*(1-kk)+.8;ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.3,0,0,TAU);ctx.stroke();}
+    for(let i=0;i<(FXL.on?1:3);i++){const kk=(rt*(x2?1.7:1.2)+i/3)%1,rr=18+R0*1.1*kk;ctx.strokeStyle=hexA('#ff4a3a',(1-kk)*.7);ctx.lineWidth=2.6*(1-kk)+.8;ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.3,0,0,TAU);ctx.stroke();}
     /* flame tongues: back layer (wide, dark red) then front layer (narrow, orange/white), each sways and licks upward on its own phase */
     const layers=[[x2?20:14,1.0,'#d81408',.38,.9],[x2?16:11,.78,'#ff5a2a',.5,1.2],[x2?12:8,.55,'#ffd0a0',.42,1.55]];
-    for(const [n,hs,col,al,sp] of layers){
+    for(const [n0,hs,col,al,sp] of layers){
+      const n=FXL.on?Math.ceil(n0*.4):n0;
       for(let i=0;i<n;i++){
         const u=(i+.5)/n-.5,fx=p.x+u*R0*1.35,by=p.y-1-Math.abs(u)*10;
         const ph=rt*sp*5+i*2.37+hs*3,flick=.62+.38*Math.sin(ph*1.9)*Math.sin(ph*.7+1),h=(58+k2*22)*hs*(1-Math.abs(u)*.8)*flick*(1+.1*fi/6);
@@ -534,9 +550,14 @@ class Renderer{
     const fuseFlash=e.fuse>0&&((e.fuse*12)|0)%2===0,warn=(e.st===1&&e.ai==='charge')||(e.xf&&!e.xf.released&&((t*14)|0)%2===0)||(e.st===1&&(e.ai==='slam'||e.ai==='leap')&&((t*16)|0)%2===0);
     const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0);
     const esid=e.esid!==undefined?e.esid:(Object.keys(Sprites.sheets).length?(e.esid=Sprites.enemySheet(e)):null);   /* pack art for this boss / enemy, if any */
-    const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S);
+    const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
     ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();
+    if(e.elite){      /* elite: golden halo, a pulsing ring on the ground and flickering sparks */
+      GLOW.at(ctx,e.x,e.y-e.r,e.r*3.1,'#ffd23f',.5+.12*Math.sin(t*5+e.ph));
+      ctx.save();ctx.strokeStyle='rgba(255,210,63,'+(.55+.25*Math.sin(t*6))+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.15,e.r*.4,0,0,TAU);ctx.stroke();
+      ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ffe58a';for(let i=0;i<(FXL.on?0:4);i++){const a=t*2.4+i/4*TAU+e.ph,q=(t*1.3+i*.25+e.ph)%1;ctx.globalAlpha=1-q;ctx.fillRect(e.x+Math.cos(a)*e.r*1.0-1.2,e.y-e.r*.2-q*e.r*1.9-1.2,2.4,2.4);}ctx.restore();
+    }
     if(e.boss){
       GLOW.at(ctx,e.x,e.y-e.r,e.r*2.8,e.bd.c,.35+.1*Math.sin(t*5));
       if(e.tf>0||e.xf){
@@ -544,7 +565,7 @@ class Renderer{
         const c=e.xf&&!e.xf.released?Math.min(1,e.xf.t/e.xf.rel):1,ar=e.r*(2.6+.5*(e.tf||0))*(.7+.5*c);
         GLOW.at(ctx,e.x,e.y-e.r,ar*1.5,'#ff3b2a',.35+.2*c);GLOW.at(ctx,e.x,e.y-e.r,ar,e.bd.c,.55);
         ctx.save();ctx.globalCompositeOperation='lighter';
-        for(let i=0;i<11;i++){const a=i/11*TAU+t*.7,bx=e.x+Math.cos(a)*e.r*1.05,by=e.y-e.r*.2+Math.sin(a)*e.r*.3,h=ar*(.55+.45*Math.sin(t*9+i*2.3))*.9;
+        for(let i=0;i<(FXL.on?4:11);i++){const a=i/(FXL.on?4:11)*TAU+t*.7,bx=e.x+Math.cos(a)*e.r*1.05,by=e.y-e.r*.2+Math.sin(a)*e.r*.3,h=ar*(.55+.45*Math.sin(t*9+i*2.3))*.9;
           ctx.fillStyle=i%2?'rgba(255,120,60,.45)':'rgba(255,230,160,.4)';ctx.beginPath();ctx.moveTo(bx-e.r*.22,by);ctx.lineTo(bx+Math.sin(t*7+i)*e.r*.15,by-h);ctx.lineTo(bx+e.r*.22,by);ctx.closePath();ctx.fill();}
         if(e.xf&&!e.xf.released){ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3;for(let q=0;q<3;q++){const rr=((t*1.6+q/3)%1);ctx.globalAlpha=1-rr;ctx.beginPath();ctx.ellipse(e.x,e.y-e.r*.3,e.r*(1+rr*5),e.r*(.4+rr*1.6),0,0,TAU);ctx.stroke();}}
         ctx.restore();
@@ -587,7 +608,9 @@ class Renderer{
     ctx.imageSmoothingEnabled=true;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
     }
     if(e.stun>0){ctx.fillStyle='#fff7b0';for(let i=0;i<3;i++){const a=t*6+i*TAU/3;ctx.fillRect(e.x+Math.cos(a)*10-1.5,e.y-e.r*2.4+Math.sin(a)*3,3,3);}}
-    if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2*clamp(e.hp/e.max,0,1),3);}
+    if(e.elite){const bw=e.r*2.6,bx=e.x-bw/2,by=e.y-e.r*2.75;ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(bx-1,by-1,bw+2,6);ctx.fillStyle='#ffd23f';ctx.fillRect(bx,by,bw*clamp(e.hp/e.max,0,1),4);
+      ctx.fillStyle='#ffd23f';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('★',e.x,by-4);}
+    else if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2*clamp(e.hp/e.max,0,1),3);}
   }
   /* the sprite sheet of the Dragon Balls, or null until the image has loaded (then the old vector drawing is used) */
   ballSheet(){
@@ -633,7 +656,7 @@ class Renderer{
     /* glow + turning rays behind the ball */
     GLOW.at(ctx,gx,cy,38+6*pulse,'#ffaa28',.7);GLOW.at(ctx,gx,cy,18,'#ffe9a8',.45+.25*pulse);
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(gx,cy);ctx.rotate(t*.9);ctx.fillStyle='#ffd27a';ctx.globalAlpha=.14+.1*pulse;
-    for(let i=0;i<8;i++){ctx.rotate(TAU/8);ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(-2.2,-(36+6*Math.sin(t*3+i)));ctx.lineTo(2.2,-(36+6*Math.sin(t*3+i)));ctx.closePath();ctx.fill();}
+    if(!FXL.on)for(let i=0;i<8;i++){ctx.rotate(TAU/8);ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(-2.2,-(36+6*Math.sin(t*3+i)));ctx.lineTo(2.2,-(36+6*Math.sin(t*3+i)));ctx.closePath();ctx.fill();}
     ctx.restore();
     /* the ball: squash when it lands, stretch while it flies, pops in when it appears */
     const sqz=h<1.5&&hp.lv>0?lvK*.26*Math.exp(-hp.since*16):0,str=h>1?Math.min(.16,Math.abs(hp.vy)/2400):0,pop=Math.min(1,.45+t*4.4);
@@ -642,7 +665,7 @@ class Renderer{
     ctx.restore();
     /* twinkling stars around it */
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle='#fff2b0';
-    for(let i=0;i<5;i++){const a=t*1.8+i*TAU/5,R=21+3*Math.sin(t*2+i),px=gx+Math.cos(a)*R,py=cy+Math.sin(a)*R*.72,tw=.5+.5*Math.sin(t*7+i*2.1),z=1.4+2.6*tw;ctx.globalAlpha=.25+.7*tw;ctx.fillRect(px-z,py-.6,z*2,1.2);ctx.fillRect(px-.6,py-z,1.2,z*2);}
+    for(let i=0;i<(FXL.on?2:5);i++){const a=t*1.8+i*TAU/5,R=21+3*Math.sin(t*2+i),px=gx+Math.cos(a)*R,py=cy+Math.sin(a)*R*.72,tw=.5+.5*Math.sin(t*7+i*2.1),z=1.4+2.6*tw;ctx.globalAlpha=.25+.7*tw;ctx.fillRect(px-z,py-.6,z*2,1.2);ctx.fillRect(px-.6,py-z,1.2,z*2);}
     ctx.restore();
     ctx.globalAlpha=1;
   }
@@ -767,7 +790,7 @@ class Renderer{
     if(o.v===0){ctx.fillStyle='#6a64c8';ctx.fillRect(x-r*.1,y-r*1.9,r*.2,r*.9);ctx.fillRect(x-r*.3,y-r*1.6,r*.6,r*.18);}
   }
   drawChest(c,t){
-    const ctx=this.ctx,x=c.x,y=c.y,s=c.final?1.5:1,pulse=.5+.5*Math.sin(t*4);
+    const ctx=this.ctx,x=c.x,y=c.y,s=c.final?1.5:c.elite?1.2:1,pulse=.5+.5*Math.sin(t*4);
     GLOW.at(ctx,x,y-10*s,(34+8*pulse)*s,c.final?'#ff7ad0':'#ffd23f',.9);
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+3,14*s,4*s,0,0,TAU);ctx.fill();
     ctx.fillStyle='#7a4a1e';ctx.fillRect(x-12*s,y-14*s,24*s,14*s);ctx.fillStyle='#a8682a';ctx.fillRect(x-12*s,y-20*s,24*s,7*s);
@@ -968,6 +991,7 @@ class Renderer{
     /* milestones: small white skull = horde, big red skull = boss, Shenron = final boss (past ones fade; the next boss pulses when it is close) */
     {const cy=py+3*U;let nextB=null;for(const b of g.bossQ)if(!b.done&&b.t>=g.t&&(!nextB||b.t<nextB.t))nextB=b;
       for(const ht of (g.hordePlan||[])){const past=ht<g.t;drawSkull(ctx,px+pw*clamp(ht/g.dur,0,1),cy+7*U,3.6*U,'#f4f4f4',past?.3:.95);}
+      for(const e of (g.elitePlan||[])){const x=px+pw*clamp(e.t/g.dur,0,1),y=cy+14*U,r=3.8*U;ctx.save();ctx.globalAlpha=e.done||e.t<g.t?.3:.95;ctx.fillStyle='#ffd23f';ctx.strokeStyle='#0a0f1c';ctx.lineWidth=Math.max(1,U);ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();}   /* gold star = elite enemy */
       for(const b of g.bossQ){const x=px+pw*clamp(b.t/g.dur,0,1),past=b.done||b.t<g.t,soon=b===nextB&&b.t-g.t<30,pulse=soon?1+.18*Math.sin(g.rt*8):1,a=past?.35:1;
         if(b.final)drawShenron(ctx,x,cy-1*U,1.25*U*pulse,a);else drawSkull(ctx,x,cy-3*U,6.2*U*pulse,'#ff3b3b',a);}}
     /* right side: kills, zenny, buffs */

@@ -3,7 +3,7 @@
    Jagged flickering arcs + moving spark sprites around projectiles, beams, discs, rings and bombs. */
 const ELEC={
   n:0,max:130,                                  /* per-frame budget of drawn arcs (keeps big barrages cheap) */
-  lvl(g){return Math.max(0,Math.min(6,(g.formIdx|0)+1));},
+  lvl(g){if(FXL.on)return 0;return Math.max(0,Math.min(6,(g.formIdx|0)+1));},
   r(i,s){const x=Math.sin(i*127.1+s*311.7)*43758.5453;return x-Math.floor(x);},   /* deterministic noise: arcs flicker ~22 times a second */
   col(c,lv,i){return lv>=5&&i%3===0?'#ffe066':lv>=3&&i%4===1?'#b8f0ff':c;},
   zig(ctx,x0,y0,x1,y1,seg,jit,seed,fr){

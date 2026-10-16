@@ -1,5 +1,7 @@
 'use strict';
 const TAU=Math.PI*2;
+/* "reduced effects" (settings.reduceFx, set by App.applySettings): fewer particles, no electric arcs / flame tongues / turning rays, softer glows and flashes, calmer screen shake */
+const FXL={on:false,a:1,m:1};   /* a = the player's "effect opacity" slider (0..1), m = the multiplier in force right now (a while one of the player's own effect layers is drawn, otherwise 1) */
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const rint=(a,b)=>Math.floor(rnd(a,b+1));
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;

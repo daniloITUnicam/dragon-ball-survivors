@@ -127,9 +127,9 @@ class UI{
     const d=this.save,s=d.settings;
     return h('div',{class:'main'},
       h('div',{class:'mtop'},this.patchBtn(),this.cloudMenuBtn()),
-      /* "Work in progress" badge: bounces back and forth on the right of the menu (decorative, never intercepts clicks) */
-      WIP_URL?h('div',{class:'wip','aria-hidden':'true',title:'Work in progress'},h('div',{class:'wipin'},h('img',{src:WIP_URL,alt:'W.I.P.',draggable:'false'}))):null,
-      h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors')),
+      /* the title, with the "Work in progress" badge hopping at its bottom right (decorative, never intercepts clicks) */
+      h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors'),
+        WIP_URL?h('div',{class:'wip','aria-hidden':'true',title:'Work in progress'},h('div',{class:'wipin'},h('img',{src:WIP_URL,alt:'W.I.P.',draggable:'false'}))):null),
       h('div',{class:'menu'},
         this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),
         this.btn('shop',()=>this.push('shop')),

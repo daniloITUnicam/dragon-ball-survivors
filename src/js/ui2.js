@@ -32,11 +32,11 @@ Object.assign(UI.prototype,{
     const apply=()=>{this.app.applySettings();};
     const row=(label,ctl,desc)=>h('div',{class:'srow'},h('div',{class:'sl'},h('b',null,label),desc?h('small',null,desc):null),ctl);
     const toggle=(label,key,desc,cb)=>row(label,h('button',{class:'btn small'+(s[key]?'':' alt'),'data-fid':'t'+key,onclick:()=>{this.sfx();s[key]=!s[key];apply();if(cb)cb();this.rebuild(true);}},s[key]?this.t('on'):this.t('off')),desc);
-    const slider=(label,key,min,max,step,fmt)=>{
+    const slider=(label,key,min,max,step,fmt,desc)=>{
       const out=h('span',{class:'val'},fmt(s[key]));
       const inp=h('input',{type:'range',min,max,step,value:s[key],'data-fid':'s'+key,oninput:()=>{s[key]=+inp.value;out.textContent=fmt(s[key]);apply();}});
       inp.onchange=()=>this.sfx('click');
-      return row(label,h('div',{class:'sld'},inp,out));
+      return row(label,h('div',{class:'sld'},inp,out),desc);
     };
     const select=(label,key,opts)=>{
       const sel=h('select',{'data-fid':'sel'+key,onchange:()=>{s[key]=sel.value;apply();this.rebuild(true);}},opts.map(([v,l])=>h('option',{value:v,selected:s[key]===v},l)));
@@ -65,7 +65,9 @@ Object.assign(UI.prototype,{
     }else if(tab==='video'){
       body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
-        toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps')];
+        toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps'),
+        toggle(this.t('reduceFx'),'reduceFx',this.t('reduceFxDesc')),
+        slider(this.t('fxOpacity'),'fxAlpha',0,100,5,v=>Math.round(v)+'%',this.t('fxOpacityDesc'))];
     }else if(tab==='world'){
       const dn=v=>this.t('dayWord')+' '+Math.round(v)+'% · '+this.t('nightWord')+' '+(100-Math.round(v))+'%';
       body=[toggle(this.t('ambientFx'),'ambient',this.t('ambientFxDesc')),

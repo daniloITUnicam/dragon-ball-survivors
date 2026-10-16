@@ -14,7 +14,11 @@ await pg.screenshot({path:'/tmp/menu_wip.png'});
 /* the badge moves */
 const xs=[],ys=[];for(let i=0;i<8;i++){const r=await ev(()=>{const e=document.querySelector('.wipin');const q=e.getBoundingClientRect();return[q.left,q.top];});xs.push(r[0]);ys.push(r[1]);await wait(450);}
 const rg=a=>Math.max(...a)-Math.min(...a);
-ok(rg(xs)>30&&rg(ys)>8,'the W.I.P. badge bounces back and forth ('+Math.round(rg(xs))+' px horizontally, '+Math.round(rg(ys))+' px vertically)');
+ok(rg(xs)>4&&rg(ys)>8,'the W.I.P. badge sways and hops ('+Math.round(rg(xs))+' px horizontally, '+Math.round(rg(ys))+' px vertically)');
+/* ... and it sits at the bottom right of the title */
+const wl=await ev(()=>{const l=document.querySelector('.logoimg').getBoundingClientRect(),w=document.querySelector('.wip').getBoundingClientRect(),mn=document.querySelector('.menu .btn').getBoundingClientRect();return{lx:(l.left+l.right)/2,ly:(l.top+l.bottom)/2,wx:(w.left+w.right)/2,wy:(w.top+w.bottom)/2,lw:l.width,top:l.top,menuTop:mn.top,h:innerHeight,w:innerWidth,ww:w.width};});
+ok(wl.wx>wl.lx+wl.lw*.2&&wl.wy>wl.ly,'the badge is at the bottom right of the title');
+ok(wl.lw>=Math.min(wl.w*.94,980)*.9&&wl.top<=wl.h*.12,'the title is big and placed high ('+Math.round(wl.lw)+' px wide, top at '+Math.round(wl.top)+' px)');
 /* chars header */
 await ev(()=>{__app.ui.push('chars');});await wait(600);
 const c=await ev(()=>{const el=__app.ui.top.el;const r=[...el.querySelectorAll('.hdr button')].map(x=>x.textContent.trim());return r;});
