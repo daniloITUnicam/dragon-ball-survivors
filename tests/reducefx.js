@@ -89,7 +89,8 @@ const heavy=await pg.evaluate(()=>{const g=G,r=__app.renderer;g.formIdx=5;g.form
   g.balls=0;g.ballSet=[];g.spawnLoot('ball',g.p.x-100,g.p.y-20);
   for(let i=0;i<20;i++){g.burst(g.p.x+rnd(-80,80),g.p.y+rnd(-80,80),30,'#9fe8ff');g.bolt(g.p.x,g.p.y,150,'#ffe066',3);g.pillar(g.p.x,g.p.y,'#fff',1);g.ring(g.p.x,g.p.y,100,'#fff',.5);}
   const time=on=>{FXL.on=on;__app.save.d.settings.reduceFx=on;const t0=performance.now();for(let i=0;i<40;i++){g.update(1/60);g.kai=2;r.draw(g,1/60);}return(performance.now()-t0)/40;};
-  time(false);time(true);const off=time(false),on=time(true);return{off:+off.toFixed(2),on:+on.toFixed(2),elite:g.en.some(e=>e.elite)};});
+  time(false);time(true);const best=on=>{let m=1e9;for(let k=0;k<5;k++)m=Math.min(m,time(on));return m;};   /* best of 5: a timer in a shared container is noisy */
+  const off=best(false),on=best(true);return{off:+off.toFixed(2),on:+on.toFixed(2),elite:g.en.some(e=>e.elite)};});
 console.log('frame ms: normal '+heavy.off+' / reduced '+heavy.on);
 ok(heavy.elite,'elite, kaioken aura, ball and 30 enemies drawn in the reduced mode with no errors');
 ok(heavy.on<=heavy.off*1.15,'the reduced mode is not slower ('+heavy.on+' ms vs '+heavy.off+' ms)');

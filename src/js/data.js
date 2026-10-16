@@ -482,9 +482,14 @@ const STAGES=[
 /* Canonical campaign order (Dragon Ball -> Z -> Super). STAGES keeps its original indices so saves/clears stay valid. */
 const STAGE_ORDER=[5,10,0,6,1,2,7,9,3,8,4];
 const STAGE_DIF=[.2,.6,.5,1,1.5,2,2.5,3,3.7,4.4,5.6];
+/* the last stages of the campaign hold Super Dragon Balls instead of the normal ones */
+const SUPER_STAGES=3;
+STAGE_ORDER.slice(-SUPER_STAGES).forEach(si=>{STAGES[si].sup=true;});
 STAGE_ORDER.forEach((si,p)=>{const st=STAGES[si];st.pos=p;st.no=p+1;st.dif=STAGE_DIF[p];if(p>0)st.req=STAGE_ORDER[p-1];else delete st.req;});
 
 /* ---------- Trinkets ---------- */
+/* Zeno-sama's market value of a trinket by rarity: its price in his shop (before the stage factor), the zenny a duplicate gives back and the base of the sale value */
+const ZENO_PRICE=[80,180,400,800,1600];
 const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0ff'},{n:T('Epico','Epic'),c:'#c05aff'},{n:T('Leggendario','Legendary'),c:'#ffb020'},{n:T('Mitico','Mythic'),c:'#ff3b8a'}];
 const TRINKETS=[
  {id:'scouter',r:0,k:'眼',n:T('Scouter Rotto','Broken Scouter'),d:T('+8% probabilità di critico.','+8% crit chance.'),m:{crit:.08}},
@@ -507,7 +512,16 @@ const TRINKETS=[
  {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 20s i nemici rallentano per 4s.','Every 20s enemies slow for 4s.'),sp:'slowtime'},
  {id:'dragonheart',r:3,k:'龍',n:T('Cuore del Drago','Dragon Heart'),d:T('+12% danno, +8% esperienza, +25% zenny.','+12% damage, +8% XP, +25% zenny.'),m:{might:.12,xp:.08,gold:.25}},
  {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 15s.','A barrier blocks one hit every 15s.'),sp:'barrier'},
- {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.')}
+ {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.')},
+ /* more trinkets with plain stats, so the gacha pool is wider: they exist at every rarity (common .. mythic) like the other stat trinkets */
+ {id:'shell',r:0,k:'亀',n:T('Guscio di Muten Roshi','Master Roshi\'s Shell'),d:T('',''),m:{armor:.7,regen:.3}},
+ {id:'gi',r:0,k:'衣',n:T('Gi da Allenamento Pesante','Heavy Training Gi'),d:T('',''),m:{hpPct:.08}},
+ {id:'weights',r:1,k:'重',n:T('Pesi da Allenamento','Training Weights'),d:T('',''),m:{might:.06,hpPct:.08}},
+ {id:'capsulecard',r:1,k:'札',n:T('Tessera Capsule Corp.','Capsule Corp. Card'),d:T('',''),m:{xp:.10,lootRate:.30}},
+ {id:'medal',r:1,k:'勲',n:T('Medaglia del Torneo','Tournament Medal'),d:T('',''),m:{gold:.15,magnet:.25}},
+ {id:'mask',r:2,k:'面',n:T('Maschera di Jackie Chun','Jackie Chun\'s Mask'),d:T('',''),m:{crit:.06,dodge:.10}},
+ {id:'scroll',r:2,k:'巻',n:T('Pergamena della Tartaruga','Turtle Scroll'),d:T('',''),m:{area:.14,crit:.04}},
+ {id:'belt',r:3,k:'帯',n:T('Cintura del Campione','Champion\'s Belt'),d:T('',''),m:{might:.08,armor:2}}
 ];
 
 /* ---- trinket rarity instances: the same trinket can be found at any rarity (common .. mythic); stats scale with it and are capped per rarity ---- */

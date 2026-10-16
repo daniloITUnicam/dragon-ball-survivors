@@ -23,7 +23,7 @@ const THEMES={
 };
 /* per-theme multiply tint of the rock sprites (grey-green art: plains/beach/arena keep it as drawn) */
 const ROCK_TINT={redrock:'#e0a08a',waste:'#d8c2a4',hell:'#8a6a66'};
-const LOOT_COL={coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
+const LOOT_COL={sball:'#ffd23f',coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
 /* tiny skull (progress-bar milestones): cranium + jaw, dark outline, eye sockets and nose */
 function drawSkull(ctx,x,y,r,col,a){
   ctx.save();ctx.globalAlpha=a==null?1:a;ctx.lineJoin='round';ctx.lineWidth=Math.max(1,r*.3);ctx.strokeStyle='#14080c';ctx.fillStyle=col;
@@ -669,8 +669,31 @@ this.W=1;this.H=1;this.Z=1;
     ctx.restore();
     ctx.globalAlpha=1;
   }
+  /* Super Dragon Ball: a giant ball floating over the ground with a golden aura, a tall column of light, turning rays and slow rings - impossible to miss */
+  drawSuperBall(l){
+    const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,cy=gy-S*.62-10-fl,pulse=.5+.5*Math.sin(t*3.2);
+    ctx.save();ctx.translate(gx,gy);ctx.scale(1,.4);GLOW.at(ctx,0,0,86+8*pulse,'#ffd23f',.5);ctx.restore();
+    ctx.fillStyle='rgba(0,0,0,.34)';ctx.beginPath();ctx.ellipse(gx,gy,26-fl*.5,8-fl*.15,0,0,TAU);ctx.fill();
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    for(const [w,hh,a] of [[40,320,.14],[16,400,.24]]){const gr=ctx.createLinearGradient(0,gy,0,gy-hh);gr.addColorStop(0,'rgba(255,214,90,'+a+')');gr.addColorStop(1,'rgba(255,214,90,0)');ctx.globalAlpha=.65+.35*pulse;ctx.fillStyle=gr;ctx.fillRect(gx-w/2,gy-hh,w,hh);}
+    for(let i=0;i<3;i++){const p=(t*.55+i/3)%1;ctx.globalAlpha=(1-p)*.4;ctx.strokeStyle='#ffe9a8';ctx.lineWidth=1+3*(1-p);ctx.beginPath();ctx.ellipse(gx,gy,18+p*110,(18+p*110)*.38,0,0,TAU);ctx.stroke();}
+    ctx.restore();
+    GLOW.at(ctx,gx,cy,100+12*pulse,'#ffb013',.5);GLOW.at(ctx,gx,cy,54,'#fff3b0',.3+.15*pulse);
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(gx,cy);ctx.rotate(t*.6);ctx.fillStyle='#ffe28a';ctx.globalAlpha=.11+.07*pulse;
+    if(!FXL.on)for(let i=0;i<12;i++){ctx.rotate(TAU/12);ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-(120+14*Math.sin(t*2.4+i)));ctx.lineTo(6,-(120+14*Math.sin(t*2.4+i)));ctx.closePath();ctx.fill();}
+    ctx.restore();
+    const pop=Math.min(1,.4+t*3);
+    if(im){ctx.save();ctx.translate(gx,cy);ctx.scale(pop,pop);ctx.imageSmoothingEnabled=true;ctx.drawImage(im,(star-1)*64,0,64,64,-S/2,-S/2,S,S);
+      ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.16+.16*pulse;ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.arc(0,0,S*.47,0,TAU);ctx.fill();ctx.restore();}
+    else{ctx.save();ctx.translate(gx,cy);ctx.scale(pop,pop);const g2=ctx.createRadialGradient(-S*.15,-S*.2,4,0,0,S*.5);g2.addColorStop(0,'#fff0b8');g2.addColorStop(.5,'#ffae1c');g2.addColorStop(1,'#a85a00');ctx.fillStyle=g2;ctx.beginPath();ctx.arc(0,0,S*.47,0,TAU);ctx.fill();
+      ctx.fillStyle='#d22';for(let i=0;i<star;i++){const a=i/star*TAU+t*.4,r=star>1?S*.2:0;ctx.beginPath();ctx.arc(Math.cos(a)*r,Math.sin(a)*r,S*.06,0,TAU);ctx.fill();}ctx.restore();}
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle='#fff6c4';
+    for(let i=0;i<(FXL.on?3:8);i++){const a=t*1.4+i*TAU/8,R=56+6*Math.sin(t*2+i),px=gx+Math.cos(a)*R,py=cy+Math.sin(a)*R*.7,tw=.5+.5*Math.sin(t*6+i*2.1),z=2+4*tw;ctx.globalAlpha=.25+.7*tw;ctx.fillRect(px-z,py-.8,z*2,1.6);ctx.fillRect(px-.8,py-z,1.6,z*2);}
+    ctx.restore();ctx.globalAlpha=1;
+  }
   drawLoot(l,t){
     if(l.k==='ball'){const im=this.ballSheet();if(im){this.drawBall(l,im);return;}}
+    if(l.k==='sball'){this.drawSuperBall(l);return;}
     const ctx=this.ctx,T0=l.t,ph=(l.x*.13+l.y*.07)%TAU;
     /* drop animation: the item pops out with a little hop and a squash, then floats with a gentle bob */
     const pk=Math.min(1,T0/.45),hop=pk<1?Math.sin(pk*Math.PI)*16:0,pop=pk<1?(.35+.65*(1+2.2*Math.pow(pk-1,3)+1.2*Math.pow(pk-1,2))):1;
@@ -1009,6 +1032,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='#7a4e0c';ctx.beginPath();ctx.arc(cx0,cy0,cr,0,TAU);ctx.fill();ctx.fillStyle='#f2b51c';ctx.beginPath();ctx.arc(cx0,cy0,cr*.84,0,TAU);ctx.fill();
       ctx.strokeStyle='#7a4e0c';ctx.lineWidth=1.6*U;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx0-cr*.38,cy0-cr*.38);ctx.lineTo(cx0+cr*.38,cy0-cr*.38);ctx.lineTo(cx0-cr*.38,cy0+cr*.38);ctx.lineTo(cx0+cr*.38,cy0+cr*.38);ctx.stroke();}
     let by=70*U;
+    {const tk=g.run.tk||{},tn=(tk.t1||0)+(tk.t10||0)+(tk.l10||0);if(tn>0){txt(tt('hudTickets',{n:(tk.t1||0)+(tk.t10||0)*10+(tk.l10||0)*10}),W-m,by-2*U,'#ffd7f0','right',F(12));by+=16*U;}}
     if(g.streak>=5){                                    /* kill streak: counter that pops on every kill + a bar that drains until the streak breaks */
       const sc=g.streak,col=sc>=500?'#d86bff':sc>=200?'#ff5a3d':sc>=100?'#ff7b4a':sc>=50?'#ffb13b':'#ffe24d',pop=1+Math.min(.4,Math.max(0,g.streakPop)*1.6),bw=74*U;
       txt(tr(T('SERIE','STREAK')),W-m,by,'#ffe7c0','right',F(11,800));
@@ -1028,7 +1052,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.slowT>0){txt(tt('buffSlow'),W-m,by,'#9fe8ff','right',F(12));by+=16*U;}
     if(g.x2)txt('x2',W-m,by+4*U,'#ff7ad0','right',F(16,900));
     /* dragon balls: tiny, bottom-right */
-    {const sh=this.ballSheet(),own=g.ballOwned?g.ballOwned():null,all7=g.balls>=7,sz=15*U;
+    {const sh=this.ballSheet(),own=g.ballOwned?g.ballOwned():null,all7=own?own.size>=7:g.balls>=7,sz=15*U;
       for(let i=0;i<7;i++){const x=W-m-(6-i)*16.5*U-sz/2,y=H-m-sz/2-U,on=own?own.has(i+1):i<g.balls;
         if(sh){
           ctx.fillStyle='rgba(0,0,0,.4)';ctx.beginPath();ctx.arc(x,y,sz*.5,0,TAU);ctx.fill();
@@ -1051,7 +1075,7 @@ this.W=1;this.H=1;this.Z=1;
     /* beacons for off-screen map items */
     const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':'#ffd23f']);
     for(const c of g.chests)tgts.push([c.x,c.y,'#ffd23f']);
-    for(const l of g.loot)if(l.k==='ball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
+    for(const l of g.loot)if(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;
       if(sxp>20&&sxp<W-20&&syp>20&&syp<H-20)continue;

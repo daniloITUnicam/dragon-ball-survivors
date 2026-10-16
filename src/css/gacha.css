@@ -1,0 +1,148 @@
+/* ====== Gacha shop, summon animation, trinket bag and trinket slot ====== */
+.gball{display:inline-block;flex:none;width:var(--z,48px);height:var(--z,48px);background-repeat:no-repeat;background-size:calc(var(--z,48px)*7) var(--z,48px);background-position:calc(var(--z,48px)*(1 - var(--n,1))) 0;image-rendering:auto;vertical-align:middle}
+.gball.nosheet{border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a8,#ff9d1c 55%,#b85f00);color:#d22;font-size:calc(var(--z,48px)*.3);line-height:var(--z,48px);text-align:center;font-style:normal}
+
+/* ---- shop screen ---- */
+.gsrc{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:1100px}
+.gtop{position:relative;width:100%;border:3px solid var(--ink2);border-radius:14px;background:radial-gradient(ellipse at 50% 120%,rgba(255,157,28,.35),rgba(19,43,70,.9) 65%),var(--panel);padding:18px 12px 14px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.gtop h3{font-size:clamp(26px,5vw,44px);color:var(--gold);text-shadow:3px 3px 0 var(--orange-d);margin:0}
+.gtop .orbit{position:relative;width:min(360px,80vw);height:84px;margin:2px 0}
+.gtop .orbit .gball{position:absolute;left:calc(50% - var(--z)/2 + var(--dx));top:calc(50% - var(--z)/2 + var(--dy));animation:gbob 2.6s ease-in-out infinite;animation-delay:var(--dl);filter:drop-shadow(0 0 8px rgba(255,170,40,.8))}
+@keyframes gbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.gtk{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;width:100%}
+.tkcard{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;border:3px solid var(--ink2);border-radius:12px;background:var(--panel);text-align:center}
+.tkcard.l10{border-color:#ff9ad0;background:linear-gradient(160deg,rgba(255,120,200,.16),var(--panel) 70%)}
+.tkcard .cd{min-height:34px}
+.tkimg{position:relative;width:150px;height:72px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:34px;color:#2a1200;background:linear-gradient(135deg,#ffe08a,#ff9d1c);box-shadow:0 4px 0 rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.35);-webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat;mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat}
+.tkimg small{position:absolute;bottom:4px;left:0;right:0;font:700 11px var(--body);letter-spacing:.22em;opacity:.7}
+.tkcard.t10 .tkimg{background:linear-gradient(135deg,#fff3b0,#ffc83a 50%,#ff9d1c)}
+.tkcard.l10 .tkimg{background:linear-gradient(115deg,#ff7ad0,#ffd23f 35%,#7ad0ff 70%,#c05aff);background-size:200% 100%;animation:gshine 3s linear infinite}
+@keyframes gshine{to{background-position:200% 0}}
+.tkcount{font-family:var(--display);font-size:30px;color:var(--gold);line-height:1}
+.gtools{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.grates{width:100%;border:2px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2);padding:8px 14px}
+.grates summary{cursor:pointer;font-weight:700;color:var(--mute)}
+.grates table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+.grates td,.grates th{padding:4px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.08)}
+.grates th:first-child,.grates td:first-child{text-align:left}
+.grates td:first-child{font-weight:700}
+.gnote{color:var(--mute);font-size:13px;text-align:center;max-width:700px}
+
+/* ---- the summon overlay ---- */
+.gov{position:fixed;inset:0;z-index:30;pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;background:radial-gradient(ellipse at 50% 55%,rgba(58,28,98,.96),rgba(4,6,16,.99) 78%);overflow:hidden;--z:128px}
+.gov.n10{--z:84px}
+.gov.fast *{animation-duration:.01s!important;animation-delay:0s!important;transition-duration:0s!important}
+.gov .gtitle{font-family:var(--display);font-size:clamp(20px,4vw,32px);color:var(--gold);text-shadow:2px 2px 0 var(--orange-d);letter-spacing:.06em;text-align:center}
+.gov .greels{display:grid;gap:12px;justify-content:center}
+.gov.n1 .greels{grid-template-columns:var(--z)}
+.gov.n10 .greels{grid-template-columns:repeat(5,var(--z))}
+.greel{position:relative;width:var(--z);height:var(--z);border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 40%,#2c2250,#0c0a1e 80%);border:3px solid rgba(255,255,255,.22);box-shadow:inset 0 0 20px rgba(0,0,0,.7),0 0 0 rgba(255,255,255,0)}
+.greel::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.65),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 78%,rgba(0,0,0,.65));pointer-events:none}
+.gstrip{display:flex;flex-direction:column;will-change:transform;transform:translateY(0)}
+.gstrip .gball{margin:0}
+.greel.stop{border-color:var(--c);animation:gstop .5s ease-out}
+.greel.stop.r0{--c:#b8c4d0;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 0 10px rgba(184,196,208,.3)}
+.greel.stop.r1{--c:#4ab0ff;box-shadow:inset 0 0 14px rgba(0,0,0,.5),0 0 22px rgba(74,176,255,.65)}
+.greel.stop.r2{--c:#c05aff;box-shadow:inset 0 0 14px rgba(0,0,0,.5),0 0 32px rgba(192,90,255,.85)}
+.greel.stop.r3{--c:#ffb020;box-shadow:inset 0 0 14px rgba(0,0,0,.4),0 0 44px rgba(255,176,32,.95),0 0 90px rgba(255,176,32,.5);animation:gstop .5s ease-out,gpulse 1.1s ease-in-out infinite .5s}
+.greel.stop.r4{--c:#ff3b8a;box-shadow:inset 0 0 14px rgba(0,0,0,.4),0 0 54px rgba(255,59,138,1),0 0 120px rgba(255,59,138,.7);animation:gstop .5s ease-out,gpulse .7s ease-in-out infinite .5s}
+@keyframes gstop{0%{transform:scale(1.18)}60%{transform:scale(.95)}100%{transform:scale(1)}}
+@keyframes gpulse{50%{filter:brightness(1.35)}}
+.gspark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--c,#fff);box-shadow:0 0 8px var(--c,#fff);pointer-events:none;animation:gspark .9s ease-out forwards}
+@keyframes gspark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(.2);opacity:0}}
+.gskip{position:absolute;right:14px;bottom:14px;z-index:6;opacity:.8}
+
+/* the cards that pop in */
+.gov .gcards{display:grid;gap:10px;justify-content:center;width:100%;max-width:1040px}
+.gov.n1 .gcards{grid-template-columns:minmax(0,340px)}
+.gov.n10 .gcards{grid-template-columns:repeat(5,minmax(0,1fr))}
+.gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px 9px;border-radius:12px;border:3px solid var(--c);background:linear-gradient(170deg,rgba(255,255,255,.1),rgba(10,8,24,.92) 55%);text-align:center;opacity:0;animation:gpop .5s cubic-bezier(.2,1.7,.4,1) forwards;overflow:hidden}
+.gcard .glyph{font-size:34px;width:auto}
+.gov.n1 .gcard .glyph{font-size:58px}
+.gcard .cn{font-size:15px;line-height:1.1}
+.gov.n1 .gcard .cn{font-size:22px}
+.gcard .ctag{font:700 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+.gcard .cd{font-size:12px;line-height:1.25;min-height:30px}
+.gov.n1 .gcard .cd{font-size:14px}
+.gcard .gnew{font:800 11px var(--body);letter-spacing:.08em;padding:2px 8px;border-radius:99px;background:#2a8f3e;color:#eaffea}
+.gcard .gdup{font:800 11px var(--body);letter-spacing:.04em;padding:2px 8px;border-radius:99px;background:#4a566e;color:#fff}
+.gcard.r0{box-shadow:0 0 0 rgba(0,0,0,0)}
+.gcard.r1{box-shadow:0 0 14px rgba(74,176,255,.5)}
+.gcard.r2{box-shadow:0 0 22px rgba(192,90,255,.7)}
+.gcard.r3{box-shadow:0 0 30px rgba(255,176,32,.9);animation:gpop .5s cubic-bezier(.2,1.7,.4,1) forwards,gpulse 1.3s ease-in-out infinite .6s}
+.gcard.r4{box-shadow:0 0 40px rgba(255,59,138,1),0 0 90px rgba(255,59,138,.5);animation:gpop .6s cubic-bezier(.2,1.7,.4,1) forwards,gpulse .8s ease-in-out infinite .7s}
+.gcard.r3::before,.gcard.r4::before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,rgba(255,255,255,0),rgba(255,255,255,.13),rgba(255,255,255,0) 22%,rgba(255,255,255,0) 50%,rgba(255,255,255,.1),rgba(255,255,255,0) 72%);animation:grot 3.4s linear infinite;pointer-events:none}
+@keyframes gpop{0%{opacity:0;transform:scale(.15) rotate(-10deg)}55%{opacity:1;transform:scale(1.14) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes grot{to{transform:rotate(360deg)}}
+.gsum{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;font-weight:700}
+.gsum .good{margin:0}
+
+/* Mythic jackpot / Legendary banner, in the spirit of a summon screen: burst of rays, flash, big slanted lettering with a shine */
+.gjack{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+.gjack .grays{position:absolute;left:50%;top:50%;width:260vmax;height:260vmax;margin:-130vmax 0 0 -130vmax;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.0) 0deg 7deg,rgba(255,200,240,.24) 7deg 12deg);-webkit-mask:radial-gradient(circle,#000 4%,transparent 30%);mask:radial-gradient(circle,#000 4%,transparent 30%);animation:grot 9s linear infinite,graysin .7s ease-out}
+.gjack.leg .grays{background:repeating-conic-gradient(from 0deg,rgba(255,255,255,0) 0deg 7deg,rgba(255,220,120,.22) 7deg 12deg)}
+@keyframes graysin{from{opacity:0;transform:scale(.2)}}
+.gjack .gflash{position:absolute;inset:0;background:#fff;animation:gflash 1.3s ease-out forwards}
+@keyframes gflash{0%{opacity:0}8%{opacity:.95}100%{opacity:0}}
+.gjack .gbanner{position:relative;font-family:var(--display);font-size:clamp(54px,15vw,170px);line-height:.95;letter-spacing:.03em;font-style:italic;transform:skewX(-8deg);color:transparent;background-image:linear-gradient(100deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.95) 50%,rgba(255,255,255,0) 62%),linear-gradient(180deg,#fff 0%,#ffe9f6 30%,#ff7ac8 55%,#c02a8a 100%);background-size:250% 100%,100% 100%;background-position:150% 0,0 0;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:4px #3a0a30;paint-order:stroke fill;filter:drop-shadow(0 0 22px rgba(255,59,138,.95)) drop-shadow(6px 8px 0 rgba(30,0,25,.8));animation:gbanner .9s cubic-bezier(.2,1.5,.3,1) both,gsweep 1.6s ease-in-out .5s infinite}
+.gjack.leg .gbanner{background-image:linear-gradient(100deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.95) 50%,rgba(255,255,255,0) 62%),linear-gradient(180deg,#fff 0%,#fff2b0 30%,#ffb020 58%,#b86a00 100%);-webkit-text-stroke:4px #3a2000;filter:drop-shadow(0 0 22px rgba(255,176,32,.95)) drop-shadow(6px 8px 0 rgba(30,15,0,.8))}
+@keyframes gbanner{0%{opacity:0;transform:skewX(-8deg) scale(3.4);filter:blur(14px)}60%{opacity:1;transform:skewX(-8deg) scale(.92)}100%{opacity:1;transform:skewX(-8deg) scale(1)}}
+@keyframes gsweep{from{background-position:150% 0,0 0}to{background-position:-100% 0,0 0}}
+.gjack .gsub{position:relative;margin-top:8px;font-family:var(--display);font-size:clamp(20px,4vw,38px);color:#fff;letter-spacing:.14em;text-shadow:0 0 14px rgba(255,59,138,.95),3px 3px 0 #3a0a30;animation:gbanner 1s cubic-bezier(.2,1.5,.3,1) .25s both}
+.gjack.leg .gsub{text-shadow:0 0 14px rgba(255,176,32,.95),3px 3px 0 #3a2000}
+.gjack .gstar{position:absolute;color:#fff;font-size:var(--s);left:var(--x);top:var(--y);text-shadow:0 0 12px var(--c,#ff7ac8);animation:gtw 1.2s ease-in-out infinite;animation-delay:var(--d);opacity:0}
+@keyframes gtw{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(90deg)}}
+.gov.shake{animation:gshake .5s}
+@keyframes gshake{0%,100%{transform:translate(0)}20%{transform:translate(-7px,4px)}40%{transform:translate(6px,-5px)}60%{transform:translate(-4px,-3px)}80%{transform:translate(4px,3px)}}
+
+/* ---- trinket cards (bag) ---- */
+.bagsplit{display:flex;gap:14px;width:100%;max-width:1100px;align-items:flex-start;flex-wrap:wrap}
+.baggrid{flex:1 1 440px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tcard{position:relative;display:flex;gap:8px;align-items:center;padding:9px 10px;border:3px solid var(--c);border-radius:10px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 14%,transparent),var(--panel) 70%);color:var(--ink);font-family:var(--body);text-align:left;cursor:pointer;min-width:0}
+.tcard .glyph{font-size:30px;width:38px}
+.tcard .col{min-width:0;gap:1px}
+.tcard .cn{font-size:14px;line-height:1.1}
+.tcard .ctag{font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--c)}
+.tcard .cd{font-size:12px;line-height:1.25}
+.tcard:hover,.tcard:focus-visible{filter:brightness(1.15)}
+.tcard.sel{box-shadow:0 0 0 3px #fff,0 0 18px var(--c)}
+.tcard.eq::after{content:"✓";position:absolute;top:3px;right:6px;font-weight:900;color:#9affb0}
+.tcard.r3{box-shadow:0 0 12px rgba(255,176,32,.4)}.tcard.r4{box-shadow:0 0 16px rgba(255,59,138,.55)}
+.tcard.r3.sel,.tcard.r4.sel{box-shadow:0 0 0 3px #fff,0 0 22px var(--c)}
+.bagdet{flex:0 1 320px;position:sticky;top:0;border:3px solid var(--c,var(--line));border-radius:12px;background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;align-items:flex-start}
+.bagdet .glyph{font-size:62px;width:auto;align-self:center}
+.bagdet .cn{font-size:22px}
+.bagdet .ctag{font:700 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+.bagdet .stl{display:flex;flex-direction:column;gap:3px;font-weight:700}
+.bagdet .btn{align-self:stretch}
+.rchips{display:flex;gap:6px;flex-wrap:wrap}
+.rchip{font:700 12px var(--body);padding:5px 10px;border-radius:99px;border:2px solid var(--c);background:transparent;color:var(--c);cursor:pointer;opacity:.5}
+.rchip.on{background:color-mix(in srgb,var(--c) 22%,transparent);opacity:1}
+.bagsort{padding:7px 10px;border-radius:9px;border:2px solid rgba(255,255,255,.18);background:rgba(8,14,30,.7);color:#fff;font:600 14px var(--body)}
+
+/* ---- trinket slot in the character screen ---- */
+.tslotwrap{display:flex;flex-direction:column;align-items:center;gap:4px;align-self:center}
+.tslot{position:relative;width:78px;height:78px;border:3px dashed var(--line);border-radius:12px;background:rgba(0,0,0,.25);color:var(--mute);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-family:var(--body);padding:2px}
+.tslot:hover,.tslot:focus-visible{border-color:var(--orange);color:var(--ink)}
+.tslot .tplus{font-family:var(--display);font-size:44px;line-height:1}
+.tslot.on{border-style:solid;border-color:var(--c);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 22%,transparent),rgba(0,0,0,.35));box-shadow:0 0 14px color-mix(in srgb,var(--c) 70%,transparent)}
+.tslot .glyph{font-size:34px;width:auto}
+.tslot .tsn{font-size:10px;line-height:1.05;text-align:center;max-width:70px;overflow:hidden;color:var(--ink)}
+.tslotwrap .unq{font-size:11px;padding:2px 8px}
+
+/* ---- Super Shenron ---- */
+.card.stage.superc{background:linear-gradient(160deg,#4a2c00,#1a1000 80%);border-color:var(--gold);box-shadow:0 0 22px rgba(255,210,63,.55);animation:gpulse 2s ease-in-out infinite}
+.sballs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.sballs .gball{filter:drop-shadow(0 0 10px rgba(255,210,63,.95))}
+.sballs .gball.off{filter:grayscale(1) brightness(.4);opacity:.7}
+.supbox{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px}
+.supbox .card{flex:1 1 280px;min-height:170px}
+.claimbar{width:100%;max-width:1100px;background:rgba(255,210,63,.12);border:2px solid var(--gold);border-radius:10px;padding:8px 12px;text-align:center;font-weight:700;color:var(--gold)}
+
+@media (max-width:700px){
+  .gov.n10{--z:58px}.gov.n10 .greels{grid-template-columns:repeat(5,var(--z));gap:8px}
+  .gov.n10 .gcards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gov{--z:104px}
+  .gcard .cd{min-height:0}
+  .bagdet{flex:1 1 100%;position:static}
+}

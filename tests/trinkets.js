@@ -43,12 +43,12 @@ ok(dom.tswap&&dom.cols===2&&/replaced|sostituit/i.test(dom.warn||''),'window sho
 await pg.screenshot({path:'/tmp/tswap.png'});
 const r3=await pg.evaluate(()=>{const g=G,o={};__app.resolveModal(1);o.keep=g.trinkets.join();o.unsold=!__it.sold;o.coinsKept=g.run.coins===__c0;
  step(5);o.noReopen=!g.modal;
- g.trial.lock=null;g.zenoBuy(__it);__app.resolveModal(0);o.replaced=g.trinkets.join()===__it.id&&g.trR(__it.id)===__it.rar;o.paid=__c0-g.run.coins===__it.price;o.sold=__it.sold;
+ g.trial.lock=null;const oldSale=trinketSale(g.trR(g.trinkets[0]),g.sd);g.zenoBuy(__it);__app.resolveModal(0);o.replaced=g.trinkets.join()===__it.id&&g.trR(__it.id)===__it.rar;o.paid=__c0-g.run.coins===__it.price-oldSale;   /* the trinket it replaces was found in the run, so it is sold */o.sold=__it.sold;
  g.endZeno();
  /* training room: regen still works, abilities still off */
  g.p.hp=5;g.startTrial();const a=g.useAbility();step(120);o.trainRegen=g.p.hp>5;o.trainAbility=a;
  return o;});
 ok(r3.keep==='boots'&&r3.unsold&&r3.coinsKept&&r3.noReopen,'keeping the current trinket costs nothing and does not re-ask while standing on it');
-ok(r3.replaced&&r3.paid&&r3.sold,'replacing swaps the trinket (with its rarity) and charges the price');
+ok(r3.replaced&&r3.paid&&r3.sold,'replacing swaps the trinket (with its rarity), charges the price and sells the old one');
 ok(r3.trainRegen&&!r3.trainAbility,'training room: abilities off but passive regeneration stays');
 console.log(errs.length?errs.slice(0,4):'no errors');await b.close();process.exit(errs.length||process.exitCode?1:0);})();

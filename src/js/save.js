@@ -11,6 +11,7 @@ class SaveData{
     return{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
+      tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,sball:[],gacha:{pulls:0,mythics:0,legend:0},
       diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false},
@@ -36,6 +37,11 @@ class SaveData{
     delete d.shop.dash;if(d.testBuys)delete d.testBuys.dash;
     for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
     for(const k of['clears','x2'])while(d[k].length<STAGES.length)d[k].push(0);
+    /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..7 without repeats */
+    for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
+    {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok)seen.add(b.id+'@'+b.r);return ok;});
+      if(d.equip&&!seen.has(d.equip.id+'@'+d.equip.r))d.equip=null;
+      d.sball=[...new Set((Array.isArray(d.sball)?d.sball:[]).filter(n=>n>=1&&n<=7))];}
     return d;
   }
   write(){
@@ -127,11 +133,12 @@ class Progress{
     st.zeno=(st.zeno||0)+(g.run.zeno||0)-(b.zeno||0);st.zbuys=(st.zbuys||0)+(g.run.zbuy||0)-(b.zbuy||0);
     {const rc=st.rec||(st.rec={});for(const [k,v] of Object.entries({evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary,bosses:g.run.bossKills,coins:g.run.coins,mythic:g.run.mythic||0,k20:g.run.k20||0,streak:g.run.streak||0}))rc[k]=Math.max(rc[k]||0,v||0);}
     st.zenny+=total;d.zenny+=total;
+    const tks={};for(const k of TICKET_KINDS){const n=(g.run.tk[k]||0)-((b.tk&&b.tk[k])||0);if(n>0){d.tickets[k]+=n;tks[k]=n;}}   /* the tickets found in the run */
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
     if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
-    g.bank={kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};
+    g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};
     if(g.diffId!=='easy')for(const id of g.C.start){
       if((win||g.lvl>=50)&&!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}
     }
@@ -143,7 +150,7 @@ class Progress{
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins};
+    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);
@@ -167,7 +174,11 @@ class Progress{
   revertTest(){
     let n=0;const tb=this.d.testBuys||{};
     for(const id of Object.keys(tb)){const k=Math.min(tb[id],this.d.shop[id]||0);n+=k;const v=(this.d.shop[id]||0)-k;if(v>0)this.d.shop[id]=v;else delete this.d.shop[id];}
-    this.d.testBuys={};this.save.write();return n;
+    this.d.testBuys={};
+    /* trinkets pulled for free in Test mode go back too (and the slot empties if it held one) */
+    const nb=this.d.bag.length;this.d.bag=this.d.bag.filter(b=>!b.t);n+=nb-this.d.bag.length;
+    if(this.d.equip&&!this.d.bag.some(b=>b.id===this.d.equip.id&&b.r===this.d.equip.r))this.d.equip=null;
+    this.save.write();return n;
   }
   refundAll(){
     let sum=0;

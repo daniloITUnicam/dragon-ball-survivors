@@ -49,6 +49,28 @@ All keys can be rebound in **Settings → Controls**.
 
 ### 🆕 October 2026 update (v35 → v40)
 
+**🎰 Gacha, Trinket bag and Super Dragon Balls (latest additions)**
+- **Gacha** (button on the main menu, `src/js/gacha.js` + `src/js/ui_gacha.js`): the **tickets** you find in runs are spent to pull **trinkets**. Three kinds: **1× Ticket** (1 pull), **10× Ticket** (10) and **10× Lucky Ticket** (10 with better odds). A pull rolls the **rarity** first and then one of the trinkets of that rarity (adding trinkets never makes Mythics rarer).
+
+| Rarity | Normal tickets | 10× Lucky Ticket | Market value (duplicate) | Sale in a run (stage 1) |
+|---|---|---|---|---|
+| Common | 72% | 45% | 80 | 80 + 20 = 100 |
+| Rare | 20% | 32% | 180 | 180 + 50 = 230 |
+| Epic | 6% | 15% | 400 | 400 + 150 = 550 |
+| Legendary | 1.5% | 6% | 800 | 800 + 400 = 1200 |
+| Mythic | 0.5% | 2% | 1600 | 1600 + 1000 = 2600 |
+
+- **Animated pull**: a column of Dragon Balls spins and stops on the ball of the rarity (1, 2, 3, 5 or 7 stars: more stars, more sparks and higher sounds). **Legendary**: golden lettering. **Mythic**: flash, rays, a shaking screen, "MYTHIC!" lettering and a **jackpot sound** (`gMythic` in `audio.js`). With 10 pulls the trinkets show up one after the other with a pop-in and a sound; "Skip" shows everything at once. Each card is marked **NEW** or **DUPLICATE** (a duplicate pays Zeno-sama's market value in zenny).
+- **Trinket bag** (from the Gacha and from the character screen): every trinket you obtained, with a rarity filter, **search by name or effect**, and sorting by date obtained (newest/oldest), rarity or name. One entry per trinket + rarity pair.
+- **Trinket slot** in the character screen (right of the sprite): the **+** opens the Bag and the trinket you pick starts with you in every run (**just one**, at the rarity you obtained it, and it does not count as a "found trinket" for the achievements). If you replace it during a run, the one in the Bag stays yours.
+- **Trinkets found in a run = sold**: when you replace them, decline them or at the end of the run you receive Zeno-sama's market value (+30% per stage difficulty level, `trinketSale`) plus a rarity bonus (+20 / +50 / +150 / +400 / **+1000** for a Mythic). It does not happen in Zeno-sama's shop or with the Bag's trinket.
+- **8 new stat-only trinkets** (Master Roshi's Shell, Heavy Training Gi, Training Weights, Capsule Corp. Card, Tournament Medal, Jackie Chun's Mask, Turtle Scroll, Champion's Belt): they exist at every rarity (tiny stats on Commons, maximum on Mythics, with the `TCAP` caps). The pool holds 29 trinkets, 22-25 per rarity.
+- **Ticket sources**: every **Elite** → 1× Ticket; every **boss** → 20% for a 10× Ticket; the fourth Dragon Ball wish, **"10 Tickets"** → a 10× Ticket. Tickets are saved when the run ends (also on a defeat, only once even with "Continue") and listed on the end screen; a counter shows in the in-run interface.
+- **Super Dragon Balls** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): in the **last 3 stages** (Buu's Dimension, Realm of the Gods, Tournament of Power) the normal Dragon Balls no longer appear. In **55%** of the runs, between 28% and 55% of the run time, a **giant ball with a golden glow** drops 520-700 px away (golden arrow at the screen edge), **guarded** by a ring of 16 enemies (+3 per difficulty level, +30% HP) when you get within 340 px. There are 7 (1-7 stars), saved in `save.sball`, and they **stay between runs**.
+- **Super Shenron**: with all 7 Super Balls the special scenario shows up as the first card of the stage menu, where the 7 are used up for a **10× Lucky Ticket** (takes you to the Gacha) or to **unlock a character of your choice for free** (takes you to the character screen, where "Get it free" replaces the purchase).
+- **Test mode**: free, unlimited pulls; the trinkets you get disappear when you turn it off. **Save**: `deepMerge` fixed (a `null` default, like the Trinket slot, can no longer make loading fail).
+- **🧪 Added tests:** `gacha` (odds over 300,000 pulls, tickets, duplicates, bag, slot, in-run sale, ticket sources, Super Balls, Super Shenron and all the screens).
+
 **🔄 Automatic updates and patch notes (latest additions)**
 - **No run is lost when a new version is released.** `build.py` stamps every build with an *id* (a hash of everything in the page) and writes `dist/version.json`; the GitHub Pages workflow publishes it next to `index.html`. The game reads it (never cached) a few seconds after start, then every minute and when the tab comes back to the foreground. When the id differs a **giant notice with a 10 second countdown** appears (the run keeps going, the notice never blocks clicks); at zero the **run in progress ends keeping EVERY coin** (no 25% defeat penalty), the cloud save is flushed and the **page reloads itself**. In the menus the notice is the same but there is no run to end.
 - Safety nets: it does nothing on `file://`, when `version.json` is missing or in a preview; after two useless reloads (stale CDN copy) it stops insisting until you reload by hand; the `?u=` cache-buster is removed from the address bar.
@@ -458,6 +480,7 @@ docs/screens/         screenshots used in this README
 
 ```bash
 node tests/check_i18n.js      # translations in all languages
+node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Super Balls (puppeteer)
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk
 node tests/totem.js           # one-time totem + 8 powers

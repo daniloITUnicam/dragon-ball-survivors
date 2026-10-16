@@ -274,7 +274,7 @@ class AudioSys{
   }
   sfx(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
     const T=(f,d,ty,v,s)=>this.tone(f,d,ty,v,s);
@@ -367,6 +367,25 @@ class AudioSys{
         this.toneAt(196,.11,'square',.14,0,0);this.toneAt(147,.22,'square',.14,-20,.11);this.toneAt(98,.3,'sawtooth',.07,0,.05);break;
       case'uiTab':this.toneAt(988,.05,'square',.11,0,0);this.toneAt(1480,.12,'square',.1,0,.045);this.toneAt(494,.08,'triangle',.07,0,0);break;
       case'ach':[659,784,988,1318].forEach((f,i)=>setTimeout(()=>T(f,.18,'triangle',.05),i*90));break;
+      /* ---- gacha: the reel ticks, a ball lands (the higher the rarity, the bigger the sound), the card pops in, and the Mythic jackpot ---- */
+      case'ticket':[1319,1568,2093,2637].forEach((f,i)=>this.toneAt(f,.12,'square',.05,0,i*.05));this.toneAt(3136,.3,'sine',.04,0,.2);this.noise(.15,.04,12000,5000,.15);break;
+      case'gTick':this.toneAt(1300+Math.random()*700,.03,'square',.045,0,0);break;
+      case'gStop0':this.thump(.09,130,.14);this.toneAt(660,.12,'triangle',.05,0,.02);break;
+      case'gStop1':this.thump(.12,120,.18);[880,1175].forEach((f,i)=>this.toneAt(f,.16,'sine',.055,0,.03+i*.07));break;
+      case'gStop2':this.thump(.16,100,.24);[784,988,1175,1568].forEach((f,i)=>this.toneAt(f,.18,'square',.045,0,.03+i*.06));this.noise(.3,.05,11000,3000,.12);break;
+      case'gStop3':this.thump(.22,85,.4);this.zap(300,2200,.35,.06);[523,659,784,1046,1318,1568].forEach((f,i)=>{this.toneAt(f,.3,'square',.04,0,.12+i*.045);this.toneAt(f/2,.3,'triangle',.04,0,.12+i*.045);});this.noise(.6,.09,12000,1500,.1);this.elec(.4,.05,.1,90,0);break;
+      case'gPop0':this.toneAt(420,.07,'square',.04,260,0);break;
+      case'gPop1':this.toneAt(560,.08,'square',.045,330,0);this.toneAt(1120,.09,'sine',.03,0,.03);break;
+      case'gPop2':this.toneAt(700,.09,'square',.05,400,0);[1320,1760].forEach((f,i)=>this.toneAt(f,.12,'sine',.035,0,.04+i*.05));break;
+      case'gPop3':this.toneAt(820,.1,'square',.055,500,0);[1046,1568,2093].forEach((f,i)=>this.toneAt(f,.16,'triangle',.05,0,.03+i*.045));this.noise(.18,.05,12000,4000,.05);break;
+      case'gPop4':this.thump(.2,90,.3);[1046,1318,1568,2093,2637].forEach((f,i)=>this.toneAt(f,.22,'square',.05,0,i*.04));this.noise(.4,.08,12000,2500,.05);break;
+      case'gMythic':
+        /* jackpot: a rising sweep, two hammer hits, a cascade of coins and a long bright chord */
+        this.wind(1.0,.1,300,5200,0,1.2);this.zap(120,2600,.9,.07);this.elec(.9,.07,0,90,70);
+        this.thump(.34,70,.9,.85);this.thump(.26,110,.5,.98);this.noise(1.2,.26,12000,200,.85);
+        for(let i=0;i<22;i++)this.toneAt(1046*Math.pow(1.0595,Math.min(24,i*1.2)|0),.07,'square',.04,0,1.0+i*.045);
+        [523,659,784,1046,1318,1568,2093].forEach((f,i)=>{this.toneAt(f,1.7,'sawtooth',.03,0,.9+i*.03);this.toneAt(f*2,1.4,'sine',.03,0,.9+i*.03);});
+        this.toneAt(3136,.9,'sine',.04,0,1.1);this.noise(.7,.08,12000,4000,1.0);break;
     }
   }
 }

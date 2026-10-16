@@ -15,7 +15,7 @@ const fmtT=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart
 const fmtN=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e4?(n/1e3).toFixed(1)+'k':String(Math.floor(n));
 function deepMerge(base,over){
   if(over===undefined||over===null)return base;
-  if(Array.isArray(base)||typeof base!=='object')return over;
+  if(base===null||Array.isArray(base)||typeof base!=='object')return over;   /* a null default (the equipped trinket) takes whatever was stored */
   const o={...base};
   for(const k in over)o[k]=(k in base&&typeof base[k]==='object'&&!Array.isArray(base[k]))?deepMerge(base[k],over[k]):over[k];
   return o;

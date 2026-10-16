@@ -37,7 +37,7 @@ const gate=await pg.evaluate(()=>{const g=G;g.gm=[];g.en=[];g.modal=null;g.bombO
   g.bossAlive=1;g.update(1/30);out.boss=g.wave.ph;g.bossAlive=0;g.wave.ph='calm';g.wave.until=0;
   g.hordeT=g.t+10;g.update(1/30);out.horde=g.wave.ph;out.postponed=g.wave.until>g.t;g.hordeT=1e9;
   g.bombOn=true;g.wave.until=0;g.update(1/30);out.bomb=g.wave.ph;g.bombOn=false;
-  g.bossQ[0].done=false;g.bossQ[0].t=g.t+15;g.wave.until=0;g.update(1/30);out.bossSoon=g.wave.ph;g.bossQ[0].done=true;
+  g.bossQ[0].done=false;g.bossQ[0].t=g.t+15;g.wave.until=0;g.update(1/30);out.bossSoon=g.wave.ph;g.bossQ.forEach(b=>{b.done=true;});    /* every other boss too: where the run clock happens to be decides whether one is within 25 s */
   g.wave.until=0;g.update(1/30);out.free=g.wave.ph;
   g.bossAlive=1;g.update(1/30);out.cut=g.wave.ph;g.bossAlive=0;
   g.sb.nospawn=true;g.wave.ph='calm';g.wave.until=0;g.update(1/30);out.nospawn=g.wave.ph;g.sb.nospawn=false;return out;});

@@ -1,0 +1,69 @@
+'use strict';
+/* ====== Gacha: tickets, drop rates, the trinket bag and the sale of trinkets found in a run ======
+   - A ticket is spent in the Gacha shop. Kinds: t1 = 1x ticket (1 pull), t10 = 10x ticket (10 pulls), l10 = 10x Lucky ticket (10 pulls with better rates).
+   - A pull rolls a rarity first (rates below), then picks one of the trinkets that can exist at that rarity: widening the pool never makes a Mythic harder to find.
+   - Every (trinket, rarity) pair is a separate collectible. Pulling one you already own pays its Zeno-sama market value in zenny instead.
+   - One trinket from the bag is equipped (d.equip) and starts every run in the trinket slot. */
+const GACHA={
+  rates:{n:[72,20,6,1.5,.5],l:[45,32,15,6,2]},   /* % for Common, Rare, Epic, Legendary, Mythic: normal tickets / Lucky tickets */
+  stars:[1,2,3,5,7],                              /* dragon-ball stars shown on the slot for each rarity: more stars = rarer */
+  sell:[20,50,150,400,1000],                      /* extra zenny when a trinket found in a run is sold (on top of its market value) */
+  kinds:{t1:{n:1,lucky:false},t10:{n:10,lucky:false},l10:{n:10,lucky:true}},
+  bossChance:.20                                  /* chance that a boss drops a 10x ticket */
+};
+const TICKET_KINDS=['t1','t10','l10'];
+const trinketKey=(id,r)=>id+'@'+r;
+/* the trinkets that can come out at rarity r (the same rule as Zeno-sama's stock: stat trinkets at any rarity, effect-only ones at their own) */
+function gachaPool(r){return TRINKETS.filter(t=>t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4);}
+function gachaRarity(lucky,rnd){
+  const w=GACHA.rates[lucky?'l':'n'],tot=w.reduce((a,b)=>a+b,0);let q=(rnd||Math.random)()*tot;
+  for(let i=0;i<w.length;i++){q-=w[i];if(q<=0)return i;}
+  return 0;
+}
+function gachaRoll(lucky,rnd){
+  const r=gachaRarity(lucky,rnd),pool=gachaPool(r);
+  return{id:pool[Math.floor((rnd||Math.random)()*pool.length)%pool.length].id,r};
+}
+/* the zenny a trinket found in a run is sold for: its market value in Zeno-sama's shop (grows with the stage like his prices) plus a bonus (Mythic: +1000) */
+const trinketSale=(r,sd)=>Math.round(ZENO_PRICE[r]*(1+.3*(sd||0)))+GACHA.sell[r];
+
+Object.assign(Progress.prototype,{
+  ticketCount(){const t=this.d.tickets;return t.t1+t.t10+t.l10;}
+  ,addTickets(kind,n){if(!GACHA.kinds[kind]||!(n>0))return;this.d.tickets[kind]+=n;this.save.write();}
+  ,bagHas(id,r){return this.d.bag.some(b=>b.id===id&&b.r===r);}
+  /* spend a ticket and pull: returns the list of results [{id,r,dup,coins,at}] or null when there is no ticket. Test mode: free, nothing counted, new trinkets are flagged to be removed when Test is turned off. */
+  ,gachaPull(kind){
+    const K=GACHA.kinds[kind],d=this.d,test=!!d.settings.sandbox;
+    if(!K||(!test&&!(d.tickets[kind]>0)))return null;
+    if(!test)d.tickets[kind]--;
+    const out=[],now=Date.now(),own=new Set(d.bag.map(b=>trinketKey(b.id,b.r)));
+    for(let i=0;i<K.n;i++){
+      const g=gachaRoll(K.lucky),key=trinketKey(g.id,g.r),dup=own.has(key);
+      const res={id:g.id,r:g.r,dup,coins:0,at:now+i};
+      if(dup){if(!test){res.coins=ZENO_PRICE[g.r];d.zenny+=res.coins;d.stats.zenny+=res.coins;}}
+      else{own.add(key);const b={id:g.id,r:g.r,at:now+i};if(test)b.t=1;d.bag.push(b);}
+      if(!test){const gs=d.gacha;gs.pulls++;if(g.r===4)gs.mythics++;if(g.r===3)gs.legend++;}
+      out.push(res);
+    }
+    this.save.write();return out;
+  }
+  ,equipTrinket(id,r){
+    if(!id){this.d.equip=null;this.save.write();return true;}
+    if(!this.bagHas(id,r))return false;
+    this.d.equip={id,r};this.save.write();return true;
+  }
+  /* Super Dragon Balls: collected in the last stages, kept between runs. Returns the star number or 0 when it was not stored. */
+  ,addSuperBall(star){
+    if(this.d.settings.sandbox||!(star>=1&&star<=7)||this.d.sball.includes(star))return 0;
+    this.d.sball.push(star);this.save.write();return star;
+  }
+  ,superBalls(){return this.d.sball.length;}
+  /* the seven are spent on a reward in the stage menu: 'lucky' = a 10x Lucky ticket, 'char' = an unlocked character of your choice (id) */
+  ,useSuperBalls(reward,charId){
+    const d=this.d;if(d.sball.length<7)return false;
+    if(reward==='lucky')d.tickets.l10++;
+    else if(reward==='char'){const c=CHARS.find(x=>x.id===charId);if(!c||d.unlocked.includes(charId))return false;d.unlocked.push(charId);}
+    else return false;
+    d.sball=[];this.save.write();return true;
+  }
+});

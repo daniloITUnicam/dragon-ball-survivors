@@ -24,7 +24,7 @@ function wsFx(id,a,b){
   return out.length?out:null;
 }
 const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup')};
-const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune')};
+const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets')};
 Object.assign(UI.prototype,{
   /* ---------- settings ---------- */
   screen_settings(a){
@@ -238,7 +238,8 @@ Object.assign(UI.prototype,{
     }else{
       const W=[{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},
         {k:'力',c:'#ffd23f',n:T('Potere','Power'),d:T('Tutte le armi guadagnano un livello.','All weapons gain a level.')},
-        {k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')}];
+        {k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')},
+        {k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha: 10 estrazioni di trinket.','A 10× Ticket for the Gacha: 10 trinket pulls.')}];
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
         h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
     }
@@ -287,6 +288,8 @@ Object.assign(UI.prototype,{
         h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
       this.dmgSummary(res),
       unlocked.length?h('p',{class:'good'},'🔓 '+this.t('charUnlocked')+': '+unlocked.map(c=>this.tr(c.n)).join(', ')):null,
+      !res.sandbox&&res.tickets&&Object.keys(res.tickets).length?h('p',{class:'good'},'🎫 '+this.t('ticketsFound')+': '+['t1','t10','l10'].filter(k=>res.tickets[k]).map(k=>res.tickets[k]+'× '+this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10')).join(' · ')):null,
+      !res.sandbox&&res.sold?h('p',{class:'sub'},'💰 '+this.t('trinketsSold')+': '+res.sold):null,
       res.win&&!res.sandbox&&!this.save.clears.slice(0,5).every(c=>c>0)?h('p',{class:'sub'},this.t('endlessHint')):null,
       ach.length?h('p',{class:'good'},'★ '+this.t('achUnlocked')+': '+ach.map(a=>this.tr(a.n)).join(', ')):null,
       h('div',{class:'row'},
@@ -321,7 +324,7 @@ Object.assign(UI.prototype,{
     const tsel=sel(TRINKETS.map(t=>[t.id,'['+this.tr(RARITY[t.r].n)[0]+'] '+this.tr(t.n)]));
     const esel=sel(Object.keys(ENEMIES).map(id=>[id,this.tr(ENEMIES[id].n)]));
     const bsel=sel(Object.keys(BOSSES).filter(id=>BOSSES[id].hp>0).map(id=>[id,this.tr(BOSSES[id].n)]));
-    const lsel=sel(['coin','bag','heal','magnet','dmg','haste','xp','capsule','ball'].map(k=>[k,k]));
+    const lsel=sel(['coin','bag','heal','magnet','dmg','haste','xp','capsule','ball','sball'].map(k=>[k,k]));
     const fsel=sel(['shrine','spring','altar','font','cache'].map(k=>[k,k]));
     const frm=sel([[-1,this.t('baseForm')],...LINES[g.C.line||'saiyan'].map((f,i)=>[i,(i+1)+'. '+this.tr(f.n)])],g.formIdx);
     const spd=sel([[0,'0x'],[.5,'0.5x'],[1,'1x'],[2,'2x'],[4,'4x']],g.timeScale);

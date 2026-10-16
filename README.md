@@ -57,6 +57,28 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ### 🆕 Aggiornamento di ottobre 2026 (v35 → v40)
 
+**🎰 Gacha, Borsa dei trinket e Super Sfere del Drago (ultime novità)**
+- **Gacha** (pulsante nel menu principale, `src/js/gacha.js` + `src/js/ui_gacha.js`): i **ticket** trovati in partita si spendono per estrarre **trinket**. Tre tipi: **Ticket 1×** (1 estrazione), **Ticket 10×** (10) e **Ticket 10× Fortunato** (10 con probabilità più alte). Si estrae prima la **rarità**, poi uno dei trinket di quella rarità (aggiungere trinket non rende i Mitici più rari).
+
+| Rarità | Ticket normali | Ticket 10× Fortunato | Valore di mercato (doppione) | Vendita in partita (stage 1) |
+|---|---|---|---|---|
+| Comune | 72% | 45% | 80 | 80 + 20 = 100 |
+| Raro | 20% | 32% | 180 | 180 + 50 = 230 |
+| Epico | 6% | 15% | 400 | 400 + 150 = 550 |
+| Leggendario | 1,5% | 6% | 800 | 800 + 400 = 1200 |
+| Mitico | 0,5% | 2% | 1600 | 1600 + 1000 = 2600 |
+
+- **Estrazione animata**: una colonna di Sfere del Drago gira e si ferma sulla sfera della rarità (1, 2, 3, 5 o 7 stelle: più stelle, più scintille e suoni più alti). **Leggendario**: scritta dorata. **Mitico**: lampo, raggi, schermo che trema, scritta «MITICO!» e **suono da jackpot** (`gMythic` in `audio.js`). Con 10 estrazioni i trinket compaiono uno dopo l'altro con pop-in e suono; «Salta» mostra tutto subito. Ogni carta è marcata **NUOVO** o **DUPLICATO** (il doppione paga il valore di mercato di Zeno-sama in zenny).
+- **Borsa dei trinket** (dal Gacha e dalla selezione del personaggio): tutti i trinket ottenuti, con filtro per rarità, **ricerca per nome o effetto**, ordinamento per data di ottenimento (più/meno recenti), rarità o nome. Una voce per ogni coppia trinket + rarità.
+- **Slot Trinket** nella selezione del personaggio (a destra dello sprite): il **+** apre la Borsa e il trinket scelto parte con te in ogni partita (**uno solo**, alla rarità ottenuta, non conta come «trinket trovato» per gli obiettivi). Se lo sostituisci in partita, quello della Borsa resta tuo.
+- **Trinket trovati in partita = venduti**: quando li sostituisci, li rifiuti o a fine partita ricevi il valore di mercato di Zeno-sama (+30% per livello di difficoltà dello stage, `trinketSale`) più un bonus per rarità (+20 / +50 / +150 / +400 / **+1000** per il Mitico). Non succede nel negozio di Zeno-sama né con il trinket della Borsa.
+- **8 nuovi trinket a sole statistiche** (Guscio di Muten Roshi, Gi da Allenamento Pesante, Pesi da Allenamento, Tessera Capsule Corp., Medaglia del Torneo, Maschera di Jackie Chun, Pergamena della Tartaruga, Cintura del Campione): esistono a tutte le rarità (statistiche minime nei Comuni, al massimo nei Mitici, con i tetti `TCAP`). Il pool conta 29 trinket, 22-25 per rarità.
+- **Fonti di ticket**: ogni **Élite** → Ticket 1×; ogni **boss** → 20% di un Ticket 10×; la quarta scelta del desiderio delle Sfere del Drago, **«10 Ticket»** → un Ticket 10×. I ticket si salvano a fine partita (anche in caso di sconfitta, una sola volta anche con «Continua») e sono elencati nella schermata finale; un contatore è nell'interfaccia in partita.
+- **Super Sfere del Drago** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): negli **ultimi 3 stage** (Dimensione di Bu, Regno degli Dei, Torneo del Potere) le Sfere normali non compaiono più. Nel **55%** delle partite, tra il 28% e il 55% della durata, ne cade una **gigante dal bagliore dorato** a 520-700 px (freccia dorata ai bordi), **sorvegliata** da un anello di 16 nemici (+3 per livello di difficoltà, +30% vita) quando ti avvicini a meno di 340 px. Sono 7 (1-7 stelle), si salvano in `save.sball` e **restano tra una partita e l'altra**.
+- **Super Shenron**: con tutte e 7 le Super Sfere compare, come prima carta del menu degli stage, lo scenario speciale dove le 7 si consumano per un **Ticket 10× Fortunato** (porta al Gacha) oppure per **sbloccare gratis un personaggio a scelta** (porta alla selezione del personaggio, dove «Ottieni gratis» sostituisce l'acquisto).
+- **Modalità Test**: estrazioni gratis e illimitate; i trinket ottenuti spariscono quando la disattivi. **Salvataggio**: corretto `deepMerge` (un valore predefinito `null`, come lo slot Trinket, non può più far fallire il caricamento).
+- **🧪 Test aggiunti:** `gacha` (probabilità su 300.000 estrazioni, ticket, doppioni, borsa, slot, vendita in partita, fonti di ticket, Super Sfere, Super Shenron e tutte le schermate).
+
 **🔄 Aggiornamenti automatici e note di versione (ultime novità)**
 - **Nessuna run persa quando esce una versione nuova.** `build.py` marca ogni build con un *id* (hash di tutto il contenuto) e scrive `dist/version.json`; il workflow di GitHub Pages pubblica il file accanto a `index.html`. Il gioco lo legge (senza cache) dopo pochi secondi, poi ogni minuto e quando la scheda torna in primo piano. Se l'id è diverso compare un **avviso gigante con un conto alla rovescia di 10 secondi** (la partita continua e l'avviso non blocca i click); a zero la **partita in corso termina tenendo TUTTE le monete** (niente penalità del 25% per la sconfitta), il salvataggio cloud viene inviato e la **pagina si ricarica da sola**. Nei menu l'avviso è identico ma non c'è nessuna run da chiudere.
 - Sicurezze: non fa nulla su `file://`, se `version.json` manca o se il gioco gira in un'anteprima; dopo due ricariche inutili (copia vecchia in cache sul CDN) smette di insistere finché non si ricarica a mano; l'URL viene ripulito dal parametro `?u=`.
@@ -459,13 +481,14 @@ Per la **musica del menu** è già inclusa in `assets/menu.mp3` (vedi [assets/RE
 ```
 build.py              bundler: unisce src/ in un unico HTML
 src/index.html        pagina
-src/css/style.css     stile
+src/css/style.css     stile (gacha.css: Gacha, Borsa, slot Trinket)
 src/js/
   util.js data.js     utilità e dati (armi, personaggi, stage, nemici, boss, trinket, pet, negozio…)
   i18n*.js            traduzioni (it, en, es, fr, de, pt)
   weapons*.js         comportamento delle armi
   world.js            terreno, ostacoli, zone di cura e trappole
   save.js             salvataggio, progressione, obiettivi, impostazioni
+  gacha.js            Gacha: ticket, probabilità, Borsa dei trinket, vendita, Super Sfere
   game.js             logica di gioco (senza DOM) + MapDirector (eventi, totem, stanza)
   sprites.js          sprite procedurali dei personaggi (con espressioni)
   sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
@@ -475,6 +498,7 @@ src/js/
   patches.js ui_patch.js   note di versione (dati + schermata)
   ui_account.js       schermate login / registrazione / conflitto
   input.js renderer.js ui.js ui2.js app.js   input, rendering, interfaccia e ciclo principale
+  ui_gacha.js         schermata Gacha e animazione, Borsa, slot Trinket, Super Shenron
 tests/                simulazioni e test con puppeteer
 docs/screens/         screenshot usati in questo README
 ```
@@ -485,6 +509,7 @@ Test headless in Node (simulano partite complete con un bot) e test end-to-end c
 
 ```bash
 node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
+node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)
 node tests/totem.js           # totem unico + 8 poteri
