@@ -101,6 +101,8 @@ class MusicEngine{
    Values are data: URIs (embedded) or relative URLs (link mode). Without any file the synth music plays. */
 const FILE_TRACKS=/*__TRACKS__*/{};
 const trackUri=t=>FILE_TRACKS[t]||null;
+/* sound effects taken from files in assets/ (build.py: SFX_FILES) - key 'sphere' = the Dragon Ball pick-up sound. Decoded once, played as buffers. */
+const FILE_SFX=/*__SFX__*/{};
 const XFADE=3.2; /* seconds of equal-power crossfade between the end and the start of a looping file track */
 const xfCurve=(up)=>{const n=48,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1);c[i]=Math.sin((up?x:1-x)*Math.PI/2);}return c;};
 class AudioSys{
@@ -114,10 +116,33 @@ class AudioSys{
         this.sfxG=this.ctx.createGain();this.sfxG.connect(this.master);
         const nb=this.ctx.createBuffer(1,this.ctx.sampleRate,this.ctx.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;this.nbuf=nb;
         this.music=new MusicEngine(this);this.applyVolumes();
+        this.loadSfxFiles();
         if(this.wantTrack)this.play(this.wantTrack);
       }catch(e){this.ctx=null;}
     }
     if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume();
+  }
+  /* decode the sound-effect files in the background; until a buffer is ready sfx() falls back to the synthesized sound */
+  loadSfxFiles(){
+    this.bufs=this.bufs||{};const c=this.ctx;
+    for(const k in FILE_SFX){
+      const u=FILE_SFX[k];if(!u||this.bufs[k]||this.bufLoading&&this.bufLoading[k])continue;
+      (this.bufLoading=this.bufLoading||{})[k]=1;
+      (async()=>{
+        try{
+          let ab;
+          if(u.startsWith('data:')){const bin=atob(u.slice(u.indexOf(',')+1)),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);ab=a.buffer;}
+          else ab=await (await fetch(u)).arrayBuffer();
+          this.bufs[k]=await c.decodeAudioData(ab);
+        }catch(e){}
+        this.bufLoading[k]=0;
+      })();
+    }
+  }
+  playBuf(k,vol,rate){
+    const b=this.bufs&&this.bufs[k];if(!b||!this.ctx)return false;
+    const c=this.ctx,s=c.createBufferSource(),g=c.createGain();
+    s.buffer=b;if(rate)s.playbackRate.value=rate;g.gain.value=vol==null?1:vol;s.connect(g);g.connect(this.sfxG);s.start();return true;
   }
   applyVolumes(){
     if(!this.ctx)return;
@@ -284,6 +309,7 @@ class AudioSys{
       case'buy':this.sfx('uiBuy');break;
       case'senzu':T(500,.2,'sine',.05,500);break;
       case'pickup':T(660,.12,'triangle',.05,330);break;
+      case'sphere':if(this.playBuf('sphere',.85))break;[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;   /* Dragon Ball picked up: assets/sphere_sound.mp3 */
       case'ball':[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;
       case'chest':this.noise(.25,.05,3000,500,0);[523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.2,'triangle',.05,0,.12+i*.08));break;
       case'evolve':[330,440,554,659,880,1108,1318].forEach((f,i)=>{this.toneAt(f,.28,'sawtooth',.035,0,i*.075);this.toneAt(f*2,.2,'sine',.03,0,i*.075+.02);});this.noise(.9,.07,5000,500,0);break;

@@ -107,7 +107,22 @@
     senzuBagged:['Nella borsa: {a}/{b} · premi H per usarlo','In the bag: {a}/{b} · press H to use it','En la bolsa: {a}/{b} · pulsa H para usarla','Dans le sac : {a}/{b} · appuie sur H','Im Beutel: {a}/{b} · drücke H zum Benutzen','Na bolsa: {a}/{b} · aperte H para usar'],
     senzuFull:['Borsa piena ({b}/{b}): lo mangi subito e recuperi il 40% di vita.','Bag full ({b}/{b}): you eat it right away and recover 40% HP.','Bolsa llena ({b}/{b}): te la comes al instante y recuperas el 40% de salud.','Sac plein ({b}/{b}) : tu le manges aussitôt et récupères 40 % de vie.','Beutel voll ({b}/{b}): du isst sie sofort und erhältst 40 % Leben zurück.','Bolsa cheia ({b}/{b}): você come na hora e recupera 40% de vida.'],
     act_dash:['Scatto','Dash','Impulso','Dash','Sprint','Investida'],
-    act_pet:['Abilità compagno','Companion ability','Habilidad del compañero','Capacité du compagnon','Begleiter-Fähigkeit','Habilidade do companheiro']
+    act_pet:['Abilità compagno','Companion ability','Habilidad del compañero','Capacité du compagnon','Begleiter-Fähigkeit','Habilidade do companheiro'],
+    /* patch notes + automatic update notice (patches.js, ui_patch.js, update.js) */
+    patchTitle:['Note di aggiornamento','Patch notes','Notas de la versión','Notes de mise à jour','Patchnotes','Notas de atualização'],
+    patchNew:['Novità','What\'s new','Novedades','Nouveautés','Neuerungen','Novidades'],
+    patchFix:['Correzioni','Bug fixes','Correcciones','Corrections','Fehlerbehebungen','Correções'],
+    patchBal:['Bilanciamento','Balance','Equilibrio','Équilibrage','Balance','Balanceamento'],
+    patchLatest:['Ultima versione','Latest release','Última versión','Dernière version','Neueste Version','Versão mais recente'],
+    patchNewTag:['NUOVO','NEW','NUEVO','NOUVEAU','NEU','NOVO'],
+    updTitle:['AGGIORNAMENTO!','UPDATE!','¡ACTUALIZACIÓN!','MISE À JOUR !','UPDATE!','ATUALIZAÇÃO!'],
+    updRun:['È uscita una nuova versione. Tra pochi secondi la partita in corso termina e le monete guadagnate vengono salvate: poi la pagina si ricarica da sola.','A new version is out. In a few seconds the run in progress ends and the coins you earned are saved, then the page reloads by itself.','Ha salido una nueva versión. En unos segundos la partida en curso termina y se guardan las monedas ganadas; después la página se recarga sola.','Une nouvelle version est disponible. Dans quelques secondes la partie en cours se termine et les pièces gagnées sont sauvegardées, puis la page se recharge toute seule.','Eine neue Version ist da. In wenigen Sekunden endet der laufende Durchgang, die verdienten Münzen werden gespeichert und die Seite lädt sich selbst neu.','Saiu uma nova versão. Em poucos segundos a partida em andamento termina, as moedas ganhas são salvas e a página recarrega sozinha.'],
+    updMenu:['È uscita una nuova versione: la pagina si ricarica tra pochi secondi. I tuoi progressi sono al sicuro.','A new version is out: the page reloads in a few seconds. Your progress is safe.','Ha salido una nueva versión: la página se recarga en unos segundos. Tu progreso está a salvo.','Une nouvelle version est disponible : la page se recharge dans quelques secondes. Ta progression est en sécurité.','Eine neue Version ist da: die Seite lädt in wenigen Sekunden neu. Dein Fortschritt ist sicher.','Saiu uma nova versão: a página recarrega em poucos segundos. Seu progresso está seguro.'],
+    updSecs:['secondi','seconds','segundos','secondes','Sekunden','segundos'],
+    updSaving:['Salvataggio della partita…','Saving your run…','Guardando la partida…','Sauvegarde de la partie…','Durchgang wird gespeichert…','Salvando a partida…'],
+    updSaved:['Partita salvata: +{n} monete','Run saved: +{n} coins','Partida guardada: +{n} monedas','Partie sauvegardée : +{n} pièces','Durchgang gespeichert: +{n} Münzen','Partida salva: +{n} moedas'],
+    updSavedNone:['Progressi salvati','Progress saved','Progreso guardado','Progression sauvegardée','Fortschritt gespeichert','Progresso salvo'],
+    updReload:['Aggiorno il gioco…','Updating the game…','Actualizando el juego…','Mise à jour du jeu…','Spiel wird aktualisiert…','Atualizando o jogo…']
   };
   for(const k in ADD)ADD[k].forEach((v,i)=>{STR[L[i]][k]=v;});
 })();

@@ -57,6 +57,31 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ### 🆕 Aggiornamento di ottobre 2026 (v35 → v40)
 
+**🔄 Aggiornamenti automatici e note di versione (ultime novità)**
+- **Nessuna run persa quando esce una versione nuova.** `build.py` marca ogni build con un *id* (hash di tutto il contenuto) e scrive `dist/version.json`; il workflow di GitHub Pages pubblica il file accanto a `index.html`. Il gioco lo legge (senza cache) dopo pochi secondi, poi ogni minuto e quando la scheda torna in primo piano. Se l'id è diverso compare un **avviso gigante con un conto alla rovescia di 10 secondi** (la partita continua e l'avviso non blocca i click); a zero la **partita in corso termina tenendo TUTTE le monete** (niente penalità del 25% per la sconfitta), il salvataggio cloud viene inviato e la **pagina si ricarica da sola**. Nei menu l'avviso è identico ma non c'è nessuna run da chiudere.
+- Sicurezze: non fa nulla su `file://`, se `version.json` manca o se il gioco gira in un'anteprima; dopo due ricariche inutili (copia vecchia in cache sul CDN) smette di insistere finché non si ricarica a mano; l'URL viene ripulito dal parametro `?u=`.
+- **Note di versione:** il tasto **📜** in alto a destra nel menu principale (con pallino rosso finché c'è una versione non letta) apre l'elenco, con la **data** e i cambiamenti divisi in **Novità**, poi **Correzioni** e **Bilanciamento** (le sezioni vuote spariscono). Per pubblicare una versione basta aggiungere un oggetto **in cima** a `PATCHES` in `src/js/patches.js` (testi `T('italiano','english')`, una riga per modifica).
+
+**🐉 Sfere del Drago e serie di uccisioni**
+- **Sprite nuovi** (`assets/dragonballs.webp`, 7 frame 64×64 ricavati dall'immagine di riferimento): ogni sfera ha da **1 a 7 stelle** e in una partita non ne compaiono due uguali finché non le hai tutte; il contatore in basso a destra mostra quali hai.
+- **Rimbalzano davvero** sul terreno (lancio, rimbalzi sempre più bassi, poi un saltello ogni 1,6 s) con squash e stretch, **onda d'urto e scintille a ogni atterraggio**, bagliore pulsante, raggi rotanti, colonna di luce e stelline che brillano.
+- **Suono dedicato** alla raccolta: `assets/sphere_sound.mp3` (incorporato in `DBS_AUDIO=embed`, copiato in `site/assets/` dal workflow in modalità `link`; se manca si sente il vecchio jingle sintetico).
+- **Raccolta:** niente più attrazione e raggio ridotto (11 px invece di 20 + magnete): bisogna **passarci sopra**. Le frecce ai bordi dello schermo restano.
+- **Serie di uccisioni:** contatore in alto a destra (si azzera dopo 4 s senza uccisioni); ai traguardi **25, 50, 100, 200, 350, 500, 750, 1000…** un banner, onde di luce e un po' di esperienza (qualche % di livello). Quattro nuovi obiettivi (50 / 200 / 500 / 1000 di fila).
+
+**⚡ Abilità, ricariche e prezzi (ultimi ritocchi)**
+- **Le abilità crescono con le trasformazioni:** a metà della linea ottengono un **bonus passivo** nuovo, nella **forma finale** un **effetto potenziato** (onda piccola → enorme, raggio doppio, scudo più lungo, Berserk di 13 s…); i testi sono nella scheda del personaggio e nel tooltip.
+- **Ricariche** ridotte del 30% e in calo a ogni livello (−0,2 s, al massimo −10 s). Il **Berserk di Broly** ora dà **+80% danni e +5 armatura** (+8 in forma finale).
+- **Prezzi di sblocco** ricalcolati su abilità, statistiche e forza nell'anime. Sotto la scelta della difficoltà non c'è più il testo sul x2 (si legge passando il mouse sul pulsante). Sprite: niente più linee sopra gli occhi.
+- La **barra di avanzamento** mostra di nuovo i traguardi: teschio rosso = boss, teschietti bianchi = orde, drago Shenron = boss finale.
+
+**🏆 Obiettivi, menu e Shop di Zeno (ultime novità)**
+- **Obiettivi:** ricompense molto più alte (es. Cacciatore 200, Sterminatore 500, completare uno stage 1.000, livello 10 → 50, 25 → 100, Leggenda 500, Esprimi un desiderio 500…) e **oltre 20 nuovi obiettivi** (Zeno-sama, cimelio Mitico, Kaioken ×20, Estremo, 30 minuti, serie di boss, partite giocate, personaggi sbloccati…), un obiettivo per ogni stage (anche Via del Serpente).
+- Ogni obiettivo ha una **barra di avanzamento** (es. 100/500 uccisioni, 1/4 stage) e la schermata ha **barra di ricerca** (nome o descrizione), filtro **Nascondi ottenuti** e ordinamento **Più vicini al completamento**.
+- **Glossario** e **Grimorio** non sono più nel menu principale: si trovano **in alto a destra nella selezione personaggio**.
+- Nel menu principale, a destra, il badge animato **W.I.P.** (work in progress) che rimbalza avanti e indietro.
+- **Shop di Zeno:** Zeno-sama rimbalza su e giù; gli oggetti mostrano una **nuvoletta** con gli effetti quando ci si avvicina (distanza media), mentre per **comprarli** bisogna stare proprio sopra l'oggetto: niente acquisti involontari.
+
 **⚡ Effetti e abilità (ultimi ritocchi)**
 - Il **modello del personaggio** è sempre disegnato sopra a raggi, proiettili ed effetti: nessuna abilità lo oscura.
 - **Elettricità crescente:** a ogni trasformazione le abilità (raggi, dischi, sfere, aure, meteore, onde…) si circondano di archi elettrici animati e scintille che orbitano, sempre più fitti (nella forma base non ce ne sono).
@@ -73,7 +98,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 **⏱️ Difficoltà e bilanciamento**
 - Durata uguale su tutte le mappe: **Facile 5 min · Normale 10 · Difficile 15 · Estremo 30** (nuova difficoltà *Estremo*: nemici con molta vita, mai one-shot ma pesanti, boss enormi).
-- Ogni **90 secondi** i nemici guadagnano **+20% vita e +4% danni** (cumulativo).
+- Ogni **90 secondi** i nemici guadagnano **+10% vita e +2% danni** (cumulativo) e rilasciano **+5% esperienza**. In **Estremo**: **+15% vita, +5% danni, +15% armatura** e **+8% esperienza**.
 - **+10% vita** a tutti i nemici (boss compresi) in ogni modalità.
 - Negozio: potenziamenti leggermente più forti (es. armatura +1/livello, **rigenerazione +0,5 HP/s a livello**), **Scatto rimosso dal negozio** (resta quello base; in gioco si trova il raro trinket *Stivali del Vento*).
 - Fix: schermo bianco intermittente (stato del canvas ripulito ogni frame, raggi ellittici blindati).
@@ -435,6 +460,8 @@ src/js/
   sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
   audio.js            effetti sonori sintetizzati e musica
   cloud.js            account e sincronizzazione salvataggi (Supabase)
+  update.js           avviso di nuova versione (version.json), conto alla rovescia e ricarica
+  patches.js ui_patch.js   note di versione (dati + schermata)
   ui_account.js       schermate login / registrazione / conflitto
   input.js renderer.js ui.js ui2.js app.js   input, rendering, interfaccia e ciclo principale
 tests/                simulazioni e test con puppeteer

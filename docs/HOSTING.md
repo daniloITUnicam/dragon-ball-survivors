@@ -20,4 +20,5 @@ Da quel momento: `git push` → il sito si aggiorna da solo in circa un minuto.
 
 ## Cose da sapere
 - **Musica**: `assets/menu.mp3` e `assets/namek.mp3` (generate con Suno) sono nel repository, quindi la build automatica le incorpora e il sito ha l'audio completo. Il file HTML finale pesa circa 8 MB: la prima apertura può richiedere qualche secondo.
+- **Aggiornamenti senza perdere la partita**: `python3 build.py` scrive anche `dist/version.json` (l'id della build). Il workflow lo pubblica accanto a `index.html`; se usi un altro hosting **copia `version.json` insieme a `index.html`**. Il gioco lo controlla ogni minuto: se cambia mostra un avviso di 10 secondi, termina la partita in corso salvando tutte le monete e ricarica la pagina. Senza `version.json` (o in locale) la funzione resta semplicemente spenta. Le note di versione si scrivono in `src/js/patches.js`.
 - **Salvataggi**: senza account stanno nel `localStorage` del browser (legati a dominio e dispositivo). Con un progetto Supabase gratuito il gioco ha **login e salvataggi cloud per account**: vedi [SUPABASE.md](SUPABASE.md).

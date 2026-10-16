@@ -11,6 +11,7 @@ function h(tag,props,...kids){
   return e;
 }
 const LOGO_URL=('__LOGO__'?'data:image/webp;base64,__LOGO__':'');
+const WIP_URL=('__WIP__'?'data:image/webp;base64,__WIP__':'');
 const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
 /* zenny coin icon (replaces the plain "Z") */
 function zIcon(){
@@ -115,23 +116,24 @@ class UI{
   }
 
   /* ================= SCREENS ================= */
-  header(titleKey,backFn){
+  header(titleKey,backFn,extra){
     return h('div',{class:'hdr'},
       h('button',{class:'btn small alt','data-back':true,onclick:()=>{this.sfx('uiBack');(backFn||(()=>this.pop()))();}},'← '+this.t('back')),
       h('h2',null,this.t(titleKey)),
+      extra?h('div',{class:'hx'},extra):null,
       h('div',{class:'zen'},zAmt(this.save.zenny)));
   }
   screen_main(){
     const d=this.save,s=d.settings;
     return h('div',{class:'main'},
-      this.cloudMenuBtn(),
+      h('div',{class:'mtop'},this.patchBtn(),this.cloudMenuBtn()),
+      /* "Work in progress" badge: bounces back and forth on the right of the menu (decorative, never intercepts clicks) */
+      WIP_URL?h('div',{class:'wip','aria-hidden':'true',title:'Work in progress'},h('div',{class:'wipin'},h('img',{src:WIP_URL,alt:'W.I.P.',draggable:'false'}))):null,
       h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors')),
       h('div',{class:'menu'},
         this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),
         this.btn('shop',()=>this.push('shop')),
         this.btn('ach',()=>this.push('ach')),
-        this.btn('glossary',()=>this.push('glossary')),
-        h('button',{class:'btn','data-fid':'mgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire')),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         s.sandbox?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
@@ -161,9 +163,10 @@ class UI{
     return h('div',null,this.header('chooseStage'),
       h('div',{class:'row topact'},this.btn('next',()=>this.push('chars'),'primary')),
       h('div',{class:'row'},h('span',{class:'lbl'},this.t('difficulty')),diffs,
-        h('button',{class:'btn small'+(sel.x2?'':' alt'),disabled:!x2ok,'data-fid':'x2',title:x2ok?this.t('x2Desc'):this.t('x2Locked'),
-          onclick:()=>{this.sfx();sel.x2=!sel.x2;this.rebuild(true);}},'x2 '+(x2ok?(sel.x2?this.t('on'):this.t('off')):'🔒'))),
-      h('p',{class:'sub'},x2ok?this.t('x2Desc'):this.t('x2Locked')),
+        /* the explanation lives in the tooltip (on the wrapper too, so it also shows while the button is locked) */
+        h('span',{class:'x2wrap',title:x2ok?this.t('x2Desc'):this.t('x2Locked')},
+          h('button',{class:'btn small'+(sel.x2?'':' alt'),disabled:!x2ok,'data-fid':'x2',title:x2ok?this.t('x2Desc'):this.t('x2Locked'),
+            onclick:()=>{this.sfx();sel.x2=!sel.x2;this.rebuild(true);}},'x2 '+(x2ok?(sel.x2?this.t('on'):this.t('off')):'🔒')))),
       h('div',{class:'grid stages'},cards));
   }
   screen_chars(){
@@ -199,12 +202,17 @@ class UI{
       h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},
         h('span',null,'HP '+C.hp),h('span',null,this.t('stSpeed')+' x'+C.spd),h('span',null,this.t('stPower')+' x'+C.might)),
-      (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',null,ab.cd+'s'):null),h('p',null,this.tr(ab.d))):null;})(),
+      (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',{title:this.tr(T('La ricarica diminuisce a ogni livello (fino a −10 s).','Cooldown shrinks with every level (up to −10 s).'))},abBase(ab.cd)+'s ↓'):null),h('p',null,this.tr(ab.d)),
+        ABIL_TIER[ab.m]?h('p',{class:'abtier'},h('span',null,'◆ '+this.tr(T('Forma centrale: ','Middle form: '))),this.tr(ABIL_TIER[ab.m].p)):null,
+        ABIL_TIER[ab.m]?h('p',{class:'abtier fin'},h('span',null,'★ '+this.tr(T('Forma finale: ','Final form: '))),this.tr(ABIL_TIER[ab.m].f)):null):null;})(),
       h('div',{class:'formsList'},h('span',{class:'lbl'},this.t('forms')),
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
       this.petPicker());
-    return h('div',null,this.header('chooseChar'),
-      h('div',{class:'row topact'},startBtn,h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire'))),
+    /* Glossary and Grimoire live here (top right of the character screen) instead of the main menu */
+    const refBtns=[h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
+      h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire'))];
+    return h('div',null,this.header('chooseChar',null,refBtns),
+      h('div',{class:'row topact'},startBtn),
       h('div',{class:'split'},h('div',{class:'grid chars'},cards),detail));
   }
   /* ---- pet picker (companion shown under the character list) ---- */
@@ -310,13 +318,40 @@ class UI{
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));
   }
   screen_ach(){
-    const d=this.save,done=ACHIEVEMENTS.filter(a=>d.ach[a.id]).length;
-    const cards=ACHIEVEMENTS.map(a=>{
-      const ok=!!d.ach[a.id];
-      return h('div',{class:'card achi'+(ok?' done':'')},glyph(ok?'★':'☆',ok?'#ffd23f':'#6a7a90'),
-        h('div',{class:'col'},h('div',{class:'cn'},this.tr(a.n)),h('div',{class:'cd'},this.tr(a.d)),h('div',{class:'cl'},'+',zAmt(a.reward,true),ok?' ✓':'')));
+    const d=this.save,st=this.achF||(this.achF={hide:false,near:false,q:''});
+    let sv=null;try{sv=this.app.progress.statsView(null);}catch(e){}
+    const norm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const fmtV=(v,u)=>u==='t'?fmtT(v):Math.floor(v).toLocaleString();
+    /* one row per achievement: progress [current, target] drives the bar and the "closest to completion" sorting */
+    const rows=ACHIEVEMENTS.map(a=>{
+      const ok=!!d.ach[a.id];let pr=[ok?1:0,1];
+      if(a.prog&&sv){try{pr=a.prog(sv);}catch(e){}}
+      if(ok)pr=[pr[1],pr[1],pr[2]];
+      return{a,ok,cur:pr[0],max:pr[1]||1,u:pr[2],ratio:Math.min(1,(pr[0]||0)/(pr[1]||1))};
     });
-    return h('div',null,this.header('achTitle'),h('p',{class:'sub'},this.t('achCount',{a:done,b:ACHIEVEMENTS.length})),h('div',{class:'grid ach'},cards));
+    const done=rows.filter(r=>r.ok).length;
+    const card=r=>h('div',{class:'card achi'+(r.ok?' done':'')},glyph(r.ok?'★':'☆',r.ok?'#ffd23f':'#6a7a90'),
+      h('div',{class:'col'},h('div',{class:'cn'},this.tr(r.a.n)),h('div',{class:'cd'},this.tr(r.a.d)),
+        h('div',{class:'achbar'+(r.ok?' full':'')},h('i',{style:'width:'+Math.round(r.ratio*100)+'%'})),
+        h('div',{class:'achmeta'},h('span',{class:'achprog'},fmtV(r.cur,r.u)+' / '+fmtV(r.max,r.u)),h('span',{class:'cl'},'+',zAmt(r.a.reward,true),r.ok?' ✓':''))));
+    const grid=h('div',{class:'grid ach'}),shown=h('span',{class:'achshown'});
+    const btnHide=h('button',{class:'btn small','data-fid':'achhide'}),btnNear=h('button',{class:'btn small','data-fid':'achnear'});
+    const fill=()=>{
+      const q=norm(st.q.trim());
+      let list=rows.filter(r=>!(st.hide&&r.ok)&&(!q||norm(this.tr(r.a.n)+' '+this.tr(r.a.d)).includes(q)));
+      if(st.near)list=list.slice().sort((x,y)=>(x.ok-y.ok)||(y.ratio-x.ratio));
+      grid.replaceChildren(...(list.length?list.map(card):[h('p',{class:'sub'},this.tr(T('Nessun obiettivo trovato.','No achievements found.')))]));
+      shown.textContent=this.tr(T('Mostrati','Shown'))+' '+list.length+' / '+rows.length;
+      btnHide.className='btn small'+(st.hide?'':' alt');btnHide.textContent=(st.hide?'☑ ':'☐ ')+this.tr(T('Nascondi ottenuti','Hide completed'));
+      btnNear.className='btn small'+(st.near?'':' alt');btnNear.textContent=(st.near?'☑ ':'☐ ')+this.tr(T('Più vicini al completamento','Closest to completion'));
+    };
+    btnHide.onclick=()=>{this.sfx();st.hide=!st.hide;fill();};
+    btnNear.onclick=()=>{this.sfx();st.near=!st.near;fill();};
+    const search=h('input',{type:'text',class:'achsearch','data-fid':'achq',placeholder:'🔍 '+this.tr(T('Cerca per nome o descrizione…','Search by name or description…')),value:st.q,autocomplete:'off',spellcheck:'false',
+      oninput:e=>{st.q=e.target.value;fill();}});
+    fill();
+    return h('div',null,this.header('achTitle'),h('p',{class:'sub'},this.t('achCount',{a:done,b:ACHIEVEMENTS.length})),
+      h('div',{class:'achtools'},search,btnHide,btnNear,shown),grid);
   }
 }
 

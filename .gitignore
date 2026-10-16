@@ -3,3 +3,10 @@ dist/_bundle.js
 .DS_Store
 dist/
 _cs/
+
+# sprite di lavoro (restano in locale): sul repo servono solo questi tre file
+assets/sprites/*
+!assets/sprites/fxkame.png
+!assets/sprites/sprites.json
+!assets/sprites/README.md
+assets/sprite test/

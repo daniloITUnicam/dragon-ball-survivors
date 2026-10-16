@@ -49,6 +49,31 @@ All keys can be rebound in **Settings → Controls**.
 
 ### 🆕 October 2026 update (v35 → v40)
 
+**🔄 Automatic updates and patch notes (latest additions)**
+- **No run is lost when a new version is released.** `build.py` stamps every build with an *id* (a hash of everything in the page) and writes `dist/version.json`; the GitHub Pages workflow publishes it next to `index.html`. The game reads it (never cached) a few seconds after start, then every minute and when the tab comes back to the foreground. When the id differs a **giant notice with a 10 second countdown** appears (the run keeps going, the notice never blocks clicks); at zero the **run in progress ends keeping EVERY coin** (no 25% defeat penalty), the cloud save is flushed and the **page reloads itself**. In the menus the notice is the same but there is no run to end.
+- Safety nets: it does nothing on `file://`, when `version.json` is missing or in a preview; after two useless reloads (stale CDN copy) it stops insisting until you reload by hand; the `?u=` cache-buster is removed from the address bar.
+- **Patch notes:** the **📜** button at the top right of the main menu (with a red dot while there is an unread release) opens the list with the **date** and the changes split into **What's new**, then **Bug fixes** and **Balance** (empty sections are hidden). To publish a release add an object **at the top** of `PATCHES` in `src/js/patches.js` (texts `T('italiano','english')`, one line per change).
+
+**🐉 Dragon Balls and kill streak**
+- **New sprites** (`assets/dragonballs.webp`, 7 frames of 64×64 taken from the reference image): every ball has **1 to 7 stars**, and a run never drops two equal ones until you have them all; the counter at the bottom right shows which ones you own.
+- They **really bounce** on the ground (toss, hops that get lower, then a small hop every 1.6 s) with squash and stretch, a **shock wave and sparks at every landing**, a pulsing glow, turning rays, a pillar of light and twinkling stars.
+- **Dedicated pick-up sound:** `assets/sphere_sound.mp3` (embedded with `DBS_AUDIO=embed`, copied to `site/assets/` by the workflow in `link` mode; the old synthesized jingle plays if it is missing).
+- **Pick-up:** no attraction any more and a smaller radius (11 px instead of 20 + magnet): you have to **walk over them**. The screen-edge arrows stay.
+- **Kill streak:** a counter at the top right (resets after 4 s without kills); at **25, 50, 100, 200, 350, 500, 750, 1000…** a banner, light waves and a little experience (a few % of a level). Four new achievements (50 / 200 / 500 / 1000 in a row).
+
+**⚡ Abilities, cooldowns and prices (latest tweaks)**
+- **Abilities grow with transformations:** halfway along the line they gain a new **passive bonus**, in the **final form** an **empowered effect** (small wave → huge, double beam, longer shield, 13 s Berserk…); the texts are on the character card and in the tooltip.
+- **Cooldowns** cut by 30% and shrinking with every level (−0.2 s, at most −10 s). **Broly's Berserk** now gives **+80% damage and +5 armor** (+8 in the final form).
+- **Unlock prices** recalculated from abilities, stats and strength in the anime. The x2 text under the difficulty choice is gone (hover the button to read it). Sprites: no more lines across the eyes.
+- The **progress bar** shows its milestones again: red skull = boss, small white skulls = hordes, Shenron = final boss.
+
+**🏆 Achievements, menus and Zeno's Shop (latest additions)**
+- **Achievements:** much higher rewards (e.g. Hunter 200, Exterminator 500, clearing a stage 1,000, level 10 → 50, 25 → 100, Legend 500, Make a Wish 500…) and **20+ new achievements** (Zeno-sama, Mythic trinket, Kaioken ×20, Extreme, 30 minutes, boss rush, runs played, characters unlocked…), plus one per stage (Snake Way included).
+- Every achievement has a **progress bar** (e.g. 100/500 kills, 1/4 stages), and the screen has a **search bar** (name or description), a **Hide completed** filter and a **Closest to completion** sort.
+- **Glossary** and **Grimoire** are no longer in the main menu: they are **top right on the character select screen**.
+- On the main menu, on the right, an animated **W.I.P.** (work in progress) badge bounces back and forth.
+- **Zeno's Shop:** Zeno-sama bounces up and down; items show a **speech bubble** with their effects when you get reasonably close, while **buying** needs you right on top of the item: no accidental purchases.
+
 **⚡ Effects and abilities (latest polish)**
 - The **character model** is always drawn above beams, projectiles and effects: no ability can hide it.
 - **Growing electricity:** with every transformation the abilities (beams, discs, spheres, auras, meteors, shockwaves…) get animated electric arcs and orbiting sparks, denser each time (none in the base form).
@@ -65,7 +90,7 @@ All keys can be rebound in **Settings → Controls**.
 
 **⏱️ Difficulty and balance**
 - Same length on every map: **Easy 5 min · Normal 10 · Hard 15 · Extreme 30** (new *Extreme* difficulty: very tanky enemies that don't one-shot but hit hard, huge bosses).
-- Every **90 seconds** enemies gain **+20% HP and +4% damage** (cumulative).
+- Every **90 seconds** enemies gain **+10% HP and +2% damage** (cumulative) and drop **+5% experience**. In **Extreme**: **+15% HP, +5% damage, +15% armor** and **+8% experience**.
 - **+10% HP** for all enemies (bosses included) in every mode.
 - Shop: slightly stronger upgrades (e.g. armor +1/level, **regeneration +0.5 HP/s per level**), **Dash removed from the shop** (the base dash stays; the rare in-run trinket *Wind Boots* improves it).
 - Fix: intermittent white screen (canvas state reset every frame, elliptical radii clamped).

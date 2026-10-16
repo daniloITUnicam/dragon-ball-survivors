@@ -10,9 +10,9 @@ class SaveData{
     const nl=(typeof navigator!=='undefined'&&(navigator.language||'en').slice(0,2).toLowerCase())||'en',lang=['it','es','fr','de','pt'].includes(nl)?nl:'en';
     return{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),
-      updated:0,cloud:{uid:''},
+      updated:0,cloud:{uid:''},patchSeen:'',
       diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
-      stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,maxLevel:0,maxTime:0},
+      stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
@@ -22,7 +22,9 @@ class SaveData{
   }
   load(){
     try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw)return this.normalize(JSON.parse(raw));}catch(e){}
-    return this.defaults();
+    const d=this.defaults();
+    if(typeof PATCHES!=='undefined'&&PATCHES.length)d.patchSeen=PATCHES[0].id;   /* a brand-new player has no patch notes to catch up on */
+    return d;
   }
   /* merge a stored/cloud object over the defaults and repair old formats */
   normalize(obj){
@@ -55,14 +57,20 @@ class Progress{
       totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills)};
   }
   statsView(g){
-    const s=this.d.stats,b=g?g.bank:null;
+    const s=this.d.stats,b=g?g.bank:null,r=g?g.run:null,bk=k=>(b&&b[k])||0,rk=k=>(r&&r[k])||0;
+    const run=g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,evos:r.evos,trinkets:r.tpicks||0,legendary:r.legendary,bosses:r.bossKills,coins:r.coins,mythic:rk('mythic'),k20:rk('k20'),streak:rk('streak')}
+           :{kills:0,t:0,lvl:0,form:0,evos:0,trinkets:0,legendary:0,bosses:0,coins:0,mythic:0,k20:0,streak:0};
+    /* personal records (all-time best of a single run), used for the progress bars of the "in one run" achievements */
+    const sr=s.rec||{},mx=o=>Math.max(0,...Object.values(o||{}).map(v=>+(v&&v.kills!==undefined?v.kills:v)||0));
+    const rec={kills:Math.max(mx(this.d.best),run.kills),t:Math.max(s.maxTime||0,run.t),lvl:Math.max(s.maxLevel||0,run.lvl),form:Math.max(mx(this.d.maxForm),run.form)};
+    for(const k of ['evos','trinkets','legendary','bosses','coins','mythic','k20','streak'])rec[k]=Math.max(sr[k]||0,run[k]);
     return{
       kills:s.kills+(g?g.kills-b.kills:0),bosses:s.bosses+(g?g.run.bossKills-b.bossKills:0),clears:this.d.clears,
       chests:s.chests+(g?g.run.chests-b.chests:0),balls:s.balls+(g?g.run.balls-b.balls:0),wishes:s.wishes+(g?g.run.wishes-b.wishes:0),
       shopBuys:s.shopBuys,shopMax:s.shopMax,zenny:s.zenny,perfect:s.perfect+(g?g.run.perfect-b.perfect:0),
-      hardClears:s.hardClears,x2Clears:s.x2Clears,unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,
-      run:g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary}
-           :{kills:0,t:0,lvl:0,form:0,evos:0,trinkets:0,legendary:0}
+      hardClears:s.hardClears,x2Clears:s.x2Clears,extremeClears:s.extremeClears||0,runs:s.runs,
+      zeno:(s.zeno||0)+rk('zeno')-bk('zeno'),zbuys:(s.zbuys||0)+rk('zbuy')-bk('zbuy'),
+      unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,wc:this.d.wc||{},rec,run
     };
   }
   /* Test mode (settings) and sandbox runs never give zenny, progress unlocks or achievements */
@@ -102,25 +110,28 @@ class Progress{
       {k:'clear',v:firstWin?200*(idx+1):0}
     ];
   }
-  finishRun(g,win){
+  /* opts.keep: the run was ended by the game itself (a new release is being installed) - no 25% penalty for not winning */
+  finishRun(g,win,opts){
     if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins};
     const d=this.d,st=d.stats,idx=g.stageIdx,stg=STAGES[idx],b=g.bank;
     if(g.formsUnlocked>(d.maxForm[g.C.id]||0))d.maxForm[g.C.id]=g.formsUnlocked;
     const firstWin=!!win&&!b.cleared;
     const lines=this.rewardLines(g,win,firstWin);
     const raw=lines.reduce((s,l)=>s+l.v,0);
-    const mult=stg.zenny*g.S.gold*g.D.zenny*(g.x2?2:1)*(win?1:.75);
+    const mult=stg.zenny*g.S.gold*g.D.zenny*(g.x2?2:1)*(win||(opts&&opts.keep)?1:.75);
     const total=Math.floor(raw*mult);
     const first=!b.counted;
     st.kills+=g.kills-b.kills;st.bosses+=g.run.bossKills-b.bossKills;st.chests+=g.run.chests-b.chests;
     st.balls+=g.run.balls-b.balls;st.wishes+=g.run.wishes-b.wishes;st.perfect+=g.run.perfect-b.perfect;
     if(first)st.runs++;
+    st.zeno=(st.zeno||0)+(g.run.zeno||0)-(b.zeno||0);st.zbuys=(st.zbuys||0)+(g.run.zbuy||0)-(b.zbuy||0);
+    {const rc=st.rec||(st.rec={});for(const [k,v] of Object.entries({evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary,bosses:g.run.bossKills,coins:g.run.coins,mythic:g.run.mythic||0,k20:g.run.k20||0,streak:g.run.streak||0}))rc[k]=Math.max(rc[k]||0,v||0);}
     st.zenny+=total;d.zenny+=total;
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
-    if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.x2)st.x2Clears++;}
+    if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
-    g.bank={kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,t:g.t,counted:true,cleared:b.cleared||!!win};
+    g.bank={kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};
     if(g.diffId!=='easy')for(const id of g.C.start){
       if((win||g.lvl>=50)&&!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}
     }

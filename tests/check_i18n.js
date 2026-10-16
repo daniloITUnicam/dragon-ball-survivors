@@ -5,7 +5,7 @@ const S=globalThis.__S,keys=new Set();
 const extra=[];for(const a of['up','down','left','right','confirm','cancel','pause','interact','pet','debug'])extra.push('act_'+a);
 for(const a of['general','audio','video','controls'])extra.push('tab_'+a);for(const a of['coins','kills','time','bosses','clear'])extra.push('rw_'+a);
 extra.push('level','bossKills','time');
-for(const f of['ui.js','ui2.js','renderer.js','app.js','game.js']){
+for(const f of['ui.js','ui2.js','ui_patch.js','update.js','renderer.js','app.js','game.js']){
   const s=fs.readFileSync(path.join(SRC,f),'utf8');
   for(const m of s.matchAll(/(?:this\.t|\bt|tt|this\.app\.t|this\.tt|this\.btn|this\.header)\(\s*'([A-Za-z0-9_]+)'/g))keys.add(m[1]);
 }

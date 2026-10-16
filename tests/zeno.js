@@ -28,6 +28,13 @@ ok(r2.inZeno&&r2.items===4,'entering the secret opens Zeno\'s Shop with 4 trinke
 ok(r2.enemiesHidden&&r2.timeFrozen,'level enemies/time are frozen while inside');
 await wait(300);await pg.screenshot({path:'/tmp/zeno1.png'});
 await pg.evaluate(()=>{const g=G;g.run.coins=5000;});await wait(150);await pg.screenshot({path:'/tmp/zeno1b.png'});
+/* a medium distance only shows the speech bubble (look); it must never buy */
+const r3a=await pg.evaluate(()=>{const g=G,tr=g.trial,o={};const it=tr.items[0],c0=g.run.coins;
+ g.p.x=tr.cx+it.x-70;g.p.y=tr.cy+it.y;step(120);o.look=tr.look===it;o.notBought=!it.sold&&g.run.coins===c0;return o;});
+await wait(250);await pg.screenshot({path:'/tmp/zeno_bubble.png'});
+const r3b=await pg.evaluate(()=>{const g=G,tr=g.trial,it=tr.items[0];g.p.x=tr.cx+it.x-300;step(3);return tr.look!==it;});
+ok(r3a.look,'getting close (70 px) shows the info bubble for the item');
+ok(r3a.notBought&&r3b,'the bubble distance never buys, and far away no bubble');
 const r3=await pg.evaluate(()=>{const g=G,tr=g.trial,o={};const it=tr.items[0],c0=g.run.coins;
  g.p.x=tr.cx+it.x;g.p.y=tr.cy+it.y;step(70);
  o.bought=it.sold&&g.trinkets.includes(it.id);o.paid=c0-g.run.coins===it.price;

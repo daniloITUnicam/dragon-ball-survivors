@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir site
           cp dist/dragon-ball-survivors.html site/index.html
+          cp dist/version.json site/version.json   # il gioco lo legge per accorgersi di una nuova versione (src/js/update.js)
           mkdir -p site/assets
           find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' \) -exec cp {} site/assets/ \;
           [ -f CNAME ] && cp CNAME site/CNAME || true

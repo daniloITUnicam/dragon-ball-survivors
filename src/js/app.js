@@ -13,8 +13,9 @@ class App{
     this.ui=new UI(this);
     this.cloud=new Cloud(this.save,ev=>this.onCloud(ev));
     this.cloud.isPlaying=()=>this.state==='play'||this.state==='modal';
-    this.game=null;this.state='menu';this.last=performance.now();this.hintT=0;this.trackT=0;this.lastOpts=null;
+    this.game=null;this.state='menu';this.last=performance.now();this.hintT=0;this.trackT=0;this.lastOpts=null;this.lastRes=null;
     this.joy={on:false,id:-1,ox:0,oy:0,x:0,y:0};
+    this.updater=new Updater(this);
   }
   init(){
     this.input.attach();
@@ -66,6 +67,7 @@ class App{
     this.ui.show('main');
     Sprites.loadPack(()=>{const t=this.ui.top;if(this.state==='menu'&&t&&(t.name==='chars'||t.name==='main'))this.ui.rebuild(true);});
     this.cloud.start();
+    this.updater.start();
     requestAnimationFrame(n=>this.loop(n));
   }
   /* cloud events: refresh the open menu and surface conflicts / password reset */
@@ -107,8 +109,18 @@ class App{
     this.game.resolveModal(i);this.ui.closeModal();this.state='play';
   }
   onEnd(res,g){
-    this.state='end';this.ui.closeModal();this.ui.hideSandbox();
+    this.state='end';this.lastRes=res;this.ui.closeModal();this.ui.hideSandbox();
     this.audio.play('menu');this.ui.show('end',res);
+  }
+  /* used by the update watcher (update.js): ends the run in progress right now and keeps EVERY coin (no 25% defeat penalty);
+     returns the run result, or null when there is no run to end */
+  endRunForUpdate(){
+    const g=this.game;this.lastRes=null;
+    if(!g||g.ended||!['play','modal','pause'].includes(this.state))return null;
+    const tp=document.getElementById('tip');if(tp)tp.style.display='none';
+    this.ui.clear();this.ui.closeModal();g.modal=null;g.dying=null;g.timeScale=1;
+    g.finish(false,{keep:true});
+    return this.lastRes;
   }
   endRunManually(){const g=this.game;this.ui.clear();if(g&&!g.ended)g.finish(false);else this.toMenu();}
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
