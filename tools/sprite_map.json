@@ -1,0 +1,77 @@
+{
+ "chars": {
+  "goku": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "grid": "Goku nuovo/normal",
+     "h": 49,
+     "fx_keep": true,
+     "fx": null
+    },
+    "0": {
+     "grid": "Goku nuovo/kaioken",
+     "keep_sheet": true,
+     "grid_use": [
+      "power",
+      "dash"
+     ]
+    },
+    "1": {
+     "grid": "Goku nuovo/ssj1",
+     "h": 51,
+     "fx_keep": true,
+     "fx": null
+    },
+    "2": {
+     "grid": "Goku nuovo/ssj2",
+     "h": 51,
+     "fx_keep": true,
+     "fx": null
+    },
+    "3": {
+     "grid": "Goku nuovo/ssj3",
+     "h": 51,
+     "fx_keep": true,
+     "fx": null
+    },
+    "4": {
+     "grid": "Goku nuovo/ssjgod",
+     "h": 51,
+     "fx_keep": true,
+     "fx": null
+    },
+    "5": {
+     "grid": "Goku nuovo/ssjgodssj",
+     "h": 50,
+     "fx_keep": true,
+     "fx": null
+    },
+    "6": {
+     "grid": "Goku nuovo/ultrainstinctsign",
+     "h": 56,
+     "fx_keep": true,
+     "fx": null
+    },
+    "7": {
+     "grid": "Goku nuovo/ultrainstinctcomplete",
+     "h": 56,
+     "fx_keep": true,
+     "fx": null
+    }
+   }
+  }
+ },
+ "rocks": {
+  "dir": "rocks"
+ },
+ "weapons": {
+  "kame": [
+   "GOKU fases/Goku SSJ 2",
+   46
+  ]
+ }
+}

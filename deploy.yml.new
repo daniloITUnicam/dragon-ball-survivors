@@ -1,0 +1,56 @@
+# Ogni push su main: compila il gioco e lo pubblica su GitHub Pages
+# (dominio personalizzato: vedi docs/HOSTING.md).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build (single HTML file)
+        # Impostazioni Supabase (login + salvataggi cloud): Settings → Secrets and variables → Actions → Variables.
+        # Se non sono impostate il gioco funziona lo stesso, senza il pulsante Account.
+        env:
+          DBS_AUDIO: link   # la musica (assets/*.mp3) non viene incorporata: resta in assets/ accanto a index.html, a piena qualità
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          SUPABASE_GOOGLE: ${{ vars.SUPABASE_GOOGLE }}
+        run: python3 build.py --check
+      - name: Prepare site
+        run: |
+          mkdir site
+          cp dist/dragon-ball-survivors.html site/index.html
+          mkdir -p site/assets
+          find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' \) -exec cp {} site/assets/ \;
+          [ -f CNAME ] && cp CNAME site/CNAME || true
+          touch site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -14,6 +14,7 @@ const TRACKS={
   stage8:{bpm:90,root:59,scale:PENT_MIN,prog:[[0,3,7,10],[-5,-2,2,7],[-7,-4,0,3],[-4,0,3,7]],mode:'chill',lead:.38},
   stage9:{bpm:68,root:67,scale:PENT_MAJ,prog:[[0,4,7,11],[-3,0,4,9],[-5,-1,2,7],[-8,-4,-1,4]],mode:'chill',lead:.28},
   stage10:{bpm:96,root:50,scale:PENT_MIN,prog:[[0,3,6,10],[-4,0,3,6],[-7,-4,-1,3],[-6,-2,1,5]],mode:'chill',lead:.4},
+  stage11:{bpm:78,root:53,scale:PENT_MIN,prog:[[0,3,7,10],[-2,2,5,9],[-5,-1,2,7],[-7,-4,0,5]],mode:'chill',lead:.36},
   boss2:{bpm:106,root:50,scale:PENT_MIN,prog:[[0,3,7,10],[-2,2,5,9],[-5,-1,2,5],[-7,-4,0,3]],mode:'boss',lead:.5},
   boss3:{bpm:96,root:53,scale:PENT_MIN,prog:[[0,3,7,10],[-4,0,3,7],[-9,-5,-2,3],[-5,-1,2,5]],mode:'boss',lead:.46},
   finalboss:{bpm:114,root:45,scale:PENT_MIN,prog:[[0,3,7,10],[-4,0,3,7],[-7,-4,0,3],[-2,2,5,9]],mode:'boss',lead:.62},
@@ -29,6 +30,8 @@ class MusicEngine{
     for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     this.noise=nb;this.name=null;this.tr=null;this.step=0;this.next=0;this.timer=null;
   }
+  /* death slow-down: tempo (and a darker filter) of the synth music */
+  setRate(r){this.rate=r;try{this.lp.frequency.setTargetAtTime(r<1?650:2600,this.ctx.currentTime,.25);}catch(e){}}
   play(name){
     if(name===this.name)return;
     this.name=name;const c=this.ctx;
@@ -43,7 +46,7 @@ class MusicEngine{
   }
   tick(){
     const tr=this.tr,c=this.ctx;if(!tr)return;
-    const sd=60/tr.bpm/4;
+    const sd=60/tr.bpm/4/(this.rate||1);
     if(this.next<c.currentTime-.5)this.next=c.currentTime+.05;
     while(this.next<c.currentTime+.3){
       const sw=(this.step%2)?sd*.14:0;
@@ -93,11 +96,13 @@ class MusicEngine{
   }
 }
 
-/* the menu theme is a user-supplied track embedded by build.py (placeholder stays empty in plain src) */
-const MENU_MP3_URI='data:audio/mpeg;base64,__MENU_MP3__';
-/* file tracks: key = track name used by the game ('stage2' = Planet Namek); they loop for as long as the stage lasts */
-const FILE_TRACKS={menu:MENU_MP3_URI,stage2:'data:audio/mpeg;base64,__NAMEK_MP3__'};
-const trackUri=t=>{const u=FILE_TRACKS[t];return u&&u.length>400?u:null;};
+/* user-supplied music: build.py scans assets/*.mp3 and maps each file to the menu or a stage by its NAME
+   (e.g. "android ruins.mp3" -> stage 3, "menu.mp3" -> menu). Key = track name used by the game: 'menu', 'stage<id>'.
+   Values are data: URIs (embedded) or relative URLs (link mode). Without any file the synth music plays. */
+const FILE_TRACKS=/*__TRACKS__*/{};
+const trackUri=t=>FILE_TRACKS[t]||null;
+const XFADE=3.2; /* seconds of equal-power crossfade between the end and the start of a looping file track */
+const xfCurve=(up)=>{const n=48,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1);c[i]=Math.sin((up?x:1-x)*Math.PI/2);}return c;};
 class AudioSys{
   constructor(settings){this.s=settings;this.ctx=null;this.music=null;this.last={};this.wantTrack=null;}
   unlock(){
@@ -118,32 +123,66 @@ class AudioSys{
     if(!this.ctx)return;
     this.master.gain.value=this.s.master;this.musicG.gain.value=this.s.music*.55;this.sfxG.gain.value=this.s.sfx;
   }
+  /* slow (rate<1) or restore (1) the music: synth tempo + playbackRate of file tracks */
+  slowMusic(rate){
+    this.slow=rate;if(this.music)this.music.setRate(rate);
+    for(const k in this.files||{}){const f=this.files[k];for(const w of['a','b'])try{if(f[w]&&f[w].el)f[w].el.playbackRate=rate;}catch(e){}}
+  }
   play(track){
     this.wantTrack=track;
     const uri=trackUri(track);
     if(this.music)this.music.play(uri?null:track);
     this.setFile(uri?track:null);
   }
-  /* play the embedded mp3 of a track (looping), fading every other file out; paused files keep their position */
+  /* play the file of a track, looping with a crossfade (two <audio> elements overlap at the seam: no gap, no click);
+     every other file fades out and keeps its position for when its stage music comes back */
   setFile(name){
     this.fileOn=name;
     if(!this.ctx)return;
     const c=this.ctx;this.files=this.files||{};
     for(const k in this.files){
       if(k===name)continue;const f=this.files[k];
-      if(f.on){f.on=false;if(f.g){f.g.gain.cancelScheduledValues(c.currentTime);f.g.gain.setTargetAtTime(0,c.currentTime,.18);}
-        clearTimeout(f.stop);f.stop=setTimeout(()=>{if(!f.on)f.el.pause();},900);}
+      if(f.on){f.on=false;f.out.gain.cancelScheduledValues(c.currentTime);f.out.gain.setTargetAtTime(0,c.currentTime,.18);
+        clearTimeout(f.stop);f.stop=setTimeout(()=>{if(!f.on)this.parkFile(f);},900);}
     }
     if(name){
       let f=this.files[name];
       if(!f){
-        const el=new Audio(trackUri(name));el.loop=true;el.preload='auto';f=this.files[name]={el,g:null,on:false};
-        try{const src=c.createMediaElementSource(el);f.g=c.createGain();f.g.gain.value=0;src.connect(f.g);f.g.connect(this.musicG);}catch(e){f.g=null;}
+        const uri=trackUri(name),mk=(v)=>{const el=new Audio(uri);el.preload='auto';let g=null;
+          try{const src=c.createMediaElementSource(el);g=c.createGain();g.gain.value=v;src.connect(g);g.connect(f.out);}catch(e){g=null;}
+          el.addEventListener('ended',()=>{if(f.on&&!f.xf&&f[f.cur].el===el){el.currentTime=0;const q=el.play();if(q&&q.catch)q.catch(()=>{});}}); /* fallback if the loop timer missed the seam */
+          return{el,g};};
+        f={out:c.createGain(),on:false,xf:false,cur:'a'};f.out.gain.value=0;f.out.connect(this.musicG);
+        f.a=mk(1);f.b=mk(0);this.files[name]=f;
       }
       clearTimeout(f.stop);
-      if(!f.on&&f.g){f.g.gain.cancelScheduledValues(c.currentTime);f.g.gain.setTargetAtTime(name==='menu'?1.15:1.05,c.currentTime,.35);}
-      f.on=true;const pr=f.el.play();if(pr&&pr.catch)pr.catch(()=>{});
+      if(!f.on){
+        const cu=f[f.cur];if(cu.g){cu.g.gain.cancelScheduledValues(c.currentTime);cu.g.gain.value=1;}
+        f.out.gain.cancelScheduledValues(c.currentTime);f.out.gain.setTargetAtTime(name==='menu'?1.15:1.05,c.currentTime,.35);
+      }
+      f.on=true;const pr=f[f.cur].el.play();if(pr&&pr.catch)pr.catch(()=>{});
+      if(!this.loopT)this.loopT=setInterval(()=>this.loopTick(),200);
     }
+  }
+  parkFile(f){ /* stop a faded-out file: settle any crossfade in progress and pause (position is kept) */
+    const c=this.ctx;
+    if(f.xf){f.xf=false;const o=f.cur==='a'?f.b:f.a;o.el.pause();if(o.g){o.g.gain.cancelScheduledValues(c.currentTime);o.g.gain.value=0;}const cu=f[f.cur];if(cu.g){cu.g.gain.cancelScheduledValues(c.currentTime);cu.g.gain.value=1;}}
+    f.a.el.pause();f.b.el.pause();
+  }
+  loopTick(){
+    const f=this.fileOn&&this.files&&this.files[this.fileOn];if(!f||!f.on||!this.ctx)return;
+    const c=this.ctx,now=c.currentTime;
+    if(f.xf){if(now>=f.xfEnd){f.xf=false;const o=f.cur==='a'?f.b:f.a;o.el.pause();}return;}
+    const cu=f[f.cur],el=cu.el,d=el.duration;
+    if(!isFinite(d)||d<XFADE*3||el.paused||el.currentTime<d-XFADE-.2)return;
+    const nx=f.cur==='a'?f.b:f.a;
+    if(!nx.g||!cu.g)return;
+    try{
+      nx.el.currentTime=0;const q=nx.el.play();if(q&&q.catch)q.catch(()=>{});
+      nx.g.gain.cancelScheduledValues(now);cu.g.gain.cancelScheduledValues(now);
+      nx.g.gain.setValueCurveAtTime(xfCurve(true),now,XFADE);cu.g.gain.setValueCurveAtTime(xfCurve(false),now,XFADE);
+      f.xf=true;f.xfEnd=now+XFADE+.1;f.cur=f.cur==='a'?'b':'a';
+    }catch(e){}
   }
   tone(f,d,type,vol,slide){
     if(!this.ctx||this.s.sfx<=0)return;
@@ -219,8 +258,16 @@ class AudioSys{
       case'hit':T(190,.07,'triangle',.04,-110);this.noise(.04,.035,6000,900,0);break;
       case'pop':T(300,.1,'square',.025,-200);break;
       case'gem':T(1100,.05,'sine',.03,300);break;
-      case'coin':T(1500,.07,'square',.025,500);break;
+      case'coin':T(1318,.06,'square',.022,300);this.toneAt(1976,.14,'square',.02,200,.055);break;
+      case'pkheal':[523,659,784,1047].forEach((f,i)=>this.toneAt(f,.22,'sine',.045,0,i*.06));this.toneAt(2093,.25,'sine',.02,0,.2);break;
+      case'pkmagnet':this.noise(.5,.07,300,3600,0);this.toneAt(110,.45,'sawtooth',.04,900,0);this.toneAt(1900,.06,'square',.04,-600,.42);this.thump(.07,90,.45);break;
+      case'pkdmg':this.thump(.12,120,.35);this.toneAt(150,.3,'sawtooth',.06,-90,0);this.toneAt(300,.22,'square',.04,500,.03);this.noise(.2,.07,4200,300,0);break;
+      case'pkhaste':[700,1050,1500,2100].forEach((f,i)=>this.toneAt(f,.08,'square',.026,400,i*.035));this.noise(.18,.04,9000,2500,.05);break;
+      case'pkxp':this.toneAt(1568,.1,'sine',.04,0,0);this.toneAt(2349,.22,'sine',.035,0,.07);break;
+      case'pkluck':[988,1175,1480,1976,2637].forEach((f,i)=>this.toneAt(f,.14,'triangle',.035,0,i*.05));break;
+      case'pkcapsule':this.noise(.06,.05,6000,1500,0);this.toneAt(440,.12,'triangle',.05,0,.05);this.toneAt(880,.12,'triangle',.05,0,.14);this.toneAt(1760,.3,'sine',.04,0,.24);break;
       case'kame':this.zap(240,1500,.35,.05);this.elec(.45,.07,0,85);this.thump(.08,110,.4);break;
+      case'death':T(260,1.3,'sawtooth',.07,-200);this.toneAt(130,1.6,'triangle',.08,-90,.1);this.noise(1,.09,2200,90,0);this.thump(.2,90,.6);break;
       case'boom':this.thump(.13,150,.5);this.noise(.5,.12,2600,90,0);break;
       case'hurt':T(130,.18,'square',.06,-60);break;
       case'boss':T(70,.7,'sawtooth',.08,40);break;

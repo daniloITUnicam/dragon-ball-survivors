@@ -12,7 +12,7 @@ Il gioco disegna i personaggi giocabili con il codice. Se preferisci **usare la 
 Programmi comodi per disegnare pixel art: Aseprite, LibreSprite (gratuito), Piskel (nel browser), Pixelorama.
 
 ## 2. Formato del foglio
-Una **sola riga di 7 frame** affiancati, tutti della stessa larghezza, sfondo trasparente:
+Una **sola riga di 7 frame** (oppure **10**, vedi sotto) affiancati, tutti della stessa larghezza, sfondo trasparente:
 
 | Frame | Uso |
 |---|---|
@@ -20,11 +20,16 @@ Una **sola riga di 7 frame** affiancati, tutti della stessa larghezza, sfondo tr
 | 1, 2, 3, 4 | ciclo di camminata |
 | 5 | preparazione dell'attacco (carica) |
 | 6 | colpo / lancio |
+| 7 *(opz.)* | posa di carica della trasformazione (con l'aura/esplosione già disegnata) |
+| 8 *(opz.)* | posa di scatto (corpo orizzontale) |
+| 9 *(opz.)* | scia di velocità, disegnata dietro lo scatto |
+
+I frame 7-9 sono facoltativi: nel `sprites.json` il campo `has` elenca quali sono davvero presenti (es. `"has":[8,9]`). Quelli assenti usano la grafica del gioco (aura procedurale, posa normale con immagini residue).
 
 - Misura consigliata: **64 × 96 px per frame** (foglio di 448 × 96). Il personaggio sta in piedi con i **piedi sulla linea rossa** (2 px sopra il bordo basso) e centrato.
 - Disegna il personaggio **rivolto verso destra**: il gioco lo specchia da solo quando va a sinistra.
 - Il contorno lo disegni tu nello sprite. Il lampeggio quando si viene colpiti, l'ombra, le aure e i bagliori delle trasformazioni li aggiunge il gioco.
-- Con meno di 7 colonne le pose mancanti usano l'ultima disponibile (1 sola colonna = sprite fisso).
+- I fogli importati dal pack (vedi sotto) hanno `cols: 10`. Con meno di 7 colonne le pose mancanti usano l'ultima disponibile (1 sola colonna = sprite fisso).
 
 ## 3. Nomi dei file
 Il nome è l'`id` del personaggio (quello in `src/js/data.js`, es. `goku`, `vegeta`, `piccolo`…).
@@ -65,5 +70,34 @@ Le voci per un file specifico (`goku_0`) sovrascrivono `default`.
 
 Su GitHub Pages basta committare i PNG: la build automatica li incorpora.
 
+## 6. Importare un pack di frame (tools/import_pack.py)
+Per i personaggi del gioco i fogli sono generati da un pack di frame numerati (una cartella per forma, sfondo bianco o trasparente) messo in `assets/sprites/`. Lo script `tools/import_pack.py` legge `tools/sprite_map.json` (per ogni personaggio e forma: cartella sorgente e numero dei frame di idle, camminata, preparazione, colpo, carica, scatto, scia), scontorna lo sfondo, allinea i piedi, ingrandisce 2× e scrive `<id>[_<forma>].png` + `sprites.json`:
+
+```
+python3 tools/import_pack.py --review _cs/rev          # tutti i personaggi, con fogli di controllo
+python3 tools/import_pack.py goku vegeta               # solo alcuni
+python3 tools/contact.py ...                           # contact sheet numerati per scegliere i frame
+```
+
+`--review` salva, per ogni personaggio, un'immagine con tutte le forme: è il modo più rapido per accorgersi di un frame sbagliato (correggi il numero in `sprite_map.json` e rilancia). Le cartelle `_cs/` sono di lavoro e non vanno committate.
+
+I frame di camminata (1-4) **non** vengono presi dal pack (salvo la camminata fatta a mano, qui sotto) (sono pose di combattimento: in loop sembrano un ballo): `import_pack.py` li ricava dal frame fermo, con il busto immobile e le gambe che oscillano dall'anca (`synth_walk`). Per una forma si può regolare l'altezza dell'anca con `"hip"` (0-1, default .62) o tornare ai frame del pack con `"walk_pack": true` nella mappa.
+
+**Camminata fatta a mano.** Dove esiste un ciclo di camminata disegnato apposta (oggi: Goku base e Gogeta, in `assets/sprites/Goku walk/` e `Gogeta walk/`, frame già ritagliati `walk_<n>.png` con sfondo trasparente) la forma lo usa al posto di `synth_walk`: nella mappa `"walk_dir": "<cartella>"`, `"walk_n": [numeri nell'ordine del ciclo]` e `"idle_n"` (frame fermo, usato anche come riferimento di scala: tutti i frame sono scalati come l'idle del pack). I frame oltre il quarto finiscono in colonne extra dopo le 10 standard e `sprites.json` riceve `"walk": [indici dei frame]` (es. `[1,2,3,4,10,11,12,13]`); il gioco li percorre a 12 fotogrammi/s (`Sprites.walkFrame`). Le forme senza `walk_dir` (trasformazioni, altri personaggi) restano sulla camminata sintetica: per estenderla basta una cartella per forma e la stessa voce nella mappa.
+
+**Rocce dei pianeti.** `assets/sprites/rocks/rock_<n>.png` (20 sprite ritagliati dallo sheet delle rocce) vengono impacchettati da `import_pack.py` (voce `"rocks": {"dir": "rocks"}`) nell'atlas `rocks.png`; `sprites.json` ha `rects: [[x,y,w,h], ...]` nello stesso ordine. In `src/js/world.js` i tipi di ostacolo "roccia" (pianure, Namecc escluso, rifiuti, spiaggia, Pianeta Vegeta, arena) hanno un gruppo di sprite (`rk`) e ogni istanza ne sceglie uno in modo deterministico; la **collisione** è un cerchio ricavato dall'impronta dello sprite (`min(.36·larghezza, .55·altezza)` in px di mondo, scala 1.2 px/px con tetto di 150 px di larghezza), non più dal raggio del disegno procedurale. Le rocce hanno una tinta moltiplicativa per tema (`ROCK_TINT` in `renderer.js`). Se `rocks.png` manca, restano i disegni procedurali di prima. Test: `tests/rocks_walk.js`.
+
+Gli effetti delle armi si importano con la voce `"weapons"` della mappa: `fxkame.png` (raggio del Kamehameha: esplosione alla bocca, corpo, testa) è il frame 46 di *Goku SSJ 2*; il gioco allunga il corpo alla lunghezza del raggio e lo tinge col colore dell'arma (`Sprites.drawBeam` in `src/js/sheets.js`, test `tests/sprites_beam.js`).
+
+Copertura attuale: 32 personaggi/linee hanno grafica dal pack (Goku e le sue forme, Vegeta, Trunks, Gohan, Piccolo, Crilin, Broly, Freezer, Cell, Bu, Bardock, Raditz, Vegito, Gogeta, Gotenks, androidi 16/17/18, Cooler, Toppo, Hit, Kefla, Caulifla, Kale, Beerus, Whis, Jiren, Black, Zamasu, Frost, Turles). Gli altri mantengono la grafica generata dal codice.
+
+## 7. Fogli a griglia e emote (tools/import_grid.py)
+Per Goku le 9 forme arrivano da fogli a griglia (una immagine per forma + una con carica/scatto/scia). `tools/import_grid.py --src "assets/sprite test/goku" --out "assets/sprites/Goku nuovo"` taglia i frame (camminata 00-04, kamehameha 10-17, carica 20-23, scatto 30-33, emote `emote/e0-3.png`); poi `tools/import_pack.py goku` usa l'opzione `grid` della mappa:
+- carica e scatto sono animati: dopo le 10 colonne standard il foglio ha colonne extra e `sprites.json` contiene `pw` (frame della carica) e `dh` (frame dello scatto); il gioco li scorre con `Sprites.poseFrame` (carica = avanzamento della trasformazione, scatto = durata dello scatto);
+- le emote diventano il foglio `emo<id>[_<forma>].png` (4 ritratti affiancati) mostrato nella scelta personaggio (`Sprites.emoSheet`), che cicla le emote della forma mostrata;
+- `grid_use: ["power","dash"]` con `keep_sheet` aggiunge solo carica/scatto a un foglio già costruito (usato per Kaioken); `fx_keep` riusa la scia del foglio esistente.
+
+Stato attuale: solo Goku usa fogli (`goku*.png`, `emogoku*.png`) più `fxkame.png` e `rocks.png`; gli altri sono stati spostati in `assets/sprites/_archivio/` (sottocartella ignorata dalla build). Per riattivarne uno: riporta i suoi `.png` in `assets/sprites/`, le sue voci di `_archivio/sprites.json` in `sprites.json` e la riga di `tools/sprite_map_archivio.json` in `tools/sprite_map.json`.
+
 ## Nota tecnica
-I fogli vengono incorporati come base64 nel file HTML (aumenta il peso del file). Il test `tests/sprites_pack.js` verifica caricamento, ricerca delle forme e assenza di errori.
+I fogli vengono incorporati come base64 nel file HTML (aumenta il peso del file). I test `tests/sprites_pack.js` (tutti i personaggi, base e forma massima) e `tests/sprites_goku.js` (trasformazione e scatto) verificano caricamento, ricerca delle forme e assenza di errori.

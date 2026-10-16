@@ -48,7 +48,13 @@ Object.assign(UI.prototype,{
         toggle(this.t('fullscreen'),'fullscreen'),
         toggle(this.t('showFps'),'fps'),toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('streamerMode'),'streamer',this.t('streamerDesc')),
-        toggle(this.t('sandboxOpt'),'sandbox',this.t('sandboxOptDesc')),
+        row(this.t('sandboxOpt'),h('button',{class:'btn small'+(s.sandbox?'':' alt'),'data-fid':'tsandbox',onclick:()=>{
+          if(!this.sbArm){this.sbArm=true;this.toast({type:'info',msg:this.t(s.sandbox?'sbWarnOff':'sbWarnOn')});setTimeout(()=>{if(this.sbArm){this.sbArm=false;if(this.top&&this.top.name==='settings')this.rebuild(true);}},6000);this.sfx();this.rebuild(true);return;}
+          this.sbArm=false;this.sfx();
+          if(s.sandbox){s.sandbox=false;const n=this.app.progress.revertTest();apply();if(!this.stageOpen(this.save.lastStage))this.save.lastStage=5;if(!this.charOpen(this.save.lastChar))this.save.lastChar='goku';this.toast({type:'info',msg:this.t('sbReverted',{n})});}
+          else{s.sandbox=true;apply();}
+          this.rebuild(true);}},this.sbArm?'\u26A0 '+this.t('act_confirm'):(s.sandbox?this.t('on'):this.t('off'))),
+          this.sbArm?this.t(s.sandbox?'sbWarnOff':'sbWarnOn'):this.t('sandboxOptDesc')),
         row(this.t('resetSave'),h('button',{class:'btn small bad','data-fid':'reset',onclick:()=>{
           if(this.resetArm){this.app.save.reset();this.app.applySettings();this.resetArm=false;this.toast({type:'info',msg:this.t('resetDone')});this.show('main');}
           else{this.resetArm=true;this.toast({type:'info',msg:this.t('resetConfirm')});setTimeout(()=>{this.resetArm=false;},4000);}
@@ -60,8 +66,16 @@ Object.assign(UI.prototype,{
       body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
         toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps')];
+    }else if(tab==='world'){
+      const dn=v=>this.t('dayWord')+' '+Math.round(v)+'% · '+this.t('nightWord')+' '+(100-Math.round(v))+'%';
+      body=[toggle(this.t('ambientFx'),'ambient',this.t('ambientFxDesc')),
+        toggle(this.t('weatherFx'),'weather',this.t('weatherFxDesc')),
+        toggle(this.t('dayNight'),'dayNight',this.t('dayNightDesc')),
+        s.dayNight?slider(this.t('dnShare'),'dnDay',0,100,5,dn):null,
+        s.dayNight?select(this.t('dnLen'),'dnLen',[['180','3 min'],['300','5 min'],['480','8 min']]):null,
+        s.dayNight?h('p',{class:'sub'},this.t('dnShareDesc')):null];
     }else body=this.controlsPanel();
-    const tabs=['general','audio','video','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
+    const tabs=['general','audio','video','world','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
     return h('div',null,this.header('settings'),h('div',{class:'row tabs'},tabs),h('div',{class:'settings'},body));
   },
   controlsPanel(){
@@ -93,16 +107,19 @@ Object.assign(UI.prototype,{
     const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},glyph(w.def.k,w.color),
       h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
-    const kr=(k,v)=>h('div',{class:'krow'},h('span',null,t(k)),h('b',null,v));
+    const kr=(k,v)=>h('div',{class:'krow'},h('span',null,k===null?t('passSlots').replace(/\s*[:(]?\s*\{a\}\s*\/\s*\{b\}\)?/,''):t(k)),h('b',null,v));
     const stats=[kr('stHp',Math.round(p.hp)+' / '+p.maxHp),kr('stPower','x'+S.might.toFixed(2)),kr('stSpeed','x'+S.spd.toFixed(2)),kr('stCooldown','x'+S.cd.toFixed(2)),
       kr('stArmor',S.armor.toFixed(1)),kr('stRegen',S.regen.toFixed(1)+'/s'),kr('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')'),kr('stDodge',Math.round(S.dodge*100)+'%'),
       kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+(S.gold*(g.x2?2:1)).toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
     const fe=g.formEntry;
-    const ups=[kr('passSlots',g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
+    const ups=[kr(null,g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
-    const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id);return h('div',{class:'prow'},glyph(tr.k,RARITY[tr.r].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[tr.r].c},this.tr(tr.n)+' · '+this.tr(RARITY[tr.r].n)),h('div',{class:'cd'},this.tr(tr.d))));});
+    const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id),rr=g.trR(id);return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)),h('div',{class:'cd'},this.tr(trinDesc(tr,rr)))));});
+    /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
+    const ablist=[];
+    for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabs=h('div',{class:'row tabs'},
       ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
@@ -112,12 +129,12 @@ Object.assign(UI.prototype,{
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
         this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
     return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
-      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
+      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
   },
   /* ---------- sandbox config ---------- */
   screen_sandboxCfg(){
     const sel=this.sel;
-    const stage=h('select',{'data-fid':'sbs',onchange:()=>{sel.stage=+stage.value;}},STAGES.map((s,i)=>h('option',{value:i,selected:sel.stage===i},'S'+s.id+' '+this.tr(s.n))));
+    const stage=h('select',{'data-fid':'sbs',onchange:()=>{sel.stage=+stage.value;}},STAGE_ORDER.map(i=>h('option',{value:i,selected:sel.stage===i},'S'+STAGES[i].no+' '+this.tr(STAGES[i].n))));
     const ch=h('select',{'data-fid':'sbc',onchange:()=>{sel.char=ch.value;}},CHARS.map(c=>h('option',{value:c.id,selected:sel.char===c.id},this.tr(c.n))));
     const df=h('select',{'data-fid':'sbd',onchange:()=>{sel.diff=df.value;}},Object.keys(DIFF).map(k=>h('option',{value:k,selected:sel.diff===k},this.tr(DIFF[k].n))));
     return h('div',null,this.header('sandbox'),h('p',{class:'sub'},this.t('sbDesc')),
@@ -142,7 +159,7 @@ Object.assign(UI.prototype,{
     if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id);return{k:t.k,c:RARITY[t.r].c,n:t.n,tag:this.tr(RARITY[t.r].n),d:t.d};}
+    if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n),d:trinDesc(t,rr)};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
@@ -162,14 +179,37 @@ Object.assign(UI.prototype,{
     let el;
     if(m.type==='level'){
       el=h('div',{class:'screen modal'},h('h2',null,this.t('levelUpTitle',{n:g.lvl})),
-        h('div',{class:'cards'},m.options.map((o,i)=>this.card(this.describe(o),i,()=>{this.sfx('lvl');this.app.resolveModal(i);}))));
+        h('div',{class:'cards'},m.options.map((o,i)=>{
+          const c=this.card(this.describe(o),i,()=>{this.sfx('lvl');this.app.resolveModal(i);});
+          if(m.rec===i){   /* recommended card: star + short reason */
+            const WHY={evo:T('Per evolvere un\'arma','Evolves a weapon'),wevo:T('Arma quasi evoluta','Nearly evolved'),hp:T('Poca salute','Low health'),armor:T('Poca armatura','Low armor')};
+            c.classList.add('recd');c.append(h('span',{class:'recstar',title:this.tr(WHY[m.recWhy]||WHY.evo)},'★'),h('span',{class:'recwhy'},'★ '+this.tr(WHY[m.recWhy]||WHY.evo)));
+          }
+          return c;})));
     }else if(m.type==='chest'){
       el=h('div',{class:'screen modal'},h('h2',null,this.t('chestTitle')),
         h('div',{class:'cards'},m.rewards.map((r,i)=>this.card(this.describeReward(r),i,null,' reveal'))),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,style:'animation-delay:1.4s',onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.t('collect'))));
     }else if(m.type==='pick'){
-      const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
+      const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id,rar:(m.rars||[])[i]}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
       el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs));
+    }else if(m.type==='tswap'){
+      /* only one trinket can be carried: compare the current one with the new one before replacing it */
+      const ct=TRINKETS.find(x=>x.id===m.cur.id),nt=TRINKETS.find(x=>x.id===m.nw.id),sc=trinStats(ct,m.cur.rar),sn=trinStats(nt,m.nw.rar);
+      const keys=[...new Set([...sc.map(x=>x.k),...sn.map(x=>x.k)])];
+      const col=(t,r,mine,other,tag)=>{
+        const rows=keys.map(k=>{const a=mine.find(x=>x.k===k),b=other.find(x=>x.k===k),va=a?a.v:0,vb=b?b.v:0;
+          return h('div',{class:'tsrow '+(va>vb?'up':va<vb?'down':'eq')},a?this.tr(a.t):'—',h('b',null,va>vb?' ▲':va<vb?' ▼':''));});
+        const sp=t.x||(t.sp?t.d:null);
+        return h('div',{class:'tscol',style:'--c:'+RARITY[r].c},h('div',{class:'tstag'},this.tr(tag)),
+          h('div',{class:'tshead'},glyph(t.k,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
+          h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null);};
+      el=h('div',{class:'screen modal'},h('h2',null,this.tr(T('Sostituire il cimelio?','Replace your trinket?'))),
+        h('p',{class:'sub'},this.tr(T('Puoi portare un solo cimelio alla volta.','You can only carry one trinket at a time.'))),
+        h('div',{class:'tswap'},col(ct,m.cur.rar,sc,sn,T('Attuale','Current')),h('div',{class:'tsarrow'},'→'),col(nt,m.nw.rar,sn,sc,T('Nuovo','New'))),
+        h('p',{class:'tswarn'},'⚠ '+this.tr(T('Il cimelio attuale verrà sostituito e perso.','Your current trinket will be replaced and lost.'))),
+        h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.tr(T('Sostituisci','Replace'))),
+          h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(1);}},this.tr(T('Tieni l\'attuale','Keep current')))));
     }else if(m.type==='totem'){
       const W=(m.opts||['luck','risk']).map(id=>TOTEMS.find(t=>t.id===id)).filter(Boolean);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('totemTitle')),h('p',{class:'sub'},this.t('totemSub')),
@@ -182,9 +222,9 @@ Object.assign(UI.prototype,{
       const cards=m.offers.map((o,i)=>{
         if(o.sold)return null;   /* bought / free upgrades disappear */
         let info;
-        if(o.kind==='form'){const e=LINES[g.C.line||'saiyan'][g.formsUnlocked];info={k:'変',c:e.aura,n:e.n,tag:this.t('trialForm'),d:T('Sblocchi subito la prossima trasformazione.','Unlock the next transformation right away.')};}
-        else if(o.kind==='weapon'){const w=WEAPONS[o.wid];info={k:w.k,c:w.c,n:w.n,tag:this.t('trialWeapon'),d:T('+1 livello a quest\'arma.','+1 level for this weapon.')};}
-        else{const p=Math.round(STEP[o.a]*100),q=Math.round(STEP[o.b]*135);info={k:'力',c:'#c9a0ff',n:T('Scambio statistica','Stat swap'),tag:this.t('trialSwap'),d:T('-'+p+'% '+NAMES[o.a].it+'  →  +'+q+'% '+NAMES[o.b].it,'-'+p+'% '+NAMES[o.a].en+'  →  +'+q+'% '+NAMES[o.b].en)};}
+        if(o.kind==='form'){const e=LINES[g.C.line||'saiyan'][g.formsUnlocked];info={k:'変',c:e.aura,n:e.n,tag:this.t('trialForm'),d:T('Sblocchi subito la prossima trasformazione. (Alternativa all\'arma)','Unlock the next transformation right away. (Alternative to the weapon)')};}
+        else if(o.kind==='weapon'){const w=WEAPONS[o.wid];info={k:w.k,c:w.c,n:w.n,tag:this.t('trialWeapon'),d:T('+1 livello a quest\'arma. (Alternativa alla trasformazione)','+1 level for this weapon. (Alternative to the transformation)')};}
+        else{const p=Math.round(STEP[o.a]*100*TRIAL_MALUS),q=Math.round(STEP[o.b]*135);info={k:'力',c:'#c9a0ff',n:T('Scambio statistica','Stat swap'),tag:this.t('trialSwap'),d:T('-'+p+'% '+NAMES[o.a].it+'  →  +'+q+'% '+NAMES[o.b].it,'-'+p+'% '+NAMES[o.a].en+'  →  +'+q+'% '+NAMES[o.b].en)};}
         const ok=!o.sold&&(m.freePick||g.run.coins>=o.price);
         const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('uiErr');});
         el.disabled=!ok;if(!ok)el.classList.add('locked');
@@ -204,8 +244,33 @@ Object.assign(UI.prototype,{
     const f=this.focusables(el)[0];if(f)setTimeout(()=>f.focus({preventScroll:true}),30);
     if(this.top)this.top.el.classList.add('hidden');
   },
+  /* tooltip content for a HUD zone (see Renderer.zones) */
+  tipFor(z,g){
+    const hd=(c,glyphK,name,sub)=>h('div',{class:'tiph'},glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
+    const T2=(it,en)=>this.tr(T(it,en)),box=kids=>h('div',{class:'tipbox'},kids);
+    if(z.k==='weapon'){const w=g.weapons.get(z.id);if(!w)return null;
+      return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
+        w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
+    if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
+      return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/5'),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
+    if(z.k==='trinket'){const t=TRINKETS.find(x=>x.id===z.id);if(!t)return null;const rr=g.trR(z.id);return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)),h('p',null,this.tr(trinDesc(t,rr)))]);}
+    if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+a.cd+'s':null),h('p',null,this.tr(a.d))]);}
+    if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}
+    if(z.k==='dash')return box([hd('#7fd4ff','走',T('Scatto','Dash'),T2('Ricarica ','Cooldown ')+Math.round(g.dashCdMax)+'s'),h('p',null,T2('Breve scatto invulnerabile nella direzione in cui ti muovi: danneggia i nemici che attraversi.','A short invulnerable dash in your movement direction: it damages the enemies you pass through.'))]);
+    if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX),h('p',null,T2('Mangia un fagiolo: recuperi il 40% della salute. Se la borsa è piena, i nuovi ne curano comunque una parte.','Eat a bean: restores 40% of your health. Pick-ups beyond a full bag still heal you.'))]);
+    return null;
+  },
   closeModal(){if(this.modalEl){this.modalEl.remove();this.modalEl=null;}},
   /* ---------- end of run ---------- */
+  /* damage dealt by each weapon (bars) and the zenny collected during the run */
+  dmgSummary(res){
+    const dm=res.dmg||{},ids=Object.keys(dm).filter(k=>dm[k]>0).sort((a,b)=>dm[b]-dm[a]),tot=ids.reduce((s,k)=>s+dm[k],0)||1,top=dm[ids[0]]||1;
+    const nm=k=>k==='other'?this.t('dmgOther'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='other'?'#9aa4b8':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
+    const fmt=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':String(Math.round(v));
+    return h('div',{class:'dmgsum'},h('h3',null,this.t('dmgSummary')),
+      ids.length?ids.slice(0,9).map(k=>h('div',{class:'dmgrow'},h('span',{class:'dn'},nm(k)),h('span',{class:'dbar'},h('i',{style:'width:'+Math.max(3,Math.round(dm[k]/top*100))+'%;background:'+cl(k)})),h('b',null,fmt(dm[k])+' · '+Math.round(dm[k]/tot*100)+'%'))):h('p',{class:'sub'},'—'),
+      h('div',{class:'rline'},h('span',null,this.t('coinsCollected')),h('b',null,zAmt(Math.round(res.coins||0),true))));
+  },
   screen_end(res){
     const g=this.app.game,labels={coins:'rw_coins',kills:'rw_kills',time:'rw_time',bosses:'rw_bosses',clear:'rw_clear'};
     const st=(k,v)=>[h('span',null,this.t(k)),h('b',null,v)];
@@ -217,6 +282,7 @@ Object.assign(UI.prototype,{
         res.lines.map(l=>h('div',{class:'rline'},h('span',null,this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
         h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2)+(res.x2?' (x2)':''))),
         h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
+      this.dmgSummary(res),
       unlocked.length?h('p',{class:'good'},'🔓 '+this.t('charUnlocked')+': '+unlocked.map(c=>this.tr(c.n)).join(', ')):null,
       res.win&&!res.sandbox&&!this.save.clears.slice(0,5).every(c=>c>0)?h('p',{class:'sub'},this.t('endlessHint')):null,
       ach.length?h('p',{class:'good'},'★ '+this.t('achUnlocked')+': '+ach.map(a=>this.tr(a.n)).join(', ')):null,

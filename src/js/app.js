@@ -31,9 +31,22 @@ class App{
       }
     });
     const cv=this.canvas;
+    /* hover explanations for the HUD (weapons, upgrades, relics, abilities); also while the game is paused */
+    const tip=document.createElement('div');tip.id='tip';document.body.append(tip);
+    document.addEventListener('pointermove',e=>{
+      const R=this.renderer,hide=()=>{tip.style.display='none';};
+      if(e.pointerType==='touch'||!this.game||!R.zones||(this.state!=='play'&&this.state!=='pause')||e.target!==cv)return hide();
+      const k0=R.W/innerWidth,mx=e.clientX*k0,my=e.clientY*k0,z=R.zones.find(q=>mx>=q.x&&mx<=q.x+q.w&&my>=q.y&&my<=q.y+q.h);
+      if(!z)return hide();
+      const el=this.ui.tipFor(z,this.game);if(!el)return hide();
+      tip.replaceChildren(el);tip.style.display='block';
+      const w=tip.offsetWidth,hh=tip.offsetHeight;tip.style.left=Math.min(innerWidth-w-8,e.clientX+16)+'px';tip.style.top=Math.min(innerHeight-hh-8,e.clientY+16)+'px';
+    });
+    document.addEventListener('pointerleave',()=>{tip.style.display='none';});
     cv.addEventListener('pointerdown',e=>{
       if(this.state==='play'&&this.renderer.petBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.petBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.usePet();return;}}
       if(this.state==='play'&&this.renderer.abBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.abBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useAbility();return;}}
+      if(this.state==='play'&&this.renderer.dashBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.dashBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.dash();return;}}
       if(this.state==='play'&&this.renderer.szBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.szBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useSenzu();return;}}
       if(e.pointerType==='mouse'||this.state!=='play'||this.joy.on)return;
       const k=this.renderer.W/innerWidth;
@@ -80,14 +93,14 @@ class App{
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
     this.game=new Game(o,this.makeEnv());this.state='play';
-    this.audio.unlock();this.audio.play('stage'+STAGES[o.stage].id);
+    this.audio.unlock();if(this.audio.slowMusic)this.audio.slowMusic(1);this.audio.play('stage'+STAGES[o.stage].id);
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
     this.joy.on=false;
     const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
     for(const b of st.bosses)if(BOSSES[b[0]])defs.push(BOSSES[b[0]].sp);
     Sprites._wq=[];Sprites.warm(defs);
   }
-  pause(){if(this.state!=='play')return;this.state='pause';this.ui.show('pause');}
+  pause(){if(this.state!=='play')return;const tp=document.getElementById('tip');if(tp)tp.style.display='none';this.state='pause';this.ui.show('pause');}
   resume(){if(this.state!=='pause')return;this.ui.clear();this.state='play';}
   resolveModal(i){
     if(!this.game||!this.game.modal)return;
@@ -100,15 +113,15 @@ class App{
   endRunManually(){const g=this.game;this.ui.clear();if(g&&!g.ended)g.finish(false);else this.toMenu();}
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
   retry(){if(this.lastOpts)this.startGame(this.lastOpts);}
-  toMenu(){this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
+  toMenu(){if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
-    for(const a of['interact','pet','kaioken','senzu'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
+    for(const a of['interact','pet','kaioken','senzu','dash'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
     this.renderer.keyHints=h;
   }
   loop(now){
     requestAnimationFrame(n=>this.loop(n));
-    try{this.tick(now);}catch(e){console.error('frame error',e);}
+    try{this.tick(now);}catch(e){console.error('frame error',e);try{this.renderer.resetCtx();}catch(_){}}
   }
   tick(now){
     const dt=Math.min(.05,(now-this.last)/1000);this.last=now;
@@ -125,10 +138,12 @@ class App{
         if(I.pressed('pet'))g.usePet();
         if(I.pressed('kaioken'))g.toggleKaioken();
         if(I.pressed('senzu'))g.useSenzu();
+        if(I.pressed('dash'))g.dash();
         if(I.pressed('debug')&&g.sandbox)this.ui.toggleSandbox(g);
         g.update(dt);
         this.trackT-=dt;
         if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?'finalboss':['boss','boss2','boss3'][g.stageIdx%3]):'stage'+g.stage.id);}
+        if(g.dying&&g.modal)g.modal=null;
         if(g.modal&&!this.ui.modalEl&&!g.ended){this.state='modal';this.ui.openModal(g.modal,g);}
       }
       r.draw(g,dt);

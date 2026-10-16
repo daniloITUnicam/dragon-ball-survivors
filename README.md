@@ -43,8 +43,9 @@ Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, 
 | Conferma / Annulla | `Invio`, `Spazio` / `Esc`, `Backspace` | A / B |
 | Pausa | `Esc` o `P` | Start |
 | Interagire (altari, totem, stanza del tempo) | `E` o `F` | A |
-| Abilità del compagno | `Q` o `Shift sinistro` (o tocca il pulsante in basso a sinistra) | X |
+| Abilità del compagno | `Q` (o tocca il pulsante in basso a sinistra) | X |
 | **Fagiolo Senzu** (dalla borsa) | `H` · pulsante a schermo | LB |
+| **Scatto** (danni sul percorso + invulnerabilità, ricarica 4 s) | `Shift` · pulsante a schermo | RB |
 | **Abilità del personaggio** (Kaioken, Berserk, raggi, cloni…) | `R` o `X` · pulsante a schermo | Y |
 | Debug (FPS ecc.) | `F2` o `` ` `` | Select |
 
@@ -53,6 +54,68 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 ---
 
 ## Novità dell'ultimo aggiornamento
+
+### 🆕 Aggiornamento di ottobre 2026 (v35 → v40)
+
+**⚡ Effetti e abilità (ultimi ritocchi)**
+- Il **modello del personaggio** è sempre disegnato sopra a raggi, proiettili ed effetti: nessuna abilità lo oscura.
+- **Elettricità crescente:** a ogni trasformazione le abilità (raggi, dischi, sfere, aure, meteore, onde…) si circondano di archi elettrici animati e scintille che orbitano, sempre più fitti (nella forma base non ce ne sono).
+- **Aura del Kaioken** costante e dinamica come nell'anime: bagliore rosso, fiamme a più strati che ondeggiano, anelli a terra, scintille che salgono; più grande e feroce a ×20. Resta sopra a tutti gli effetti.
+- **Kamehameha:** raggio che parte dalle mani e si estende, impulsi di energia che scorrono lungo il raggio, testa pulsante con anelli e scintille, sfera di carica con raggi rotanti. La portata cresce di +1% a ogni livello del personaggio (max +30%) e a ogni livello dell'arma. Stesso trattamento per il **Big Bang Kamehameha** (anche evoluto: testa gigante).
+- **Modalità Test:** non si guadagnano più zenny, obiettivi, sblocchi né progressi (come l'Ambiente di test).
+- Nella schermata degli stage basta **cliccare un livello** per passare alla scelta del personaggio.
+- **Freezer** ora ha 7 forme (con **Dorato**) e **Cell** 6 (Imperfetto → Semi-Perfetto con C-17 → Perfetto con C-18 → Super Perfetto → **Dorato** → **Nero**); a ogni forma salgono statistiche, armatura e vita massima (+12%).
+
+**🗺️ Livelli**
+- **Via del Serpente** (Stage 2): si cammina *solo* sul corpo del serpente, nemici e oggetti compaiono solo lì. Ogni 2:30 min (in tempo di gioco scalato sulla durata) i nemici diventano più ardui, fino a un'orda di mini-boss; boss finale **Janemba** in due fasi (forma grassa → animazione di trasformazione → Janemba vero con spada e raggio come nel film). Completarlo in Difficile sblocca **Gogeta**.
+- **Inferno** ora viene dopo le saghe di Freezer e Cell (Stage 8). Contiene **Freezer** e **Cell** come mini-boss che *si evolvono a ogni 1/N della loro vita*: Freezer in 7 forme (prima forma → seconda → terza → finale → 100% → **Freezer Dorato** → **Freezer Nero**), Cell in 6 (imperfetto → semi-perfetto, assorbe C-17 → perfetto, assorbe C-18 → super perfetto, dopo l'autodistruzione di Goku → **Cell Dorato** → **Cell Nero**). Ogni forma ha animazione di trasformazione, nuove mosse (Disco Distruttore, Raggio Mortale, Sfera della Morte, Supernova, Kamehameha di Cell, Cell Jr., Taiyoken…) e più armatura e più vita massima a ogni forma. Boss finale: Omega Shenron.
+- **Anteprima animata** della mappa (vista dall'alto) su ogni card di stage; ordine canonico aggiornato (vedi tabella sotto).
+
+**⏱️ Difficoltà e bilanciamento**
+- Durata uguale su tutte le mappe: **Facile 5 min · Normale 10 · Difficile 15 · Estremo 30** (nuova difficoltà *Estremo*: nemici con molta vita, mai one-shot ma pesanti, boss enormi).
+- Ogni **90 secondi** i nemici guadagnano **+20% vita e +4% danni** (cumulativo).
+- **+10% vita** a tutti i nemici (boss compresi) in ogni modalità.
+- Negozio: potenziamenti leggermente più forti (es. armatura +1/livello, **rigenerazione +0,5 HP/s a livello**), **Scatto rimosso dal negozio** (resta quello base; in gioco si trova il raro trinket *Stivali del Vento*).
+- Fix: schermo bianco intermittente (stato del canvas ripulito ogni frame, raggi ellittici blindati).
+
+**💀 Morte e interfaccia**
+- Animazione di morte (rallentatore, musica che rallenta), menù entro 2 s con *Riprova*, **riassunto danni per arma e monete raccolte**.
+- Schermata di level-up più leggera: il gioco resta visibile sullo sfondo.
+- **Modalità Test** (Impostazioni): tutti gli stage e personaggi aperti e negozio gratis; disattivandola tutto torna com'era (con avviso di conferma).
+
+**👹 Nemici molto più vivi**
+- Nuovo sistema di **abilità dei nemici** (`src/js/skills.js`): ventagli di ki, anelli, balzi, terremoti, colpi dal cielo, mine, scudo, evocazioni, cura, grido di battaglia, sfere orbitanti, raggi, trottola, tana sotterranea, fendenti. Ogni abilità ha una **preparazione visibile** (nemico che si carica, "!" e alone) e ogni livello ha le sue combinazioni (Saibaman che lasciano pozze acide, Cell Jr. corazzati che evocano Cell Jr., Reaper che si interrano…).
+- **Rabbia e trasformazioni** dei nemici: sotto il 50% di vita entrano in furia (aura, più veloci e forti), alcuni **cambiano aspetto** (Super Saiyan, Oozaru, Majin potenziato, demone infuriato, soldato celeste ascendente, cyborg sovraccarico…) o si **evolvono** col tempo.
+- Animazioni procedurali: passo, respiro, preparazione e colpo, comparsa con "pop", gelatina per i blob, ondeggiamento dei fantasmi, battito d'ali, impatto al colpo.
+
+**🕳️ Segreti e Shop di Zeno**
+- Un segreto per livello, in un momento casuale tra 1:00 e la durata del livello: compare una **freccia con i metri** verso un **altare con un misterioso bottone rosso**. Premendo **E** (come per la Stanza dello Spirito e del Tempo) si apre un portale per lo **Shop di Zeno**.
+- Dentro: dimensione "chill" di **60 secondi**, tempo del livello fermo, **abilità e pet disattivati**, **nessuna rigenerazione passiva**. I trinket sono a terra davanti a Zeno-sama: ci si ferma sopra per comprarli (monete della partita), con una **tendina** che mostra oggetto e statistiche.
+- La **Fortuna** decide la rarità degli oggetti (fino a leggendario); **1% di oggetti Mitici**.
+
+**🍀 Trinket: uno alla volta, con rarità e Mitico**
+- Si porta **un solo trinket**; trovandone un altro (forziere, capsula, desiderio, Zeno) si apre una **finestra di confronto** con avviso di sostituzione.
+- Ogni trinket può avere rarità **Comune → Mitica**: le statistiche crescono con la rarità e hanno un tetto per rarità (es. danno: leggendario max 15%, mitico max 20%); i testi si aggiornano da soli. Gli altri tier sono stati ridimensionati di conseguenza. Trovare un trinket ha l'1% di chance di essere Mitico.
+- Achievement *Collezionista*: ora "Trova 6 cimeli in una partita".
+
+**🕰️ Stanza dello Spirito e del Tempo**
+- Gli scambi di statistiche hanno un malus dimezzato; la trasformazione è offerta solo se arriverebbe entro 10 livelli ed è **alternativa** all'arma (o l'una o l'altra); abilità e pet disattivati anche lì (la rigenerazione resta).
+
+**🧪 Test aggiunti:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`.
+
+### 🎵 Musica per mappa e 💨 Scatto universale
+**Musica:** metti un brano in `assets/` col nome della mappa (`android ruins.mp3`, `buu dimension.mp3`, `muten island.mp3`, `tournament of power.mp3`, `namek.mp3`…) e suona in quella mappa, in loop con dissolvenza incrociata. Tabella dei nomi e opzioni di peso in [`docs/MUSIC.md`](docs/MUSIC.md). **Scatto (Shift):** ora ce l'hanno tutti i personaggi. Pulsante in basso a sinistra accanto al Kaioken, ricarica 4 s (si migliora nel negozio con *Scatto Fulmineo*: −0,4 s e +15% danno per livello), infligge danni ai nemici che attraversa e dà invulnerabilità temporanea. **Sprite:** i personaggi con sprite del pack camminano normalmente mentre caricano un raggio e allungano il braccio solo allo sparo; boss e Saibaman con arte nel pack la usano (Cabba e Janemba inclusi).
+
+### 🎨 Nuovi sprite dal pack (32 personaggi) e scatto
+I personaggi usano ora gli sprite pixel art del pack in `assets/sprites/` al posto di quelli disegnati dal codice: Goku (tutte le forme, dal Kaioken all'Ultra Istinto), Vegeta, Trunks, Gohan, Piccolo, Crilin, Broly, Freezer, Cell, Bu, Bardock, Raditz, Vegito, Gogeta, Gotenks, Androidi 16/17/18, Cooler, Toppo, Hit, Kefla, Caulifla, Kale, Beerus, Whis, Jiren, Black, Zamasu, Frost e Turles. Durante la **trasformazione** compare la posa di carica con l'aura/esplosione disegnata nello sprite, e lo **scatto** (Slancio) usa la posa orizzontale con la scia di velocità. Il **Kamehameha** usa il raggio del pack (bocca, corpo, testa), tinto col colore dell'arma. I personaggi senza sprite nel pack mantengono la grafica generata dal codice. Autori e avvertenze: [`CREDITS.md`](CREDITS.md), strumenti di importazione in [`docs/SPRITES.md`](docs/SPRITES.md).
+
+### 🌦️ Stage vivi, meteo e giorno/notte
+- **Stage animati**: ogni pianeta ha laghi e zone di bioma (secco/rigoglioso), terreno animato (onde di luce, schiuma sulle rive, fessure di lava che pulsano, griglia del Torneo), alberi e bandiere che ondeggiano col vento, bagliori sugli ostacoli, fumo dai rottami, torce, e un sacco di scenografia in più. In giro ci sono **creature** (conigli, rane, granchi, lucertole, scorpioni, piccioni…) che scappano quando ti avvicini, farfalle, lucciole, uccelli con la loro ombra, ombre di nuvole, polvere, braci, ceneri, stelle cadenti e così via.
+- **Meteo** (pianure, Namecc, Isola di Muten, Pianeta Vegeta, Arena del Cell Game e altri): **pioggia, temporali con fulmini, nebbia, tempeste di sabbia e vento**, che arrivano e se ne vanno nel corso della partita.
+- **Giorno/notte** negli stage all'aperto, con alba e tramonto. Da **Impostazioni → Ambiente** puoi attivare/disattivare **ambiente animato**, **meteo** e **ciclo giorno/notte**, scegliere con una barra **quanto giorno e quanto notte** (100% = sempre giorno, 0% = sempre notte) e la **durata del ciclo**. Tutto è solo estetico: il gameplay non cambia, e un controllo automatico riduce gli effetti se il gioco rallenta.
+
+### 🏆 Torneo del Potere finale
+Il Torneo del Potere è ora l'**ultimo stage**: 20 minuti, 12 boss con statistiche molto più alte e **evoluzioni durante lo scontro** (Dyspo, Bergamo, Basil, Lavender, Ribrianne, Cabba, Caulifla, Kale, Frost, Hit, Toppo e **Jiren**, che si evolve fino a *Ira Ultima*).
 
 ### 🖼️ Nuovo logo e menù dinamico
 - Il titolo testuale è sostituito dal **logo ufficiale del progetto** (`assets/logo.webp`, incorporato nel file finale).
@@ -286,28 +349,32 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 - **Trinket (20)** in 4 rarità: Scouter rotto, Marsupio Senzu, Fascia da allenamento, Stivali gravitazionali, Radar del Drago, Orecchino Potara, Mantello Namecciano, Nyoibo, Nuvola Speedy, Capsula Hoi-Poi, Cuore di Kaioh, Aureola angelica, Orologio della Stanza del Tempo, Sfera del Drago a 4 stelle, Cristallo divino, Armatura reale Saiyan, Anello del Tempo, Specchio di Kaioh, Cuore del Drago, Furia Saiyan.
 
 ### Stage, difficoltà e modalità
-| # | Stage | Durata | Sblocco |
-|---|---|---|---|
-| 1 | Pianure Saiyan | 8 min | — |
-| 2 | Pianeta Namecc | 10 min | clear Stage 1 |
-| 3 | Rovine degli Androidi | 12 min | clear Stage 2 |
-| 4 | Dimensione di Buu | 14 min | clear Stage 3 |
-| 5 | Torneo del Potere | 15 min | clear Stage 4 |
-| 6 | Isola di Muten | 8 min | clear Stage 1 |
-| 7 | Pianeta Vegeta | 10 min | clear Stage 2 |
-| 8 | Arena del Cell Game | 12 min | clear Stage 3 |
-| 9 | Regno degli Dei | 14 min | clear Stage 4 |
-| 10 | Inferno | 15 min | clear Stage 5 |
+| # | Stage | Sblocco |
+|---|---|---|
+| 1 | Isola di Muten | — |
+| 2 | Via del Serpente | clear Stage 1 |
+| 3 | Pianura Saiyan | clear Stage 2 |
+| 4 | Pianeta Vegeta | clear Stage 3 |
+| 5 | Pianeta Namek | clear Stage 4 |
+| 6 | Rovine degli Androidi | clear Stage 5 |
+| 7 | Arena dei Cell Game | clear Stage 6 |
+| 8 | Inferno | clear Stage 7 |
+| 9 | Dimensione di Bu | clear Stage 8 |
+| 10 | Regno degli Dei | clear Stage 9 |
+| 11 | **Torneo del Potere** (finale) | clear Stage 10 |
 
-Ogni stage ha **nemici dedicati** (47 tipi totali, ciascuno con IA diversa: inseguimento, tiratori, kamikaze, schermati, schivatori…) e **boss** a tempi prefissati (45 boss totali; es. Raditz, Nappa, Vegeta e la Grande Scimmia nello Stage 1; Freezer nello Stage 2; Cell nello Stage 3; Kid Buu nello Stage 4; Jiren nello Stage 5; Broly nello Stage 10). Una **Guida/Glossario** nel menu descrive ogni nemico e boss.
+Gli stage seguono l'**ordine canonico di Dragon Ball** (Dragon Ball → Z → Super) e la difficoltà cresce di stage in stage. Chi aveva già dei progressi non perde nulla: uno stage già completato resta aperto.
+
+Ogni stage ha **nemici dedicati** (oltre 130 varianti totali, ciascuno con IA diversa: inseguimento, tiratori, kamikaze, schermati, schivatori…) e **boss** a tempi prefissati (es. Raditz, Nappa e Vegeta nelle Pianure Saiyan; Freezer su Namek; Cell ai Cell Game; Janemba su Via del Serpente; Freezer e Cell evoluti + Omega Shenron all'Inferno; Jiren al Torneo del Potere). Una **Guida/Glossario** nel menu descrive ogni nemico e boss.
 
 **Difficoltà**
 
-| | Salute nemici | Danni nemici | Quantità | Zenny |
-|---|---|---|---|---|
-| Facile | ×0,9 | ×0,7 | ×0,8 | ×0,7 |
-| Normale | ×1 | ×1 | ×1 | ×1 |
-| Difficile | ×2 | ×1,5 | ×1,4 | ×1,35 |
+| | Salute nemici | Danni nemici | Quantità | Zenny | Durata |
+|---|---|---|---|---|---|
+| Facile | ×0,9 | ×0,7 | ×0,8 | ×0,7 | 5 min |
+| Normale | ×1 | ×1 | ×1 | ×1 | 10 min |
+| Difficile | ×2 | ×1,5 | ×1,4 | ×1,35 | 15 min |
+| Estremo | ×4 | ×1,8 | ×1,5 | ×2,4 | 30 min |
 
 **Modalità x2** (si sblocca raggiungendo il boss finale di uno stage): tempo e zenny doppi, esperienza ridotta, nemici più duri.
 **Modalità Sandbox** (Impostazioni): provi liberamente armi, forme ed evoluzioni.

@@ -2,7 +2,7 @@
 /* ====== Weapon classes. Tables have 6 entries: levels 1-5 + evolved ====== */
 const WS={
   ki:{cd:[.8,.72,.64,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[10,12,14,16,19,23],pi:[0,0,0,0,0,0]},
-  kame:{cd:[3.8,3.4,3,2.8,2.5,2.2],dmg:[7,8.5,10.5,13,16.5,22],wid:[30,36,40,46,52,64],len:[380,420,440,520,560,680]},
+  kame:{cd:[3.8,3.4,3,2.8,2.5,2.2],dmg:[7,8.5,10.5,13,16.5,22],wid:[30,36,40,46,52,64],len:[380,418,456,494,532,680]},
   disc:{n:[2,2,3,3,4,6],r:[80,85,95,100,110,125],dmg:[11,12.5,14,16,19,25],spd:[2.6,2.8,3,3.2,4,4.4]},
   spirit:{cd:[11,10,8.5,8,7,6.5],dmg:[62,78,95,120,155,210],rad:[110,125,135,160,185,230]},
   aura:{r:[66,80,94,108,128,170],dmg:[4.5,5.5,7,8.5,11,16]},
@@ -35,14 +35,44 @@ const VFX={
     }
     ctx.restore();
   },
+  /* Kamehameha 'life': energy pulses rippling along the beam, a restless bright core, a bulging head with rings and sparks, a pulsing muzzle burst */
+  kameFlow(ctx,len,wid,c,k,t){
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+    const hw=Math.max(4,wid*.5*(.35+.65*k));
+    for(let i=0;i<7;i++){   /* pulses travelling outward, widening then thinning like in the anime */
+      const ph=(t*1.9+i/7)%1,x=len*ph,sw=Math.sin(ph*Math.PI),a=.4*sw*k;
+      if(a<.02)continue;
+      const gr=ctx.createLinearGradient(x-hw*.7,0,x+hw*.7,0);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.5,hexA('#ffffff',a));gr.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(x,0,hw*.7,hw*(.38+.2*sw),0,0,TAU);ctx.fill();
+    }
+    ctx.strokeStyle=hexA('#ffffff',.55*k);ctx.lineWidth=Math.max(1.5,hw*.22);   /* core filament, gently undulating */
+    ctx.beginPath();for(let x=0;x<=len;x+=len/16){const y=Math.sin(x*.045-t*30)*hw*.18;x?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    /* head: swelling energy ball with echo rings */
+    const hp=1+.12*Math.sin(t*26);
+    GLOW.at(ctx,len,0,hw*2.1*hp,c,.8*k);GLOW.at(ctx,len,0,hw*1.1*hp,'#ffffff',.7*k);
+    for(let i=0;i<2;i++){const r=((t*1.6+i*.5)%1);ctx.strokeStyle=hexA(c,(1-r)*.7*k);ctx.lineWidth=2.2*(1-r)+.6;ctx.beginPath();ctx.ellipse(len,0,hw*(.5+1.2*r)*.55,hw*(.5+1.2*r),0,0,TAU);ctx.stroke();}
+    for(let i=0;i<6;i++){const a=t*7+i*1.047,r=hw*(1+.5*Math.sin(t*12+i));ctx.fillStyle=hexA('#ffffff',.8*k);ctx.fillRect(len+Math.cos(a)*r-1.3,Math.sin(a)*r-1.3,2.6,2.6);}
+    /* muzzle: pulsing flare at the hands */
+    const mp=1+.18*Math.sin(t*34);GLOW.at(ctx,0,0,hw*1.9*mp,c,.9*k);GLOW.at(ctx,0,0,hw*.95*mp,'#ffffff',.8*k);VFX.star(ctx,0,0,hw*1.6*mp,'rgba(255,255,255,.7)',t*5);
+    ctx.restore();
+  },
   /* energy beam along +x: wavy outer shell, bright core, travelling streaks, flares at both ends */
-  beam(ctx,len,wid,c,k,t,seed,elec){
+  beam(ctx,len,wid,c,k,t,seed,elec,spr){
+    let sp=false;
+    if(spr&&k>.02){ /* pack sprite beam when available (Kamehameha): sprite body + additive glow and electric arcs on top */
+      ctx.save();ctx.globalCompositeOperation='lighter';const gr=ctx.createLinearGradient(0,-wid*.75*k,0,wid*.75*k);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.5,c);gr.addColorStop(1,'rgba(0,0,0,0)');ctx.globalAlpha=.3*k;ctx.fillStyle=gr;ctx.fillRect(0,-wid*.75*k,len,wid*1.5*k);ctx.restore();
+      if(Sprites.drawBeam&&Sprites.drawBeam(ctx,len,wid,c,k,t)){
+        ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,0,0,wid*1.5,c,.9*k);GLOW.at(ctx,len,0,wid*1.1,c,.6*k);ctx.restore();
+        VFX.kameFlow(ctx,len,wid,c,k,t);
+        if(!elec)return;sp=true;
+      }
+    }
     ctx.save();ctx.globalCompositeOperation='lighter';
     const w=wid*(.35+.65*k),N=18,s=seed||0;
     /* soft outer halo */
-    ctx.globalAlpha=.13;ctx.fillStyle=c;ctx.fillRect(-w*.3,-w*1.15,len+w*.3,w*2.3);
+    if(!sp){ctx.globalAlpha=.13;ctx.fillStyle=c;ctx.fillRect(-w*.3,-w*1.15,len+w*.3,w*2.3);}
     /* wavy shell */
-    for(const [sc,al,col] of [[.62,.35,c],[.45,.6,c],[.28,.85,'#ffffff']]){
+    if(!sp)for(const [sc,al,col] of [[.62,.35,c],[.45,.6,c],[.28,.85,'#ffffff']]){
       ctx.globalAlpha=al;ctx.fillStyle=col;
       ctx.beginPath();
       for(let i=0;i<=N;i++){const x=len*i/N,env=Math.min(1,i/3),y=-(w*sc*env+Math.sin(x*.05-t*32+s)*w*.07*sc*3);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
@@ -51,7 +81,7 @@ const VFX={
     }
     /* travelling streaks */
     ctx.globalAlpha=.9;ctx.strokeStyle='#fff';ctx.lineCap='round';
-    for(let i=0;i<7;i++){
+    if(!sp)for(let i=0;i<7;i++){
       const ph=((t*(2.2+i*.3)+i*.37+s)%1),x0=len*ph,ln=len*.16,y=Math.sin(i*2.4+s)*w*.3;
       ctx.lineWidth=1.2+(i%3);ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(Math.min(len,x0+ln),y);ctx.stroke();
     }
@@ -69,8 +99,8 @@ const VFX={
       for(let q=0;q<10;q++){ctx.globalAlpha=k;ctx.fillStyle='#fff';const x=Math.random()*len,y=(Math.random()-.5)*w*2.3;ctx.fillRect(x,y,2.6,2.6);}
     }
     /* muzzle + tip flares */
-    GLOW.at(ctx,0,0,w*2.1,c,1);GLOW.at(ctx,0,0,w*1.1,'#fff',.9);
-    GLOW.at(ctx,len,0,w*1.6,c,.85*k);VFX.star(ctx,len,0,w*1.5*k,'rgba(255,255,255,.85)',t*4);
+    if(!sp){GLOW.at(ctx,0,0,w*2.1,c,1);GLOW.at(ctx,0,0,w*1.1,'#fff',.9);
+    GLOW.at(ctx,len,0,w*1.6,c,.85*k);VFX.star(ctx,len,0,w*1.5*k,'rgba(255,255,255,.85)',t*4);}
     ctx.restore();
   }
 };
@@ -115,11 +145,14 @@ class KiWeapon extends Weapon{
 
 class KameWeapon extends Weapon{
   constructor(g,id){super(g,id);this.beams=[];this.charge=null;}
+  /* the head shoots out of the hands in the first ~22% of the beam's life (ease-out), then the beam stays at full reach */
+  static ext(b){const u=Math.min(1,b.t/(b.dur*.22));return 1-Math.pow(1-u,3);}
   fire(a){
     const g=this.g,s=this.st,L=this.L,A=g.S.area*this.e2a;
     const angs=this.evo>=2?[a,a+Math.PI]:this.evo?[a]:this.lv>=5?[a,a+Math.PI]:[a];
-    const WM=this.evo?(this.evo>=2?2.1:1.8):1,LM=this.evo?1.12:1;
-    for(const ang of angs)this.beams.push({a:ang,t:0,dur:this.evo?.8:.6,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo});
+    const WM=this.evo?(this.evo>=2?2.1:1.8):1,LM=(this.evo?1.12:1)*(1+Math.min(.3,.01*(g.lvl-1)));   /* +1% reach per character level, capped at +30% */
+    g.fireT=Math.max(g.fireT||0,this.evo?.8:.6);   /* arm extended while the beam is out */
+    for(const ang of angs)this.beams.push({a:ang,t:0,dur:this.evo?.8:.6,ext:0,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo});
   }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
@@ -137,13 +170,13 @@ class KameWeapon extends Weapon{
       if(c.t>=c.dur){this.fire(c.a);g.audio.sfx(this.evo?'kameFireEvo':'kameFire');this.charge=null;g.cast=null;this.cd=s.cd[L]*g.S.cd*this.e2c;g.shake=Math.max(g.shake,.15);}
     }
     for(const b of this.beams){
-      b.t+=dt;b.tk-=dt;
+      b.t+=dt;b.tk-=dt;b.ext=KameWeapon.ext(b);
       if(b.tk<=0){
         b.tk=.1;const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x,oy=p.y-18;
         for(const e of g.en){
           if(e.dead)continue;
           const dx=e.x-ox,dy=e.y-8-oy,al=dx*cs+dy*sn,pe=-dx*sn+dy*cs;
-          if(al>-10&&al<b.len&&Math.abs(pe)<b.wid/2+e.r)g.hit(e,b.dmg,cs*40,sn*40);
+          if(al>-10&&al<b.len*b.ext&&Math.abs(pe)<b.wid/2+e.r)g.hit(e,b.dmg,cs*40,sn*40);
         }
       }
     }
@@ -154,7 +187,7 @@ class KameWeapon extends Weapon{
     for(const b of this.beams){
       const k=Math.sin(Math.min(1,b.t/b.dur)*Math.PI);
       ctx.save();ctx.translate(p.x+Math.cos(b.a)*14,p.y-18+Math.sin(b.a)*14);ctx.rotate(b.a);
-      VFX.beam(ctx,b.len,b.wid,c,k,g.rt,b.a*3,b.elec);
+      VFX.beam(ctx,b.len*(b.ext||.01),b.wid,c,k,g.rt,b.a*3,b.elec,true);
       ctx.restore();
       if(Math.random()<.9&&g.fx.length<420){const d=rnd(30,b.len),cs=Math.cos(b.a),sn=Math.sin(b.a),o=rnd(-.5,.5)*b.wid;g.fx.push({x:p.x+cs*d-sn*o,y:p.y-18+sn*d+cs*o,vx:cs*60+rnd(-40,40),vy:sn*60+rnd(-40,40)-20,l:rnd(.25,.5),m:.5,c:Math.random()<.5?'#ffffff':c,s:rnd(2,4)});}
     }

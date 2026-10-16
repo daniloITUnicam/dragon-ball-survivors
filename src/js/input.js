@@ -1,6 +1,6 @@
 'use strict';
 /* ====== Input: keyboard + any gamepad (Gamepad API), fully rebindable ====== */
-const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','senzu','debug'];
+const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','senzu','dash','debug'];
 const PAD_NAMES=['A / ✕','B / ○','X / □','Y / △','LB / L1','RB / R1','LT / L2','RT / R2','Select / Share','Start / Options','L3','R3','D-Up','D-Down','D-Left','D-Right','Home'];
 class Input{
   constructor(save){
@@ -102,7 +102,7 @@ class Input{
   resetBinds(){this.save.d.binds=this.save.defaults().binds;this.save.write();}
   static keyLabel(c){
     if(!c)return '—';
-    return c.replace('Key','').replace('Digit','').replace('Arrow','').replace('Escape','Esc').replace('Backspace','⌫').replace('Backquote','`')
+    return c.replace('Key','').replace('Digit','').replace('Arrow','').replace('ShiftLeft','Shift').replace('ShiftRight','Shift').replace('Escape','Esc').replace('Backspace','⌫').replace('Backquote','`')
       .replace('Space','Space').replace('Enter','Enter').replace('Numpad','Num ');
   }
   static padLabel(i){return i===undefined||i===null?'—':(PAD_NAMES[i]||('Btn '+i));}

@@ -1,0 +1,14 @@
+const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1000,height:600}});
+const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));pg.on('console',m=>{if(/frame error/.test(m.text()))errs.push(m.text());});
+await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+await pg.evaluate(()=>{__app.startGame({stage:5,char:'goku',diff:'normal',x2:false,sandbox:false});window.G=__app.game;});
+await pg.evaluate(()=>{const g=G;g.sb.god=true;for(let f=0;f<60*90;f++){if(g.modal)g.modal=null;g.input.x=Math.cos(f/80);g.input.y=Math.sin(f/80);g.update(1/60);}g.sb.god=false;});
+const kills=await pg.evaluate(()=>{const g=G;return{kills:g.kills,dmg:JSON.stringify(g.dmgBy)};});console.log('before death',JSON.stringify(kills));
+await pg.evaluate(()=>{const g=G;g.p.inv=0;g.p.hp=1;g.hurt(999,{boss:1});});
+await wait(700);await pg.screenshot({path:'/tmp/death1.png'});
+const mid=await pg.evaluate(()=>({dying:!!G.dying,ts:G.timeScale,ended:G.ended,state:__app.state}));console.log('t+0.7s',JSON.stringify(mid));
+await wait(1700);
+const end=await pg.evaluate(()=>({dying:!!G.dying,ended:G.ended,ts:G.timeScale,top:__app.ui.top&&__app.ui.top.name,hasDmg:!!document.querySelector('.dmgsum'),rows:document.querySelectorAll('.dmgrow').length}));console.log('t+2.4s',JSON.stringify(end));
+await wait(300);await pg.screenshot({path:'/tmp/death2.png'});
+console.log(errs.length?errs.slice(0,3):'no errors');await b.close();process.exit(errs.length||!end.hasDmg?1:0);})();

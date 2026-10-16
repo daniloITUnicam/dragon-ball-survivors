@@ -35,8 +35,9 @@ A *Vampire Survivors*-style game inspired by Dragon Ball: you move, your weapons
 | Confirm / Cancel | `Enter`, `Space` / `Esc`, `Backspace` | A / B |
 | Pause | `Esc` or `P` | Start |
 | Interact (altars, totems, time chamber) | `E` or `F` | A |
-| Companion ability | `Q` or `Left Shift` (or tap the bottom-left button) | X |
+| Companion ability | `Q` (or tap the bottom-left button) | X |
 | **Senzu bean** (from the bag) | `H` · on-screen button | LB |
+| **Dash** (damages what it crosses + invulnerability, 4 s cooldown) | `Shift` · on-screen button | RB |
 | **Character ability** (Kaioken, Berserk, beams, clones…) | `R` or `X` · on-screen button | Y |
 | Debug (FPS…) | `F2` or `` ` `` | Select |
 
@@ -45,6 +46,68 @@ All keys can be rebound in **Settings → Controls**.
 ---
 
 ## What's new
+
+### 🆕 October 2026 update (v35 → v40)
+
+**⚡ Effects and abilities (latest polish)**
+- The **character model** is always drawn above beams, projectiles and effects: no ability can hide it.
+- **Growing electricity:** with every transformation the abilities (beams, discs, spheres, auras, meteors, shockwaves…) get animated electric arcs and orbiting sparks, denser each time (none in the base form).
+- **Kaioken aura**, constant and alive like in the anime: red glow, layered swaying flames, ground rings, rising sparks; bigger and fiercer at ×20. It stays on top of every effect.
+- **Kamehameha:** the beam shoots out of the hands, energy pulses flow along it, pulsing head with rings and sparks, charging ball with rotating rays. Reach grows +1% per character level (max +30%) and with every weapon level. Same treatment for the **Big Bang Kamehameha** (evolved too: giant head).
+- **Test mode:** no more zenny, achievements, unlocks or progress (like the Test environment).
+- On the stage screen, **clicking a stage** now goes straight to character select.
+- **Frieza** now has 7 forms (with **Golden**) and **Cell** 6 (Imperfect → Semi-Perfect with C-17 → Perfect with C-18 → Super Perfect → **Golden** → **Black**); every form raises stats, armor and max HP (+12%).
+
+**🗺️ Levels**
+- **Snake Way** (Stage 2): you can only walk on the snake's body, enemies and items only spawn there. Every 2:30 (scaled to the run length) enemies get tougher, up to a swarm of mini-bosses; final boss **Janemba** in two phases (fat form → transformation animation → true Janemba with his sword and beam, as in the movie). Clearing it on Hard unlocks **Gogeta**.
+- **Hell** now comes after the Frieza and Cell sagas (Stage 8). It features **Frieza** and **Cell** as mini-bosses that *evolve every 1/N of their life*: Frieza in 7 forms (first → second → third → final → 100% → **Golden Frieza** → **Black Frieza**), Cell in 6 (imperfect → semi-perfect, absorbs C-17 → perfect, absorbs C-18 → super perfect, after Goku's self-destruct → **Golden Cell** → **Black Cell**). Every form has a transformation animation, new moves (Death Saucers, Death Beam, Death Ball, Supernova, Cell Kamehameha, Cell Jrs., Solar Flare…) and more armor and more max HP with every form. Final boss: Omega Shenron.
+- **Animated top-down map preview** on every stage card; canonical order updated (see table below).
+
+**⏱️ Difficulty and balance**
+- Same length on every map: **Easy 5 min · Normal 10 · Hard 15 · Extreme 30** (new *Extreme* difficulty: very tanky enemies that don't one-shot but hit hard, huge bosses).
+- Every **90 seconds** enemies gain **+20% HP and +4% damage** (cumulative).
+- **+10% HP** for all enemies (bosses included) in every mode.
+- Shop: slightly stronger upgrades (e.g. armor +1/level, **regeneration +0.5 HP/s per level**), **Dash removed from the shop** (the base dash stays; the rare in-run trinket *Wind Boots* improves it).
+- Fix: intermittent white screen (canvas state reset every frame, elliptical radii clamped).
+
+**💀 Death and UI**
+- Death animation (slow motion, slowed music), menu within 2 s with *Retry*, **per-weapon damage and collected coins summary**.
+- Lighter level-up screen: the game stays visible behind it.
+- **Test mode** (Settings): every stage and character unlocked and a free shop; turning it off reverts everything (with a confirmation warning).
+
+**👹 Much livelier enemies**
+- New **enemy skill system** (`src/js/skills.js`): ki fans, rings, lunges, quakes, sky strikes, mines, shield, summons, healing, war cry, orbiting orbs, beams, spin, burrowing, slashes. Every skill has a **visible wind-up** (enemy charges, "!" and glow) and every level has its own combinations (Saibamen leaving acid pools, armored Cell Jrs. summoning Cell Jrs., Reapers burrowing…).
+- Enemy **rage and transformations**: below 50% HP they enrage (aura, faster and stronger), some **change look** (Super Saiyan, Great Ape, empowered Majin, enraged demon, ascended celestial soldier, overclocked cyborg…) or **evolve** over time.
+- Procedural animation: walk bob, breathing, wind-up and strike poses, spawn pop, blob jelly, ghost sway, wing flutter, hit squash.
+
+**🕳️ Secrets and Zeno's Shop**
+- One secret per level, at a random time between 1:00 and the level length: an **arrow with the distance in meters** points to an **altar with a mysterious red button**. Pressing **E** (like the Room of Spirit and Time) opens a portal to **Zeno's Shop**.
+- Inside: a **60-second** chill dimension, level time frozen, **abilities and pet disabled**, **no passive regeneration**. Trinkets lie on the ground in front of Zeno-sama: stand on one to buy it (run coins), with a **pop-up card** showing the item and its stats.
+- **Luck** drives the items' rarity (up to legendary); **1% of items are Mythic**.
+
+**🍀 Trinkets: one at a time, with rarities and Mythic**
+- You carry **a single trinket**; finding another one (chest, capsule, wish, Zeno) opens a **comparison window** with a replacement warning.
+- Every trinket can have a **Common → Mythic** rarity: stats grow with rarity and are capped per rarity (e.g. damage: legendary max 15%, mythic max 20%); texts update automatically. Lower tiers were scaled down accordingly. Any trinket found has a 1% chance to be Mythic.
+- *Collector* achievement is now "Find 6 trinkets in one run".
+
+**🕰️ Room of Spirit and Time**
+- Stat swaps have half the penalty; the transformation is only offered if it would happen within 10 levels and is an **alternative** to the weapon (one or the other); abilities and pet are disabled there too (regeneration still works).
+
+**🧪 Added tests:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`.
+
+### 🎵 Per-map music and 💨 universal dash
+**Music:** drop a track in `assets/` named after the map (`android ruins.mp3`, `buu dimension.mp3`, `muten island.mp3`, `tournament of power.mp3`, `namek.mp3`…) and it plays on that map, looping with a crossfade. Name table and size options in [`docs/MUSIC.md`](docs/MUSIC.md) (Italian). **Dash (Shift):** every character has it now. Button at the bottom-left next to Kaioken, 4 s cooldown (upgradable in the shop with *Lightning Dash*: −0.4 s and +15% damage per level), damages the enemies it crosses and grants brief invulnerability. **Sprites:** characters with pack sprites walk normally while charging a beam and extend the arm only when firing; bosses and Saibamen with pack art use it (Cabba and Janemba included).
+
+### 🎨 New pack sprites (32 characters) and dash
+Characters now use the pixel-art sprites from the pack in `assets/sprites/` instead of the code-drawn ones: Goku (every form, Kaioken to Ultra Instinct), Vegeta, Trunks, Gohan, Piccolo, Krillin, Broly, Frieza, Cell, Buu, Bardock, Raditz, Vegito, Gogeta, Gotenks, Androids 16/17/18, Cooler, Toppo, Hit, Kefla, Caulifla, Kale, Beerus, Whis, Jiren, Black, Zamasu, Frost and Turles. While **transforming**, the power-up pose with the aura/burst drawn in the sprite is shown, and the **dash** uses the horizontal pose with a speed streak. The **Kamehameha** uses the pack's beam art (muzzle burst, body, head), tinted with the weapon colour. Characters without pack sprites keep the code-drawn art. Artists and caveats: [`CREDITS.md`](CREDITS.md), import tooling in [`docs/SPRITES.md`](docs/SPRITES.md) (Italian).
+
+### 🌦️ Living stages, weather and day/night
+- **Animated stages**: every planet now has lakes and biome patches (dry/lush), animated terrain (light waves, shoreline foam, pulsing lava cracks, the Tournament grid), trees and flags swaying in the wind, glowing props, smoke from wrecks, torches and a lot more scenery. **Critters** roam around (rabbits, frogs, crabs, lizards, scorpions, pigeons…) and run away when you get close, plus butterflies, fireflies, birds with their shadows, cloud shadows, dust, embers, ash, shooting stars and more.
+- **Weather** (plains, Namek, Roshi's Island, Planet Vegeta, Cell Games Arena and more): **rain, thunderstorms with lightning, fog, sandstorms and wind** come and go during the run.
+- **Day/night** on outdoor stages, with dawn and dusk. In **Settings → World** you can switch **animated environment**, **weather** and the **day/night cycle** on or off, pick **how much day and how much night** with a slider (100% = always day, 0% = always night) and the **cycle length**. It is purely cosmetic (gameplay is unchanged) and an automatic check lowers the effects if the game slows down.
+
+### 🏆 Tournament of Power as the finale
+The Tournament of Power is now the **last stage**: 20 minutes, 12 bosses with much higher stats that **evolve during the fight** (Dyspo, Bergamo, Basil, Lavender, Ribrianne, Cabba, Caulifla, Kale, Frost, Hit, Toppo and **Jiren**, who evolves up to *Final Wrath*).
 
 ### 🖼️ New logo and dynamic menu
 - The text title is replaced by the project's **logo** (`assets/logo.webp`, embedded in the final file).
@@ -277,26 +340,30 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 - **20 trinkets** across 4 rarities: Broken Scouter, Senzu Pouch, Training Headband, Gravity Boots, Dragon Radar, Potara Earring, Namekian Cape, Power Pole, Speedy Cloud, Hoi-Poi Capsule, Kaioh's Heart, Angel Halo, Spirit Room Clock, Four-Star Ball, Divine Crystal, Royal Saiyan Armor, Ring of Time, Kaioh Mirror, Dragon Heart, Saiyan Fury.
 
 ### Stages, difficulty and modes
-| # | Stage | Length | Unlock |
-|---|---|---|---|
-| 1 | Saiyan Plains | 8 min | — |
-| 2 | Planet Namek | 10 min | clear Stage 1 |
-| 3 | Android Ruins | 12 min | clear Stage 2 |
-| 4 | Buu's Dimension | 14 min | clear Stage 3 |
-| 5 | Tournament of Power | 15 min | clear Stage 4 |
-| 6 | Roshi's Island | 8 min | clear Stage 1 |
-| 7 | Planet Vegeta | 10 min | clear Stage 2 |
-| 8 | Cell Games Arena | 12 min | clear Stage 3 |
-| 9 | Realm of the Gods | 14 min | clear Stage 4 |
-| 10 | Hell | 15 min | clear Stage 5 |
+| # | Stage | Unlock |
+|---|---|---|
+| 1 | Roshi's Island | — |
+| 2 | Snake Way | clear Stage 1 |
+| 3 | Saiyan Plains | clear Stage 2 |
+| 4 | Planet Vegeta | clear Stage 3 |
+| 5 | Planet Namek | clear Stage 4 |
+| 6 | Android Ruins | clear Stage 5 |
+| 7 | Cell Games Arena | clear Stage 6 |
+| 8 | Hell | clear Stage 7 |
+| 9 | Buu's Dimension | clear Stage 8 |
+| 10 | Realm of the Gods | clear Stage 9 |
+| 11 | **Tournament of Power** (finale) | clear Stage 10 |
 
-Each stage has **dedicated enemies** (47 types in total, with different AI: chasers, shooters, kamikazes, shielded, blinkers…) and **bosses** at fixed times (45 in total; e.g. Raditz, Nappa, Vegeta and the Great Ape in Stage 1; Frieza in Stage 2; Cell in Stage 3; Kid Buu in Stage 4; Jiren in Stage 5; Broly in Stage 10). A **Glossary** in the menu describes every enemy and boss.
+Stages follow the **canonical Dragon Ball order** (Dragon Ball → Z → Super) and difficulty rises stage by stage. Existing saves lose nothing: a stage you already cleared stays open.
 
-| Difficulty | Enemy HP | Enemy damage | Spawn rate | Zenny |
-|---|---|---|---|---|
-| Easy | ×0.9 | ×0.7 | ×0.8 | ×0.7 |
-| Normal | ×1 | ×1 | ×1 | ×1 |
-| Hard | ×2 | ×1.5 | ×1.4 | ×1.35 |
+Each stage has **dedicated enemies** (130+ variants in total, with different AI: chasers, shooters, kamikazes, shielded, blinkers…) and **bosses** at fixed times (e.g. Raditz, Nappa and Vegeta on the Saiyan Plains; Frieza on Namek; Cell at the Cell Games; Janemba on Snake Way; evolved Frieza and Cell + Omega Shenron in Hell; Jiren in the Tournament of Power). A **Glossary** in the menu describes every enemy and boss.
+
+| Difficulty | Enemy HP | Enemy damage | Spawn rate | Zenny | Length |
+|---|---|---|---|---|---|
+| Easy | ×0.9 | ×0.7 | ×0.8 | ×0.7 | 5 min |
+| Normal | ×1 | ×1 | ×1 | ×1 | 10 min |
+| Hard | ×2 | ×1.5 | ×1.4 | ×1.35 | 15 min |
+| Extreme | ×4 | ×1.8 | ×1.5 | ×2.4 | 30 min |
 
 **x2 mode** (unlocked by reaching a stage's final boss): double time and zenny, reduced XP, tougher enemies.
 **Sandbox mode** (Settings): freely try weapons, forms and evolutions.

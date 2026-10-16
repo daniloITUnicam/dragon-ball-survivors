@@ -50,6 +50,18 @@
     clResolve:['Risolvi il conflitto','Resolve the conflict','Resolver el conflicto','Résoudre le conflit','Konflikt lösen','Resolver o conflito'],
     clLoginCta:['Accedi / Registrati','Log in / Sign up','Entrar / Registrarse','Connexion / Inscription','Anmelden / Registrieren','Entrar / Cadastrar'],
     clCloudBadge:['Cloud','Cloud','Nube','Cloud','Cloud','Nuvem'],
+    tab_world:['Ambiente','World','Entorno','Environnement','Umgebung','Ambiente'],
+    weatherFx:['Meteo','Weather','Clima','Météo','Wetter','Clima'],
+    weatherFxDesc:['Pioggia, temporali, nebbia, tempeste di sabbia e vento negli stage adatti.','Rain, storms, fog, sandstorms and wind on suitable stages.','Lluvia, tormentas, niebla, tormentas de arena y viento en los escenarios adecuados.','Pluie, orages, brouillard, tempêtes de sable et vent sur les niveaux adaptés.','Regen, Gewitter, Nebel, Sandstürme und Wind in passenden Stages.','Chuva, tempestades, neblina, tempestades de areia e vento nos estágios adequados.'],
+    dayNight:['Ciclo giorno/notte','Day/night cycle','Ciclo día/noche','Cycle jour/nuit','Tag-/Nachtzyklus','Ciclo dia/noite'],
+    dayNightDesc:['Attiva giorno e notte negli stage all\'aperto (Inferno e Torneo del Potere non cambiano).','Enables day and night on outdoor stages (Hell and the Tournament of Power stay the same).','Activa día y noche en los escenarios al aire libre (Infierno y el Torneo del Poder no cambian).','Active le jour et la nuit sur les niveaux en extérieur (l\'Enfer et le Tournoi du Pouvoir ne changent pas).','Aktiviert Tag und Nacht in Außen-Stages (Hölle und Turnier der Macht bleiben gleich).','Ativa dia e noite nos estágios ao ar livre (Inferno e Torneio do Poder não mudam).'],
+    dnShare:['Giorno / Notte','Day / Night','Día / Noche','Jour / Nuit','Tag / Nacht','Dia / Noite'],
+    dnShareDesc:['100% = sempre giorno, 0% = sempre notte, in mezzo alterna i due.','100% = always day, 0% = always night, in between it alternates.','100% = siempre día, 0% = siempre noche, en medio alterna.','100 % = toujours jour, 0 % = toujours nuit, entre les deux ça alterne.','100% = immer Tag, 0% = immer Nacht, dazwischen wechselt es.','100% = sempre dia, 0% = sempre noite, no meio alterna.'],
+    dayWord:['Giorno','Day','Día','Jour','Tag','Dia'],
+    nightWord:['Notte','Night','Noche','Nuit','Nacht','Noite'],
+    dnLen:['Durata del ciclo','Cycle length','Duración del ciclo','Durée du cycle','Zyklusdauer','Duração do ciclo'],
+    ambientFx:['Ambiente animato','Animated environment','Entorno animado','Environnement animé','Animierte Umgebung','Ambiente animado'],
+    ambientFxDesc:['Particelle, creature, meteo e animazioni degli stage (disattiva se il gioco rallenta)','Particles, critters, weather and stage animations (turn off if the game lags)','Partículas, criaturas, clima y animaciones de los escenarios (desactívalo si va lento)','Particules, créatures, météo et animations des niveaux (désactive si le jeu rame)','Partikel, Tiere, Wetter und Stage-Animationen (bei Rucklern ausschalten)','Partículas, criaturas, clima e animações dos estágios (desative se travar)'],
     streamerMode:['Modalità streamer','Streamer mode','Modo streamer','Mode streamer','Streamer-Modus','Modo streamer'],
     streamerDesc:['Nasconde la tua email (e il campo email nel login) per non mostrarla in diretta.','Hides your email (and the email field on the login form) so it is not shown on stream.','Oculta tu correo (y el campo de correo del inicio de sesión) para no mostrarlo en directo.','Masque ton e-mail (et le champ e-mail de la connexion) pour ne pas l\'afficher en direct.','Verbirgt deine E-Mail (und das E-Mail-Feld beim Login), damit sie nicht im Stream erscheint.','Oculta seu e-mail (e o campo de e-mail do login) para não aparecer na transmissão.'],
     upgTag:['Potenziamento','Upgrade','Mejora','Amélioration','Verbesserung','Melhoria'],
@@ -94,6 +106,7 @@
     senzuTitle:['Borsa Senzu','Senzu bag','Bolsa Senzu','Sac de Senzu','Senzu-Beutel','Bolsa Senzu'],
     senzuBagged:['Nella borsa: {a}/{b} · premi H per usarlo','In the bag: {a}/{b} · press H to use it','En la bolsa: {a}/{b} · pulsa H para usarla','Dans le sac : {a}/{b} · appuie sur H','Im Beutel: {a}/{b} · drücke H zum Benutzen','Na bolsa: {a}/{b} · aperte H para usar'],
     senzuFull:['Borsa piena ({b}/{b}): lo mangi subito e recuperi il 40% di vita.','Bag full ({b}/{b}): you eat it right away and recover 40% HP.','Bolsa llena ({b}/{b}): te la comes al instante y recuperas el 40% de salud.','Sac plein ({b}/{b}) : tu le manges aussitôt et récupères 40 % de vie.','Beutel voll ({b}/{b}): du isst sie sofort und erhältst 40 % Leben zurück.','Bolsa cheia ({b}/{b}): você come na hora e recupera 40% de vida.'],
+    act_dash:['Scatto','Dash','Impulso','Dash','Sprint','Investida'],
     act_pet:['Abilità compagno','Companion ability','Habilidad del compañero','Capacité du compagnon','Begleiter-Fähigkeit','Habilidade do companheiro']
   };
   for(const k in ADD)ADD[k].forEach((v,i)=>{STR[L[i]][k]=v;});

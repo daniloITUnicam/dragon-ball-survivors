@@ -1,0 +1,26 @@
+const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1100,height:640}});
+const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+const STEP=`window.step=(n,fn)=>{const g=G;for(let f=0;f<n;f++){if(g.modal){try{__app.resolveModal(0);}catch(e){}if(g.modal)g.modal=null;}g.update(1/60);if(g.p.hp<g.p.maxHp*.6)g.p.hp=g.p.maxHp;if(fn)fn(f);}};`;
+const out=await pg.evaluate(()=>{const idx=STAGES.findIndex(s=>s.theme==='snake');
+ __app.startGame({stage:idx,char:'goku',diff:'hard',x2:false,sandbox:true});const g=__app.game;g.sb.god=true;window.G=g;
+ window.step=(n,fn)=>{for(let f=0;f<n;f++){if(g.modal){try{__app.resolveModal(0);}catch(e){}if(g.modal)g.modal=null;}g.update(1/60);if(g.p.hp<g.p.maxHp*.6)g.p.hp=g.p.maxHp;if(fn)fn(f);}};
+ step(60*40);return 'ok t='+g.t.toFixed(0);});
+console.log(out);await wait(400);await pg.screenshot({path:'/tmp/snake1.png'});
+const r=await pg.evaluate(()=>{const g=G,o=[];g.t=899;
+ for(let f=0;f<400&&!g.en.some(e=>e.boss);f++)step(1);
+ const e=g.en.find(e=>e.boss);o.push('boss '+e.bid+' hp '+Math.round(e.hp)+' pos off '+Math.abs(e.y-Snake.f(e.x)).toFixed(0)+' final '+e.final);
+ const pats={};const orig=g.bossAttack.bind(g);g.bossAttack=function(x){const before=g.bz.length,jb=g.jbeams.length;orig(x);const k=x.bd.id+':'+(g.jbeams.length>jb?'jbeam':g.bz.length>before?'bz':'shots');pats[k]=(pats[k]||0)+1;};
+ step(60*12);
+ o.push('after 12s phase0 pats '+JSON.stringify(pats)+' form '+e.bd.n.en);
+ e.hp=e.max*.49;let sawXf=false,sawBeam=false,sawBz=false;
+ step(60*30,()=>{if(e.xf&&e.xf.morph)sawXf=true;if(g.jbeams.length)sawBeam=true;});
+ o.push('morph seen '+sawXf+' now '+e.bd.n.en+' p2 '+e.p2+' beam seen '+sawBeam+' pats '+JSON.stringify(pats));
+ return o;});
+console.log(r.join('\n'));
+// capture visuals during beam
+await pg.evaluate(()=>{const g=G,e=g.en.find(e=>e.boss);g.jbeams.length=0;g.p.x=e.x-420;g.p.y=Snake.f(g.p.x);e.stun=0;e.sh=0;g.bossAttack=g.bossAttack;});
+await pg.evaluate(()=>{const g=G,e=g.en.find(e=>e.boss);const px=g.p.x;g.jbeams.push({x:e.x,y:e.y-e.r*.6,a:Math.PI,t:0,charge:1,fire:.7,w:30,len:1300,col:'#ff2a5a',dmg:1,e,hcd:0});step(75);});
+await wait(100);await pg.screenshot({path:'/tmp/snake2.png'});
+console.log(errs.length?errs.slice(0,4):'no errors');await b.close();process.exit(errs.length?1:0);})();

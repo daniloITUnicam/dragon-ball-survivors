@@ -65,8 +65,11 @@ class UI{
   rebuild(keepFocus){
     const t=this.top;if(!t)return;
     const fid=keepFocus&&document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.fid:null;
+    /* keep the scroll position of the screen (and of its inner scroll boxes) when it is rebuilt in place */
+    const SB='.wgrid,.grimdetail,.detail,.split>*',old=t.el,sc=old.scrollTop,inner=[...old.querySelectorAll(SB)].map(e=>e.scrollTop);
     const el=this['screen_'+t.name](t.args);el.classList.add('screen');
     t.el.replaceWith(el);t.el=el;
+    if(sc||inner.some(v=>v)){el.scrollTop=sc;[...el.querySelectorAll(SB)].forEach((e,i)=>{if(inner[i])e.scrollTop=inner[i];});}
     if(fid){const f=el.querySelector('[data-fid="'+fid+'"]');if(f){f.focus({preventScroll:true});return;}}
     this.focusFirst();
   }
@@ -134,40 +137,43 @@ class UI{
       h('div',{class:'foot'},
         h('span',{class:'hint'},this.app.input.mode==='pad'?('🎮 '+(this.app.input.padName||'').slice(0,40)):this.t('kbHint'))));
   }
-  stageOpen(i){const q=STAGES[i].req!==undefined?STAGES[i].req:i-1;return i===0||this.save.clears[q]>0;}
-  maxStage(){return this.stageOpen(this.sel.stage)?this.sel.stage:0;}
+  testAll(){return !!this.save.settings.sandbox;}
+  charOpen(id){return this.testAll()||this.save.unlocked.includes(id);}
+  stageOpen(i){const st=STAGES[i];return this.testAll()||st.pos===0||this.save.clears[i]>0||this.save.clears[STAGE_ORDER[st.pos-1]]>0;}
+  maxStage(){return this.stageOpen(this.sel.stage)?this.sel.stage:STAGE_ORDER[0];}
   screen_stages(){
     const d=this.save,sel=this.sel;
-    if(!this.stageOpen(sel.stage))sel.stage=0;
-    const x2ok=!!d.x2[sel.stage];if(!x2ok)sel.x2=false;
-    const cards=STAGES.map((s,i)=>{
-      const locked=!this.stageOpen(i),b=d.best[String(i)];
+    if(!this.stageOpen(sel.stage))sel.stage=STAGE_ORDER[0];
+    const x2ok=this.testAll()||!!d.x2[sel.stage];if(!x2ok)sel.x2=false;
+    const cards=STAGE_ORDER.map(i=>{
+      const s=STAGES[i],locked=!this.stageOpen(i),b=d.best[String(i)];
       return h('button',{class:'card stage'+(i===sel.stage?' sel':'')+(locked?' locked':''),'data-fid':'st'+i,disabled:locked,
         style:'--sky:'+THEMES[s.theme].sky+';--hi:'+THEMES[s.theme].hi,
-        onclick:()=>{this.sfx();sel.stage=i;this.rebuild(true);}},
-        h('div',{class:'stnum'},'STAGE '+s.id),h('div',{class:'cn'},this.tr(s.n)),
-        h('div',{class:'cd'},this.t('duration')+': '+fmtT(s.time/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+s.bosses.length),
+        onclick:()=>{this.sfx();sel.stage=i;this.push('chars');}},
+        h('canvas',{class:'stprev',width:240,height:96,'data-theme':s.theme,'data-seed':String(i)}),
+        h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
+        h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+s.bosses.length),
         h('div',{class:'cd'},this.t('rewardMult')+' x'+s.zenny),
-        locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:(s.req!==undefined?s.req:i-1)+1})):
+        locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:STAGES[STAGE_ORDER[s.pos-1]].no})):
           h('div',{class:'cl'},(d.clears[i]?'★ '+this.t('clears')+': '+d.clears[i]:this.t('notCleared'))+(b?' · '+this.t('best')+': '+b.kills+' '+this.t('kills'):'')));
     });
     const diffs=Object.keys(DIFF).map(k=>h('button',{class:'btn small'+(sel.diff===k?'':' alt'),'data-fid':'df'+k,onclick:()=>{this.sfx();sel.diff=k;d.diff=k;this.app.save.write();this.rebuild(true);}},this.tr(DIFF[k].n)));
     return h('div',null,this.header('chooseStage'),
+      h('div',{class:'row topact'},this.btn('next',()=>this.push('chars'),'primary')),
       h('div',{class:'row'},h('span',{class:'lbl'},this.t('difficulty')),diffs,
         h('button',{class:'btn small'+(sel.x2?'':' alt'),disabled:!x2ok,'data-fid':'x2',title:x2ok?this.t('x2Desc'):this.t('x2Locked'),
           onclick:()=>{this.sfx();sel.x2=!sel.x2;this.rebuild(true);}},'x2 '+(x2ok?(sel.x2?this.t('on'):this.t('off')):'🔒'))),
       h('p',{class:'sub'},x2ok?this.t('x2Desc'):this.t('x2Locked')),
-      h('div',{class:'grid stages'},cards),
-      h('div',{class:'row'},this.btn('next',()=>this.push('chars'),'primary')));
+      h('div',{class:'grid stages'},cards));
   }
   screen_chars(){
     const d=this.save,sel=this.sel;
-    if(!d.unlocked.includes(sel.char))sel.char='goku';
-    const peekId=sel.peek&&!d.unlocked.includes(sel.peek)?sel.peek:null;
+    if(!this.charOpen(sel.char))sel.char='goku';
+    const peekId=sel.peek&&!this.charOpen(sel.peek)?sel.peek:null;
     const C=CHARS.find(c=>c.id===(peekId||sel.char));
     this.anim=[];
     const cards=CHARS.map((c,ci)=>{
-      const open=d.unlocked.includes(c.id),cv=document.createElement('canvas');cv.width=78;cv.height=96;
+      const open=this.charOpen(c.id),cv=document.createElement('canvas');cv.width=78;cv.height=96;
       this.anim.push({cv,c,open,seed:hash(ci,7),key:'',w:78,h:96,base:90,k:(c.u||1.95)/Sprites.S*1.1});
       const isSel=peekId?c.id===peekId:c.id===sel.char;
       return h('button',{class:'char'+(isSel?' sel':'')+(open?'':' locked'),'data-fid':'c'+c.id,onclick:()=>{this.sfx();if(open){sel.char=c.id;sel.peek=null;}else sel.peek=c.id;this.rebuild(true);}},
@@ -176,13 +182,19 @@ class UI{
     const line=LINES[C.line||'saiyan'];
     const big=document.createElement('canvas');big.width=170;big.height=190;
     this.anim.push({cv:big,c:C,open:!peekId,seed:.3,key:'',w:170,h:190,base:178,k:(C.u||1.95)/Sprites.S*2.9,big:true,forms:peekId?0:Math.min(((d.maxForm||{})[C.id]||0),LINES[C.line||'saiyan'].length)});
+    /* portrait of the emotes (sheet emo<id>[_<form>]): cycles the 4 emotes of the form shown by the big sprite */
+    let portrait=null;
+    if(!peekId&&Sprites.emoSheet(C.id,99)){
+      const pv=document.createElement('canvas');pv.width=166;pv.height=152;portrait=pv;
+      this.anim.push({cv:pv,c:C,emo:true,forms:this.anim[this.anim.length-1].forms,key:'',w:166,h:152});
+    }
     const lock=peekId?h('div',{class:'lockbox'},h('div',null,h('b',null,this.t('reqLabel')+': '),this.tr(C.lock)),
       C.price?h('button',{class:'btn small'+(d.zenny>=C.price?'':' alt'),disabled:d.zenny<C.price,'data-fid':'buychar',onclick:()=>{
         if(this.app.progress.buyChar(C.id)){this.sfx('buy');sel.char=C.id;sel.peek=null;this.toast({type:'info',msg:this.t('charBought',{c:this.tr(C.n)})});this.rebuild();}
       }},(()=>{const pt=this.t('buyChar',{n:'\u0001'}).split('\u0001');return[pt[0],zAmt(C.price),pt[1]||''];})()):null):null;
     const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx('uiStart');d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet});}},this.t('start'));
     const detail=h('div',{class:'detail'},
-      h('div',{class:'preview'},big),
+      h('div',{class:'preview'},portrait?h('div',{class:'emoframe'},portrait):null,big),
       h('h3',null,this.tr(C.n)),h('p',null,this.tr(C.d)),lock,
       h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},
@@ -190,9 +202,9 @@ class UI{
       (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',null,ab.cd+'s'):null),h('p',null,this.tr(ab.d))):null;})(),
       h('div',{class:'formsList'},h('span',{class:'lbl'},this.t('forms')),
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
-      this.petPicker(),startBtn);
+      this.petPicker());
     return h('div',null,this.header('chooseChar'),
-      h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire'))),
+      h('div',{class:'row topact'},startBtn,h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire'))),
       h('div',{class:'split'},h('div',{class:'grid chars'},cards),detail));
   }
   /* ---- pet picker (companion shown under the character list) ---- */
@@ -208,8 +220,23 @@ class UI{
       P?h('div',{class:'petinfo',style:'--c:'+P.c},h('b',null,this.tr(P.race)+' · '+this.tr(P.ab)),h('span',null,this.tr(P.d)+' '+this.t('petPassive')+' '+this.t('petCd',{n:P.cd}))):h('div',{class:'petinfo'},this.t('petNoneDesc')));
   }
   /* ---- character / pet idle animations (blinks, expressions, little combat poses) ---- */
+  /* stage cards: a small animated top-down view of each map (the terrain renderer pointed at a tiny canvas, slowly panning) */
+  animStages(dt){
+    this.pvAcc=(this.pvAcc||0)+dt;if(this.pvAcc<1/24)return;const step=this.pvAcc;this.pvAcc=0;
+    const r=this.app.renderer,old=r.ctx,S=.4,W=240,H=96,t=this.animT;
+    for(const cv of document.querySelectorAll('canvas.stprev')){
+      const th=cv.dataset.theme,seed=+cv.dataset.seed||0,pc=cv.getContext('2d'),vw=W/S,vh=H/S;
+      let cx=seed*733+t*26,cy=seed*411+Math.sin(t*.25+seed)*60;
+      if(th==='snake'){cx=((t*40+seed*50)%6000)-3000;cy=Snake.f(cx)-vh/2;}
+      try{r.ctx=pc;pc.setTransform(S,0,0,S,-cx*S,-cy*S);pc.imageSmoothingEnabled=false;r.terrain(cx,cy,vw,vh,t,th);}catch(e){}
+      r.ctx=old;pc.setTransform(1,0,0,1,0,0);
+      const g=pc.createLinearGradient(0,H*.45,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(8,14,28,.55)');pc.fillStyle=g;pc.fillRect(0,0,W,H);
+    }
+    r.ctx=old;
+  }
   animate(dt){
     this.animT=(this.animT||0)+dt;
+    if(this.top&&this.top.name==='stages'){this.animStages(dt);return;}
     const t=this.animT,list=this.anim;if(!list||!list.length||!this.top||this.top.name!=='chars')return;
     for(const a of list){
       if(!a.cv.isConnected)continue;
@@ -220,6 +247,11 @@ class UI{
         const g=a.cv.getContext('2d');g.imageSmoothingEnabled=true;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);
         const sp=Sprites.forSp(a.pet.sp,fr,false),kk=a.k*Sprites.S/(sp.s||Sprites.S);g.translate(a.w/2,a.base+dy);g.scale(kk,kk);g.drawImage(sp.c,-sp.ox,-sp.oy);continue;
       }
+      if(a.emo){
+        const fm=a.forms>0?Math.floor(t/3.2)%(a.forms+1)-1:-1,sid=Sprites.emoSheet(a.c.id,fm),S=sid&&Sprites.sheets[sid];if(!S)continue;
+        const ix=Math.floor(t/1.1)%S.cols,key=sid+':'+ix;if(key===a.key)continue;a.key=key;
+        const g=a.cv.getContext('2d');g.imageSmoothingEnabled=true;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);g.drawImage(S.img,ix*S.fw,0,S.fw,S.fh,0,0,a.w,a.h);continue;
+      }
       let form=-1;if(a.big&&a.forms>0)form=Math.floor(t/3.2)%(a.forms+1)-1;
       const po=charPose(t,a.seed,hot),dy=Math.round(po.dy),key=a.open?po.f+':'+(po.ex||'')+':'+dy+':'+form+(a.big&&po.fx?':'+((t*20)|0):''):'x';
       if(key===a.key)continue;a.key=key;
@@ -227,7 +259,7 @@ class UI{
       const cfg=cfgForForm(a.c,form),ck='menu:'+a.c.id+':'+form;
       if(a.big&&form>=0){const col=LINES[a.c.line||'saiyan'][form].aura;GLOW.at(g,a.w/2,a.base-60,70+Math.sin(t*9)*6,col,.55);}
       const sp=Sprites.player(ck,cfg,po.f,false,po.ex);
-      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{const kp=a.k*Sprites.pk(sp);g.scale(kp,kp);}g.imageSmoothingEnabled=!sp.px;g.drawImage(sp.c,-sp.ox,-sp.oy);
+      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{let kp=a.k*Sprites.pk(sp);if(a.big&&sp.px)kp=Math.min(kp,(a.base-6)/sp.oy);g.scale(kp,kp);}   /* tall sheets must not be cut by the canvas top */g.imageSmoothingEnabled=!sp.px;g.drawImage(sp.c,-sp.ox,-sp.oy);
       if(!a.open){g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#0b1a2b';g.fillRect(0,0,a.w,a.h);g.globalCompositeOperation='source-over';}
       else if(a.big&&po.fx){g.setTransform(1,0,0,1,0,0);GLOW.at(g,a.w/2+44,a.base-62,30,'#ffe9a0',.9);}
     }
@@ -249,7 +281,7 @@ class UI{
       return h('button',{class:'char g'+(id===cur?' sel':'')+(seen[id]?'':' locked'),'data-fid':'g'+id,onclick:()=>{this.sfx();gs[tab]=id;this.rebuild(true);}},cv,h('b',null,seen[id]?this.tr(defs[id].n):'???'));
     });
     const big=document.createElement('canvas');big.width=160;big.height=160;draw(big,def.sp,isSeen);
-    const stages=STAGES.filter(s=>tab==='enemies'?s.roster.some(r=>r[0]===cur):s.bosses.some(b=>b[0]===cur)).map(s=>'S'+s.id).join(', ')||'—';
+    const stages=STAGES.filter(s=>tab==='enemies'?s.roster.some(r=>r[0]===cur):s.bosses.some(b=>b[0]===cur)).map(s=>'S'+s.no).join(', ')||'—';
     const info=isSeen?[
       h('p',null,this.tr(descs[cur])),
       h('div',{class:'krow'},h('span',null,this.t('glossBehavior')),h('b',null,this.tr(AI_TEXT[def.ai]||AI_TEXT.chase))),
@@ -267,12 +299,12 @@ class UI{
   screen_shop(){
     const d=this.save;
     const cards=SHOP.map(it=>{
-      const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&d.zenny>=cost;
+      const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost);
       return h('div',{class:'card shopi'},
         glyph(it.k,'#ffd23f'),h('div',{class:'col'},h('div',{class:'cn'},this.tr(it.n)),h('div',{class:'cd'},this.tr(it.d)),
           h('div',{class:'pips'},Array.from({length:it.max},(_,i)=>h('i',{class:i<lv?'on':''})))),
         h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},
-          maxed?this.t('maxed'):zAmt(cost)));
+          maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost))));
     });
     return h('div',null,this.header('shopTitle'),h('p',{class:'sub'},this.t('shopDesc')),h('div',{class:'grid shop'},cards),
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));

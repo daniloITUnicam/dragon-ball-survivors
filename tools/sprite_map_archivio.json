@@ -1,0 +1,1106 @@
+{
+ "chars": {
+  "vegeta": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "src": "VEGETA fases/Vegeta",
+     "idle": 8,
+     "walk": [
+      12,
+      10,
+      29,
+      10
+     ],
+     "wind": 88,
+     "thrust": 60,
+     "dash": 13
+    },
+    "1": {
+     "src": "VEGETA fases/Vegeta Saga Buu SSJ",
+     "idle": 1,
+     "walk": [
+      5,
+      3,
+      15,
+      3
+     ],
+     "wind": 39,
+     "thrust": 36,
+     "power": 41,
+     "dash": 6
+    },
+    "4": {
+     "src": "VEGETA fases/Vegeta Ssj God",
+     "idle": 1,
+     "walk": [
+      5,
+      3,
+      15,
+      3
+     ],
+     "wind": 39,
+     "thrust": 36,
+     "power": 42,
+     "dash": 6
+    },
+    "5": {
+     "src": "VEGETA fases/Vegeta Blue",
+     "idle": 8,
+     "walk": [
+      22,
+      27,
+      29,
+      27
+     ],
+     "wind": 45,
+     "thrust": 39,
+     "dash": 33
+    }
+   }
+  },
+  "trunks": {
+   "fx": [
+    "MIRAI TRUNKS fases/Mirai Trunks",
+    13
+   ],
+   "forms": {
+    "base": {
+     "src": "MIRAI TRUNKS fases/Mirai Trunks",
+     "idle": 3,
+     "walk": [
+      4,
+      26,
+      5,
+      33
+     ],
+     "wind": 67,
+     "thrust": 10,
+     "dash": 29
+    },
+    "1": {
+     "src": "MIRAI TRUNKS fases/Super Mirai Trunks",
+     "idle": 22,
+     "walk": [
+      23,
+      25,
+      34,
+      25
+     ],
+     "wind": 17,
+     "thrust": 19,
+     "power": null,
+     "dash": 40
+    }
+   }
+  },
+  "gohan": {
+   "fx": [
+    "GOHAN fases/Gohan Adulto",
+    13
+   ],
+   "forms": {
+    "base": {
+     "src": "GOHAN fases/Gohan Adulto",
+     "idle": 3,
+     "walk": [
+      19,
+      34,
+      20,
+      34
+     ],
+     "wind": 55,
+     "thrust": 50,
+     "dash": 32
+    },
+    "1": {
+     "src": "GOHAN fases/Teen Gohan SSJ",
+     "idle": 1,
+     "walk": [
+      3,
+      4,
+      6,
+      4
+     ],
+     "wind": 40,
+     "thrust": 41,
+     "dash": 7,
+     "fx": [
+      "GOHAN fases/Teen Gohan SSJ",
+      8
+     ]
+    },
+    "2": {
+     "src": "GOHAN fases/Teen Gohan SSJ2",
+     "idle": 3,
+     "walk": [
+      5,
+      4,
+      8,
+      4
+     ],
+     "wind": 30,
+     "thrust": 19,
+     "dash": 9,
+     "fx": [
+      "GOHAN fases/Teen Gohan SSJ2",
+      16
+     ]
+    },
+    "7": {
+     "src": "GOHAN fases/Gohan Mistico",
+     "idle": 4,
+     "walk": [
+      14,
+      15,
+      18,
+      15
+     ],
+     "wind": 45,
+     "thrust": 44,
+     "power": 7,
+     "dash": 23,
+     "fx": [
+      "GOHAN fases/Gohan Mistico",
+      26
+     ]
+    }
+   }
+  },
+  "piccolo": {
+   "fx": [
+    "Piccolo",
+    18
+   ],
+   "forms": {
+    "base": {
+     "src": "Piccolo",
+     "idle": 3,
+     "walk": [
+      4,
+      21,
+      5,
+      22
+     ],
+     "wind": 25,
+     "thrust": 62,
+     "dash": 15
+    }
+   }
+  },
+  "krillin": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "src": "Kuririn",
+     "idle": 15,
+     "walk": [
+      16,
+      17,
+      43,
+      17
+     ],
+     "wind": 71,
+     "thrust": 61,
+     "dash": 18
+    }
+   }
+  },
+  "broly": {
+   "fx": [
+    "BROLY fases/Broly Segunda Forma",
+    8
+   ],
+   "forms": {
+    "base": {
+     "src": "BROLY fases/Broly Segunda Forma",
+     "idle": 16,
+     "walk": [
+      25,
+      16,
+      27,
+      16
+     ],
+     "wind": 34,
+     "thrust": 29,
+     "dash": 7
+    },
+    "0": {
+     "src": "BROLY fases/Broly Full Power",
+     "idle": 12,
+     "walk": [
+      15,
+      12,
+      21,
+      12
+     ],
+     "wind": 33,
+     "thrust": 22,
+     "power": 8,
+     "dash": 19
+    }
+   }
+  },
+  "freezer": {
+   "fx": [
+    "FREEZA formas/Freeza Forma Final",
+    8
+   ],
+   "forms": {
+    "base": {
+     "src": "FREEZA formas/Freeza Primeira Forma",
+     "idle": 1,
+     "walk": [
+      2,
+      3,
+      12,
+      3
+     ],
+     "wind": 39,
+     "thrust": 44,
+     "dash": 22
+    },
+    "1": {
+     "src": "FREEZA formas/Freeza Terceira Forma",
+     "idle": 6,
+     "walk": [
+      14,
+      6,
+      19,
+      6
+     ],
+     "wind": 25,
+     "thrust": 30,
+     "power": 22,
+     "dash": 2
+    },
+    "2": {
+     "src": "FREEZA formas/Freeza Forma Final",
+     "idle": 3,
+     "walk": [
+      26,
+      3,
+      36,
+      3
+     ],
+     "wind": 17,
+     "thrust": 41,
+     "dash": 11
+    },
+    "3": {
+     "src": "FREEZA formas/Freeza Full Power",
+     "idle": 10,
+     "walk": [
+      8,
+      10,
+      9,
+      10
+     ],
+     "wind": 11,
+     "thrust": 36,
+     "dash": 22
+    },
+    "4": {
+     "src": "FREEZA formas/Golden Freeza",
+     "idle": 3,
+     "walk": [
+      6,
+      3,
+      4,
+      3
+     ],
+     "wind": 42,
+     "thrust": 40,
+     "dash": 27,
+     "fx": [
+      "FREEZA formas/Golden Freeza",
+      8
+     ]
+    }
+   }
+  },
+  "cell": {
+   "fx": [
+    "CELL formas/Cell Semi Perfeito",
+    7
+   ],
+   "forms": {
+    "base": {
+     "src": "CELL formas/Cell Imperfeito",
+     "idle": 1,
+     "walk": [
+      13,
+      18,
+      31,
+      18
+     ],
+     "wind": 36,
+     "thrust": 45,
+     "dash": 6
+    },
+    "0": {
+     "src": "CELL formas/Cell Semi Perfeito",
+     "idle": 1,
+     "walk": [
+      2,
+      5,
+      3,
+      5
+     ],
+     "wind": 44,
+     "thrust": 10,
+     "dash": 4
+    },
+    "1": {
+     "src": "CELL formas/cell Perfeito",
+     "idle": 1,
+     "walk": [
+      2,
+      3,
+      6,
+      3
+     ],
+     "wind": 43,
+     "thrust": 34,
+     "dash": 7,
+     "fx": [
+      "CELL formas/cell Perfeito",
+      8
+     ]
+    }
+   }
+  },
+  "bu": {
+   "fx": [
+    "MAJIN BUU formas/Majin Buu",
+    11
+   ],
+   "forms": {
+    "base": {
+     "src": "MAJIN BUU formas/Majin Buu",
+     "idle": 2,
+     "walk": [
+      3,
+      5,
+      7,
+      5
+     ],
+     "wind": 13,
+     "thrust": 38,
+     "dash": 6
+    },
+    "1": {
+     "src": "MAJIN BUU formas/Majin Buu(Flaco)",
+     "idle": 1,
+     "walk": [
+      3,
+      4,
+      9,
+      4
+     ],
+     "wind": 25,
+     "thrust": 27,
+     "dash": 22,
+     "fx": [
+      "MAJIN BUU formas/Majin Buu(Flaco)",
+      16
+     ]
+    },
+    "2": {
+     "src": "MAJIN BUU formas/Super Buu",
+     "idle": 1,
+     "walk": [
+      2,
+      3,
+      7,
+      3
+     ],
+     "wind": 3,
+     "thrust": 13,
+     "dash": 19
+    },
+    "4": {
+     "src": "MAJIN BUU formas/Majin Buu Gohan",
+     "idle": 1,
+     "walk": [
+      2,
+      3,
+      6,
+      3
+     ],
+     "wind": 3,
+     "thrust": 35,
+     "dash": 7
+    },
+    "5": {
+     "src": "MAJIN BUU formas/Kid Buu",
+     "idle": 8,
+     "walk": [
+      9,
+      10,
+      12,
+      10
+     ],
+     "wind": 51,
+     "thrust": 62,
+     "dash": 13,
+     "fx": [
+      "MAJIN BUU formas/Kid Buu",
+      14
+     ]
+    }
+   }
+  },
+  "beerus": {
+   "fx": [
+    "Bills",
+    28
+   ],
+   "forms": {
+    "base": {
+     "src": "Bills",
+     "idle": 3,
+     "walk": [
+      4,
+      8,
+      5,
+      8
+     ],
+     "wind": 36,
+     "thrust": 47,
+     "dash": 25
+    }
+   }
+  },
+  "whis": {
+   "forms": {
+    "base": {
+     "src": "Bills",
+     "idle": 0,
+     "walk": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "wind": 0,
+     "thrust": 0,
+     "fx": [
+      "Bills",
+      28
+     ]
+    }
+   }
+  },
+  "cooler": {
+   "fx": [
+    "Cooler",
+    7
+   ],
+   "forms": {
+    "base": {
+     "src": "Cooler",
+     "idle": 3,
+     "walk": [
+      15,
+      3,
+      16,
+      3
+     ],
+     "wind": 34,
+     "thrust": 29,
+     "dash": 6
+    }
+   }
+  },
+  "toppo": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "src": "Toppo",
+     "idle": 1,
+     "walk": [
+      4,
+      13,
+      1,
+      13
+     ],
+     "wind": 8,
+     "thrust": 20,
+     "dash": 12
+    }
+   }
+  },
+  "jiren": {
+   "fx": [
+    "Jiren",
+    12
+   ],
+   "forms": {
+    "base": {
+     "src": "Jiren",
+     "idle": 1,
+     "walk": [
+      2,
+      25,
+      6,
+      25
+     ],
+     "wind": 37,
+     "thrust": 34,
+     "dash": 7
+    }
+   }
+  },
+  "hit": {
+   "fx": [
+    "HITTO/Hitto",
+    14
+   ],
+   "forms": {
+    "base": {
+     "src": "HITTO/Hitto",
+     "idle": 3,
+     "walk": [
+      6,
+      8,
+      12,
+      8
+     ],
+     "wind": 22,
+     "thrust": 21,
+     "dash": 18
+    }
+   }
+  },
+  "caulifla": {
+   "fx": [
+    "Caulifla",
+    25
+   ],
+   "forms": {
+    "base": {
+     "src": "Caulifla",
+     "idle": 1,
+     "walk": [
+      11,
+      13,
+      14,
+      13
+     ],
+     "wind": 27,
+     "thrust": 41,
+     "dash": 19
+    }
+   }
+  },
+  "kale": {
+   "fx": [
+    "KALE fases/Kale Ssj",
+    5
+   ],
+   "forms": {
+    "base": {
+     "src": "KALE fases/Kale",
+     "idle": 1,
+     "walk": [
+      2,
+      28,
+      30,
+      28
+     ],
+     "wind": 24,
+     "thrust": 13,
+     "dash": 5
+    },
+    "0": {
+     "src": "KALE fases/Kale Ssj",
+     "idle": 1,
+     "walk": [
+      19,
+      18,
+      20,
+      18
+     ],
+     "wind": 48,
+     "thrust": 28,
+     "dash": 3,
+     "fx": [
+      "KALE fases/Kale Ssj",
+      5
+     ]
+    }
+   }
+  },
+  "turles": {
+   "fx": [
+    "Turles",
+    7
+   ],
+   "forms": {
+    "base": {
+     "src": "Turles",
+     "idle": 1,
+     "walk": [
+      2,
+      28,
+      31,
+      28
+     ],
+     "wind": 30,
+     "thrust": 13,
+     "dash": 6
+    }
+   }
+  },
+  "frost": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "src": "Frost/Frost Primeira Forma",
+     "idle": 1,
+     "walk": [
+      2,
+      3,
+      4,
+      3
+     ],
+     "wind": 22,
+     "thrust": 24,
+     "dash": 6
+    },
+    "2": {
+     "src": "Frost/Frost Ultima Forma",
+     "idle": 1,
+     "walk": [
+      2,
+      10,
+      14,
+      10
+     ],
+     "wind": 11,
+     "thrust": 52,
+     "dash": 3
+    }
+   }
+  },
+  "black": {
+   "fx": [
+    "GOKU BLACK formas/Goku Black 2",
+    18
+   ],
+   "forms": {
+    "base": {
+     "src": "GOKU BLACK formas/Goku Black 2",
+     "idle": 3,
+     "walk": [
+      15,
+      3,
+      16,
+      3
+     ],
+     "wind": 36,
+     "thrust": 48,
+     "dash": 38
+    },
+    "1": {
+     "src": "GOKU BLACK formas/Goku Black Rose",
+     "idle": 3,
+     "walk": [
+      18,
+      3,
+      24,
+      3
+     ],
+     "wind": 35,
+     "thrust": 37,
+     "dash": 25,
+     "fx": [
+      "GOKU BLACK formas/Goku Black Rose",
+      10
+     ]
+    }
+   }
+  },
+  "zamasu": {
+   "fx": [
+    "ZAMASU formas/Zamasu",
+    11
+   ],
+   "forms": {
+    "base": {
+     "src": "ZAMASU formas/Zamasu",
+     "idle": 2,
+     "walk": [
+      3,
+      8,
+      9,
+      8
+     ],
+     "wind": 25,
+     "thrust": 62,
+     "dash": 6
+    }
+   }
+  },
+  "fzamasu": {
+   "fx": [
+    "ZAMASU formas/Zamasu",
+    11
+   ],
+   "forms": {
+    "base": {
+     "src": "ZAMASU formas/Zamasu e Black Fusion",
+     "idle": 41,
+     "walk": [
+      41,
+      45,
+      46,
+      45
+     ],
+     "wind": 47,
+     "thrust": 49,
+     "dash": 50
+    }
+   }
+  },
+  "c16": {
+   "fx": [
+    "ANDROIDES/Androide 16",
+    13
+   ],
+   "forms": {
+    "base": {
+     "src": "ANDROIDES/Androide 16",
+     "idle": 1,
+     "walk": [
+      5,
+      31,
+      7,
+      31
+     ],
+     "wind": 14,
+     "thrust": 26,
+     "dash": 8
+    }
+   }
+  },
+  "c17": {
+   "fx": [
+    "ANDROIDES/Androide 17",
+    16
+   ],
+   "forms": {
+    "base": {
+     "src": "ANDROIDES/Androide 17",
+     "idle": 1,
+     "walk": [
+      4,
+      17,
+      19,
+      17
+     ],
+     "wind": 30,
+     "thrust": 27,
+     "power": 36,
+     "dash": 5
+    }
+   }
+  },
+  "c18": {
+   "fx": [
+    "ANDROIDES/Androide 18",
+    8
+   ],
+   "forms": {
+    "base": {
+     "src": "ANDROIDES/Androide 18",
+     "idle": 1,
+     "walk": [
+      3,
+      4,
+      13,
+      4
+     ],
+     "wind": 29,
+     "thrust": 11,
+     "dash": 7
+    }
+   }
+  },
+  "kefla": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "0": {
+     "src": "Kefla Super Sayajin",
+     "pat": "kefla___ultimate",
+     "idle": 19,
+     "walk": [
+      19,
+      20,
+      19,
+      21
+     ],
+     "wind": 22,
+     "thrust": 26,
+     "dash": 27
+    }
+   }
+  },
+  "gogeta": {
+   "fx": [
+    "Gogeta",
+    54
+   ],
+   "forms": {
+    "base": {
+     "src": "Gogeta",
+     "idle": 49,
+     "walk": [
+      50,
+      52,
+      53,
+      52
+     ],
+     "wind": 63,
+     "thrust": 64,
+     "dash": 68,
+     "walk_dir": "Gogeta walk",
+     "walk_n": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      9
+     ],
+     "idle_n": 0
+    }
+   }
+  },
+  "raditz": {
+   "forms": {
+    "base": {
+     "src": "RADITZ fases/Raditz",
+     "idle": 3,
+     "walk": [
+      3,
+      16,
+      3,
+      12
+     ],
+     "wind": 6,
+     "thrust": 21,
+     "power": 5,
+     "dash": 9
+    },
+    "1": {
+     "src": "RADITZ fases/Raditz Ssj",
+     "idle": 1,
+     "walk": [
+      1,
+      2,
+      14,
+      2
+     ],
+     "wind": 9,
+     "thrust": 10,
+     "power": 43,
+     "dash": 6
+    }
+   }
+  },
+  "bardock": {
+   "fx": [
+    "BARDOCK fases/Bardock",
+    9
+   ],
+   "forms": {
+    "base": {
+     "src": "BARDOCK fases/Bardock",
+     "idle": 3,
+     "walk": [
+      3,
+      36,
+      3,
+      38
+     ],
+     "wind": 19,
+     "thrust": 18,
+     "power": 5,
+     "dash": 8
+    },
+    "1": {
+     "src": "BARDOCK fases/Bardock Ssj",
+     "idle": 13,
+     "walk": [
+      13,
+      14,
+      15,
+      14
+     ],
+     "wind": 43,
+     "thrust": 44,
+     "power": 56,
+     "dash": 18,
+     "fx": [
+      "BARDOCK fases/Bardock Ssj",
+      24
+     ]
+    }
+   }
+  },
+  "vegito": {
+   "forms": {
+    "base": {
+     "src": "VEGITO fases/Vegito",
+     "idle": 24,
+     "walk": [
+      24,
+      29,
+      24,
+      28
+     ],
+     "wind": 20,
+     "thrust": 14,
+     "dash": 40
+    },
+    "1": {
+     "src": "VEGITO fases/Vegito Ssj2",
+     "idle": 11,
+     "walk": [
+      11,
+      14,
+      16,
+      14
+     ],
+     "wind": 21,
+     "thrust": 40,
+     "power": 9,
+     "dash": 27
+    },
+    "5": {
+     "src": "VEGITO fases/Vegito SSJ Blue",
+     "idle": 28,
+     "walk": [
+      28,
+      33,
+      30,
+      33
+     ],
+     "wind": 37,
+     "thrust": 67,
+     "power": 19,
+     "dash": 45
+    }
+   }
+  },
+  "gotenks": {
+   "forms": {
+    "base": {
+     "src": "Gotenks Base",
+     "idle": 30,
+     "walk": [
+      30,
+      31,
+      32,
+      33
+     ],
+     "wind": 41,
+     "thrust": 44,
+     "dash": 36,
+     "fx": [
+      "Gotenks Base",
+      37
+     ]
+    }
+   }
+  },
+  "cabba": {
+   "forms": {
+    "base": {
+     "src": "KYABE fases/Kyabe",
+     "idle": 3,
+     "walk": [
+      3,
+      9,
+      3,
+      10
+     ],
+     "wind": 5,
+     "thrust": 19,
+     "dash": 6
+    },
+    "1": {
+     "src": "KYABE fases/Kyabe ssj",
+     "idle": 3,
+     "walk": [
+      3,
+      9,
+      3,
+      10
+     ],
+     "wind": 5,
+     "thrust": 17,
+     "dash": 6
+    }
+   }
+  },
+  "janemba": {
+   "forms": {
+    "base": {
+     "src": "Janemba",
+     "idle": 1,
+     "walk": [
+      1,
+      2,
+      1,
+      3
+     ],
+     "wind": 11,
+     "thrust": 10,
+     "dash": 6,
+     "fx": [
+      "Janemba",
+      7
+     ]
+    }
+   }
+  },
+  "saibaman": {
+   "forms": {
+    "base": {
+     "src": "Saibaman",
+     "idle": 5,
+     "walk": [
+      1,
+      9,
+      5,
+      9
+     ],
+     "wind": 6,
+     "thrust": 10,
+     "dash": 16
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,13 @@
+const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1100,height:640}});
+const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+const r=await pg.evaluate(()=>{const o=[];__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;
+ const need=FORM_TIERS[g.formsUnlocked].lvl;
+ g.lvl=Math.max(1,need-11);o.push('lvl '+g.lvl+' (form at '+need+') form offered: '+g.makeOffers().some(x=>x.kind==='form'));
+ g.lvl=need-10;const off=g.makeOffers();o.push('lvl '+g.lvl+' form offered: '+off.some(x=>x.kind==='form'));
+ g.modal={type:'trial',offers:off,freePick:true};g.run.coins=9999;
+ const fi=off.findIndex(x=>x.kind==='form');g.buyOffer(fi);o.push('after form: weapon offer sold='+off.filter(x=>x.kind==='weapon').every(x=>x.sold));
+ g.modal={type:'trial',offers:off,freePick:false};const sw=off.findIndex(x=>x.kind==='swap'),sa=off[sw].a,before=g.swap[sa];g.buyOffer(sw);o.push('swap malus '+(g.swap[sa]-before).toFixed(3)+' (was -0.10/-0.12/-0.08)');
+ return o;});
+console.log(r.join('\n'));console.log(errs.length?errs:'no errors');await b.close();})();

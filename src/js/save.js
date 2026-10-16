@@ -9,14 +9,14 @@ class SaveData{
   defaults(){
     const nl=(typeof navigator!=='undefined'&&(navigator.language||'en').slice(0,2).toLowerCase())||'en',lang=['it','es','fr','de','pt'].includes(nl)?nl:'en';
     return{
-      zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(10).fill(0),x2:new Array(10).fill(0),
+      zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),
       updated:0,cloud:{uid:''},
-      diff:'normal',pet:'dende',lastChar:'goku',lastStage:0,best:{},ach:{},shop:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
+      diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,streamer:false,sandbox:false,fullscreen:false},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false},
       binds:{
-        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ','ShiftLeft'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],debug:['F2','Backquote']},
-        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],debug:[8]}
+        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
+        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],debug:[8]}
       }
     };
   }
@@ -27,9 +27,13 @@ class SaveData{
   /* merge a stored/cloud object over the defaults and repair old formats */
   normalize(obj){
     const d=deepMerge(this.defaults(),obj);
+    /* saves from before the universal dash: Shift used to be a second key for the pet, it now belongs to the dash */
+    if(!(obj&&obj.binds&&obj.binds.kb&&obj.binds.kb.dash)){d.binds.kb.pet=(d.binds.kb.pet||[]).filter(k=>k!=='ShiftLeft'&&k!=='ShiftRight');if(!d.binds.kb.pet.length)d.binds.kb.pet=['KeyQ'];}
     if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
+    if(d.shop.dash){let sum=0;for(let i=0;i<d.shop.dash;i++)sum+=Math.round(120*Math.pow(1.5,i));d.zenny+=sum;}   /* the dash upgrade left the shop: refund it */
+    delete d.shop.dash;if(d.testBuys)delete d.testBuys.dash;
     for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
-    for(const k of['clears','x2'])while(d[k].length<10)d[k].push(0);
+    for(const k of['clears','x2'])while(d[k].length<STAGES.length)d[k].push(0);
     return d;
   }
   write(){
@@ -47,7 +51,7 @@ class Progress{
   get d(){return this.save.d;}
   runCtx(g,win){
     const s=this.d.stats;
-    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
+    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,pos:STAGES[g.stageIdx].pos,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
       totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills)};
   }
   statsView(g){
@@ -57,12 +61,14 @@ class Progress{
       chests:s.chests+(g?g.run.chests-b.chests:0),balls:s.balls+(g?g.run.balls-b.balls:0),wishes:s.wishes+(g?g.run.wishes-b.wishes:0),
       shopBuys:s.shopBuys,shopMax:s.shopMax,zenny:s.zenny,perfect:s.perfect+(g?g.run.perfect-b.perfect:0),
       hardClears:s.hardClears,x2Clears:s.x2Clears,unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,
-      run:g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,evos:g.run.evos,trinkets:g.trinkets.length,legendary:g.run.legendary}
+      run:g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary}
            :{kills:0,t:0,lvl:0,form:0,evos:0,trinkets:0,legendary:0}
     };
   }
+  /* Test mode (settings) and sandbox runs never give zenny, progress unlocks or achievements */
+  blocked(g){return !!(g&&g.sandbox)||!!this.d.settings.sandbox;}
   live(g){
-    if(g.sandbox)return;
+    if(this.blocked(g))return;
     const mf=this.d.maxForm;if(g.formsUnlocked>(mf[g.C.id]||0)){mf[g.C.id]=g.formsUnlocked;this.save.write();}
     this.checkUnlocks(this.runCtx(g,false));
     this.checkAch(g);
@@ -76,6 +82,7 @@ class Progress{
     return out;
   }
   checkAch(g){
+    if(this.blocked(g))return[];
     const v=this.statsView(g),out=[];
     for(const a of ACHIEVEMENTS){
       if(!this.d.ach[a.id]&&a.test(v)){this.d.ach[a.id]=Date.now();this.d.zenny+=a.reward;out.push(a.id);this.notify({type:'ach',a});}
@@ -84,7 +91,7 @@ class Progress{
     return out;
   }
   reachedFinal(g){
-    if(g.sandbox)return;
+    if(this.blocked(g))return;
     if(!this.d.x2[g.stageIdx]){this.d.x2[g.stageIdx]=1;this.save.write();this.notify({type:'x2',stage:g.stageIdx});}
   }
   /* zenny: (coins + kills + time + bosses + clear) * stage mult * shop/trinket gold * x2 * (win?1:.75) */
@@ -96,7 +103,7 @@ class Progress{
     ];
   }
   finishRun(g,win){
-    if(g.sandbox)return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[]};
+    if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins};
     const d=this.d,st=d.stats,idx=g.stageIdx,stg=STAGES[idx],b=g.bank;
     if(g.formsUnlocked>(d.maxForm[g.C.id]||0))d.maxForm[g.C.id]=g.formsUnlocked;
     const firstWin=!!win&&!b.cleared;
@@ -110,7 +117,7 @@ class Progress{
     if(first)st.runs++;
     st.zenny+=total;d.zenny+=total;
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
-    if(firstWin){d.clears[idx]++;if(g.diffId==='hard')st.hardClears++;if(g.x2)st.x2Clears++;}
+    if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
     g.bank={kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,t:g.t,counted:true,cleared:b.cleared||!!win};
@@ -125,7 +132,7 @@ class Progress{
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2};
+    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);
@@ -135,6 +142,9 @@ class Progress{
   buy(id){
     const it=SHOP.find(s=>s.id===id),lv=this.d.shop[id]||0;
     if(!it||lv>=it.max)return false;
+    if(this.d.settings.sandbox){   /* Test mode: free purchase, remembered so that turning Test off can undo it */
+      this.d.shop[id]=lv+1;this.d.testBuys=this.d.testBuys||{};this.d.testBuys[id]=(this.d.testBuys[id]||0)+1;this.save.write();return true;
+    }
     const c=shopCost(it,lv);
     if(this.d.zenny<c)return false;
     this.d.zenny-=c;this.d.shop[id]=lv+1;this.d.stats.shopBuys++;
@@ -142,10 +152,16 @@ class Progress{
     this.checkAch(null);this.save.write();
     return true;
   }
+  /* turning Test off: undo every shop level bought for free while it was on; returns how many */
+  revertTest(){
+    let n=0;const tb=this.d.testBuys||{};
+    for(const id of Object.keys(tb)){const k=Math.min(tb[id],this.d.shop[id]||0);n+=k;const v=(this.d.shop[id]||0)-k;if(v>0)this.d.shop[id]=v;else delete this.d.shop[id];}
+    this.d.testBuys={};this.save.write();return n;
+  }
   refundAll(){
     let sum=0;
-    for(const it of SHOP){const lv=this.d.shop[it.id]||0;for(let i=0;i<lv;i++)sum+=shopCost(it,i);}
-    this.d.zenny+=Math.floor(sum*.9);this.d.shop={};this.save.write();
+    const tb=this.d.testBuys||{};for(const it of SHOP){const lv=(this.d.shop[it.id]||0)-(tb[it.id]||0);for(let i=0;i<lv;i++)sum+=shopCost(it,i);}
+    this.d.zenny+=Math.floor(sum*.9);this.d.shop={};this.d.testBuys={};this.save.write();
     return Math.floor(sum*.9);
   }
 }

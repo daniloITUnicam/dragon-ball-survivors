@@ -68,7 +68,7 @@ Object.assign(UI.prototype,{
     /* stages cleared with this weapon (second evolution progress) */
     const cl=d.wc[cur]||[];
     const prog=isOpen?h('div',{class:'stprog'},h('span',{class:'lbl'},this.t('grimStages')+': '),
-      STAGES.map((s,i)=>h('i',{class:cl.includes(i)||evo2?'on':'',title:'S'+s.id+' '+this.tr(s.n)},'S'+s.id))):null;
+      STAGE_ORDER.map(i=>h('i',{class:cl.includes(i)||evo2?'on':'',title:'S'+STAGES[i].no+' '+this.tr(STAGES[i].n)},'S'+STAGES[i].no))):null;
     const inRun=g&&g.weapons.get(cur);
     const detail=h('div',{class:'detail grimdetail'},
       h('h3',null,isOpen?this.tr(W.n):this.t('grimHidden')),

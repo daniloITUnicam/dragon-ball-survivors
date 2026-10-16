@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','world','config','save','cloud','game','sprites','sprites_hd','sheets','menubg','audio','input','renderer','uiicons','ui','ui2','ui_account','grimoire','app']
+ORDER = ['util','data','i18n','i18n2','i18n3','weapons','weapons2','weapon_elec','world','config','save','cloud','game','skills','sprites','sprites_hd','sheets','menubg','audio','input','ambient','zeno_sprite','renderer','uiicons','ui','ui2','ui_account','grimoire','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -19,14 +19,70 @@ if not (_ok.match(_url) and _ok.match(_key)):
     sys.exit('invalid characters in SUPABASE_URL / SUPABASE_ANON_KEY')
 js = js.replace('__SUPABASE_URL__', _url).replace('__SUPABASE_KEY__', _key).replace('__SUPABASE_GOOGLE__', '1' if _goo else '')
 print('cloud:', 'ON ('+_url+')' if _url and _key else 'off (no Supabase settings)')
-_mp3 = ROOT/'assets'/'menu.mp3'
-if _mp3.exists():
-    js = js.replace('__MENU_MP3__', base64.b64encode(_mp3.read_bytes()).decode())
 _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
-_nk = ROOT/'assets'/'namek.mp3'
-if _nk.exists():
-    js = js.replace('__NAMEK_MP3__', base64.b64encode(_nk.read_bytes()).decode())
+# ---- music: assets/*.mp3 (also .ogg .m4a .wav) mapped to the menu / a stage by the FILE NAME ----
+# "menu.mp3" -> menu;  "android ruins.mp3", "Buu Dimension.mp3"... -> the stage whose name (or alias below) the file name contains.
+# DBS_AUDIO=embed (default): base64 inside the HTML (single file). DBS_AUDIO=link: relative URL "assets/<file>" (the site must serve
+# the files next to index.html, see .github/workflows/deploy.yml). DBS_AUDIO_BUDGET_MB=<n>: when embedding, re-encode with ffmpeg
+# (mp3, lower bitrate) if the files total more than n MB - needed for hosts with a size cap on the single HTML file.
+import shutil, hashlib, unicodedata
+STAGE_KEYS = {1: ['saiyan plains', 'plains', 'pianura saiyan', 'pianura'], 2: ['planet namek', 'namek'],
+              3: ['android ruins', 'androids ruins', 'rovine degli androidi', 'rovine', 'ruins'],
+              4: ['buu dimension', 'buus dimension', 'dimensione di bu', 'dimension', 'dimensione', 'buu'],
+              5: ['tournament of power', 'torneo del potere', 'tournament', 'torneo'],
+              6: ['muten island', 'roshi island', 'roshis island', 'isola di muten', 'kame house', 'muten', 'roshi'],
+              7: ['planet vegeta', 'pianeta vegeta', 'vegeta'], 8: ['cell games', 'cell game', 'arena dei cell game', 'cell'],
+              9: ['realm of the gods', 'regno degli dei', 'gods', 'dei'], 10: ['hell', 'inferno']}
+def _norm(t):
+    t = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()
+    return ' '.join(re.sub(r'[^a-z0-9]+', ' ', t).split())
+_MIME = {'.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4', '.wav': 'audio/wav'}
+_tracks = {}; _src = {}
+for f in sorted((ROOT/'assets').glob('*')):
+    if f.suffix.lower() not in _MIME: continue
+    nm = _norm(f.stem)
+    if nm in ('menu', 'main menu', 'menu theme'): key = 'menu'
+    else:
+        best = (0, None)
+        for sid, ks in STAGE_KEYS.items():
+            for k in ks:
+                if re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) and len(k) > best[0]: best = (len(k), sid)
+        key = 'stage%d' % best[1] if best[1] else None
+    if not key:
+        print('music: skipped', f.name, '(name does not match the menu or any stage)'); continue
+    if key in _src: print('music: WARNING', f.name, 'also maps to', key, '- keeping', _src[key].name); continue
+    _src[key] = f
+_mode = (os.environ.get('DBS_AUDIO') or 'embed').lower()
+_budget = float(os.environ.get('DBS_AUDIO_BUDGET_MB') or 0)
+_enc = {}
+if _mode == 'embed' and _budget and _src and sum(f.stat().st_size for f in _src.values()) > _budget * 1048576:
+    if not shutil.which('ffmpeg'):
+        print('music: WARNING budget set but ffmpeg not found - embedding the originals')
+    else:
+        def _dur(f):
+            r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', str(f)], capture_output=True, text=True)
+            try: return float(r.stdout.strip())
+            except ValueError: return 0.0
+        tot = sum(_dur(f) for f in _src.values()) or 1
+        kbps = max(40, min(128, int(_budget * 8192 / tot)))
+        cache = ROOT/'dist'/'.audio'; cache.mkdir(parents=True, exist_ok=True)
+        for key, f in _src.items():
+            h = hashlib.md5(f.read_bytes()).hexdigest()[:10]
+            o = cache/('%s_%d_%s.mp3' % (key, kbps, h))
+            if not o.exists():
+                subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(f), '-vn', '-ac', '2', '-ar', '44100' if kbps >= 80 else '32000',
+                                '-c:a', 'libmp3lame', '-b:a', '%dk' % kbps, '-joint_stereo', '1', str(o)], check=True)
+            _enc[key] = o
+        print('music: re-encoded to %d kbps (budget %.1f MB)' % (kbps, _budget))
+for key, f in _src.items():
+    g = _enc.get(key, f)
+    if _mode == 'link':
+        _tracks[key] = 'assets/' + urllib.parse.quote(f.name)
+    else:
+        _tracks[key] = 'data:%s;base64,%s' % (_MIME[g.suffix.lower()], base64.b64encode(g.read_bytes()).decode())
+    print('music: %-8s <- %s (%s, %.1f MB)' % (key, f.name, _mode, g.stat().st_size / 1048576))
+js = js.replace('/*__TRACKS__*/{}', json.dumps(_tracks, separators=(',', ':')))
 # ---- optional sprite sheets: assets/sprites/<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
 import struct
 _sd = pathlib.Path(os.environ.get('DBS_SPRITES') or (ROOT/'assets'/'sprites'))

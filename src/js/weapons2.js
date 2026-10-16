@@ -353,6 +353,8 @@ class MeteorWeapon extends NW{
 }
 class SweepWeapon extends NW{
   constructor(g,id){super(g,id);this.act=null;this.tk=0;}
+  reach(){return 1+Math.min(.3,.01*(this.g.lvl-1));}   /* +1% reach per character level, capped at +30% (like the Kamehameha) */
+  static ext(a){const u=Math.min(1,a.t/.2);return Math.max(.02,1-Math.pow(1-u,3));}   /* the beam shoots out of the hands in the first 0.2 s */
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
     if(!this.act){
@@ -363,10 +365,10 @@ class SweepWeapon extends NW{
         else this.cd=.2;
       }
     }else{
-      const a=this.act;a.t+=dt;g.cast={a:a.a,t:Math.min(a.t,.4),dur:.4,color:this.color,kind:'kame'};
+      const a=this.act;a.t+=dt;g.fireT=Math.max(g.fireT||0,.12);g.cast={a:a.a,t:Math.min(a.t,.4),dur:.4,color:this.color,kind:'kame'};
       a.cur=a.a+a.t/a.dur*TAU*1.15;this.tk-=dt;
       if(this.tk<=0){
-        this.tk=.12;const len=s.len[L]*this.area(),wid=s.wid[L]*this.area(),angs=this.evo>=2?[a.cur,a.cur+TAU/3,a.cur+TAU*2/3]:this.evo?[a.cur,a.cur+Math.PI]:[a.cur];
+        this.tk=.12;const len=s.len[L]*this.area()*this.reach()*SweepWeapon.ext(a),wid=s.wid[L]*this.area(),angs=this.evo>=2?[a.cur,a.cur+TAU/3,a.cur+TAU*2/3]:this.evo?[a.cur,a.cur+Math.PI]:[a.cur];
         for(const ang of angs){const cs=Math.cos(ang),sn=Math.sin(ang);
           for(const e of g.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-8-(p.y-18),al=dx*cs+dy*sn,pe=-dx*sn+dy*cs;if(al>-10&&al<len&&Math.abs(pe)<wid/2+e.r)g.hit(e,s.dmg[L]*this.dm,cs*30,sn*30);}}
       }
@@ -376,9 +378,13 @@ class SweepWeapon extends NW{
   }
   draw(ctx){
     if(!this.act)return;
-    const g=this.g,p=g.p,s=this.st,L=this.L,a=this.act,k=Math.min(1,a.t/.25,(a.dur-a.t)/.3),len=s.len[L]*this.area(),wid=s.wid[L]*this.area();
+    const g=this.g,p=g.p,s=this.st,L=this.L,a=this.act,k=Math.min(1,a.t/.25,(a.dur-a.t)/.3),len=s.len[L]*this.area()*this.reach()*SweepWeapon.ext(a),wid=s.wid[L]*this.area();
     const angs=this.evo>=2?[a.cur,a.cur+TAU/3,a.cur+TAU*2/3]:this.evo?[a.cur,a.cur+Math.PI]:[a.cur];
-    for(const ang of angs){ctx.save();ctx.translate(p.x,p.y-18);ctx.rotate(ang);VFX.beam(ctx,len,wid,this.color,Math.max(0,k),g.rt,ang);ctx.restore();}
+    /* evolved Big Bang: the pack's Kamehameha art (tinted) with the living flow, a huge pulsing energy ball at the head and the muzzle burst */
+    for(const ang of angs){ctx.save();ctx.translate(p.x,p.y-18);ctx.rotate(ang);VFX.beam(ctx,len,wid,this.color,Math.max(0,k),g.rt,ang,!!this.evo,!!this.evo);
+      const kk=Math.max(0,k);if(!this.evo&&kk>.05)VFX.kameFlow(ctx,len,wid,this.color,kk,g.rt);
+      if(this.evo&&kk>.05){ctx.globalCompositeOperation='lighter';const hp=1+.14*Math.sin(g.rt*22),R=wid*(this.evo>=2?.75:.62)*hp;GLOW.at(ctx,len,0,R*2.2,this.color,.75*kk);GLOW.at(ctx,len,0,R*1.25,'#ffffff',.8*kk);VFX.star(ctx,len,0,R*1.7,'rgba(255,255,255,.8)',g.rt*3);}
+      ctx.restore();}
   }
 }
 class DynWeapon extends NW{
