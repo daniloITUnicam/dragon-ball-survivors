@@ -172,7 +172,7 @@ class Progress{
   refundAll(){
     let sum=0;
     const tb=this.d.testBuys||{};for(const it of SHOP){const lv=(this.d.shop[it.id]||0)-(tb[it.id]||0);for(let i=0;i<lv;i++)sum+=shopCost(it,i);}
-    this.d.zenny+=Math.floor(sum*.9);this.d.shop={};this.d.testBuys={};this.save.write();
-    return Math.floor(sum*.9);
+    this.d.zenny+=sum;this.d.shop={};this.d.testBuys={};this.save.write();   /* full refund */
+    return sum;
   }
 }

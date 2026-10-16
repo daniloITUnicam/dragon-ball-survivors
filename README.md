@@ -72,6 +72,9 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 **🌊 Ondate, élite, sfera garantita ed effetti ridotti**
 - **Ritmo a ondate** (`updateWave` in `src/js/game.js`): calma → **picco di 15 s** (spawn ×1,75, tetto ×1,2, banner rosso) → **respiro di 12 s** (spawn ×0,3, banner azzurro, **pioggia di 10-16 gemme** attorno al giocatore pari a circa il 9% di un livello, e le gemme dei nemici valgono **+50%**) → di nuovo calma per 38-52 s (× radice della durata). Il picco **non parte** durante un boss, a meno di 22 s da un'orda, durante le ondate di kamikaze o tiratori, a meno di 25 s da un boss o negli ultimi istanti; se arriva un boss a metà picco, finisce subito. Costanti in cima a `game.js` (`WAVE_SURGE`, `WAVE_REST`, `WAVE_RATE`, `REST_RATE`, `REST_GEM`...).
 - **Nemici élite** (`planElites`/`spawnElite`/`eliteDown`): da 2 a 6 per partita (uno ogni ~210 s), distribuiti tra i boss e mai a meno di 28 s da uno; nascono più forti a ogni uscita. Sono una versione grande (×1,35), dorata e con barra della vita del nemico più forte della lista (×9 vita, +45% danni, armatura, quasi immuni al respingimento, esperienza ×6). Compaiono come **stella dorata sulla barra di avanzamento**; non arrivano durante un picco o un boss. Alla sconfitta lasciano **sempre un forziere** (un potenziamento o un'evoluzione **più un oggetto garantito**, non la scelta da boss), monete e gemme.
+- **Borsa di zenny** (`bagValue`, `MapDirector.spawnLootPoint`): il mucchio di monete che ogni tanto compare sulla mappa è una **borsa** (~45% dei bottini a terra, circa una ogni 2 minuti) con il valore scritto sopra. Valore = `1000 × t / 1800`, arrotondato a 5 (min 25, max 1300): 25 all'inizio, ~335 al minuto 10, 500 al 15, **1000 al 30**. Dura 90 s, ha la freccia sul bordo schermo ed è attratta dal magnete. Aggiunge al totale della partita il valore *base*: i bonus agli zenny (Avidità, Totem della Ricchezza, Jackpot…) si applicano a fine partita su tutto.
+- **Valore delle monete** (`coinValue`): ogni moneta a terra (nemici, bottini sulla mappa, Bubbles) vale `5 + 35 × t / 1800` zenny, **da 5 a 40 al minuto 30, mai oltre 40** (il tetto evita il farming con molti nemici). Il Jackpot e il Deposito di monete mantengono la propria scala.
+- **Negozio:** «Rimborsa tutto» restituisce il **100%** degli zenny spesi (senza percentuale sul pulsante).
 - **Sfera del Drago garantita** (`updateBallPlan`): ogni `clamp(durata×0,28; 100; 270)` secondi (la prima dopo il 75% dell'intervallo) ne cade una a 280-420 px dal giocatore, **mai due insieme, mai durante un boss, mai nell'ultimo minuto**; resta 150 s e la freccia ai bordi la indica. Il drop casuale dai nemici (0,07%) resta.
 - **Effetti ridotti** (Impostazioni > Video, `settings.reduceFx`, flag globale `FXL.on`): −60% particelle, meno fulmini, **niente scariche elettriche, colonne di luce, fiamme del Kaioken e raggi rotanti** delle sfere, bagliori al 60%, lampi del -70%, tremolio schermo ridotto, particelle d'ambiente dimezzate. Gli anelli d'urto restano perché portano informazioni di gioco. Testo tradotto in 6 lingue.
 - **Opacità degli effetti** (slider 0-100% sotto «Effetti ridotti», `settings.fxAlpha`, `FXL.a`): scala l'opacità di tutto ciò che è *del giocatore*: armi e proiettili, raggi, particelle, anelli, aure (trasformazioni, Kaioken, Berserk), cariche; 0% = invisibili. Il rendering avvolge `globalAlpha` del contesto (`fxBegin`/`fxEnd` in `renderer.js`) con una curva `a^1,7` (gli strati additivi si sommano oltre il 100%, quindi una scala lineare sembrerebbe invariata fino a valori bassi). **Non toccati**: sprite del personaggio, proiettili e zone di pericolo dei nemici, interfaccia.
@@ -134,7 +137,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 **🕰️ Stanza dello Spirito e del Tempo**
 - Gli scambi di statistiche hanno un malus dimezzato; la trasformazione è offerta solo se arriverebbe entro 10 livelli ed è **alternativa** all'arma (o l'una o l'altra); abilità e pet disattivati anche lì (la rigenerazione resta).
 
-**🧪 Test aggiunti:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`, `waves` (ondate, élite, sfera garantita), `reducefx`.
+**🧪 Test aggiunti:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`, `waves` (ondate, élite, sfera garantita), `reducefx`, `dende`, `pets_bag` (compagni, borsa e valore delle monete), `refund`.
 
 ### 🎵 Musica per mappa e 💨 Scatto universale
 **Musica:** metti un brano in `assets/` col nome della mappa (`android ruins.mp3`, `buu dimension.mp3`, `muten island.mp3`, `tournament of power.mp3`, `namek.mp3`…) e suona in quella mappa, in loop con dissolvenza incrociata. Tabella dei nomi e opzioni di peso in [`docs/MUSIC.md`](docs/MUSIC.md). **Scatto (Shift):** ora ce l'hanno tutti i personaggi. Pulsante in basso a sinistra accanto al Kaioken, ricarica 4 s (si migliora nel negozio con *Scatto Fulmineo*: −0,4 s e +15% danno per livello), infligge danni ai nemici che attraversa e dà invulnerabilità temporanea. **Sprite:** i personaggi con sprite del pack camminano normalmente mentre caricano un raggio e allungano il braccio solo allo sparo; boss e Saibaman con arte nel pack la usano (Cabba e Janemba inclusi).
@@ -261,12 +264,12 @@ Prima di ogni partita scegli un aiutante in base alla **razza**. Segue il giocat
 
 | Compagno | Razza | Abilità (potenziata verso il basso) | Ricarica |
 |---|---|---|---|
-| Dende | Namecciano | **Cura**: ripristina il 7% della vita | 42 s |
-| Mini Shenron | Drago | **Raccolta magica**: attira le gemme entro 300 px e dà un piccolo bonus XP (3%) | 55 s |
-| Mini Droid | Androide | **Scudo di energia**: invulnerabile per 0,9 s | 55 s |
-| Bubbles | Animale della Terra | **Banana fortunata**: qualche zenny e +3% fortuna per 40 s | 50 s |
-| Mini Buu | Majin | **Raggio caramella**: stordisce i nemici molto vicini per 0,6 s (0,2 s sui boss) | 38 s |
-| Saibaman | Saiyan (pianta) | **Autodistruzione**: piccola esplosione ad area | 30 s |
+| Dende | Namecciano | **Cura**: ripristina il 30% della vita | 30 s |
+| Mini Shenron | Drago | **Raccolta magica**: attira le gemme entro 400 px e dà un bonus XP del 5% del livello | 40 s |
+| Mini Droid | Androide | **Scudo di energia**: invulnerabile per 1,5 s | 40 s |
+| Bubbles | Animale della Terra | **Banana fortunata**: 3 monete a terra e +5% fortuna per 50 s | 36 s |
+| Mini Buu | Majin | **Raggio caramella**: stordisce i nemici entro 210 px per 1 s (0,4 s sui boss) | 28 s |
+| Saibaman | Saiyan (pianta) | **Autodistruzione**: esplosione ad area (raggio 160 px, 12 danni + 0,8 per livello) | 22 s |
 
 Le abilità dei pet sono state **ridimensionate di almeno tre quarti**: aiutano, ma non risolvono più la partita.
 
@@ -376,7 +379,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 
 ### Oggetti, struttura della run e mappa
 - **Forzieri** (uno per boss e uno di rifornimento ogni 5 minuti) con ricompense e trinket.
-- **Oggetti a terra**: monete, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna, capsule.
+- **Oggetti a terra**: monete (5-40 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna, capsule.
 - **Sfere del Drago**: raccogline 7 per esprimere un desiderio (seconda vita, potere, fortuna).
 - **Eventi sulla mappa**: Altare del Potere (bonus temporaneo), Sorgente curativa, Altare del Sacrificio (arma +1 in cambio di metà vita), Fonte dell'esperienza, Deposito di monete, Totem, Stanza dello Spirito e del Tempo.
 - **Trinket (20)** in 4 rarità: Scouter rotto, Marsupio Senzu, Fascia da allenamento, Stivali gravitazionali, Radar del Drago, Orecchino Potara, Mantello Namecciano, Nyoibo, Nuvola Speedy, Capsula Hoi-Poi, Cuore di Kaioh, Aureola angelica, Orologio della Stanza del Tempo, Sfera del Drago a 4 stelle, Cristallo divino, Armatura reale Saiyan, Anello del Tempo, Specchio di Kaioh, Cuore del Drago, Furia Saiyan.

@@ -64,6 +64,9 @@ All keys can be rebound in **Settings → Controls**.
 **🌊 Waves, elites, guaranteed ball and reduced effects**
 - **Wave rhythm** (`updateWave` in `src/js/game.js`): calm → **15 s surge** (spawn ×1.75, cap ×1.2, red banner) → **12 s breather** (spawn ×0.3, blue banner, a **shower of 10-16 gems** around the player worth about 9% of a level, and the gems dropped by enemies are worth **+50%**) → calm again for 38-52 s (× the square root of the run length). A surge **never starts** during a boss fight, within 22 s of a horde, during kamikaze or gunner waves, within 25 s of a boss or in the last moments; a boss arriving mid-surge ends it at once. Constants at the top of `game.js` (`WAVE_SURGE`, `WAVE_REST`, `WAVE_RATE`, `REST_RATE`, `REST_GEM`...).
 - **Elite enemies** (`planElites`/`spawnElite`/`eliteDown`): 2 to 6 per run (one every ~210 s), placed between the bosses and never within 28 s of one; each is stronger than the last. They are a big (×1.35), golden version with a health bar of the toughest enemy in the roster (×9 HP, +45% damage, armor, almost immune to knockback, ×6 experience). They show as a **golden star on the progress bar**; they never arrive during a surge or a boss. When defeated they **always drop a chest** (an upgrade or evolution **plus a guaranteed trinket**, not the boss-style pick), coins and gems.
+- **Zenny bag** (`bagValue`, `MapDirector.spawnLootPoint`): the pile of coins that now and then appears on the map is a **bag** (~45% of the map loot, about one every 2 minutes) with its value written above it. Value = `1000 × t / 1800`, rounded to 5 (min 25, max 1300): 25 at the start, ~335 at minute 10, 500 at 15, **1000 at 30**. It lasts 90 s, has an off-screen arrow and is pulled in by the magnet. It adds its *base* value to the run total: zenny bonuses (Greed, Totem of Wealth, Jackpot…) are applied to everything at the end of the run.
+- **Coin value** (`coinValue`): every loose coin (enemies, map loot, Bubbles) is worth `5 + 35 × t / 1800` zenny, **from 5 to 40 at minute 30 and never more** (the cap prevents farming with lots of enemies). Jackpot and the coin Cache keep their own scale.
+- **Shop:** "Refund all" gives back **100%** of the zenny spent (no percentage on the button).
 - **Guaranteed Dragon Ball** (`updateBallPlan`): every `clamp(run length×0.28, 100, 270)` seconds (the first after 75% of the interval) one lands 280-420 px from the player, **never two at once, never during a boss fight, never in the last minute**; it stays 150 s and the screen-edge arrow points to it. The random drop from enemies (0.07%) stays.
 - **Reduced effects** (Settings > Video, `settings.reduceFx`, global flag `FXL.on`): −60% particles, fewer lightning bolts, **no electric arcs, light pillars, Kaioken flames or turning rays** on the balls, glows at 60%, flashes −70%, calmer screen shake, ambient particles halved. Shock rings stay because they carry gameplay information. Text translated in 6 languages.
 - **Effect opacity** (0-100% slider under "Reduced effects", `settings.fxAlpha`, `FXL.a`): scales the opacity of everything that belongs to *the player*: weapons and projectiles, beams, particles, rings, auras (transformations, Kaioken, Berserk), charges; 0% = invisible. The renderer wraps the context's `globalAlpha` (`fxBegin`/`fxEnd` in `renderer.js`) with an `a^1.7` curve (additive layers add up past 100%, so a straight scale would look unchanged until very low values). **Not affected**: the character sprite, enemy projectiles and danger zones, the interface.
@@ -126,7 +129,7 @@ All keys can be rebound in **Settings → Controls**.
 **🕰️ Room of Spirit and Time**
 - Stat swaps have half the penalty; the transformation is only offered if it would happen within 10 levels and is an **alternative** to the weapon (one or the other); abilities and pet are disabled there too (regeneration still works).
 
-**🧪 Added tests:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`, `waves` (waves, elites, guaranteed ball), `reducefx`.
+**🧪 Added tests:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`, `waves` (waves, elites, guaranteed ball), `reducefx`, `dende`, `pets_bag` (companions, bag and coin value), `refund`.
 
 ### 🎵 Per-map music and 💨 universal dash
 **Music:** drop a track in `assets/` named after the map (`android ruins.mp3`, `buu dimension.mp3`, `muten island.mp3`, `tournament of power.mp3`, `namek.mp3`…) and it plays on that map, looping with a crossfade. Name table and size options in [`docs/MUSIC.md`](docs/MUSIC.md) (Italian). **Dash (Shift):** every character has it now. Button at the bottom-left next to Kaioken, 4 s cooldown (upgradable in the shop with *Lightning Dash*: −0.4 s and +15% damage per level), damages the enemies it crosses and grants brief invulnerability. **Sprites:** characters with pack sprites walk normally while charging a beam and extend the arm only when firing; bosses and Saibamen with pack art use it (Cabba and Janemba included).
@@ -252,12 +255,12 @@ Pick a helper by **race** before each run. It follows you, **collects nearby XP 
 
 | Companion | Race | Ability (heavily nerfed) | Cooldown |
 |---|---|---|---|
-| Dende | Namekian | **Healing**: restores 7% HP | 42 s |
-| Mini Shenron | Dragon | **Magic gather**: pulls gems within 300 px and gives a small XP bonus (3%) | 55 s |
-| Mini Droid | Android | **Energy shield**: invulnerable for 0.9 s | 55 s |
-| Bubbles | Earth animal | **Lucky banana**: a few zenny and +3% luck for 40 s | 50 s |
-| Mini Buu | Majin | **Candy beam**: stuns very close enemies for 0.6 s (0.2 s on bosses) | 38 s |
-| Saibaman | Saiyan (plant) | **Self-destruct**: small area explosion | 30 s |
+| Dende | Namekian | **Healing**: restores 30% HP | 30 s |
+| Mini Shenron | Dragon | **Magic gather**: pulls gems within 400 px and gives an XP bonus of 5% of a level | 40 s |
+| Mini Droid | Android | **Energy shield**: invulnerable for 1.5 s | 40 s |
+| Bubbles | Earth animal | **Lucky banana**: 3 coins on the ground and +5% luck for 50 s | 36 s |
+| Mini Buu | Majin | **Candy beam**: stuns enemies within 210 px for 1 s (0.4 s on bosses) | 28 s |
+| Saibaman | Saiyan (plant) | **Self-destruct**: area explosion (160 px radius, 12 damage + 0.8 per level) | 22 s |
 
 Pet abilities were **cut by at least three quarters**: they help, but no longer decide the run.
 
@@ -367,7 +370,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 
 ### Items, run structure and map
 - **Chests** (one per boss, plus a supply chest every 5 minutes) with rewards and trinkets.
-- **Ground pickups**: coins, heart, magnet, temporary damage/speed buffs, XP, luck, capsules.
+- **Ground pickups**: coins (5-40 zenny depending on the moment), zenny bag, heart, magnet, temporary damage/speed buffs, XP, luck, capsules.
 - **Dragon Balls**: collect 7 to make a wish (second life, power, fortune).
 - **Map events**: Altar of Power (temporary buff), Healing Spring, Sacrifice Altar (weapon +1 for half your HP), Experience Font, Coin Cache, Totem, Room of Spirit and Time.
 - **20 trinkets** across 4 rarities: Broken Scouter, Senzu Pouch, Training Headband, Gravity Boots, Dragon Radar, Potara Earring, Namekian Cape, Power Pole, Speedy Cloud, Hoi-Poi Capsule, Kaioh's Heart, Angel Halo, Spirit Room Clock, Four-Star Ball, Divine Crystal, Royal Saiyan Armor, Ring of Time, Kaioh Mirror, Dragon Heart, Saiyan Fury.

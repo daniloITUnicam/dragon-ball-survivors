@@ -23,7 +23,7 @@ const THEMES={
 };
 /* per-theme multiply tint of the rock sprites (grey-green art: plains/beach/arena keep it as drawn) */
 const ROCK_TINT={redrock:'#e0a08a',waste:'#d8c2a4',hell:'#8a6a66'};
-const LOOT_COL={coin:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
+const LOOT_COL={coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
 /* tiny skull (progress-bar milestones): cranium + jaw, dark outline, eye sockets and nose */
 function drawSkull(ctx,x,y,r,col,a){
   ctx.save();ctx.globalAlpha=a==null?1:a;ctx.lineJoin='round';ctx.lineWidth=Math.max(1,r*.3);ctx.strokeStyle='#14080c';ctx.fillStyle=col;
@@ -693,6 +693,15 @@ this.W=1;this.H=1;this.Z=1;
       case'luck':ctx.rotate(T0*1.6+ph);break;
     }
     switch(l.k){
+      case'bag':{GLOW.at(ctx,x,y,30,'#ffd23f',.75);GLOW.at(ctx,x,y,15,'#fff3b0',.35);
+        ctx.lineJoin='round';ctx.lineWidth=1.6;ctx.strokeStyle='#2e1a08';ctx.fillStyle='#9a6330';
+        ctx.beginPath();ctx.moveTo(x-4.5,y-5);ctx.quadraticCurveTo(x-13,y+1,x-10,y+8.5);ctx.quadraticCurveTo(x,y+13,x+10,y+8.5);ctx.quadraticCurveTo(x+13,y+1,x+4.5,y-5);ctx.closePath();ctx.fill();ctx.stroke();   /* the sack */
+        ctx.fillStyle='#c48a45';ctx.beginPath();ctx.ellipse(x-4.5,y+2,2.6,5,-.35,0,TAU);ctx.fill();
+        ctx.fillStyle='#9a6330';ctx.beginPath();ctx.moveTo(x-4.5,y-5.5);ctx.lineTo(x-7,y-10.5);ctx.lineTo(x-2,y-8);ctx.lineTo(x,y-11.5);ctx.lineTo(x+2.5,y-8);ctx.lineTo(x+7,y-10.5);ctx.lineTo(x+4.5,y-5.5);ctx.closePath();ctx.fill();ctx.stroke();   /* the gathered top */
+        ctx.fillStyle='#e8c040';ctx.fillRect(x-5.5,y-5.5,11,2.4);ctx.strokeRect(x-5.5,y-5.5,11,2.4);   /* the rope */
+        ctx.fillStyle='#ffd23f';ctx.strokeStyle='#5a3a08';ctx.lineWidth=1.2;ctx.font='900 11px sans-serif';ctx.textAlign='center';ctx.strokeText('Z',x,y+8);ctx.fillText('Z',x,y+8);   /* the zenny mark */
+        ctx.font='900 11px sans-serif';ctx.lineWidth=2.4;ctx.strokeStyle='rgba(30,16,4,.85)';ctx.fillStyle='#fff1a8';ctx.strokeText(String(l.v),x,y-15);ctx.fillText(String(l.v),x,y-15);   /* its value */
+        break;}
       case'coin':GLOW.at(ctx,x,y,14,'#ffd23f',.7);ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.arc(x,y,6,0,TAU);ctx.fill();ctx.fillStyle='#b8860b';ctx.fillRect(x-1,y-3,2,6);ctx.fillStyle='#fff3b0';ctx.fillRect(x-4,y-4,2,3);break;
       case'heal':GLOW.at(ctx,x,y,16,'#8be07a',.8);ctx.fillStyle='#8be07a';ctx.beginPath();ctx.ellipse(x,y,7,5,.5,0,TAU);ctx.fill();ctx.fillStyle='#d8ffc8';ctx.fillRect(x-3,y-3,3,2);break;
       case'magnet':GLOW.at(ctx,x,y,18,'#ff5a5a',.7);ctx.lineWidth=4;ctx.strokeStyle='#d8d8e0';ctx.beginPath();ctx.arc(x,y,6,Math.PI,0);ctx.stroke();ctx.fillStyle='#e03a3a';ctx.fillRect(x-8,y,4,6);ctx.fillStyle='#3a6ae0';ctx.fillRect(x+4,y,4,6);break;
@@ -1042,7 +1051,7 @@ this.W=1;this.H=1;this.Z=1;
     /* beacons for off-screen map items */
     const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':'#ffd23f']);
     for(const c of g.chests)tgts.push([c.x,c.y,'#ffd23f']);
-    for(const l of g.loot)if(l.k==='ball'||l.k==='capsule')tgts.push([l.x,l.y,l.k==='ball'?'#ff9d1c':'#ffffff']);
+    for(const l of g.loot)if(l.k==='ball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;
       if(sxp>20&&sxp<W-20&&syp>20&&syp<H-20)continue;

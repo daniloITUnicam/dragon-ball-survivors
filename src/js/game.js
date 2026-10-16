@@ -40,7 +40,7 @@ class Game{
     this.map=new MapDirector(this);
     for(const id of this.C.start)this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
-    this.luckT=0;this.initPet(o.pet||this.save.pet||'dende');
+    this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     this.recalc();this.p.hp=this.p.maxHp;
   }
   get viewR(){return Math.hypot(this.vw,this.vh)/2+50;}
@@ -73,7 +73,7 @@ class Game{
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=fm?(fm.idx>=6?2:fm.idx>=3?1:0):0;
-    S.luck=Math.min(.9,.07*sl('luck')+this.luckBonus+(this.luckT>0?.03:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,.07*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
@@ -598,8 +598,11 @@ class Game{
   }
   pickLoot(){const w=this.lootWeights(),o=Object.keys(w).filter(k=>w[k]>0);return o.length?wpick(o,k=>w[k]):null;}
   lootOnField(k){return this.loot.some(l=>l.k===k&&!l.dead);}
+  /* zenny bag: its value follows the moment it appears, 1000 at minute 30 (a straight line, in steps of 5, at least 25); the coin buffs (S.gold) apply on top when the run pays out */
+  coinValue(t){return clamp(Math.round(5+35*(t===undefined?this.t:t)/1800),5,40);}   /* a loose coin: 5 zenny at the start, 40 at minute 30 and never more */
+  bagValue(t){return clamp(Math.round(1000*(t===undefined?this.t:t)/1800/5)*5,25,1300);}
   spawnLoot(k,x,y){
-    const v=k==='coin'?Math.round(5*(1+this.t/600)):k==='xp'?Math.round(this.need*.3):0;
+    const v=k==='coin'?this.coinValue():k==='bag'?this.bagValue():k==='xp'?Math.round(this.need*.3):0;
     this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
   }
   /* Dragon Balls carry a number of stars (1-7): the ones owned this run (ballSet, or the lowest numbers when the counter was set by hand in the sandbox) */
@@ -611,10 +614,11 @@ class Game{
     return pick(pool.length?pool:all);
   }
   collectLoot(l){
-    const p=this.p,pc=({coin:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'})[l.k]||'#fff';
-    this.burst(l.x,l.y-8,l.k==='coin'?4:9,pc);if(l.k!=='coin')this.ring(l.x,l.y-6,l.k==='ball'?46:26,pc,.35);   /* pick-up sparkle */
+    const p=this.p,pc=({coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'})[l.k]||'#fff';
+    this.burst(l.x,l.y-8,l.k==='coin'?4:l.k==='bag'?22:9,pc);if(l.k!=='coin')this.ring(l.x,l.y-6,l.k==='ball'?46:26,pc,.35);   /* pick-up sparkle */
     switch(l.k){
       case'coin':this.addZenny(l.v);this.audio.sfx('coin');break;
+      case'bag':this.addZenny(l.v);this.audio.sfx('coin');this.audio.sfx('pkxp');this.run.bags=(this.run.bags||0)+1;this.floatText(l.x,l.y-34,'+Z '+l.v,1);this.ring(l.x,l.y-6,60,'#ffd23f',.45);this.shake=Math.max(this.shake,.08);break;
       case'heal':this.heal(p.maxHp*.3);this.audio.sfx('pkheal');this.ring(p.x,p.y,40,'#8be07a',.4);break;
       case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;this.audio.sfx('pkmagnet');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
       case'dmg':this.buffs.dmg=12;this.recalc();this.audio.sfx('pkdmg');this.floatText(p.x,p.y-50,this.env.tr(T('Danni +15% (12s)','Damage +15% (12s)')),2);break;
@@ -1011,6 +1015,7 @@ class Game{
     if(this.tempBuffs.length){let ch=false;for(const b of this.tempBuffs){b.t-=dt;if(b.t<=0)ch=true;}if(ch){this.tempBuffs=this.tempBuffs.filter(b=>b.t>0);this.recalc();}}
     if(this.riskT>0){this.riskT-=dt;if(this.riskT<=0)this.recalc();}
     if(this.luckT>0){this.luckT-=dt;if(this.luckT<=0)this.recalc();}
+    if(this.petLuckT>0){this.petLuckT-=dt;if(this.petLuckT<=0)this.recalc();}
     if(this.emoT>0){this.emoT-=dt;if(this.emoT<=0)this.emo=null;}
     if(this.buffs.dmg>0){this.buffs.dmg-=dt;if(this.buffs.dmg<=0)this.recalc();}
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
@@ -1218,16 +1223,16 @@ class Game{
     const p=this.p,id=q.d.id,c=q.d.c;q.cd=q.d.cd;q.fl=.5;q.act=.6;
     this.ring(p.x,p.y,90,c,.5);this.burst(q.x,q.y-12,16,c);this.audio.sfx('shrine');
     const tr=o=>this.env.tr(o);
-    if(id==='dende'){this.heal(p.maxHp*.07);this.floatText(p.x,p.y-56,tr(T('Guarigione!','Healed!')),2);this.pillar(p.x,p.y,'#8be07a',.6);}
-    else if(id==='shenron'){for(const g of this.gm){if(Math.hypot(g.x-p.x,g.y-p.y)<300)g.att=true;}this.addXp(this.need*.03/Math.max(.2,this.S.xp));this.floatText(p.x,p.y-56,tr(T('Raccolta Magica!','Magic Gather!')),2);this.pillar(p.x,p.y,'#59d070',.8);this.ring(p.x,p.y,300,'#59d070',.6);}
-    else if(id==='droid'){p.inv=Math.max(p.inv,.9);this.barrierT=Math.max(this.barrierT,0);this.floatText(p.x,p.y-56,tr(T('Scudo!','Shield!')),2);this.ring(p.x,p.y,60,'#8ad8ff',.8);}
-    else if(id==='bubbles'){this.luckT=40;for(let i=0;i<2;i++)this.loot.push({k:'coin',x:p.x+rnd(-40,40),y:p.y+rnd(-30,30),v:Math.round(3*(1+this.t/600)),t:0});this.recalc();this.floatText(p.x,p.y-56,tr(T('Fortuna +3% (40s)','Luck +3% (40s)')),2);}
+    if(id==='dende'){this.heal(p.maxHp*.30);this.floatText(p.x,p.y-56,tr(T('Guarigione!','Healed!')),2);this.pillar(p.x,p.y,'#8be07a',.6);}
+    else if(id==='shenron'){for(const g of this.gm){if(Math.hypot(g.x-p.x,g.y-p.y)<400)g.att=true;}this.addXp(this.need*.05/Math.max(.2,this.S.xp));this.floatText(p.x,p.y-56,tr(T('Raccolta Magica!','Magic Gather!')),2);this.pillar(p.x,p.y,'#59d070',.8);this.ring(p.x,p.y,400,'#59d070',.6);}
+    else if(id==='droid'){p.inv=Math.max(p.inv,1.5);this.barrierT=Math.max(this.barrierT,0);this.floatText(p.x,p.y-56,tr(T('Scudo!','Shield!')),2);this.ring(p.x,p.y,60,'#8ad8ff',.8);}
+    else if(id==='bubbles'){this.petLuckT=50;for(let i=0;i<3;i++)this.loot.push({k:'coin',x:p.x+rnd(-40,40),y:p.y+rnd(-30,30),v:this.coinValue(),t:0});this.recalc();this.floatText(p.x,p.y-56,tr(T('Fortuna +5% (50s)','Luck +5% (50s)')),2);}
     else if(id==='buu'){
-      this.ring(p.x,p.y,170,'#ff9ec7',.7);
-      for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(170+e.r)**2)e.stun=Math.max(e.stun,e.boss?.2:.6);}
+      this.ring(p.x,p.y,210,'#ff9ec7',.7);
+      for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(210+e.r)**2)e.stun=Math.max(e.stun,e.boss?.4:1);}
       this.floatText(p.x,p.y-56,tr(T('Raggio Caramella!','Candy Beam!')),2);
     }else if(id==='saibaman'){
-      this.explodeAt(q.x,q.y-6,130,7+this.lvl*.55,'#ff7a3a');this.shake=Math.max(this.shake,.3);this.audio.sfx('boom');
+      this.explodeAt(q.x,q.y-6,160,12+this.lvl*.8,'#ff7a3a');this.shake=Math.max(this.shake,.3);this.audio.sfx('boom');
       this.floatText(p.x,p.y-56,tr(T('Autodistruzione!','Self-Destruct!')),2);
     }
     return true;
@@ -1408,7 +1413,7 @@ class Game{
       l.t+=dt;
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
-      if((l.k==='coin'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
+      if((l.k==='coin'||l.k==='bag'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
       if(l.ttl&&l.t>l.ttl){l.dead=true;continue;}
       if(d<(l.k==='ball'?BALL_PICK_R:20)){l.dead=true;this.collectLoot(l);}
     }
@@ -1568,8 +1573,9 @@ class MapDirector{
   pos(rmin,rmax){const a=rnd(0,TAU),d=rnd(rmin,rmax);return this.g.spawnSpot(a,d,0);}
   spawnLootPoint(){
     /* a regular drop around the player: coins are common, everything else is picked by the loot director (rarity + what the player needs) */
-    const g=this.g,k=Math.random()<.45?'coin':(g.pickLoot()||'coin'),[x,y]=this.pos(150,330);
-    g.spawnLoot(k,x,y);g.loot[g.loot.length-1].ttl=60;
+    const g=this.g,k=Math.random()<.45?'bag':(g.pickLoot()||'bag'),[x,y]=this.pos(150,330);
+    g.spawnLoot(k,x,y);g.loot[g.loot.length-1].ttl=k==='bag'?90:60;
+    if(k==='bag')g.floatText(g.p.x,g.p.y-70,g.env.tr(T('Una borsa di zenny è apparsa!','A zenny bag appeared!')),5);
   }
   /* "scripted" help: every ~12 s check what the player lacks; at most one help item on the field per kind, with long pauses in between */
   needHelp(){
