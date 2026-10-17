@@ -4,7 +4,9 @@
    - <id>.png      base form of character <id>            (e.g. goku.png)
    - <id>_<n>.png  transformation number n (0 = first)    (e.g. goku_0.png, goku_1.png ...)
    A form without its own sheet reuses the highest lower sheet of the same character; a character without any sheet keeps the procedural art.
-   Layout: one row of equally wide frames: 0 idle, 1-4 walk cycle, 5 attack wind-up, 6 attack thrust, and optionally 7 power-up pose (transformations), 8 dash pose, 9 dash speed-lines (see docs/SPRITES.md).
+   Layout: one row of equally wide frames: 0 idle, 1-4 walk cycle, 5 attack wind-up, 6 attack thrust, and optionally 7 power-up pose (transformations), 8 dash pose, 9 dash speed-lines,
+   10 Kamehameha charge, 11 Kamehameha fire / two-handed shot, 12 Ki Blast wind-up (ball on the palm), 13 Ki Blast throw (arm extended), 14 arms raised (Spirit Bomb), 15 one arm to the sky (see docs/SPRITES.md and docs/SPRITES_AI.md).
+   sprites.json "hand": {"10":[x,y],...} = where the game draws the energy ball (frames 10, 12, 14) or where the shot leaves the hand (frame 13), in px of the frame, character facing right.
    build.py embeds the files + optional assets/sprites/sprites.json (frame/anchor/ppu overrides) as SPRITE_PACK. */
 const SPRITE_PACK=__SPRITE_PACK__;
 Sprites.sheets={};
@@ -57,7 +59,7 @@ Sprites.loadPack=function(onLoad){
     const d=SPRITE_PACK[id],img=new Image();
     img.onload=()=>{
       const cols=Math.max(1,d.cols||7),fw=d.fw||Math.floor(img.width/cols),fh=d.fh||img.height;
-      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null};
+      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null};
       if(id==='rocks'&&typeof World!=='undefined'){World.rockOn=true;World.cache.clear();}
       if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
       if(onLoad)onLoad(id);

@@ -107,7 +107,7 @@ const OBSTACLES={
 /* ====== Snake Way: the only walkable ground is the snake's body, a winding corridor along the x axis ====== */
 const ISLE_KINDS=['kingkai','kami','kame','korin','capsule','grandkai','shrine','nimbus','temple'];
 const Snake={
-  HW:150,XMAX:22000,IS:1900,
+  HW:150,XMAX:22000,IS:3800,
   f(x){return 230*Math.sin(x*.0042+MAP.p1)+60*Math.sin(x*.0113+1.1+MAP.p2);},
   df(x){return 230*.0042*Math.cos(x*.0042+MAP.p1)+60*.0113*Math.cos(x*.0113+1.1+MAP.p2);},
   cx(x){return Math.max(-this.XMAX,Math.min(this.XMAX,x));},

@@ -12,7 +12,7 @@ Il gioco disegna i personaggi giocabili con il codice. Se preferisci **usare la 
 Programmi comodi per disegnare pixel art: Aseprite, LibreSprite (gratuito), Piskel (nel browser), Pixelorama.
 
 ## 2. Formato del foglio
-Una **sola riga di 7 frame** (oppure **10**, vedi sotto) affiancati, tutti della stessa larghezza, sfondo trasparente:
+Una **sola riga di 7 frame** (oppure **10**, o **16** con le pose delle armi, vedi sotto) affiancati, tutti della stessa larghezza, sfondo trasparente:
 
 | Frame | Uso |
 |---|---|
@@ -23,6 +23,7 @@ Una **sola riga di 7 frame** (oppure **10**, vedi sotto) affiancati, tutti della
 | 7 *(opz.)* | posa di carica della trasformazione (con l'aura/esplosione già disegnata) |
 | 8 *(opz.)* | posa di scatto (corpo orizzontale) |
 | 9 *(opz.)* | scia di velocità, disegnata dietro lo scatto |
+| 10-15 *(opz.)* | pose delle armi: 10 carica del Kamehameha, 11 raggio / colpi a due mani, 12 sfera del Colpo di Ki, 13 lancio del Colpo di Ki, 14 braccia alzate (Genkidama), 15 braccio al cielo. Con i punti `hand` in `sprites.json`. Guida, prompt per un generatore AI e strumento per assemblare il foglio: [`SPRITES_AI.md`](SPRITES_AI.md) |
 
 I frame 7-9 sono facoltativi: nel `sprites.json` il campo `has` elenca quali sono davvero presenti (es. `"has":[8,9]`). Quelli assenti usano la grafica del gioco (aura procedurale, posa normale con immagini residue).
 

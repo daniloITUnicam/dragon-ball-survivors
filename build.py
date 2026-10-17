@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','i18n4','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','cloud','game','skills','sprites','sprites_hd','sheets','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','renderer','uiicons','ui','ui2','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','i18n','i18n2','i18n3','i18n4','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','cloud','game','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','renderer','events_draw','uiicons','ui','ui2','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -23,6 +23,10 @@ _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
 _wip = ROOT/'assets'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu
 js = js.replace('__WIP__', base64.b64encode(_wip.read_bytes()).decode() if _wip.exists() else '')
+_xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
+js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
+_hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)
+js = js.replace('__HPBAR__', base64.b64encode(_hp.read_bytes()).decode() if _hp.exists() else '')
 _db = ROOT/'assets'/'dragonballs.webp'   # the 7 Dragon Balls (1..7 stars), one 64x64 frame each, side by side
 js = js.replace('__DBALLS__', base64.b64encode(_db.read_bytes()).decode() if _db.exists() else '')
 # ---- music: assets/*.mp3 (also .ogg .m4a .wav) mapped to the menu / a stage by the FILE NAME ----

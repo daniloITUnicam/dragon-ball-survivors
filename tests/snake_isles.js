@@ -9,7 +9,7 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
  window.step=(n,fn)=>{for(let f=0;f<n;f++){if(g.modal){try{__app.resolveModal(0);}catch(e){}if(g.modal)g.modal=null;}g.update(1/60);if(g.p.hp<g.p.maxHp*.6)g.p.hp=g.p.maxHp;if(fn)fn(f);}};
  /* geometry */
  const L=Snake.islandsIn(-Snake.XMAX,Snake.XMAX);
- ok(L.length>=18,'islands along the snake ('+L.length+', all kinds '+new Set(L.map(i=>i.kind)).size+'/9)');
+ ok(L.length>=10,'islands along the snake ('+L.length+', all kinds '+new Set(L.map(i=>i.kind)).size+'/9)');
  ok(new Set(L.map(i=>i.kind)).size===9,'every island kind appears');
  ok(L.every(i=>Math.abs(i.x)<=Snake.XMAX-400&&Math.abs(i.x)>=800),'none near the start nor past the end');
  const I=L.find(i=>i.x>0&&i.side>0)||L[0];

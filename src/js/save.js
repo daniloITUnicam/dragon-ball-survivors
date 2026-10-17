@@ -14,7 +14,7 @@ class SaveData{
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,endAuto:false,endPrio:[]},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],debug:[8]}
@@ -111,11 +111,11 @@ class Progress{
   }
   /* zenny: (coins + kills + time + bosses + clear) * stage mult * shop/trinket gold * x2 * (win?1:.75) */
   /* level / evolution of every weapon at the end of the run (shown beside its damage) */
-  weaponLevels(g){const o={};for(const [id,w] of g.weapons)o[id]={lv:w.lv,evo:w.evo|0};return o;}
+  weaponLevels(g){const o={};for(const [id,w] of g.weapons)o[id]={lv:w.lv,evo:w.evo|0,xl:w.xl|0};return o;}
   rewardLines(g,win,firstWin){
     const idx=g.stageIdx,b=g.bank;
     return[
-      {k:'coins',v:g.run.coins-b.coins},
+      {k:'coins',v:g.run.coins-Math.min(b.coins,g.run.minC)},   /* what was already paid is not paid twice: after "Continue" only the new coins count (spending in Zeno's Shop first eats the old ones) */
       {k:'clear',v:firstWin?Math.round(200*ZMUL*(idx+1)):0}
     ];
   }
@@ -142,7 +142,7 @@ class Progress{
     if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
-    g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};
+    g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};   g.run.minC=g.run.coins;
     /* a weapon is unlocked by simply winning a map with a character that starts with it (once per weapon: a second owner of the same weapon unlocks nothing new) */
     if(win)for(const id of g.C.start){
       if(!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}

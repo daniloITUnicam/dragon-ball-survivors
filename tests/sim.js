@@ -1,8 +1,8 @@
 // Headless balance simulator: node tests/sim.js <stage 1-5> <diff> <N> <charIds|all> [dt]
 const fs=require('fs'),path=require('path');
 const SRC=path.join(__dirname,'..','src','js');
-let code='const Sea={has:()=>false,wet:()=>-9,cache:new Map()};\n';for(const f of ['util','data','weapons','weapons2','mapart','world','save','gacha','game'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
-code+='\nglobalThis.__X={LINES,ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon};';
+let code='const Sea={has:()=>false,wet:()=>-9,cache:new Map()};\n';for(const f of ['util','data','weapons','weapons2','mapart','world','save','gacha','game','skills','events','pose'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
+code+='\nglobalThis.__X={LINES,ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon,PASS,WMAX,MAX_PASSIVES,xpNeed,ESC_E,ESC_N,ESC_X,ESC_EVERY,ENDLESS_MILE,ENDLESS_W,ENDLESS_BONUS,ENDLESS_ZENO,ENDLESS_CD_MIN,ENDLESS_T0,ENDLESS_TK,WXL,XL_DMG,XL_AREA,XL_CD,BERS_T,BERS_T2,BERS_AIM,X_SPAWN_K,X_CAP_K};';
 (0,eval)(code);
 const X=globalThis.__X;
 function mem(){const m={};return{getItem:k=>m[k]||null,setItem:(k,v)=>{m[k]=v;}};}

@@ -93,8 +93,11 @@ class Sprites{
   /* frames: 0 idle, 1-4 walk cycle, 5 attack wind-up, 6 attack thrust */
   static pose(f){
     const W=[null,[1.6,0,1,0],[0,0,0,-.6],[0,1.6,-1,0],[0,0,0,-.6]];
-    if(f>=1&&f<=4){const w=W[f];return{l:w[0],r:w[1],sw:w[2],bob:w[3],atk:0};}
-    return{l:0,r:0,sw:0,bob:0,atk:f===5?1:f===6?2:0};
+    /* composite frames (weapon animations): 20 + base frame = the body WITHOUT arms (the game paints the arms itself, see pose.js),
+       30 + base frame = the same with a fierce face. The base frame (0 idle, 1-4 walk) keeps the legs walking under the arms. */
+    const na=f>=20,ang=f>=30;if(na)f%=10;
+    if(f>=1&&f<=4){const w=W[f];return{l:w[0],r:w[1],sw:w[2],bob:w[3],atk:0,na,ang};}
+    return{l:0,r:0,sw:0,bob:0,atk:na?0:f===5?1:f===6?2:0,na,ang};
   }
   /* pet art: mini Shenron and Bubbles the monkey */
   static pdragonArt(R,f){
@@ -139,6 +142,7 @@ class Sprites{
     /* back arm (behind torso) */
     const sl=c.sleeve||c.under||out,gl=c.gloves||skin;
     const arm=(front)=>{
+      if(ps.na)return;   /* the arms are painted by the game (pose.js) */
       const sg=front?1:-1,bx=front?5.2+wd:-8-wd;
       if(ps.atk===2&&front){R(4.4+wd,-14.4,7.6,3,sl);R(4.4+wd,-11.8,7.6,.8,sh(sl,-.25));R(11.6+wd,-15,3.6,4.2,gl);R(11.6+wd,-15,3.6,1,sh(gl,.25));if(c.wrist)R(9.2+wd,-14.4,1.6,3,c.wrist);return;}
       if(ps.atk===1){const dx=front?-1.2:-3.2;R(bx+dx,-14.8,3,6,front?sh(sl,-.2):sl);R(bx+dx,-9,3,3.2,gl);return;}
@@ -176,7 +180,7 @@ class Sprites{
       H(-6.8,-18.2,13.6,.8,skin);H(5.2,-18.2,1.6,.8,skD);H(-6,-17.4,12,.8,skD);H(-5,-16.6,10,.8,skD);H(-3.6,-15.9,7.2,.6,sh(skD,-.15));
     }else{H(-7.4,-29,14.8,13.4,skin);H(4.6,-29,2.8,13.4,skD);H(-7.4,-29,1.6,13.4,skL);H(-6,-17.4,12,1.8,skD);}
     H(-5.8,-19.4,2.2,1.2,'#ff8a7a88');H(3.6,-19.4,2.2,1.2,'#ff8a7a88');
-    const brow=(c.hs&&c.hs!=='bald'&&c.hair)?sh(c.hair,-.35):'#2a1a14',eyc=c.eye||'#1a1a22',ay=ps.atk===2?-.6:0;
+    const brow=(c.hs&&c.hs!=='bald'&&c.hair)?sh(c.hair,-.35):'#2a1a14',eyc=c.eye||'#1a1a22',fi=ps.atk===2||ps.ang,ay=fi?-.6:0;
     const dk='#1a1216',mo='#5a1a1a';
     if(ex==='blink'){
       H(-5.4,-22.2,4.4,.9,dk);H(1,-22.2,4.4,.9,dk);H(-6,-26.2,5,1.1,brow);H(1,-26.2,5,1.1,brow);H(-.5,-20.8,1,1,skD);H(-1.4,-18.8,2.8,.8,'#7a2a2a');
@@ -205,10 +209,10 @@ class Sprites{
     H(-5.6,-24.4+ay,4.8,5,'#fff');H(.8,-24.4+ay,4.8,5,'#fff');
       H(-4.4,-24+ay,3,4.6,eyc);H(1.6,-24+ay,3,4.6,eyc);H(-4.4,-24+ay,3,1,sh(eyc,-.5));H(1.6,-24+ay,3,1,sh(eyc,-.5));
       H(-3.9,-23.4+ay,1.2,1.2,'#fff');H(2.1,-23.4+ay,1.2,1.2,'#fff');H(-2.6,-21.4+ay,.8,.8,'#ffffffaa');H(3.4,-21.4+ay,.8,.8,'#ffffffaa');
-      if(ps.atk===2){H(-6,-26.8,5.2,1.1,brow);H(.8,-26.8,5.2,1.1,brow);H(-.8,-25.8,.8,.8,brow);H(0,-25.8,.8,.8,brow);}   /* angry brows stay above the eyes */
+      if(fi){H(-6,-26.8,5.2,1.1,brow);H(.8,-26.8,5.2,1.1,brow);H(-.8,-25.8,.8,.8,brow);H(0,-25.8,.8,.8,brow);}   /* angry brows stay above the eyes */
       else{H(-6,-26.2,5,1.1,brow);H(1,-26.2,5,1.1,brow);}
       H(-.5,-20.8,1,1,skD);
-      if(ps.atk===2)H(-1.6,-19,3.2,1.8,'#5a1a1a');else H(-1.4,-18.8,2.8,.8,'#7a2a2a');
+      if(fi)H(-1.6,-19,3.2,1.8,'#5a1a1a');else H(-1.4,-18.8,2.8,.8,'#7a2a2a');
       if(hq){
         /* the lid lines stay inside the eye box: lash line exactly as wide as the eye, lower lid UNDER the eye (it used to cut across the white) */
         H(-5.6,-24.7+ay,4.8,.6,dk);H(.8,-24.7+ay,4.8,.6,dk);H(-5.4,-19.2+ay,4.4,.4,skD);H(1,-19.2+ay,4.4,.4,skD);

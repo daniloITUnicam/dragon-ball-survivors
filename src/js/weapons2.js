@@ -17,9 +17,9 @@ Object.assign(WS,{
 });
 /* second evolutions hit a bit softer than the classic x1.5 */
 class NW extends Weapon{
-  get dm(){return(this.evo?1+.03*(this.g.formIdx+1):1)*this.tier;}
-  get e2c(){return(this.evo>=2?.88:1)*(1-.015*this.lvB);}
-  get e2a(){return(this.evo>=2?1.15:1)*(1+.02*this.lvB);}
+  get dm(){return(this.evo?1+.03*(this.g.formIdx+1):1)*this.tier*this.xlD;}
+  get e2c(){return this.cdXl((this.evo>=2?.88:1)*(1-.015*this.lvB));}
+  get e2a(){return(this.evo>=2?1.15:1)*(1+.02*this.lvB)*this.xlA;}
   get e2n(){return this.evo>=2?1:0;}
   area(){return this.g.S.area*this.e2a;}
   cdv(){return this.st.cd[this.L]*this.g.S.cd*this.e2c;}
@@ -32,7 +32,7 @@ class JavelinWeapon extends NW{
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.cd-=dt;if(this.cd>0)return;
     const t=g.nearest(p.x,p.y,600);if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x),n=s.n[L]+g.S.proj+this.e2n;
+    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),n=s.n[L]+g.S.proj+this.e2n;
     for(let i=0;i<n;i++){
       const a=base+(i-(n-1)/2)*.15;
       g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*540,vy:Math.sin(a)*540,r:8*this.area(),dmg:s.dmg[L]*this.dm,pi:s.pi[L]+(this.evo?2:0),life:1.15,hit:[],c:this.color,spear:a});
@@ -48,7 +48,7 @@ class DSundayWeapon extends NW{
     if(!cands.length){this.cd=.1;return;}
     const n=s.n[L]+g.S.proj+this.e2n;
     for(let i=0;i<n;i++){
-      const t=cands[i%cands.length],a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+(i>=cands.length?rnd(-.15,.15):0);
+      const t=cands[i%cands.length],a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+(i>=cands.length?rnd(-.15,.15):0)+g.aimJit();
       g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*470,vy:Math.sin(a)*470,r:7,dmg:s.dmg[L]*this.dm,pi:0,life:1.3,hit:[],c:this.color,expl:s.rad[L]*this.area(),ex:.6});
     }
     g.audio.sfx('shot');this.cd=this.cdv();
@@ -59,7 +59,7 @@ class BreakerWeapon extends NW{
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.cd-=dt;if(this.cd>0)return;
     const t=g.nearest(p.x,p.y,520);if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x),n=s.n[L]+(this.evo>=2?1:0);
+    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),n=s.n[L]+(this.evo>=2?1:0);
     for(let i=0;i<n;i++){
       const a=base+(i-(n-1)/2)*.3;
       g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*320,vy:Math.sin(a)*320,r:11,dmg:s.dmg[L]*this.dm*.45,pi:0,life:1.4,hit:[],c:this.color,expl:s.rad[L]*this.area(),ex:1.25});
@@ -86,7 +86,7 @@ class BoomerWeapon extends NW{
     if(this.cd<=0){
       const t=g.nearest(p.x,p.y,520);
       if(t){
-        const base=Math.atan2(t.y-(p.y-14),t.x-p.x),n=s.n[L]+g.S.proj+this.e2n;
+        const base=Math.atan2(t.y-(p.y-14),t.x-p.x)+g.aimJit(),n=s.n[L]+g.S.proj+this.e2n;
         for(let i=0;i<n;i++)this.bs.push({a:base+(i-(n-1)/2)*.5,t:-i*.14,dur:1.5,d:s.dist[L]*this.area(),hit:new Set(),x:p.x,y:p.y});
         g.audio.sfx('slash');this.cd=this.cdv();
       }else this.cd=.15;
@@ -362,7 +362,7 @@ class SweepWeapon extends NW{
       this.cd-=dt;
       if(this.cd<=0){
         const t=g.nearest(p.x,p.y,520);
-        if(t){this.act={a:Math.atan2(t.y-p.y,t.x-p.x),t:0,dur:s.dur[L]};g.audio.sfx(this.evo?'kameFireEvo':'kameFire');}
+        if(t){this.act={a:Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),t:0,dur:s.dur[L]};g.audio.sfx(this.evo?'kameFireEvo':'kameFire');}
         else this.cd=.2;
       }
     }else{

@@ -120,6 +120,7 @@ select{background:var(--panel2);color:var(--ink);border:2px solid var(--line);bo
 .pausescr{justify-content:flex-start}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;width:100%;max-width:1100px}
 .psec{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.endsec{grid-column:1/-1}.endsec .h3s{margin-top:6px}.endprio{padding:2px 0}.epn{min-width:22px;text-align:center;color:#ffd23f;font-weight:900}.epb{padding:2px 10px;min-width:38px}.endesc{max-width:760px;margin:6px auto 0;font-size:13px;line-height:1.35;opacity:.85}
 .prow{display:flex;gap:10px;align-items:center}.prow .glyph{font-size:30px;width:38px}
 .krow{display:flex;justify-content:space-between;font-size:14px;gap:12px}.krow span{color:var(--mute)}
 .card.bought{animation:buy .7s}

@@ -256,6 +256,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(r.x-R*.14,r.y-R*.55,R*.28,R*.5);
     }
     if(!g.trial)this.drawZones(g,cx,cy,t);
+    if(!g.trial)this.drawEvents(g,t);
     this.drawDanger(g,t);this.drawBeams(g,t);
     for(const l of (g.trial?[]:g.loot))this.drawLoot(l,t);
     for(const f of (g.trial?[]:g.feat))this.drawFeature(f,t,g);
@@ -342,6 +343,7 @@ this.W=1;this.H=1;this.Z=1;
     ctx.setTransform(1,0,0,1,0,0);
     this.vignette(g.dying?Math.min(.9,.5+.5*g.dying.t/.6):.5);if(g.dying){const dk=Math.min(.45,g.dying.t*.6);ctx.fillStyle='rgba(40,0,0,'+dk+')';ctx.fillRect(0,0,this.W,this.H);}
     if(!g.trial)Ambient.screen(ctx,this.W,this.H,this.U,t);
+    if(!g.trial)this.eventOverlay(g,t);
     if(g.tsT>0){ctx.fillStyle='rgba(215,225,255,'+Math.min(.3,g.tsT*.3)+')';ctx.fillRect(0,0,this.W,this.H);}
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
@@ -357,6 +359,9 @@ this.W=1;this.H=1;this.Z=1;
       else if(p.mv)frame=Sprites.walkFrame(g.pcKey,t);
       else if(g.cast)frame=0;
     }
+    /* optional sheet frames for the weapon poses (10-15, see pose.js / docs/SPRITES_AI.md); only when the sheet declares them */
+    let pzS=null;
+    if(!g.dying&&Sprites.sheetFor(g.pcKey)&&!g.xform&&!(g.dashT>0&&Sprites.sheetHas(g.pcKey,8))){const z0=Pose.cur(g),f2=z0?Pose.sheetFrame(z0):0;if(f2&&Sprites.sheetHas(g.pcKey,f2)){frame=f2;pzS=z0;}}
     if(g.dying)frame=0;
     const flash=!g.dying&&p.inv>0&&((t*20)|0)%2===0&&p.inv<.45;
     let ex=g.dying?'hurt':null;
@@ -367,7 +372,13 @@ this.W=1;this.H=1;this.Z=1;
     if(xf){
       if(!xf.released||xf.t-xf.rel<.55){const has=Sprites.sheetHas;const pf=xf.released?(((g.rt*8)|0)%2?2:3)/4+.01:Math.min(.99,xf.t/xf.rel);if(has(g.pcKey,7)){frame=Sprites.poseFrame(g.pcKey,'pw',pf);pk2=g.pcKey;pc2=g.pc;}else if(has(pck,7)){frame=Sprites.poseFrame(pck,'pw',pf);}}
     }else if(g.dashT>0&&Sprites.sheetHas(pck,8)){frame=Sprites.poseFrame(pck,'dh',1-g.dashT/.26);dashing=true;}
-    const sp=Sprites.player(pk2,pc2,frame,false,ex),k=u/(sp.s||Sprites.S);
+    /* weapon animations (pose.js): the body is painted without arms (legs keep walking) and the arms are drawn by the pose; the character
+       looks toward the aim while it acts. Imported sprite sheets, transformations, dashes and death keep their own frames. */
+    let pz=null,fm=frame,fd=p.face;
+    if(!g.dying&&!xf&&!dashing&&!Sprites.sheetFor(g.pcKey)){pz=Pose.cur(g);if(pz){fm=(p.mv?Sprites.walkFrame(g.pcKey,t):0)+(POSE_FIERCE[pz.st]?30:20);g.pfd=Pose.fdOf(g,pz.a);g.pfdUntil=g.rt+.3;}}
+    if(pzS){g.pfd=Pose.fdOf(g,pzS.a);g.pfdUntil=g.rt+.3;}
+    if(!g.dying&&g.pfdUntil>g.rt&&g.pfd)fd=g.pfd;
+    const sp=Sprites.player(pk2,pc2,fm,false,ex),k=u/(sp.s||Sprites.S);
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(p.x,p.y,7*u,2.4*u,0,0,TAU);ctx.fill();
     this.fxBegin();
     if(dashing)this.dashTrail(g,pck,pcc,k,t);
@@ -410,12 +421,14 @@ this.W=1;this.H=1;this.Z=1;
     }
     this.fxEnd();
     const bob=p.mv&&!sp.px?-Math.abs(Math.sin(t*9))*1.2:0;   /* pack sprites bob inside their own walk frames */
+    const Z=pz?Pose.build(g,pz,u,fd,Sprites.pose(fm).bob,bob):null,blink=!g.dying&&p.inv>0&&p.inv<.45,whiteArm=flash&&!xf;
+    if(Z){ctx.save();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.B,g.pc,u,false,whiteArm);ctx.restore();}   /* the far arm goes behind the body */
     ctx.save();ctx.translate(p.x,p.y+bob);
     if(g.dying){const dd=g.dying.t,kd=Math.min(1,dd/.6);ctx.rotate(-p.face*(Math.PI/2)*(1-Math.pow(1-kd,3)));ctx.globalAlpha=1-.55*Math.min(1,Math.max(0,(dd-.5)/1.4));}
-    ctx.scale(p.face*k,k);
+    ctx.scale(fd*k,k);
     if(!g.dying&&p.inv>0&&p.inv<.45)ctx.globalAlpha=.55;
     ctx.imageSmoothingEnabled=!sp.px;
-    ctx.drawImage((flash&&!xf?Sprites.player(pk2,pc2,frame,true,ex):sp).c,-sp.ox,-sp.oy);
+    ctx.drawImage((flash&&!xf?Sprites.player(pk2,pc2,fm,true,ex):sp).c,-sp.ox,-sp.oy);
     ctx.restore();ctx.imageSmoothingEnabled=false;
     if(g.dying&&g.dying.t>.45){   /* the soul leaves the body: a golden halo rises and fades */
       const s2=Math.min(1,(g.dying.t-.45)/1.4),hy=p.y-16*u-s2*60,al=1-.7*s2;
@@ -424,10 +437,18 @@ this.W=1;this.H=1;this.Z=1;
       ctx.globalAlpha=al*.5;GLOW.at(ctx,p.x,hy+8,26,'#fff3b0',.5);ctx.restore();
     }
     if(g.emo&&g.emoT>0)this.drawEmote(g.emo,p.x+13,p.y-58*(u/1.95)-8-Math.sin(g.rt*8)*1.5,t);
+    const SB=pzS?Pose.sheetBall(g,pzS,frame,fd,u,bob):null,BL=Z?Z.ball:SB;
+    if(BL&&!g.cast){   /* the ball in the hand (Ki Blast wind-up, Spirit Bomb above the head) */
+      const bl=BL||SB,col=(pz||pzS).col||'#ffd24a';
+      this.fxBegin();VFX.orb(ctx,bl.x,bl.y,bl.r,col,g.rt);ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,bl.x,bl.y,bl.r*(3+.3*Math.sin(g.rt*30)),col,.35);ctx.restore();this.fxEnd();
+    }
     if(g.cast){
-      const c=g.cast,kk=clamp(c.t/c.dur,0,1),a=c.a,ca=Math.cos(a),sa=Math.sin(a),d=9+9*kk,hx=p.x+ca*d,hy=p.y-17+sa*d;
-      ctx.lineCap='round';ctx.strokeStyle=g.pc.skin;ctx.lineWidth=3.4;
-      if(!sp.px)for(const sd of[-1,1]){ctx.beginPath();ctx.moveTo(p.x+sd*4,p.y-18);ctx.lineTo(hx-sa*sd*2.4,hy+ca*sd*2.4);ctx.stroke();}
+      const c=g.cast,kk=clamp(c.t/c.dur,0,1),a=c.a,ca=Math.cos(a),sa=Math.sin(a),d=9+9*kk;
+      let hx=p.x+ca*d,hy=p.y-17+sa*d;
+      if(Z&&Z.ball){hx=Z.ball.x;hy=Z.ball.y;}   /* procedural arms: the ball is held between the hands */
+      else if(SB){hx=SB.x;hy=SB.y;}   /* sheet frame 10: the hand anchor of the sprite */
+      else{ctx.lineCap='round';ctx.strokeStyle=g.pc.skin;ctx.lineWidth=3.4;
+        if(!sp.px)for(const sd of[-1,1]){ctx.beginPath();ctx.moveTo(p.x+sd*4,p.y-18);ctx.lineTo(hx-sa*sd*2.4,hy+ca*sd*2.4);ctx.stroke();}}
       this.fxBegin();VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
       if(c.kind==='kame'){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy,(14+26*kk)*(1+.1*Math.sin(g.rt*19)),c.color,.55*kk+.2);   /* charging ball: pulsing halo and rotating rays */
         for(let i=0;i<8;i++){const aa=g.rt*3+i*TAU/8,r0=5+9*kk,l=(10+16*kk)*(.7+.3*Math.sin(g.rt*17+i));ctx.strokeStyle=hexA('#ffffff',.25+.45*kk);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(hx+Math.cos(aa)*r0,hy+Math.sin(aa)*r0);ctx.lineTo(hx+Math.cos(aa)*(r0+l),hy+Math.sin(aa)*(r0+l));ctx.stroke();}ctx.restore();}
@@ -436,6 +457,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.globalAlpha=.35*kk;ctx.strokeStyle=c.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(hx,hy,16+30*(1-kk),0,TAU);ctx.stroke();
       ctx.restore();this.fxEnd();
     }
+    if(Z){ctx.save();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.A,g.pc,u,true,whiteArm);ctx.restore();}   /* the near arm in front */
   }
   /* Kaioken: a constant, living red aura (as in the anime) - glow, wavering flame tongues in two layers, a pulsing outline halo, rising sparks and ground rings.
      Drawn with the player, i.e. above every ability effect, so it never fades into the background. */
@@ -970,6 +992,16 @@ this.W=1;this.H=1;this.Z=1;
     ctx.globalAlpha=1;
   }
 
+  /* the character in the medallion of the HP bar: the sprite of the current form (the one before while a transformation charges), a pained face at low life */
+  hudPortrait(g,ctx,cx,cy,r){
+    const xf=g.xform,old=xf&&!xf.released?xf.old:null,pcc=old?old.pc:g.pc,pck=old?old.key:g.pcKey,t=g.rt,hr=g.p.hp/g.p.maxHp;
+    let ex=null;
+    if(g.dying||hr<.25)ex='pain';else if(g.emo&&g.emoT>0)ex=g.emo;else if((t%4.3)>4.17)ex='blink';
+    const sp=Sprites.player(pck,pcc,0,false,ex);
+    let ox=0,oy=0;if(xf&&!xf.released){const k=xf.t/xf.rel;ox=(Math.random()-.5)*r*.12*k;oy=(Math.random()-.5)*r*.12*k;}
+    HpBar.portrait(ctx,sp,cx+ox,cy+oy,r,xf&&!xf.released?xf.col:g.formColor,t,xf?(xf.released?Math.max(0,.5-(xf.t-xf.rel)*.6):.15*xf.t/xf.rel):0);
+  }
+
   /* ---------- HUD (screen space) ---------- */
   hud(g,dt,cx,cy){
     const ctx=this.ctx,U=this.U,W=this.W,H=this.H,p=g.p,tt=this.tt,tr=this.tr;
@@ -978,16 +1010,28 @@ this.W=1;this.H=1;this.Z=1;
     const txt=(s,x,y,col,al,font)=>{ctx.font=font;ctx.textAlign=al||'left';ctx.lineWidth=3*U;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(s,x,y);ctx.fillStyle=col||'#fff';ctx.fillText(s,x,y);},tr2=(a,b)=>tr(T(a,b));
     const m=10*U;this.zones=[];
     /* xp bar */
-    ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,W,11*U);
-    const xr=clamp(g.xp/g.need,0,1);ctx.fillStyle='#4ac8ff';ctx.fillRect(0,0,W*xr,11*U);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(0,0,W*xr,3*U);
-    txt(tt('lv')+' '+g.lvl,m,30*U,'#fff','left',F(16));
+    const xr=clamp(g.xp/g.need,0,1),xl=XpBar.layout(U,W);
+    if(xl){   /* the artwork: medallion + level plates, a beam that fills up, XP / next and the percentage */
+      XpBar.draw(ctx,2*U,2*U,xl,xr,{lv:g.lvl,lvl:tt('xpLevel')+' '+g.lvl,cur:String(Math.floor(g.xp)),need:String(Math.round(g.need)),pct:Math.floor(xr*100)+'%'},g.rt);
+    }else{    /* narrow screens: the thin bar */
+      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,W,11*U);ctx.fillStyle='#4ac8ff';ctx.fillRect(0,0,W*xr,11*U);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(0,0,W*xr,3*U);
+      txt(tt('lv')+' '+g.lvl+'  ·  '+Math.floor(g.xp)+' / '+Math.round(g.need),m,30*U,'#fff','left',F(16));
+    }
     /* hp */
-    const bw=Math.min(250*U,W*.4),hy=38*U;
-    ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(m,hy,bw,15*U);
-    const hr=clamp(p.hp/p.maxHp,0,1);ctx.fillStyle=hr>.3?'#e9503f':'#ff2a2a';ctx.fillRect(m,hy,bw*hr,15*U);ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(m,hy,bw*hr,4*U);
-    txt(Math.ceil(p.hp)+' / '+p.maxHp,m+6*U,hy+12*U,'#fff','left',F(11));
+    const hr=clamp(p.hp/p.maxHp,0,1),hl=HpBar.layout(U,W);let wy0;
+    if(hl){   /* the artwork: medallion with the live portrait + level plate, the fill that follows the life, HP / max */
+      const hy0=(xl?2*U+xl.h-6*U:2*U);
+      HpBar.draw(ctx,2*U,hy0,hl,hr,{cur:String(Math.ceil(p.hp)),max:String(p.maxHp),plate:tt('lv')+' '+g.lvl},g.rt,(c,cx,cy,r)=>this.hudPortrait(g,c,cx,cy,r));
+      wy0=hy0+hl.h+2*U;
+    }else{    /* narrow screens: the plain bar */
+      const bw=Math.min(250*U,W*.4),hy=xl?xl.h+8*U:38*U;
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(m,hy,bw,15*U);
+      ctx.fillStyle=hr>.3?'#e9503f':'#ff2a2a';ctx.fillRect(m,hy,bw*hr,15*U);ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(m,hy,bw*hr,4*U);
+      txt(Math.ceil(p.hp)+' / '+p.maxHp,m+6*U,hy+12*U,'#fff','left',F(11));
+      wy0=hy+22*U;
+    }
     /* weapons */
-    let ix=m;const wy=hy+22*U,sz=52*U;
+    let ix=m;const wy=wy0,sz=52*U;
     for(const w of g.weapons.values()){
       this.zones.push({x:ix,y:wy,w:sz,h:sz,k:'weapon',id:w.id});
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy,sz,sz);
@@ -995,6 +1039,7 @@ this.W=1;this.H=1;this.Z=1;
       txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       {const pw=(sz-6*U)/WMAX;for(let i=0;i<WMAX;i++){ctx.fillStyle=i<w.lv?(w.evo?'#ffd23f':'#fff'):'rgba(255,255,255,.2)';ctx.fillRect(ix+3*U+i*pw,wy+sz-5*U,pw-1.5*U,3.2*U);}}
       if(w.evo)txt(w.evo>=2?'★★':'★',ix+sz-9*U,wy+12*U,'#ffd23f','center',F(13));
+      if(w.xl>0)txt(String(w.lvShow),ix+sz-4*U,wy+sz-9*U,'#ffd23f','right',F(12,900));   /* Endless: the level beyond 5 */
       if(w.maxed&&w.evo<g.maxEvo(w.id)){
         if(g.evoReady(w))txt('!',ix+6*U,wy+13*U,'#ff9d1c','center',F(15));
         else{const pn=PASS[evoPass(w.id,w.evo)];if(pn)txt(pn.k,ix+9*U,wy+13*U,pn.c,'center',F(14,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
@@ -1203,6 +1248,13 @@ this.W=1;this.H=1;this.Z=1;
       const b=g.banner,k=b.t/b.dur,a=k<.1?k/.1:k>.8?(1-k)/.2:1;
       ctx.globalAlpha=clamp(a,0,1);
       txt(b.txt,W/2,H*.3,b.col,'center',F(Math.min(34,Math.max(18,W/U/24)),400).replace('"Rajdhani"','"Bangers"'));
+      if(b.sub){   /* second line: a thin golden rule and a smaller sentence under the title (Endless notices) */
+        const lw=Math.min(W*.5,340*U),ly=H*.3+11*U,lg=ctx.createLinearGradient(W/2-lw/2,0,W/2+lw/2,0);
+        lg.addColorStop(0,'rgba(255,210,63,0)');lg.addColorStop(.5,b.col);lg.addColorStop(1,'rgba(255,210,63,0)');
+        ctx.fillStyle=lg;ctx.fillRect(W/2-lw/2,ly,lw,1.5*U);
+        let fs=16;ctx.font=F(fs,600);while(ctx.measureText(b.sub).width>W*.92&&fs>9){fs-=.5;ctx.font=F(fs,600);}
+        txt(b.sub,W/2,H*.3+32*U,'#fff3cf','center',F(fs,600));
+      }
       ctx.globalAlpha=1;
     }
     if(this.joy&&this.joy.on){

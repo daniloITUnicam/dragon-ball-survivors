@@ -108,7 +108,7 @@ Object.assign(UI.prototype,{
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
     const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},glyph(w.def.k,w.color),
-      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)),pips(w.lv,WMAX),
+      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)+(w.xl>0?' · Lv '+w.lvShow:'')),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
     const kr=(k,v)=>h('div',{class:'krow'},h('span',null,k===null?t('passSlots').replace(/\s*[:(]?\s*\{a\}\s*\/\s*\{b\}\)?/,''):t(k)),h('b',null,v));
     const stats=[kr('stHp',Math.round(p.hp)+' / '+p.maxHp),kr('stPower','x'+S.might.toFixed(2)),kr('stSpeed','x'+S.spd.toFixed(2)),kr('stCooldown','x'+S.cd.toFixed(2)),
@@ -123,6 +123,16 @@ Object.assign(UI.prototype,{
     /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
+    /* Endless only: automatic level-up choice + the priority list (up to 10: 5 weapons + 5 upgrades the player owns) */
+    const endSec=g.endless?(()=>{
+      const st=this.save.settings,list=g.enPrio(),def=k=>k[0]==='w'?WEAPONS[k.slice(2)]:PASS[k.slice(2)];
+      const mv=(i,d)=>{const l=list.slice(),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];g.setPrio(l);this.sfx();this.rebuild(true);};
+      const tog=h('button',{class:'btn small'+(st.endAuto?'':' alt'),'data-fid':'endauto',onclick:()=>{this.sfx();st.endAuto=!st.endAuto;this.app.save.write();this.rebuild(true);}},t('endAuto')+': '+t(st.endAuto?'on':'off'));
+      const rows=list.map((k,i)=>h('div',{class:'prow endprio'},h('b',{class:'epn'},i+1),glyph(def(k).k,def(k).c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(def(k).n))),
+        h('button',{class:'btn small alt epb','data-fid':'epu'+i,title:t('endUp'),disabled:i===0,onclick:()=>mv(i,-1)},'▲'),
+        h('button',{class:'btn small alt epb','data-fid':'epd'+i,title:t('endDown'),disabled:i===list.length-1,onclick:()=>mv(i,1)},'▼')));
+      return h('div',{class:'psec endsec'},h('h3',null,t('endTitle')),tog,h('p',{class:'sub'},t('endAutoD')),h('h3',{class:'h3s'},t('endPrio')),h('p',{class:'sub'},t('endPrioD')),rows);
+    })():null;
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabs=h('div',{class:'row tabs'},
       ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
@@ -132,7 +142,7 @@ Object.assign(UI.prototype,{
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
         this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
     return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
-      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
+      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},endSec,sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
   },
   /* ---------- sandbox config ---------- */
   screen_sandboxCfg(){
@@ -148,8 +158,8 @@ Object.assign(UI.prototype,{
   describe(o){
     if(o.type==='w'){const w=WEAPONS[o.id],g=this.app.game,wp=g&&g.weapons.get(o.id),ev=wp?wp.evo:0,pid=evoPass(o.id,ev);
       const evoNow=((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo;
-      const fx=evoNow?[{i:'dmg',t:T('+5% danno','+5% damage')},{i:'cd',t:T('−1,5% ricarica','−1.5% cooldown')},{i:'area',t:T('+2% area','+2% area')}]:(o.lv?wsFx(o.id,o.lv-1,o.lv):null);
-      return{k:w.k,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
+      const fx=o.xl!=null?[{i:'dmg',t:'+'+(XL_DMG*100).toString().replace('.',',')+'% '+this.t('xlDmg')},{i:'area',t:'+'+(XL_AREA*100).toString().replace('.',',')+'% '+this.t('xlArea')},{i:'cd',t:'−'+(XL_CD*100).toString().replace('.',',')+'% '+this.t('xlCd')}]:evoNow?[{i:'dmg',t:T('+5% danno','+5% damage')},{i:'cd',t:T('−1,5% ricarica','−1.5% cooldown')},{i:'area',t:T('+2% area','+2% area')}]:(o.lv?wsFx(o.id,o.lv-1,o.lv):null);
+      return{k:w.k,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.xl!=null?'Lv '+(o.lv+o.xl)+'→'+(o.lv+o.xl+1):o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
         hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
       const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
@@ -252,7 +262,7 @@ Object.assign(UI.prototype,{
       const W=[{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},
         {k:'力',c:'#ffd23f',n:T('Potere','Power'),d:T('Tutte le armi guadagnano un livello.','All weapons gain a level.')},
         {k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')},
-        {k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha: 10 estrazioni di cimeli.','A 10× Ticket for the Gacha: 10 trinket pulls.')}];
+        {k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha dei Cimeli: 10 estrazioni di cimeli.','A 10× Ticket for the Trinket Gacha: 10 trinket pulls.')}];
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
         h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
     }
@@ -284,7 +294,7 @@ Object.assign(UI.prototype,{
     const dm=res.dmg||{},ids=Object.keys(dm).filter(k=>dm[k]>0).sort((a,b)=>dm[b]-dm[a]),tot=ids.reduce((s,k)=>s+dm[k],0)||1,top=dm[ids[0]]||1,ws=res.ws||{};
     const nm=k=>k==='other'?this.t('dmgOther'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='other'?'#9aa4b8':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
     const fmt=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':String(Math.round(v));
-    const row=k=>{const w=ws[k],lv=w?(w.evo?'★'+(w.evo>1?'★':''):'Lv'+w.lv):'';
+    const row=k=>{const w=ws[k],lv=w?(w.evo?'★'+(w.evo>1?'★':''):'Lv'+w.lv)+(w.xl?' Lv'+(w.lv+w.xl):''):'';
       return h('div',{class:'wrow',style:'--c:'+cl(k)},h('span',{class:'wic',style:'--c:'+cl(k)},k==='other'?'気':(WEAPONS[k]?WEAPONS[k].k:'?')),
         h('div',{class:'wmid'},h('div',{class:'wtop'},h('span',{class:'wn'},nm(k)),lv?h('small',{class:'wlv'},lv):null),
           h('span',{class:'dbar'},h('i',{style:'width:'+Math.max(3,Math.round(dm[k]/top*100))+'%;background:'+cl(k)}))),
@@ -321,8 +331,9 @@ Object.assign(UI.prototype,{
       h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':!canEnd?true:null,onclick:()=>{this.sfx();this.app.retry();}},this.t('retry')),
         h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.toMenu();}},this.t('toMenu')),
-        showEnd?h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',title:canEnd?this.t('endlessGo'):lockWhy,
-          onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')):null));
+        showEnd?h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',title:canEnd?this.t('endlessGo')+'\n'+this.t('endlessDesc'):lockWhy,
+          onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')):null),
+      showEnd?h('p',{class:'sub endesc'},this.t('endlessDesc')):null);
   },
   /* ---------- toasts ---------- */
   /* a small face of a character (first frame of its emote sheet, otherwise the head of its sprite) for the notifications; null when nothing can be drawn */

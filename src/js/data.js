@@ -43,6 +43,10 @@ const MAX_WEAPONS=5;
 /* seconds a kind of floor item stays away after one appeared (rarity scale: coin common, heal/xp uncommon, haste/dmg rare, magnet/luck very rare, capsule epic) */
 const LOOT_CD={heal:14,xp:25,haste:50,dmg:50,magnet:85,luck:100,capsule:140};
 const WMAX=5;    /* every tier (base, evolution 1, evolution 2) has 5 levels; the evolution needs the current tier at level 5 */
+/* Endless mode: a weapon that has reached its last tier at level 5 keeps levelling up to Lv 100 (95 extra levels): each one adds damage and size and shortens the cooldown a bit */
+const WXL=95,XL_DMG=.04,XL_AREA=.012,XL_CD=.005,ENDLESS_CD_MIN=.2;
+const ENDLESS_MILE=50,ENDLESS_W=4,ENDLESS_BONUS=100,ENDLESS_ZENO=300,ENDLESS_COIN_K=.9,ENDLESS_COIN_T=15;   /* every 50 player levels: +100 coins and tougher enemies (4 of the old 90 s steps); coin income x0.9 every 15 s; Zeno's Shop every 5 min */
+const ENDLESS_T0=12,ENDLESS_TK=.1;   /* target seconds per level at the start of Endless, and how much it grows per level */
 const SENZU_MAX=3;   /* Senzu bag capacity */
 const MAX_PASSIVES=5;   /* max different secondary upgrades per run (each up to level 5) */
 
@@ -584,7 +588,7 @@ const TOTEMS=[
 /* ---------- Character abilities: one per character, key R (or the on-screen button next to the pet) ---------- */
 const ABIL_DESC={
   kaioken:()=>T('Kaioken x10 / x20: danno ×2 / ×4, ma perdi 4 / 8 salute al secondo. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×2 / ×4, but you lose 4 / 8 HP per second. Press again to switch or stop.'),
-  berserk:()=>T('Berserk: 10 secondi fuori controllo (comandi invertiti, attacchi casuali, non annullabile), ma +80% danno, +5 armatura e −30% danni subiti.','Berserk: 10 seconds out of control (inverted controls, random attacks, cannot be cancelled), but +80% damage, +5 armor and −30% damage taken.'),
+  berserk:()=>T('Berserk: 6 secondi fuori controllo (comandi invertiti, attacchi casuali, mira delle armi imprecisa, non annullabile), ma +80% danno, +5 armatura e −30% danni subiti.','Berserk: 6 seconds out of control (inverted controls, random attacks, inaccurate weapon aim, cannot be cancelled), but +80% damage, +5 armor and −30% damage taken.'),
   beam:v=>T('Raggio potente nella direzione del nemico più vicino: colpisce tutto in linea.','A powerful beam toward the nearest enemy: hits everything in line.'),
   nova:v=>T('Esplosione di ki attorno a te: danni ad area e respinge i nemici.','A ki blast around you: area damage that pushes enemies back.'),
   regen:v=>T('Rigenera il '+Math.round(14*v)+'% della salute in 6 secondi.','Regenerates '+Math.round(14*v)+'% of your HP over 6 seconds.'),
@@ -603,7 +607,7 @@ const ABIL_DESC={
 /* the ability grows with the transformation line: a NEW PASSIVE from the middle form on (p) and an EMPOWERED version in the final form (f) */
 const ABIL_TIER={
   kaioken:{p:T('Il Kaioken costa il 30% di salute in meno.','Kaioken costs 30% less health.'),f:T('Kaioken perfetto: costo −55% e moltiplicatori ×2,5 / ×5 al posto di ×2 / ×4.','Perfected Kaioken: −55% cost and ×2.5 / ×5 multipliers instead of ×2 / ×4.')},
-  berserk:{p:T('+12% danno sempre attivo.','+12% damage at all times.'),f:T('Berserk di 13 secondi, esplosioni ×1,5, +8 armatura e 1,5 s di invulnerabilità all\'inizio.','13-second Berserk, ×1.5 blasts, +8 armor and 1.5 s of invulnerability at the start.')},
+  berserk:{p:T('+12% danno sempre attivo.','+12% damage at all times.'),f:T('Berserk di 8 secondi, esplosioni ×1,5, +8 armatura e 1,5 s di invulnerabilità all\'inizio.','8-second Berserk, ×1.5 blasts, +8 armor and 1.5 s of invulnerability at the start.')},
   beam:{p:T('+12% area dei tuoi attacchi.','+12% area on all your attacks.'),f:T('Il raggio diventa enorme (larghezza ×2,6, portata ×1,6, +70% danno) e parte anche alle tue spalle.','The beam becomes huge (×2.6 width, ×1.6 range, +70% damage) and also fires behind you.')},
   nova:{p:T('Ogni 14 secondi un\'onda d\'urto automatica respinge i nemici vicini.','Every 14 seconds an automatic shockwave pushes nearby enemies back.'),f:T('Onda enorme: raggio ×1,85, +70% danno, stordimento di 1,2 s.','Huge wave: ×1.85 radius, +70% damage, 1.2 s stun.')},
   regen:{p:T('+0,6 salute al secondo sempre attiva.','+0.6 HP per second at all times.'),f:T('Cura ×1,7 e 2 secondi di invulnerabilità all\'attivazione.','×1.7 healing and 2 seconds of invulnerability on activation.')},

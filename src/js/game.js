@@ -1,12 +1,14 @@
-/* every ESC_EVERY seconds new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor */
+/* every ESC_EVERY seconds (60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
+   In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
-const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=90,ESC_N={hp:.01,dmg:.01,arm:0,xp:.05},ESC_X={hp:.02,dmg:.01,arm:.05,xp:.08};   /* every 90 s new enemies get only a tiny step of HP / damage (1%; before 10% / 2%) */
+const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
 const SPAWN_K=.85,CAP_K=.78;
 /* enemy fire: a volley is smaller (x0.67), the shooters wait longer between volleys, and all of them share a "shot budget" that refills at a fixed rate,
    so a crowd of shooters can never drown the screen in bullets (Snake Way is the calmest: its shooters are the most numerous and the most dangerous) */
 const SHOT_N_K=.67,SHOT_CD_K=1.8,SHOT_CD_SNAKE=2.6,SHOT_RATE=6,SHOT_RATE_SNAKE=3.4,SHOT_BANK=12,SHOT_BANK_SNAKE=8,EB_CAP=90;
+const BERS_T=6,BERS_T2=8,BERS_AIM=.5;   /* Broly's Berserk: seconds (base / final form) and the random aim error of the weapons while it lasts (+-0.5 rad, about 29 degrees) */
 const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
 /* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
 const GEM_CAP=90,GEM_KEEP=55;
@@ -26,8 +28,9 @@ class Game{
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
-    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;
-    this.run={bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
+    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;
+    this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
+    this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
     this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;
@@ -43,7 +46,7 @@ class Game{
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
-    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.bombT=this.stage.no===1?1e9:rnd(180,260)*this.evK;this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
+    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     for(const id of this.C.start)this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
@@ -58,7 +61,7 @@ class Game{
   get form(){return this.formIdx>=0?Object.assign({idx:this.formIdx},FORM_TIERS[this.formIdx]):null;}
   get formEntry(){return this.formIdx>=0?LINES[this.C.line||'saiyan'][this.formIdx]:null;}
   has(sp){return this.trinkets.some(id=>{const t=TRINKETS.find(x=>x.id===id);return t&&t.sp===sp;});}
-  say(txt,col,dur){this.banner={txt,col:col||'#ffd23f',t:0,dur:dur||2.6};}
+  say(txt,col,dur,sub){this.banner={txt,col:col||'#ffd23f',t:0,dur:dur||2.6,sub:sub||null};}   /* sub: an optional smaller second line */
   floatText(x,y,s,c){if(this.tx.length<50)this.tx.push({x,y,t:0,s,c:c||0});}
 
   /* ---------- stats ---------- */
@@ -73,7 +76,7 @@ class Game{
     const S={};
     S.might=BASE_POWER*C.might*(1+.15*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.05*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
     S.spd=C.spd*(1+.08*(P.speed||0))*(1+.03*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
-    S.cd=Math.max(.35,(C.cd||1)-.08*(P.haste||0)-.03*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
+    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.08*(P.haste||0)-.03*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
     S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.15*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+1*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.5*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
@@ -89,8 +92,8 @@ class Game{
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
     if(this.abBuf){S.might*=1+(this.abBuf.m||0);S.spd*=1+(this.abBuf.s||0);S.taken*=1+(this.abBuf.tk||0);}
     if(this.kai>0){const f2=this.abTier>=2&&this.abil.m==='kaioken',km=f2?(this.kai===1?2.5:5):(this.kai===1?2:4);S.might*=km;S.spd*=1+.4*(km-1);S.cd=Math.max(.15,S.cd/km);}
-    S.might*=1+this.swap.might;S.spd*=1+this.swap.spd;S.cd=Math.max(.3,S.cd*(1-this.swap.cd));
-    {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(.3,S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
+    S.might*=1+this.swap.might;S.spd*=1+this.swap.spd;S.cd=Math.max(this.cdMin(.3),S.cd*(1-this.swap.cd));
+    {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(this.cdMin(.3),S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
     this.abPassive(S);
     this.S=S;
     const mh=Math.round((C.hp+20*(P.vit||0)+12*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
@@ -120,7 +123,7 @@ class Game{
   passCount(){let n=0;for(const k in this.pass)if(this.pass[k]>0)n++;return n;}   /* number of different secondary upgrades */
   upgradePool(){
     const pool=[];
-    for(const [id,w] of this.weapons)if(w.lv<WMAX)pool.push({type:'w',id,lv:w.lv});
+    for(const [id,w] of this.weapons){if(w.lv<WMAX)pool.push({type:'w',id,lv:w.lv});else if(w.canXl())pool.push({type:'w',id,lv:w.lv,xl:w.xl});}   /* Endless: a finished weapon keeps levelling (xl) */
     const slots=this.passCount();
     for(const id in PASS){const lv=this.pass[id]||0;if(lv<5&&(lv>0||slots<MAX_PASSIVES))pool.push({type:'p',id,lv});}
     return pool;
@@ -181,7 +184,12 @@ class Game{
   }
   upgradeWeapon(w){w.upgrade();this.recalc();}
   heal(v){if(this.trial&&this.trial.zeno)return;this.p.hp=Math.min(this.p.maxHp,this.p.hp+v);}
-  addZenny(v){this.run.coins+=v;}
+  /* Endless: the coin income shrinks by 10% every 15 s (the +100 of a milestone is exempt, it goes straight to run.coins) */
+  coinK(){return this.endless?Math.pow(ENDLESS_COIN_K,Math.floor(Math.max(0,this.t-this.en0.t)/ENDLESS_COIN_T)):1;}
+  addZenny(v){this.run.coins+=this.endless?Math.round(v*this.coinK()):v;}
+  /* money spent (Zeno's Shop, the trial shop): remembers the lowest balance since the last payout, so coins that were already paid are never paid twice */
+  spendCoins(n){this.run.coins-=n;this.run.minC=Math.min(this.run.minC,this.run.coins);}
+  cdMin(v){return this.endless?Math.min(v,ENDLESS_CD_MIN):v;}   /* Endless: cooldown multiplier floor 0.2 */
 
   /* ---------- trinkets ---------- */
   /* one trinket can be carried; the shop's "Trinket slot" upgrade adds up to two more. When every slot is taken a new one opens a comparison window (replace one / keep them) */
@@ -480,16 +488,65 @@ class Game{
     }
   }
   /* ---------- progression ---------- */
-  addXp(v){this.xp+=v*this.S.xp;}
+  addXp(v){const a=v*this.S.xp;this.xp+=a;this.xpAcc+=a;}
   levelUp(){
-    this.xp-=this.need;this.lvl++;this.need=xpNeed(this.lvl);this.audio.sfx('lvl');
+    this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('lvl');
     if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
     this.emote('happy',1.1);
     this.ring(this.p.x,this.p.y,110,'#ffd23f',.5);this.pillar(this.p.x,this.p.y,'#ffe9a0',.55);this.burst(this.p.x,this.p.y-20,18,'#ffd23f');
     while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();
     this.recalc();
+    if(this.endless)this.checkMilestone();
     const lm={type:'level',options:this.levelOptions()};{const rc=this.recommend(lm.options);if(rc){lm.rec=rc.i;lm.recWhy=rc.why;}}
+    if(this.endless&&this.save.settings.endAuto){this.autoLevel(lm);return;}   /* Endless "auto-select": the card is chosen by the priority list, no menu */
     if(this.xform)this.afterX=lm;else this.modal=lm;
+  }
+  /* XP needed for the next level: the normal curve, or in Endless a gentle curve calibrated on the XP income the player had when Endless began
+     (about ENDLESS_T0 s per level at first, ENDLESS_TK s longer for every level after that), so that 50 levels take roughly ten minutes */
+  needFor(l){return this.endless?this.endlessNeed(l):xpNeed(l);}
+  endlessNeed(l){return Math.max(40,Math.round(this.en0.rate*(ENDLESS_T0+ENDLESS_TK*Math.max(0,l-this.en0.lvl))));}
+  /* every ENDLESS_MILE player levels: +ENDLESS_BONUS coins (no decay) and enemies get ENDLESS_W of the old steps at once */
+  checkMilestone(){
+    const m=Math.floor(this.lvl/ENDLESS_MILE);
+    while(this.enMile<m){
+      this.enMile++;this.run.coins+=ENDLESS_BONUS;
+      const F=this.escF,W=ENDLESS_W,pc=x=>Math.round(x*100)+'%',n=this.enMile*ENDLESS_MILE;
+      this.say(this.env.tr('endMileT',{n}),'#ffd23f',5.2,this.env.tr('endMileS',{c:ENDLESS_BONUS,hp:pc(F.hp*W),dm:pc(F.dmg*W)})+(F.arm?this.env.tr('endMileA',{ar:pc(F.arm*W)}):''));
+      this.audio.sfx('wish');this.flash=Math.max(this.flash||0,.35);this.flashC='#ffd23f';this.shake=Math.max(this.shake,.35);
+      this.ring(this.p.x,this.p.y,260,'#ffd23f',.8);this.pillar(this.p.x,this.p.y,'#ffe9a0',1.1);this.burst(this.p.x,this.p.y-20,40,'#ffd23f');
+    }
+  }
+  /* the owned weapons and upgrades in priority order (max 10: 5 weapons + 5 upgrades); the order is a setting that outlives the run */
+  enPrio(){
+    const own=[...this.weapons.keys()].map(i=>'w:'+i).concat(Object.keys(this.pass).filter(k=>this.pass[k]>0).map(i=>'p:'+i));
+    const out=(this.save.settings.endPrio||[]).filter(k=>own.includes(k));
+    for(const k of own)if(!out.includes(k))out.push(k);
+    return out.slice(0,MAX_WEAPONS+MAX_PASSIVES);
+  }
+  setPrio(list){this.save.settings.endPrio=list.slice(0,MAX_WEAPONS+MAX_PASSIVES);this.env.save.write();}
+  optKey(o){return o.type==='w'?'w:'+o.id:o.type==='p'?'p:'+o.id:null;}
+  /* the card to take when nobody is choosing: the best-ranked owned item; then owned weapons/upgrades; a needed evolution passive before the rest; a Senzu when hurt */
+  autoPick(opts){
+    const pr=this.enPrio(),need=this.neededPass(),hpLow=this.p.hp<this.p.maxHp*.45;
+    let best=0,bs=1e9;
+    opts.forEach((o,i)=>{
+      const k=this.optKey(o);let s;
+      if(k&&pr.includes(k))s=pr.indexOf(k);
+      else if(o.type==='p'&&need.includes(o.id))s=15;
+      else if(o.type==='w'||o.type==='p')s=o.lv>0?20:25;
+      else if(o.type==='h')s=hpLow?-1:60;else s=70;
+      if(s<bs){bs=s;best=i;}
+    });
+    return best;
+  }
+  optName(o){
+    if(o.type==='w'){const w=this.weapons.get(o.id),lv=w?w.lvShow+1:1;return this.env.tr(WEAPONS[o.id].n)+' Lv '+lv;}
+    if(o.type==='p')return this.env.tr(PASS[o.id].n)+' Lv '+((this.pass[o.id]||0)+1);
+    return this.env.tr(T('Senzu','Senzu'));
+  }
+  autoLevel(lm){
+    const o=lm.options[this.autoPick(lm.options)]||lm.options[0];
+    this.applyOption(o);this.floatText(this.p.x,this.p.y-72,'▲ '+this.optName(o),2);
   }
   unlockForm(){
     this.prevPc=this.pc;this.prevKey=this.pcKey;
@@ -678,7 +735,7 @@ class Game{
       case'coin':this.addZenny(l.v);this.audio.sfx('coin');break;
       case'bag':this.addZenny(l.v);this.audio.sfx('coin');this.audio.sfx('pkxp');this.run.bags=(this.run.bags||0)+1;this.floatText(l.x,l.y-34,'+Z '+l.v,1);this.ring(l.x,l.y-6,60,'#ffd23f',.45);this.shake=Math.max(this.shake,.08);break;
       case'heal':this.heal(p.maxHp*.3);this.audio.sfx('pkheal');this.ring(p.x,p.y,40,'#8be07a',.4);break;
-      case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;this.audio.sfx('pkmagnet');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
+      case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;for(const q of this.loot)if((q.k==='bag'||q.k==='coin')&&!q.isle)q.att=true;this.audio.sfx('pkmagnet');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
       case'dmg':this.buffs.dmg=12;this.recalc();this.audio.sfx('pkdmg');this.floatText(p.x,p.y-50,this.env.tr(T('Danni +15% (12s)','Damage +15% (12s)')),2);break;
       case'haste':this.buffs.haste=10;this.recalc();this.audio.sfx('pkhaste');this.floatText(p.x,p.y-50,this.env.tr(T('Fuoco rapido (10s)','Rapid fire (10s)')),2);break;
       case'xp':this.addXp(l.v*.7);this.audio.sfx('pkxp');break;
@@ -750,7 +807,16 @@ class Game{
     this.audio.sfx('ticket');this.ring(p.x,p.y,90,c,.6);this.burst(p.x,p.y-14,22,c);this.pillar(p.x,p.y,c,.9);this.flash=Math.max(this.flash||0,.15);this.flashC=c;
     this.say(this.env.tr(kind==='t1'?T('TICKET 1x ottenuto!','1x TICKET found!'):kind==='t10'?T('TICKET 10x ottenuto!','10x TICKET found!'):T('TICKET 10x FORTUNATO ottenuto!','10x LUCKY TICKET found!')),c,2.8);
   }
-  continueAfterWin(){this.ended=false;this.say(this.env.tr(T('Modalità infinita!','Endless mode!')),'#ffd23f',2.4);}
+  /* Endless: from here on the enemies grow every ENDLESS_MILE levels (not every minute), coins dry up, weapons can reach Lv 100, Zeno's Shop opens every 5 minutes */
+  continueAfterWin(){
+    this.ended=false;this.endless=true;
+    this.en0={t:this.t,lvl:this.lvl,steps:Math.floor(this.t/ESC_EVERY),mile:Math.floor(this.lvl/ENDLESS_MILE),rate:Math.max(this.xpRate,xpNeed(this.lvl)/45)};
+    this.enMile=this.en0.mile;
+    this.need=this.needFor(this.lvl);
+    this.map.zenoNext=this.t+ENDLESS_ZENO;
+    this.recalc();
+    this.say(this.env.tr('endIntroT'),'#ffd23f',5,this.env.tr('endIntroS',{n:ENDLESS_MILE}));this.audio.sfx('wish');
+  }
 
   /* ---------- spawning ---------- */
   /* difficulty scales with progress through the stage; the stage multiplier eases in over the first 40% */
@@ -760,14 +826,16 @@ class Game{
   prog(){return Math.min(1.3,this.t/this.dur);}
   stageMul(v){return 1+(v-1)*Math.min(1,this.t/(this.dur*.4));}
   /* per-step escalation factors (see ESC_N / ESC_X): Extreme grows faster and also gets armor */
-  get escF(){return this.diffId==='extreme'?ESC_X:ESC_N;}
-  escSteps(){return Math.floor(this.t/ESC_EVERY);}
+  get escF(){return this.diffId==='extreme'?ESC_X:this.diffId==='easy'?ESC_E:ESC_N;}
+  escSteps(){return this.endless?this.en0.steps+(this.enMile-this.en0.mile)*ENDLESS_W:Math.floor(this.t/ESC_EVERY);}
+  /* Extreme: 2% more enemies every 30 s (60 steps at most) */
+  xSteps(){return this.diffId==='extreme'?Math.min(60,Math.floor(this.t/X_SPAWN_STEP)):0;}
   hpMul(){return ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
   dmgMul(){return ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  spawnCap(){if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K);}
-  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn;}
+  spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk);}
+  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps());}
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -837,7 +905,7 @@ class Game{
   waveRest(){
     const p=this.p,n=10+Math.min(6,this.sd*2+((this.lvl/12)|0)),v=this.need*.09/n;
     for(let i=0;i<n;i++){const a=i/n*TAU+rnd(-.2,.2),[x,y]=this.spawnSpot(a,rnd(55,230),i);this.dropGem(x,y,v);}
-    this.say(this.env.tr(T('RESPIRO! RACCOGLI LE GEMME','BREATHER! COLLECT THE GEMS')),'#5ad0ff',2.2);this.audio.sfx('pkxp');
+    this.audio.sfx('pkxp');
     this.ring(p.x,p.y,230,'#5ad0ff',.6);this.burst(p.x,p.y-16,14,'#5ad0ff');
   }
   /* ---- elite enemies: a few per run, spread between the bosses; each one is a big, tough version of a regular enemy and always drops a chest ---- */
@@ -1087,7 +1155,8 @@ class Game{
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial;
-    this.rt+=dt;if(!inTrial){const e0=Math.floor(this.t/ESC_EVERY);this.t+=dt*this.CR;if(Math.floor(this.t/ESC_EVERY)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
+    this.rt+=dt;if(!inTrial){const e0=Math.floor(this.t/ESC_EVERY);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/ESC_EVERY)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
+    if(dt>0)this.xpRate+=(this.xpAcc/dt-this.xpRate)*(1-Math.exp(-dt/45));this.xpAcc=0;   /* XP income per second, smoothed over ~45 s (calibrates the Endless level curve) */
     if(p.inv>0)p.inv-=dt;
     if(this.shake>0)this.shake-=dt;
     if(this.flash>0)this.flash-=dt;
@@ -1137,13 +1206,12 @@ class Game{
     if(this.slowT>0)this.slowT-=dt;
     for(const k in this.lootCd)if(this.lootCd[k]>0)this.lootCd[k]-=dt;
     if(this.streak>0){this.streakT-=dt;if(this.streakT<=0)this.streak=0;}if(this.streakPop>0)this.streakPop-=dt;
-    /* suicide-bomber waves: every few minutes, for 50-90 seconds */
-    if(inTrial){}else if(!this.bombOn){this.bombT-=dt;if(this.bombT<=0&&this.stage.roster.some(r=>ENEMIES[r[0]].ai==='explode'&&this.t>=r[1])){this.bombOn=true;this.bombEnd=this.t+rnd(50,90);this.say(this.env.tr(T('ONDATA DI KAMIKAZE!','KAMIKAZE WAVE!')),'#ff7a3a',2.4);this.audio.sfx('boss');}else if(this.bombT<=0)this.bombT=20;}
-    else if(this.t>=this.bombEnd){this.bombOn=false;this.bombT=rnd(260,380)*this.evK;for(const e of this.en)if(e.ai==='explode'&&!(e.fuse>0)){e.dead=true;this.burst(e.x,e.y-8,5,'#ffb13b');}}
+    /* the stage's own Dragon Ball event (see events.js): every few minutes, 30-45 seconds */
+    if(!inTrial)this.evUpdate(dt);
     /* ranged-enemy wave: 60 seconds (first stage: 30), then they leave */
     if(!inTrial){
       if(this.shootOn){this.shootQT-=dt;if(this.shootQT<=0){this.shootQT+=8;this.shootQ=4;}}   /* 4 shooters per 8 s (first stage) */
-      if(!this.shootOn){this.shootT-=dt;if(this.shootT<=0){if(this.stage.roster.some(r=>(ENEMIES[r[0]].ai==='ranged'||ENEMIES[r[0]].ai==='hover')&&this.t>=r[1])&&!this.bossAlive){this.shootOn=true;this.shootEnd=this.t+(this.stage.no===1?30:60);this.shootQ=4;this.shootQT=8;this.say(this.env.tr(T('ONDATA DI TIRATORI!','GUNNER WAVE!')),'#6ad0ff',2.6);this.audio.sfx('boss');}else this.shootT=20;}}
+      if(!this.shootOn){this.shootT-=dt;if(this.shootT<=0){if(this.stage.roster.some(r=>(ENEMIES[r[0]].ai==='ranged'||ENEMIES[r[0]].ai==='hover')&&this.t>=r[1])&&!this.bossAlive){this.shootOn=true;this.shootEnd=this.t+(this.stage.no===1?30:60);this.shootQ=4;this.shootQT=8;}else this.shootT=20;}}
       else if(this.t>=this.shootEnd){this.shootOn=false;this.shootT=rnd(240,340)*this.evK;for(const e of this.en)if(!e.boss&&(e.ai==='ranged'||e.ai==='hover')){e.dead=true;this.burst(e.x,e.y-8,5,'#6ad0ff');}}
     }
     /* glossary: remember enemies the player has actually met */
@@ -1157,7 +1225,7 @@ class Game{
     if(p.atk>0)p.atk-=dt;
     if(this.fireT>0)this.fireT-=dt;
     const pn=this.pr.length;
-    if(!this.dying)for(const w of this.weapons.values()){const n0=this.pr.length;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;}
+    if(!this.dying)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
     this.curW=null;
     if(this.pr.length>pn||this.cast)p.atk=.34;
     this.updateProjectiles(dt);
@@ -1218,7 +1286,7 @@ class Game{
       case'clones':S.might*=1.08;S.spd*=1.06;break;
       case'crit':S.crit+=.06;break;
       case'barrier':S.taken*=.85;break;
-      case'timestop':S.cd=Math.max(.3,S.cd*.92);break;
+      case'timestop':S.cd=Math.max(this.cdMin(.3),S.cd*.92);break;
       case'erase':S.might*=1.1;break;
       case'rewind':S.dodge=Math.min(.75,S.dodge+.08);S.regen+=.4;break;
       case'jackpot':S.gold+=.15;S.luck=Math.min(.9,S.luck+.04);break;
@@ -1227,13 +1295,20 @@ class Game{
     }
   }
   get kaiAvail(){return this.abil.m==='kaioken'&&this.formsUnlocked>=1;}
-  /* Broly: BERSERK, 10 seconds, cannot be cancelled. Controls are inverted and he lashes out at random enemies. */
+  /* Broly: BERSERK, 6 seconds (8 in the final form), cannot be cancelled. Controls are inverted, he lashes out at random enemies and the aim of every weapon is off (aimJit). */
+  /* weapon animations (pose.js): armAct starts a pose of the arms toward angle a; armFire plays the pose of a weapon that has just fired toward the nearest enemy */
+  armAct(st,a,o){this.pa=Object.assign({st,a,t0:this.rt,w:0,h:.16,r:.16,col:this.formColor||'#ffd24a',alt:0,ball:0},o||{});}
+  armFire(w){
+    const f=ARM_FIRE[w.id],p=this.p,t=this.nearest(p.x,p.y,700),a=t?Math.atan2(t.y-8-(p.y-18),t.x-p.x):(p.face>0?0:Math.PI);
+    this.armAct(f.st,a,{w:f.w||0,h:f.h,r:f.r,col:w.color,ball:f.ball|0,alt:f.alt?(w.alt=!w.alt)|0:0});
+  }
+  aimJit(){return this.bers>0?rnd(-BERS_AIM,BERS_AIM):0;}
   get berAvail(){return this.C.id==='broly';}
   get bersCdMax(){return this.cdFor(45);}
   startBerserk(){
     if(this.abBlocked())return false;
     if(this.bers>0||this.bersCd>0||this.modal||this.ended||this.xform)return false;
-    const p=this.p,f2=this.abTier>=2;this.bersMax=f2?13:10;this.bers=this.bersMax;this.bersT=.15;if(f2)p.inv=Math.max(p.inv,1.5);this.recalc();
+    const p=this.p,f2=this.abTier>=2;this.bersMax=f2?BERS_T2:BERS_T;this.bers=this.bersMax;this.bersT=.15;if(f2)p.inv=Math.max(p.inv,1.5);this.recalc();
     this.flash=.6;this.flashC='#9aff4a';this.shake=Math.max(this.shake,.9);
     this.ring(p.x,p.y,320,'#8aff3a',.9);this.ring(p.x,p.y,180,'#ffffff',.6);this.pillar(p.x,p.y,'#8aff3a',1.4);this.bolt(p.x,p.y-20,260,'#c8ff6a',12);this.burst(p.x,p.y-18,50,'#8aff3a');
     this.say(this.env.tr(T('BERSERK!','BERSERK!')),'#8aff3a',2.6);this.audio.sfx('broly');this.emote('pain',2);
@@ -1544,6 +1619,7 @@ class Game{
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
       if((l.k==='coin'||l.k==='bag'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
+      if(l.att&&(l.k==='bag'||l.k==='coin')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags and coins too */
       if(l.ttl&&l.t>l.ttl){l.dead=true;continue;}
       if(l.k==='sball'&&!l.guard&&d<340){   /* the guardians: a ring of tougher enemies closes in when you get near */
         l.guard=true;this.spawnRing(16+Math.round(this.sd*3),null,e=>{e.hp*=1.3;e.max=e.hp;});
@@ -1620,7 +1696,7 @@ class Game{
     const tr=this.trial,t=TRINKETS.find(x=>x.id===it.id);
     if(!tr||!t)return;tr.hold=0;
     const done=()=>{
-      this.run.coins-=it.price;it.sold=true;tr.zj=.7;this.run.zbuy=(this.run.zbuy||0)+1;
+      this.spendCoins(it.price);it.sold=true;tr.zj=.7;this.run.zbuy=(this.run.zbuy||0)+1;
       this.burst(tr.cx+it.x,tr.cy+it.y-10,22,RARITY[it.rar].c);this.ring(tr.cx+it.x,tr.cy+it.y,60,RARITY[it.rar].c,.5);this.audio.sfx('buy');
       this.say(this.env.tr(t.n),RARITY[it.rar].c,2.2);this.floatText(tr.zx,tr.zy-70,this.env.tr(T('Grazie! Hihi!','Thank you! Hehe!')),1);
     };
@@ -1653,7 +1729,7 @@ class Game{
     const m=this.modal;if(!m||m.type!=='trial')return false;
     const o=m.offers[i];if(!o||o.sold)return false;
     const free=!!m.freePick;if(!free&&this.run.coins<o.price)return false;
-    if(free)m.freePick=false;else this.run.coins-=o.price;o.sold=true;
+    if(free)m.freePick=false;else this.spendCoins(o.price);o.sold=true;
     if(o.kind==='form')this.unlockForm();
     else if(o.kind==='weapon'){const w=this.weapons.get(o.wid);if(w)w.upgrade();}
     else{const STEP={might:.10,spd:.10,cd:.08,hp:.12};this.swap[o.a]-=STEP[o.a]*TRIAL_MALUS;this.swap[o.b]+=STEP[o.b]*1.35;}
@@ -1668,7 +1744,7 @@ class Game{
 
   /* ---------- sandbox helpers ---------- */
   jumpTo(t){this.t=Math.max(0,t);for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
-  setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=xpNeed(this.lvl);while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
+  setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
   spawnChestHere(final){this.chests.push({x:this.p.x+60,y:this.p.y,final:!!final,t:0});}
 }
 
@@ -1682,6 +1758,8 @@ class MapDirector{
     const g=this.g,p=g.p;
     for(const tr of this.trials)if(!tr.done&&g.t>=tr.t){tr.done=true;this.spawnChamber();}
     if(!this.secretDone&&g.t>=this.secretAt&&!g.cleared){this.secretDone=true;this.spawnSecret();}
+    /* Endless: the red button (and so Zeno's Shop) comes back every 5 minutes, for 4 minutes */
+    if(g.endless&&g.t>=this.zenoNext&&!g.trial){this.zenoNext=g.t+ENDLESS_ZENO;if(!g.feat.some(f=>!f.dead&&(f.kind==='secret'||f.kind==='zenoportal')))this.spawnSecret(240);}
     this.islands(dt);
     this.lootT-=dt;this.helpT.heal-=dt;this.helpT.magnet-=dt;this.needT-=dt;if(this.needT<=0){this.needT=12;this.needHelp();}
     if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
@@ -1752,9 +1830,9 @@ class MapDirector{
     g.floatText(g.p.x,g.p.y-70,g.env.tr(T('Qualcosa è apparso sulla mappa','Something appeared on the map')),5);
   }
   /* the level's secret: a portal to Zeno's Shop somewhere on the map, shown by an arrow with the distance */
-  spawnSecret(){
+  spawnSecret(ttl){
     const g=this.g,[x,y]=this.pos(650,950);
-    g.feat.push({kind:'secret',x,y,t:0,ttl:1e9,used:false,dead:false});
+    g.feat.push({kind:'secret',x,y,t:0,ttl:ttl||1e9,used:false,dead:false});
     g.say(g.env.tr(T('Un bottone rosso misterioso è apparso! Segui la freccia.','A mysterious red button has appeared! Follow the arrow.')),'#ff8a8a',3.4);g.audio.sfx('shrine');
   }
   spawnChamber(){

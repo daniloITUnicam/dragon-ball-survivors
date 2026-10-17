@@ -6,14 +6,14 @@ const sstep=(a,b,x)=>{const k=clamp((x-a)/(b-a),0,1);return k*k*(3-2*k);};
 const vnoise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
 /* per-theme recipe: wt=lake threshold, tint=[dry,lush], parts=[kind,count], crit=[kind,count], ev=[kind,period,duration,offset] */
 const AMB={
-  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2],['petal',9]],crit:[['rabbit',3]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm']},
-  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1],['petal',7]],crit:[['frog',3]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog']},
-  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2],['tumble',1]],crit:[['scorpion',3],['weed',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm']},
-  other:{tint:['#ffc0f0','#7a58c0'],parts:[['mote',14],['sparkle',16],['feather',5],['halo',4],['petal',5]],mist:['#ffb0f0',.12],wx:['feather']},
-  beach:{wt:.6,tint:['#fff0b8','#c8a860'],shore:'rgba(90,60,10,.18)',parts:[['firefly',6],['bird',3],['sparkle',10],['leaf',3],['petal',4]],crit:[['crab',5]],shadow:1,rays:1,grade:[255,170,90],wx:['rain','storm','rain']},
-  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2],['tumble',1]],crit:[['lizard',3]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand']},
+  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2],['petal',9]],crit:[['rabbit',3]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm'],flock:2,nimbus:1},
+  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1],['petal',7]],crit:[['frog',3]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog'],flock:1},
+  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2],['tumble',1]],crit:[['scorpion',3],['weed',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm'],flock:1},
+  other:{tint:['#ffc0f0','#7a58c0'],parts:[['mote',14],['sparkle',16],['feather',5],['halo',4],['petal',5]],mist:['#ffb0f0',.12],wx:['feather'],nimbus:1},
+  beach:{wt:.6,tint:['#fff0b8','#c8a860'],shore:'rgba(90,60,10,.18)',parts:[['firefly',6],['bird',3],['sparkle',10],['leaf',3],['petal',4]],crit:[['crab',5]],shadow:1,rays:1,grade:[255,170,90],wx:['rain','storm','rain'],flock:3,nimbus:1},
+  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2],['tumble',1]],crit:[['lizard',3]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand'],flock:1},
   arena:{tint:['#e8e0d0','#8a8272'],parts:[['firefly',4],['mote',10],['flash',3],['confetti',4]],crit:[['pigeon',3]],spot:1,grade:[255,200,120],mist:['#e8e0d0',.08],wx:['wind','storm','wind']},
-  sky:{back:['#5c98e0',.9],tint:['#ffffff','#a8c8f0'],parts:[['bird',4],['wind',10],['sparkle',8],['feather',3],['cloudlet',3]],rays:1,hi:1,grade:[255,190,120],wx:['gale']},
+  sky:{back:['#5c98e0',.9],tint:['#ffffff','#a8c8f0'],parts:[['bird',4],['wind',10],['sparkle',8],['feather',3],['cloudlet',3]],rays:1,hi:1,grade:[255,190,120],wx:['gale'],flock:2,nimbus:1},
   hell:{back:['hell',.84],wt:.64,tint:['#ff7a2a','#12080a'],parts:[['ember',26],['ash',14],['wisp',5],['bird',3],['soul',6]],crit:[['salamander',2]],heat:1,nn:1,wx:['ashfall']},
   void:{back:['#03051a',.8],tint:['#6a4aff','#0a0e22'],parts:[['mote',14],['sparkle',14],['meteor',1],['shard',6]],stars:1,nn:1,wx:['meteor']}
 };
@@ -409,6 +409,28 @@ const Ambient={
       else if(q.k==='butterfly'){ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(q.x-2,q.y+9,4,1.5);}
     }
   },
+  /* ---------- sky show (visual only): flocks of gulls in a V crossing the screen, and the golden Flying Nimbus every ~80 s. Born on the Snake Way, now shared by the open-sky maps ---------- */
+  flocks(c,cx,cy,vw,vh,t,n,al,seed){
+    c.save();c.lineCap='round';c.lineJoin='round';
+    for(let f=0;f<n;f++){
+      const dur=70+f*23,u=((t/dur+f*.37+(seed||0))%1),dir=f&1?-1:1,sx=cx+vw*(dir>0?-.1+1.2*u:1.1-1.2*u)-cx*.08,sy=cy+vh*(.14+.22*f)+Math.sin(t*.4+f)*14;
+      for(let i=0;i<6+f;i++){
+        const bx=sx-dir*(Math.abs(i-2.5)*20+((i&1)?6:0)),by=sy+(i-2.5)*9*(i&1?1:-1)*.7+Math.abs(i-2.5)*6,fl=Math.sin(t*9+i*1.3+f)*4;
+        c.strokeStyle='rgba(255,255,255,'+(.85*al).toFixed(3)+')';c.lineWidth=2;c.beginPath();c.moveTo(bx-7,by-fl);c.quadraticCurveTo(bx-3,by-4-fl*.4,bx,by);c.quadraticCurveTo(bx+3,by-4-fl*.4,bx+7,by-fl);c.stroke();
+      }
+    }
+    c.restore();
+  },
+  nimbus(c,cx,cy,vw,vh,t,al,seed){
+    const per=80,u=((t+20+(seed||0)*per)%per)/per;if(u>=.3)return;
+    const k=u/.3,x=cx+vw*(-.15+1.3*k),y=cy+vh*.3+Math.sin(k*6)*18,fade=Math.min(1,k*8,(1-k)*8)*al;
+    c.save();c.globalAlpha=fade;c.globalCompositeOperation='lighter';
+    for(let i=0;i<8;i++){const r=(i/8);GLOW.at(c,x-r*70,y+6+Math.sin(t*6+i)*3,8*(1-r),'#ffe26a',.6*(1-r));}
+    c.globalCompositeOperation='source-over';
+    c.fillStyle='#ffe58a';for(const [dx,dy,r] of[[-12,2,9],[0,-3,12],[13,1,10],[2,6,10]]){c.beginPath();c.arc(x+dx,y+dy,r,0,TAU);c.fill();}
+    c.fillStyle='rgba(255,255,255,.55)';c.beginPath();c.arc(x-3,y-6,6,0,TAU);c.fill();
+    c.restore();
+  },
   /* ---------- air layer (above entities) ---------- */
   drawP(ctx,q,t){
     const env=clamp(Math.min(q.l/.7,(q.m-q.l)/.9),0,1),x=q.x,y=q.y;
@@ -461,6 +483,8 @@ const Ambient={
     /* parallax layers moving faster than the ground (cloud decks / mist) */
     if(this.lod<.5)return;
     const cx=this.cx,cy=this.cy,vw=this.vw,vh=this.vh;
+    if(c.flock&&this.evK!=='storm')this.flocks(ctx,cx,cy,vw,vh,t,c.flock,1-this.nt*.92,(this.theme.length*.173)%1);   /* gulls crossing the sky */
+    if(c.nimbus)this.nimbus(ctx,cx,cy,vw,vh,t,1-this.nt*.55,(this.theme.charCodeAt(0)%7)/9);
     const lay=(f,cell,dens,wdx,col,al,rmin,rmax)=>{
       const ox=cx*f,oy=cy*f,sx=cx-ox,sy=cy-oy,sp=GLOW.spr(col);ctx.globalAlpha=al;
       for(let gx=Math.floor((ox-wdx*t)/cell)-1;gx<=Math.floor((ox+vw-wdx*t)/cell)+1;gx++)for(let gy=Math.floor(oy/cell)-1;gy<=Math.floor((oy+vh)/cell)+1;gy++){

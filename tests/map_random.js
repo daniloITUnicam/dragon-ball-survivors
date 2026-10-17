@@ -20,11 +20,11 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
  /* snake way */
  let sn=true,isl=true,kinds=true;
  for(let s=1;s<=25;s++){MAP.roll(s*1237);const L=Snake.islandsIn(-Snake.XMAX,Snake.XMAX);
-  if(L.length<18)isl=false;if(new Set(L.map(i=>i.kind)).size!==9)kinds=false;
+  if(L.length<10)isl=false;if(new Set(L.map(i=>i.kind)).size!==9)kinds=false;
   if(!L.every(i=>Math.abs(i.x)>=800&&Math.abs(i.x)<=Snake.XMAX-400))isl=false;
   const p={x:0,y:Snake.f(0)};Snake.clamp(p,10);if(Math.hypot(p.x,p.y-Snake.f(0))>1)sn=false;
   for(let x=-Snake.XMAX;x<Snake.XMAX;x+=300)if(Math.abs(Snake.f(x+300)-Snake.f(x))>420)sn=false;}
- ok(sn,'snake: the start is walkable and the body has no jumps, 25 seeds');ok(isl,'snake: 18+ islands, none near the ends, 25 seeds');ok(kinds,'snake: all 9 island kinds, 25 seeds');
+ ok(sn,'snake: the start is walkable and the body has no jumps, 25 seeds');ok(isl,'snake: 10+ islands, none near the ends, 25 seeds');ok(kinds,'snake: all 9 island kinds, 25 seeds');
  /* a run rolls its own seed unless fixed */
  delete window.__MAPSEED;const idx=STAGES.findIndex(s=>s.theme==='beach');
  const seeds=new Set();for(let i=0;i<5;i++){__app.startGame({stage:idx,char:'goku',diff:'normal',x2:false,sandbox:true});seeds.add(MAP.seed);}

@@ -101,7 +101,7 @@ class App{
     this.save.write();
     if(this.ui.active&&this.ui.top&&['main'].includes(this.ui.top.name)){}
   }
-  makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:o=>this.i18n.t(o),onEnd:(res,g)=>this.onEnd(res,g)};}
+  makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g)};}
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
     this.game=new Game(o,this.makeEnv());this.state='play';

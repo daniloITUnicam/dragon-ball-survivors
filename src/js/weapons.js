@@ -106,7 +106,7 @@ const VFX={
 };
 
 class Weapon{
-  constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];}
+  constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];this.xl=0;}
   get L(){return this.evo?5:Math.min(4,this.lv-1);}
   /* every tier has 5 levels: base (table), evolution 1 and evolution 2 (each level of an evolution: damage, cooldown, area) */
   get lvB(){return this.evo?Math.max(0,this.lv-1):0;}
@@ -115,12 +115,18 @@ class Weapon{
   get color(){return this.g.formColor||this.def.c;}
   get maxed(){return this.lv>=WMAX;}
   /* evolved weapons scale with the active transformation */
-  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*this.tier;}
-  get e2c(){return(this.evo>=2?.85:1)*(1-.015*this.lvB);}
-  get e2a(){return(this.evo>=2?1.2:1)*(1+.02*this.lvB);}
+  /* Endless extra levels (xl, see WXL): damage, size and cooldown; in Endless the total cooldown (stat x weapon) never goes below ENDLESS_CD_MIN */
+  get xlD(){return 1+XL_DMG*this.xl;}
+  get xlA(){return 1+XL_AREA*this.xl;}
+  cdXl(k){const g=this.g;k*=1-XL_CD*this.xl;return g.endless?Math.max(k,ENDLESS_CD_MIN/Math.max(ENDLESS_CD_MIN,g.S.cd)):k;}
+  canXl(){return !!this.g.endless&&this.lv>=WMAX&&this.evo>=this.g.maxEvo(this.id)&&this.xl<WXL;}
+  get lvShow(){return this.lv+this.xl;}
+  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*this.tier*this.xlD;}
+  get e2c(){return this.cdXl((this.evo>=2?.85:1)*(1-.015*this.lvB));}
+  get e2a(){return(this.evo>=2?1.2:1)*(1+.02*this.lvB)*this.xlA;}
   get e2n(){return this.evo>=2?2:0;}
   get evoName(){return this.evo>=2?this.def.evo2:this.def.evo;}
-  upgrade(){if(this.lv<WMAX)this.lv++;}
+  upgrade(){if(this.lv<WMAX)this.lv++;else if(this.canXl())this.xl++;}
   evolve(){this.lv=1;this.evo=(this.evo||0)+1;}
   update(dt){}
   draw(ctx){}
@@ -129,18 +135,33 @@ class Weapon{
 
 const KI_EVO_DMG=.5;   /* both evolutions of the Ki Blast hit for half (it was far too strong) */
 class KiWeapon extends Weapon{
+  /* The shot is a visible gesture: while the cooldown runs out the ball gathers on the palm (g.pa 'shoot' with ball), the arm snaps toward the
+     target and the blasts leave the hand (Pose.tip). The wind-up ends exactly when the cooldown reaches 0, so the rate of fire is the same. */
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
-    this.cd-=dt;if(this.cd>0)return;
+    this.cd-=dt;
+    const wu=Math.min(.24,(this.cdMax||.3)*.8);
+    if(!this.wu&&this.cd>0&&this.cd<=wu){
+      const t=g.nearest(p.x,p.y,640);
+      if(t){const a=Math.atan2(t.y-p.y,t.x-p.x);this.wu={a};g.armAct('shoot',a,{w:this.cd,h:.2,r:.18,col:this.color,ball:1,ballR:7*(g.S.area*this.e2a)});}
+    }
+    if(this.wu){   /* follow the target while the ball grows */
+      const t=g.nearest(p.x,p.y,640);if(t){this.wu.a=Math.atan2(t.y-p.y,t.x-p.x);if(g.pa&&g.pa.st==='shoot')g.pa.a=this.wu.a;}
+    }
+    if(this.cd>0)return;
+    this.wu=null;
     const t=g.nearest(p.x,p.y,640);
     if(!t){this.cd=.1;return;}
     /* few shots on purpose: 1 -> 3 before evolving, 4 once evolved; a single pierce only on the 2nd evolution */
-    const base=Math.atan2(t.y-p.y,t.x-p.x),n=s.n[L],pi=this.evo>=2?1:0;
+    const ang=Math.atan2(t.y-p.y,t.x-p.x),base=ang+g.aimJit(),n=s.n[L],pi=this.evo>=2?1:0;
+    if(!g.pa||g.pa.st!=='shoot'||g.rt-g.pa.t0>g.pa.w+.05)g.armAct('shoot',base,{w:0,h:.2,r:.18,col:this.color});   /* no wind-up was possible: throw at once */
+    else{g.pa.a=base;g.pa.t0=g.rt-g.pa.w;}
+    const tip=Pose.tip(g,base);
     for(let i=0;i<n;i++){
       const a=base+(i-(n-1)/2)*.17;
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});
+      g.pr.push({x:tip.x,y:tip.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});
     }
-    g.audio.sfx('shot');this.cd=s.cd[L]*g.S.cd*this.e2c;
+    g.audio.sfx('shot');this.cd=this.cdMax=s.cd[L]*g.S.cd*this.e2c;
   }
 }
 
@@ -158,6 +179,7 @@ class KameWeapon extends Weapon{
     const WM=this.evo?(this.evo>=2?KAME_WM2:KAME_WM1):KAME_WM0,LM=(this.evo?1.12:1)*(1+Math.min(.3,.01*(g.lvl-1)));   /* +1% reach per character level, capped at +30% */
     const dur=this.fireDur;
     g.fireT=Math.max(g.fireT||0,dur);   /* arm extended while the beam is out */
+    g.armAct('kamef',a,{w:0,h:dur,r:.22,col:this.color});
     for(const ang of angs)this.beams.push({a:ang,t:0,dur,ext:0,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
   }
   update(dt){
@@ -166,12 +188,12 @@ class KameWeapon extends Weapon{
       this.cd-=dt;
       if(this.cd<=0){
         const t=g.nearest(p.x,p.y,600);
-        if(t){this.charge={t:0,dur:this.evo?.65:.5,a:Math.atan2(t.y-p.y,t.x-p.x)};g.audio.sfx(this.evo?'kameChargeEvo':'kameCharge');}
+        if(t){this.charge={t:0,dur:this.evo?.65:.5,jit:g.aimJit(),a:Math.atan2(t.y-p.y,t.x-p.x)};g.audio.sfx(this.evo?'kameChargeEvo':'kameCharge');}
         else this.cd=.1;
       }
     }else{
       const c=this.charge,t=g.nearest(p.x,p.y,700);
-      if(t)c.a=Math.atan2(t.y-p.y,t.x-p.x);
+      if(t)c.a=Math.atan2(t.y-p.y,t.x-p.x)+c.jit;
       c.t+=dt;g.cast={a:c.a,t:c.t,dur:c.dur,color:this.color,kind:'kame'};
       if(c.t>=c.dur){this.fire(c.a);g.audio.sfx(this.evo?'kameFireEvo':'kameFire');this.charge=null;g.cast=null;this.cd=s.cd[L]*g.S.cd*this.e2c;g.shake=Math.max(g.shake,.15);}
     }
@@ -390,7 +412,7 @@ class SlashWeapon extends Weapon{
     if(this.cd<=0){
       const rad=s.rad[L]*(g.S.area*this.e2a),t=g.nearest(p.x,p.y,rad+20);
       if(t){
-        const a=Math.atan2(t.y-p.y,t.x-p.x),half=s.arc[L];
+        const a=Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),half=s.arc[L];
         for(const ang of(this.lv>=5&&!this.evo?[a,a+Math.PI]:[a])){
           this.slashes.push({a:ang,half,rad,t:0,dur:.22});g.cutArc(p.x,p.y-14,rad,ang,half);
           for(const e of g.en){
@@ -444,7 +466,7 @@ class DeathBeamWeapon extends Weapon{
       let best=null,bh=-1;
       for(const e of g.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<520*520&&e.hp>bh){bh=e.hp;best=e;}}
       if(best){
-        const ang=Math.atan2(best.y-8-(p.y-18),best.x-p.x),n=this.evo>=2?5:this.evo?3:this.lv>=5?2:1;
+        const ang=Math.atan2(best.y-8-(p.y-18),best.x-p.x)+g.aimJit(),n=this.evo>=2?5:this.evo?3:this.lv>=5?2:1;
         for(let k=0;k<n;k++){
           const a=ang+(k===0?0:(k%2?1:-1)*Math.ceil(k/2)*.3),cs=Math.cos(a),sn=Math.sin(a),ox=p.x,oy=p.y-18,wd=s.wid[L]*(g.S.area*this.e2a),len=s.len[L];
           this.lines.push({a,t:0,dur:.28,len,wid:wd});
@@ -483,7 +505,7 @@ class BarrageWeapon extends Weapon{
     this.cd-=dt;if(this.cd>0)return;
     const t=g.nearest(p.x,p.y,380);
     if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-p.y,t.x-p.x),n=s.n[L]+g.S.proj*2+this.e2n*2;
+    const base=Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),n=s.n[L]+g.S.proj*2+this.e2n*2;
     for(let i=0;i<n;i++){
       const a=base+rnd(-s.sp,s.sp),sp2=rnd(380,460);
       g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*sp2,vy:Math.sin(a)*sp2,r:5*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi:s.pi[L],life:.85,hit:[],c:this.color});

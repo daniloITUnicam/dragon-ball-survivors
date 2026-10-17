@@ -121,24 +121,12 @@ const SnakeArt={
   /* the sky above the entities: bird flocks, drifting mist, the Flying Nimbus now and then */
   air(c,cx,cy,vw,vh,t){
     c.save();c.lineCap='round';c.lineJoin='round';
-    for(let f=0;f<3;f++){
-      const dur=70+f*23,u=((t/dur+f*.37)%1),dir=f&1?-1:1,sx=cx+vw*(dir>0?-.1+1.2*u:1.1-1.2*u)-cx*.08,sy=cy+vh*(.14+.22*f)+Math.sin(t*.4+f)*14;
-      for(let i=0;i<6+f;i++){
-        const bx=sx-dir*(Math.abs(i-2.5)*20+((i&1)?6:0)),by=sy+(i-2.5)*9*(i&1?1:-1)*.7+Math.abs(i-2.5)*6,fl=Math.sin(t*9+i*1.3+f)*4;
-        c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=2;c.beginPath();c.moveTo(bx-7,by-fl);c.quadraticCurveTo(bx-3,by-4-fl*.4,bx,by);c.quadraticCurveTo(bx+3,by-4-fl*.4,bx+7,by-fl);c.stroke();
-      }
-    }
+    Ambient.flocks(c,cx,cy,vw,vh,t,3,1,0);   /* the gull flocks (shared with the open-sky maps, see Ambient.flocks) */
     for(let i=0;i<4;i++){   /* mist banks slipping past faster than the ground */
       const per=vw+900,x=cx+((i*per*.37+t*(16+i*6)-cx*.45)%per+per)%per-450,y=cy+vh*(.1+.27*i)+Math.sin(t*.3+i*2)*10,w=300+i*60;
       const gr=c.createRadialGradient(x,y,10,x,y,w);gr.addColorStop(0,'rgba(255,248,224,.2)');gr.addColorStop(1,'rgba(255,248,224,0)');c.fillStyle=gr;c.fillRect(x-w,y-w*.4,w*2,w*.8);
     }
-    {   /* Flying Nimbus: a little golden cloud crossing the sky every ~80 s */
-      const per=80,u=((t+20)%per)/per;if(u<.3){
-        const k=u/.3,x=cx+vw*(-.15+1.3*k),y=cy+vh*.3+Math.sin(k*6)*18;
-        c.save();c.globalCompositeOperation='lighter';for(let i=0;i<8;i++){const r=(i/8);GLOW.at(c,x-r*70,y+6+Math.sin(t*6+i)*3,8*(1-r),'#ffe26a',.6*(1-r));}c.restore();
-        c.fillStyle='#ffe58a';for(const [dx,dy,r] of[[-12,2,9],[0,-3,12],[13,1,10],[2,6,10]])this.cir(c,x+dx,y+dy,r);c.fillStyle='rgba(255,255,255,.55)';this.cir(c,x-3,y-6,6);
-      }
-    }
+    Ambient.nimbus(c,cx,cy,vw,vh,t,1,0);   /* Flying Nimbus: a little golden cloud crossing the sky every ~80 s */
     c.restore();
   },
   /* sparkles running along the body, and a soft band of light travelling down it */

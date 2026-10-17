@@ -55,6 +55,33 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 17 ottobre 2026, parte 2 (modalità Infinita, eventi di mappa, animazioni delle armi)
+
+Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17b`, `src/js/patches.js`).
+
+**♾️ Modalità Infinita** (`Game.continueAfterWin`, costanti `ENDLESS_*` in `data.js`)
+- **Armi fino al Lv 100**: un'arma al Lv 5 dell'ultima evoluzione disponibile sale per altri 95 livelli (`Weapon.xl`): +4% danno, +1,2% dimensione, −0,5% ricarica per livello; la ricarica totale (statistica × arma) non scende sotto 0,2 s (`cdXl`, `cdMin`). Le carte «livello extra» compaiono in `upgradePool` solo in Infinita.
+- **Monete −10% ogni 15 s** (`coinK`: ×0,9 a catena, nessun avviso in partita, scritto solo nella descrizione del pulsante in 6 lingue). Il bonus dei 50 livelli non decade.
+- **Ogni 50 livelli** (`checkMilestone`): +100 monete e 4 scatti di crescita dei nemici in un colpo (Normale/Difficile +40% Salute, +8% Danni; Facile +4%/+4%; Estrema +60%/+20%/+60% Armatura) con messaggio elegante. Il tempo non rafforza più i nemici (`escSteps` fisso). Curva XP dolce (`endlessNeed`: ~12 s a livello, +0,1 s a livello).
+- **Negozio di Zeno-sama** (il pulsante rosso) ogni 300 s, aperto 240 s; qualità dei cimeli legata alla Fortuna.
+- **Menu ESC**: *Selezione automatica* (`autoLevel`, nessun menu al level-up) e *Priorità dei potenziamenti* (`enPrio`, fino a 10 voci: 5 armi + 5 potenziamenti, salvate in `settings.endPrio`).
+- **Pagamento**: dopo «Continua» si pagano solo le monete guadagnate dopo la vittoria (`rewardLines`: `run.coins − min(bank.coins, run.minC)`); quello che si spende da Zeno consuma prima le vecchie.
+
+**🎬 Eventi di mappa** (`src/js/events.js` dati + logica, `src/js/events_draw.js` animazioni)
+- Una scena per ognuno degli 11 stage (`MAP_EVENTS[theme]`): annuncio con titolo e sottotitolo in 6 lingue, punti d'arrivo segnati a terra, animazioni dedicate (semi, navicelle, capsule, portali, marcia, paracadute, uova, colonne di luce e sfere della distruzione, fessure, meteore) e **trasformazioni dei nemici** (`skMorph`) con etichetta. Durata 34-38 s, prima volta a 170-250 s (Pianura Saiyan 260-330 s), poi dopo 260-400 s. Rimossi i testi «respiro / tiratori in arrivo / ondata di kamikaze»; i kamikaze compaiono solo negli eventi.
+- Gabbiani e Nuvola Speciale come effetto visivo anche sulle altre mappe (`Ambient.flocks / Ambient.nimbus`).
+
+**🥋 Animazioni del personaggio per arma** (`src/js/pose.js`)
+- I personaggi procedurali sono dipinti **senza braccia** (frame `20+n`; `30+n` = faccia feroce) e le braccia sono disegnate dal gioco con la **cinematica inversa a due ossa** (`Pose.ik`): le gambe continuano a camminare. **Kamehameha**: carica con le due mani a coppa attorno alla sfera che cresce, anche in movimento; allo sparo le braccia si tendono. **Colpo di Ki**: la sfera cresce sul palmo mentre la ricarica finisce (stessa cadenza) e parte dalla mano (`Pose.tip`). Pose anche per le altre armi (`ARM_FIRE`). Il personaggio si gira verso il bersaglio durante il gesto.
+- Per chi usa **sprite propri**: frame facoltativi 10-15 nei fogli e punti `hand` in `sprites.json`; guida con i prompt per Gemini e simili in [`docs/SPRITES_AI.md`](docs/SPRITES_AI.md) e strumento `tools/sheet_from_frames.py`.
+
+**🖥️ Interfaccia e bilanciamento**
+- **Barra Esperienza** e **barra della Salute** con la nuova grafica (`xpbar.js`, `hpbar.js`; atlanti generati da `tools/gen_xpbar.py` e `tools/gen_hpbar.py` a partire da `assets/src/`). La barra della Salute mostra il **ritratto del personaggio in gioco**, aggiornato a ogni trasformazione. Sugli schermi stretti restano le barre sottili.
+- Il Gacha si chiama ora **Gacha dei Cimeli**.
+- **Difficoltà**: i nemici nuovi crescono ogni **60 s** (prima 90): Facile +1% / +1%; Normale e Difficile +10% Salute / +2% Danni; Estrema +15% / +5% / +15% Armatura. Estrema: ogni 30 s +2% frequenza di comparsa e +1% tetto di nemici (60 scatti al massimo).
+- **Broly, Berserk** 6 s (8 s nella forma finale; prima 10 e 13) e mira imprecisa (±0,5 rad). La **Calamita** attira anche Borse di zenny e monete. Via del Serpente: isole più rare (una ogni 3.800 px, prima 1.900).
+- **🧪 Test aggiunti:** `endless`, `events`, `pose`, `hpbar`; screenshot: `shot_pose`, `shot_hp`.
+
 ### 🆕 Aggiornamento del 17 ottobre 2026 (mappe vive, ritmo più calmo, nuove scelte)
 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17`, `src/js/patches.js`).
@@ -70,7 +97,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - **Densità** (`SPAWN_K = 0,85`, `CAP_K = 0,78`): ritmo di comparsa a fine stage 8,5× (prima 12×), tetto nemici ×0,78; Facile 0,7 (prima 0,8). Eventi più radi (orde, branchi, Ondata di Kamikaze e di Tiratori, oggetti a terra, eventi «Qualcosa è apparso»), ×1,5 in modalità x2 (`evK`); ondata da 15 s con più nemici (ritmo ×2,6, tetto ×1,5, ogni 110-160 s di calma, la prima a 150-190 s). Il cumulo di monete a terra non c'è più. I nemici fuori schermo riappaiono davanti a te (dal lato in cui stai andando).
 - **Fuoco nemico con budget** (`SHOT_*`, `EB_CAP`, `Game.shotOK/shotRefill/shotN/shotCdK`): salve ×0,67, attesa ×1,8 (×2,6 sulla Via del Serpente), una **riserva di colpi condivisa** (12, ricarica 6/s; Via del Serpente 8 e 3,4/s), al massimo 90 proiettili nemici (prima 230). I proiettili delle abilità costano mezzo colpo. I proiettili dei boss non sono nel budget.
 - **Le armi distruggono i proiettili nemici** (`cutOne/cutC/cutBeam/cutArc`): raggi, esplosioni, aree, fendenti e proiettili. 
-- **Difficoltà**: ogni 90 s i nemici nuovi crescono di Salute +1% / Danno +1% (Normale; prima +10% / +2%) e +2% / +1% / Armatura +5% (Estrema; prima +15% / +5% / +15%). Il colpo ad area del Cavernicolo Gigante (Isola di Muten) carica 0,5 s in più.
+- **Difficoltà** (poi ripristinata, vedi sopra): ogni 90 s i nemici nuovi crescevano di Salute +1% / Danno +1% (Normale) e +2% / +1% / Armatura +5% (Estrema). Il colpo ad area del Cavernicolo Gigante (Isola di Muten) carica 0,5 s in più.
 
 **⚖️ Armi, economia, sblocchi**
 - Colpo di Ki evoluto −50% di danno (`KI_EVO_DMG`). Kamehameha: durata del raggio 0,95 → 0,64 s sui livelli 1-5 (prima 0,6 s), evoluzioni 0,80 → 0,68 s e 0,78 → 0,62 s; larghezza ×1,2 / ×2,6 / ×3,1 (prima ×1 / ×1,8 / ×2,1); la base è celeste con un denso alone blu (`KAME_*`).
@@ -521,6 +548,9 @@ src/js/
   gacha.js            Gacha: ticket, probabilità, Borsa dei trinket, vendita, Super Sfere
   game.js             logica di gioco (senza DOM) + MapDirector (eventi, totem, stanza)
   sprites.js          sprite procedurali dei personaggi (con espressioni)
+  pose.js             braccia del personaggio per arma (cinematica inversa), pose di Kamehameha, Colpo di Ki e altre armi
+  events.js events_draw.js   eventi di mappa a tema (dati, logica, animazioni)
+  xpbar.js hpbar.js (+ *_meta.js)   barre Esperienza e Salute con la grafica in assets/ (atlanti da tools/gen_xpbar.py e gen_hpbar.py)
   sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
   audio.js            effetti sonori sintetizzati e musica
   cloud.js            account e sincronizzazione salvataggi (Supabase)
@@ -541,6 +571,10 @@ Test headless in Node (simulano partite complete con un bot) e test end-to-end c
 node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
 node tests/map_random.js      # mappe casuali: seed, area di partenza libera, Via del Serpente su 25 seed (puppeteer)
 node tests/snake_isles.js     # isole della Via del Serpente, budget del fuoco nemico, proiettili tagliati (puppeteer)
+node tests/endless.js         # modalità Infinita: monete, 50 livelli, armi Lv 100, Zeno, pagamento, scalatura, Berserk, Calamita (puppeteer)
+node tests/events.js          # eventi di mappa: i 11 stage, annunci, trasformazioni, fine evento (puppeteer)
+node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, Kamehameha / Colpo di Ki, pose, frame 10-15 degli sprite (puppeteer)
+node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
 node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)

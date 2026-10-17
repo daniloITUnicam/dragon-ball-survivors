@@ -50,12 +50,12 @@ ok(Math.abs(ka[0]-4)<1e-9&&ka[1]<ka[0]&&ka[2]<ka[1],'Kaioken drain shrinks with 
 await mk('broly');
 const bs=await pg.evaluate(()=>{const g=G;g.xform=null;g.modal=null;g.formIdx=-1;g.recalc();const m0=g.S.might,a0=g.S.armor,tk0=g.S.taken;g.bersCd=0;g.bers=0;g.useAbility();const m1=g.S.might,a1=g.S.armor,tk1=g.S.taken,mx=g.bersMax;g.bers=0;g.bv=null;g.recalc();g.formIdx=5;g.recalc();g.bersCd=0;g.useAbility();return{m0,m1,a0,a1,tk0,tk1,mx,mx2:g.bersMax,a2:g.S.armor,cd:g.bersCdMax};});
 ok(bs.m1>bs.m0*1.7&&bs.a1-bs.a0>=5&&bs.tk1<bs.tk0,'Broly berserk: damage x'+(bs.m1/bs.m0).toFixed(2)+', armor +'+(bs.a1-bs.a0)+', damage taken x'+(bs.tk1/bs.tk0).toFixed(2));
-ok(bs.mx===10&&bs.mx2===13&&bs.a2-bs.a0>=8,'final form berserk lasts '+bs.mx2+' s with +'+(bs.a2-bs.a0)+' armor (cooldown '+bs.cd+' s)');
+ok(bs.mx===6&&bs.mx2===8&&bs.a2-bs.a0>=8,'final form berserk lasts '+bs.mx2+' s with +'+(bs.a2-bs.a0)+' armor (cooldown '+bs.cd+' s)');
 /* enemy escalation every 90 s */
-const esc=async(diff)=>{await mk('goku',diff);return pg.evaluate(()=>{const g=G,r={};g.t=0;const e0=g.mkEnemy(Object.values(ENEMIES)[1],0,0);g.t=90*4;const e4=g.mkEnemy(Object.values(ENEMIES)[1],0,0);r.F=g.escF;r.steps=g.escSteps();r.xpm=e4.xpm;r.xpm0=e0.xpm;r.arm0=e0.armor;r.arm4=e4.armor;r.dmgRatio=e4.dmg/e0.dmg;r.hpRatio=e4.max/e0.max;return r;});};
+const esc=async(diff)=>{await mk('goku',diff);return pg.evaluate(()=>{const g=G,r={};g.t=0;const e0=g.mkEnemy(Object.values(ENEMIES)[1],0,0);g.t=60*4;const e4=g.mkEnemy(Object.values(ENEMIES)[1],0,0);r.F=g.escF;r.steps=g.escSteps();r.xpm=e4.xpm;r.xpm0=e0.xpm;r.arm0=e0.armor;r.arm4=e4.armor;r.dmgRatio=e4.dmg/e0.dmg;r.hpRatio=e4.max/e0.max;return r;});};
 const en=await esc('normal'),ex=await esc('extreme');
-ok(en.F.hp===.01&&en.F.dmg===.01&&en.F.xp===.05&&en.steps===4&&Math.abs(en.xpm-1.2)<1e-9,'normal: +1% HP, +1% damage, +5% XP per 90 s (xpm after 4 steps '+en.xpm+')');
-ok(ex.F.hp===.02&&ex.F.dmg===.01&&ex.F.arm===.05&&Math.abs(ex.xpm-1.32)<1e-9&&ex.arm4>ex.arm0&&en.arm4===0,'extreme: +2% HP, +1% damage, +5% armor, +8% XP per 90 s (xpm '+ex.xpm+', armor '+ex.arm0.toFixed(2)+' -> '+ex.arm4.toFixed(2)+')');
+ok(en.F.hp===.10&&en.F.dmg===.02&&en.F.xp===.05&&en.steps===4&&Math.abs(en.xpm-1.2)<1e-9,'normal: +10% HP, +2% damage, +5% XP per 60 s (xpm after 4 steps '+en.xpm+')');
+ok(ex.F.hp===.15&&ex.F.dmg===.05&&ex.F.arm===.15&&Math.abs(ex.xpm-1.32)<1e-9&&ex.arm4>ex.arm0&&en.arm4===0,'extreme: +15% HP, +5% damage, +15% armor, +8% XP per 60 s (xpm '+ex.xpm+', armor '+ex.arm0.toFixed(2)+' -> '+ex.arm4.toFixed(2)+')');
 /* milestones on the progress bar */
 await mk('goku');
 const ms=await pg.evaluate(()=>{const g=G;return{hordes:g.hordePlan.length,bosses:g.bossQ.length,finals:g.bossQ.filter(b=>b.final).length,dur:g.dur};});
