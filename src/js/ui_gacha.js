@@ -37,13 +37,17 @@ Object.assign(UI.prototype,{
     const d=this.save,tk=d.tickets,test=this.testAll();
     const kinds=[['t1','1×'],['t10','10×'],['l10','10×']];
     const cards=kinds.map(([k,lab])=>{
-      const n=tk[k],can=test||n>0;
+      const n=tk[k],K=GACHA.kinds[k],mx=this.app.progress.gachaMaxTimes(k);
+      /* 1, 10 or 100 pulls at most: the buttons light up as the tickets allow (no "all" button: a big pull is capped at 100) */
+      const presets=(k==='t1'?[1,10,100]:[1,10]).filter(t=>t<=mx);
+      const btn=t=>{const can=test||n>=t;
+        return h('button',{class:'btn small'+(can?' primary':' alt'),disabled:!can,'data-fid':'pull'+k+'x'+t,title:this.t('gUses',{n:t}),onclick:()=>{this.sfx('uiStart');this.gachaPull(k,t);}},this.t('gPullN',{n:t*K.n}),h('small',{class:'gtu'},this.t('gUses',{n:t})));};
       return h('div',{class:'tkcard '+k},
         h('div',{class:'tkimg'},lab,h('small',null,k==='l10'?'LUCKY':'TICKET')),
         h('div',{class:'cn'},this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10')),
         h('div',{class:'cd'},this.t(k==='t1'?'tkT1D':k==='t10'?'tkT10D':'tkL10D')),
         h('div',{class:'tkcount'},test?'∞':'× '+n),
-        h('button',{class:'btn'+(can?' primary':' alt'),disabled:!can,'data-fid':'pull'+k,onclick:()=>{this.sfx('uiStart');this.gachaPull(k);}},this.t(k==='t1'?'gPull1':'gPull10')));
+        h('div',{class:'gpb'},presets.map(btn)));
     });
     const total=[0,1,2,3,4].reduce((s,r)=>s+gachaPool(r).length,0);
     const rates=h('details',{class:'grates'},h('summary',null,this.t('gRates')),
@@ -59,20 +63,22 @@ Object.assign(UI.prototype,{
       !test&&this.app.progress.ticketCount()===0?h('p',{class:'gnote'},this.t('gNoTk')):null,
       rates);
   },
-  gachaPull(kind){
-    const res=this.app.progress.gachaPull(kind);
+  gachaPull(kind,times){
+    times=times||1;
+    const res=this.app.progress.gachaPull(kind,times);
     if(!res){this.sfx('uiErr');return;}
-    this.gachaReveal(res,kind);
+    this.gachaReveal(res,kind,times);
   },
   closeReveal(){
     const o=this.gov;if(!o)return;
     if(o.__stop)o.__stop();o.remove();this.gov=null;if(this.modalEl===o)this.modalEl=null;
   },
   /* the summon: dragon-ball slot reels stop one after another (more stars = rarer, more light and sound), a big banner for Legendary and Mythic, then the trinkets pop in one by one */
-  gachaReveal(res,kind){
+  gachaReveal(res,kind,times){
     this.closeReveal();
-    const n=res.length,best=res.reduce((m,x)=>Math.max(m,x.r),0),A=this.app.audio;
-    const ov=h('div',{class:'gov n'+(n>1?10:1)});this.gov=ov;this.modalEl=ov;
+    times=times||1;
+    const n=res.length,best=res.reduce((m,x)=>Math.max(m,x.r),0),A=this.app.audio,bulk=n>10;   /* bulk (up to 100 pulls): one quick reel for the best result, then a compact list of everything */
+    const ov=h('div',{class:'gov '+(bulk?'bulk n1':'n'+(n>1?10:1))});this.gov=ov;this.modalEl=ov;
     let skip=false,gone=false,tick=0;const pend=new Set();
     const snd=s=>{if(!skip&&!gone)A.sfx(s);};
     const later=(ms,fn)=>{if(skip||gone){fn();return;}const o={fn};o.id=setTimeout(()=>{pend.delete(o);fn();},ms);pend.add(o);};
@@ -87,8 +93,8 @@ Object.assign(UI.prototype,{
     this.root.append(ov);skipBtn.focus({preventScroll:true});
     const sparks=(el,c,cnt,dist)=>{if(FXL&&FXL.on)cnt=Math.ceil(cnt/2);for(let i=0;i<cnt;i++){const a=Math.random()*TAU,d=dist*(.5+Math.random()*.7),s=h('i',{class:'gspark',style:'--c:'+c+';--x:'+Math.cos(a)*d+'px;--y:'+Math.sin(a)*d+'px'});el.append(s);setTimeout(()=>s.remove(),950);}};
     /* the reels: a strip of random balls that ends on the ball of the rarity found */
-    const K=14,dur=n>1?i=>1.3+i*.23:()=>2.3;
-    res.forEach((x,i)=>{
+    const K=14,dur=bulk?()=>1.5:n>1?i=>1.3+i*.23:()=>2.3;
+    (bulk?[res.reduce((m,x)=>x.r>m.r?x:m,res[0])]:res).forEach((x,i)=>{
       const strip=h('div',{class:'gstrip'}),w=h('div',{class:'greel'},strip);
       els.push({w,strip,x});reels.append(w);
     });
@@ -108,10 +114,21 @@ Object.assign(UI.prototype,{
       await wait(last*1000+450);clearInterval(tick);
       if(best>=3&&!skip){await this.gachaBanner(ov,best,res,snd,wait,A);}
       /* the cards */
-      title.textContent=this.t(n>1?'gDone10':'gDone1');
-      const cards=h('div',{class:'gcards'});reels.replaceWith(cards);
+      title.textContent=bulk?this.t('gDoneN',{n}):this.t(n>1?'gDone10':'gDone1');
+      const cards=h('div',{class:bulk?'gtiles':'gcards'});reels.replaceWith(cards);
       let bestSnd=-1;
-      for(const x of res){
+      if(bulk){
+        /* the same trinket at the same rarity is shown once with its count; the best come first, new ones before duplicates */
+        const grp=new Map();for(const x of res){const k=trinketKey(x.id,x.r),e=grp.get(k)||{x,c:0,nw:false,coins:0};e.c++;e.coins+=x.coins||0;if(!x.dup)e.nw=true;grp.set(k,e);}
+        [...grp.values()].sort((p,q)=>q.x.r-p.x.r||(q.nw-p.nw)||q.c-p.c).forEach((e,ix)=>{
+          const i=this.tinfo(e.x.id,e.x.r);bestSnd=Math.max(bestSnd,e.x.r);
+          cards.append(h('div',{class:'gtile r'+e.x.r,style:'--c:'+i.c+';--d:'+Math.min(ix,40)*.02+'s',title:i.name+' · '+i.rar+'\n'+i.desc},glyph(i.t.k,i.c),
+            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar)),
+            h('span',{class:'gtc'},'×'+e.c),e.nw?h('span',{class:'gnew'},this.t('gNew')):h('span',{class:'gdup'},this.t('gDup'))));
+        });
+        if(!skip)snd('gPop'+best);
+      }
+      else for(const x of res){
         const i=this.tinfo(x.id,x.r),el=h('div',{class:'gcard r'+x.r,style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),h('div',{class:'cd'},i.desc),
           x.dup?h('span',{class:'gdup'},this.t('gDup'),x.coins?[' · +',zAmt(x.coins,true)]:null):h('span',{class:'gnew'},this.t('gNew')));
         cards.append(el);bestSnd=Math.max(bestSnd,x.r);
@@ -121,9 +138,9 @@ Object.assign(UI.prototype,{
       if(skip&&!gone)A.sfx('gPop'+bestSnd);
       skipBtn.remove();
       const nNew=res.filter(x=>!x.dup).length,nDup=n-nNew,coins=res.reduce((s,x)=>s+(x.coins||0),0),test=this.testAll();
-      const can=test||this.save.tickets[kind]>0;
+      const left=this.save.tickets[kind],again=test?times:Math.min(times,left,this.app.progress.gachaMaxTimes(kind)),can=test||left>0;
       const foot=h('div',{class:'row'},
-        can?h('button',{class:'btn primary','data-fid':'again',onclick:()=>{this.sfx('uiStart');this.gachaPull(kind);}},this.t('gAgain')+(test?'':' ('+this.save.tickets[kind]+')')):null,
+        can?h('button',{class:'btn primary','data-fid':'again',onclick:()=>{this.sfx('uiStart');this.gachaPull(kind,again);}},this.t('gAgain')+(again>1?' ×'+again:'')+(test?'':' ('+left+')')):null,
         h('button',{class:'btn alt','data-fid':'gbag2',onclick:()=>{this.sfx();this.closeReveal();this.push('bag',{});}},'🎒 '+this.t('bagBtn')),
         h('button',{class:'btn alt','data-back':true,'data-fid':'gclose',onclick:()=>{this.sfx('uiBack');this.closeReveal();this.rebuild(true);}},this.t('gClose')));
       ov.append(h('div',{class:'gsum'},h('span',{class:'good'},this.t('gSummary',{n:nNew,d:nDup})),coins?h('span',null,'+',zAmt(coins,true)):null),foot);

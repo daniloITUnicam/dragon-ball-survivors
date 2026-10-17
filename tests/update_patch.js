@@ -28,14 +28,15 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
   await pg.click('.patchbtn');await wait(300);
   const PATCHES_N=await pg.evaluate(()=>PATCHES.length);
   const s=await pg.evaluate(()=>{const cards=[...document.querySelectorAll('.pncard')];return{n:cards.length,top:__app.ui.top.name,
-    secs0:[...cards[0].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs1:[...cards[1].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs2:[...cards[3].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs3:[...cards[4].querySelectorAll('.pnsec h4')].map(x=>x.textContent),
+    secs0:[...cards[1].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs1:[...cards[2].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs2:[...cards[4].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secs3:[...cards[5].querySelectorAll('.pnsec h4')].map(x=>x.textContent),secsTop:[...cards[0].querySelectorAll('.pnsec h4')].map(x=>x.textContent),grp:cards[0].querySelectorAll('.pngrp h5').length,name:(cards[0].querySelector('.pnname')||{}).textContent||'',sum:(cards[0].querySelector('.pnsum')||{}).textContent||'',plain:cards[1].querySelectorAll('.pngrp').length,
     date:cards[0].querySelector('.pndate').textContent,tags:[...cards[0].querySelectorAll('.pntag')].map(x=>x.textContent),items:cards[0].querySelectorAll('li').length,
     seen:__app.save.d.patchSeen,latest:PATCHES[0].id,order:[...cards].map(c=>c.dataset.patch)};});
   ok(s.top==='patch'&&s.n===PATCHES_N,'the patch notes screen lists every release ('+s.n+')');
-  ok(s.order[0]>s.order[1]&&s.order[1]>s.order[2]&&s.order[2]>s.order[3]&&s.order[3]>s.order[4],'newest first ('+s.order.join(' > ')+')');
+  ok(s.order[0]>s.order[1]&&s.order[1]>s.order[2]&&s.order[2]>s.order[3]&&s.order[3]>s.order[4]&&s.order[4]>s.order[5],'newest first ('+s.order.join(' > ')+')');
   ok(s.secs2.length===3&&/Novit/.test(s.secs2[0])&&/Correzioni/.test(s.secs2[1])&&/Bilanciamento/.test(s.secs2[2]),'sections in order: news, then fixes, then balance ('+s.secs2.join(' | ')+')');
   ok(s.secs0.length===2&&/Novit/.test(s.secs0[0])&&/Bilanciamento/.test(s.secs0[1])&&s.secs1.length===2,'empty sections are hidden (the newest releases have no fixes: '+s.secs0.join(' | ')+')');
   ok(s.secs3.length===1&&/Novit/.test(s.secs3[0]),'oldest release: only the news');
+  ok(s.secsTop.length===3&&s.grp>=10&&s.name.length>5&&s.sum.length>40&&s.plain===0,'the newest release has a title ('+s.name+'), a summary and its lines grouped under headings ('+s.grp+' groups); older ones stay plain');
   ok(/2026/.test(s.date)&&s.items>=4,'date shown in the player language: "'+s.date+'", '+s.items+' changes listed');
   ok(s.tags.length===2,'latest + NEW tags on the unread release ('+s.tags.join(', ')+')');
   ok(s.seen===s.latest,'opening the list marks it as read');
@@ -44,7 +45,7 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
   ok(await pg.evaluate(()=>!document.querySelector('.patchbtn .pdot')),'the red dot is gone after reading');
   await pg.evaluate(()=>{__app.save.d.settings.lang='en';__app.applySettings();__app.ui.rebuild();});
   await pg.click('.patchbtn');await wait(200);
-  const en=await pg.evaluate(()=>({h:[...document.querySelectorAll('.pncard')[3].querySelectorAll('.pnsec h4')].map(x=>x.textContent),d:document.querySelector('.pndate').textContent}));
+  const en=await pg.evaluate(()=>({h:[...document.querySelectorAll('.pncard')[4].querySelectorAll('.pnsec h4')].map(x=>x.textContent),d:document.querySelector('.pndate').textContent}));
   ok(/What's new/.test(en.h[0])&&/Bug fixes/.test(en.h[1])&&/Balance/.test(en.h[2])&&/October/.test(en.d),'English: '+en.h.join(' | ')+' · '+en.d);
   await pg.evaluate(()=>{__app.ui.pop();__app.save.d.settings.lang='it';__app.applySettings();__app.ui.rebuild();});
 

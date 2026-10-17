@@ -274,7 +274,7 @@ class AudioSys{
   }
   sfx(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:45,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
     const T=(f,d,ty,v,s)=>this.tone(f,d,ty,v,s);
@@ -282,7 +282,7 @@ class AudioSys{
       case'shot':this.zap(2100,520,.09,.03);this.toneAt(3200,.05,'square',.012,-1800,0);this.noise(.05,.03,9000,2500,0);break;
       case'hit':T(190,.07,'triangle',.04,-110);this.noise(.04,.035,6000,900,0);break;
       case'pop':T(300,.1,'square',.025,-200);break;
-      case'gem':T(1100,.05,'sine',.03,300);break;
+      case'gem':{const k=Math.pow(2,(this.pitchK||0)*.7/12);T(880*k,.07,'sine',.034,420*k);this.toneAt(1760*k,.13,'triangle',.022,0,.045);this.toneAt(2637*k,.1,'sine',.012,0,.09);break;}   /* experience chime: climbs while you keep collecting */
       case'coin':T(1318,.06,'square',.022,300);this.toneAt(1976,.14,'square',.02,200,.055);break;
       case'pkheal':[523,659,784,1047].forEach((f,i)=>this.toneAt(f,.22,'sine',.045,0,i*.06));this.toneAt(2093,.25,'sine',.02,0,.2);break;
       case'pkmagnet':this.noise(.5,.07,300,3600,0);this.toneAt(110,.45,'sawtooth',.04,900,0);this.toneAt(1900,.06,'square',.04,-600,.42);this.thump(.07,90,.45);break;

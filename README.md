@@ -55,18 +55,45 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 17 ottobre 2026 (mappe vive, ritmo più calmo, nuove scelte)
+
+Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17`, `src/js/patches.js`).
+
+**🗺️ Mappe diverse a ogni partita e animate**
+- **Mappe casuali** (`MAP.roll()` in `world.js`, chiamato da `Game`): ogni partita estrae un seme che sposta ostacoli, laghi, tonalità del terreno, decorazioni, trappole, pozze di cura e, sulla Via del Serpente, l'andamento del corpo e le isole. L'area di partenza (250 px) è sempre libera e all'asciutto. `window.__MAPSEED = 0` ripristina la mappa classica, un numero fisso rigioca quel layout (utile nei test). Test: `map_random`.
+- **Mare, laghi e lava** (`src/js/sea.js`): il livello d'acqua è un campo di rumore disegnato in chunk 64×64 «pixel» da 4 px, 8 fasi (schiuma che avanza e si ritira, creste d'onda, riflessi), con una palette per Isola di Muten, Pianura Saiyan, Pianeta Namek e **lava** (Inferno). Pesci che saltano e bolle di lava che scoppiano in scintille. Solo scenografia: `Sea.wet(theme,x,y)` tiene fuori da acqua e battigia ostacoli, decorazioni, trappole e pozze di cura.
+- **Isola di Muten** ridisegnata a partire da un'immagine di riferimento: sabbia con increspature, battigia bagnata, schiuma, rocce, casse, barili, lapidi, agavi, palme, tane, conchiglie, stelle marine. Pittura dei nuovi oggetti in `src/js/mapart.js` (`MA`), ostacoli a tema per ogni mappa in `OBSTACLES` (`world.js`), nuove particelle d'ambiente in `ambient.js`.
+- **Oggetti con vita** (`src/js/objlife.js`, `ObjLife.draw`): ragni che camminano sul bordo di botti e casse o penzolano dal filo, gabbiani e corvi, granchi, candele con falene, gatti, mosche, cristalli, lanterne, rocce di lava che sputano braci. Solo grafica, disattivata con gli effetti ambientali spenti.
+- **Via del Serpente** (`snake_art.js`, `Snake` in `world.js`, `MapDirector.islands`): corpo lungo 22.000 px per lato (prima 12.000), 9 tipi di **isole fluttuanti** percorribili con 3 potenziamenti ciascuna (una volta sola, nome annunciato), uccelli, nebbia e Nuvola Speciale. Test: `snake_isles`, `snake_way`.
+
+**🧯 Meno caos, più leggibilità**
+- **Densità** (`SPAWN_K = 0,85`, `CAP_K = 0,78`): ritmo di comparsa a fine stage 8,5× (prima 12×), tetto nemici ×0,78; Facile 0,7 (prima 0,8). Eventi più radi (orde, branchi, Ondata di Kamikaze e di Tiratori, oggetti a terra, eventi «Qualcosa è apparso»), ×1,5 in modalità x2 (`evK`); ondata da 15 s con più nemici (ritmo ×2,6, tetto ×1,5, ogni 110-160 s di calma, la prima a 150-190 s). Il cumulo di monete a terra non c'è più. I nemici fuori schermo riappaiono davanti a te (dal lato in cui stai andando).
+- **Fuoco nemico con budget** (`SHOT_*`, `EB_CAP`, `Game.shotOK/shotRefill/shotN/shotCdK`): salve ×0,67, attesa ×1,8 (×2,6 sulla Via del Serpente), una **riserva di colpi condivisa** (12, ricarica 6/s; Via del Serpente 8 e 3,4/s), al massimo 90 proiettili nemici (prima 230). I proiettili delle abilità costano mezzo colpo. I proiettili dei boss non sono nel budget.
+- **Le armi distruggono i proiettili nemici** (`cutOne/cutC/cutBeam/cutArc`): raggi, esplosioni, aree, fendenti e proiettili. 
+- **Difficoltà**: ogni 90 s i nemici nuovi crescono di Salute +1% / Danno +1% (Normale; prima +10% / +2%) e +2% / +1% / Armatura +5% (Estrema; prima +15% / +5% / +15%). Il colpo ad area del Cavernicolo Gigante (Isola di Muten) carica 0,5 s in più.
+
+**⚖️ Armi, economia, sblocchi**
+- Colpo di Ki evoluto −50% di danno (`KI_EVO_DMG`). Kamehameha: durata del raggio 0,95 → 0,64 s sui livelli 1-5 (prima 0,6 s), evoluzioni 0,80 → 0,68 s e 0,78 → 0,62 s; larghezza ×1,2 / ×2,6 / ×3,1 (prima ×1 / ×1,8 / ×2,1); la base è celeste con un denso alone blu (`KAME_*`).
+- **Zenny −20% ovunque** (`ZMUL = 0,8`): monete 4-32, Borsa 20-1040, Élite 20, boss 48, bonus primo completamento 160 per stage, Desiderio 240, doppioni del Gacha 64 / 144 / 320 / 640 / 1280, vendita dei cimeli. Il Gacha estrae fino a **100 alla volta** (×1/×10/×100).
+- Negozio: **Cimelio Extra** (fino a 3 cimeli, 3.000 e 9.000 zenny) e **Lista Nera Armi** (fino a 10 ban, da 350 zenny ×1,4). Armi sbloccate vincendo uno stage con chi le possiede. Impostazione **«Rifiuta cimeli di rarità inferiore»**.
+- Trasformazioni: **Kaioken e Ultra Istinto solo per Goku**; gli altri Saiyan hanno «Furia Saiyan»; **Vegeta** parte da «Orgoglio Saiyan» e finisce con **Ultra Ego**; Re Kaioh usa Gravità x10/x100 e Maestro Celeste (`SSJ_FORMS`, linee `vegeta` e `saiyan2` in `data.js`).
+
+**🖥️ Interfaccia**
+- **Fine stage** riprogettata (titolo compatto con due Sfere del Drago, riepilogo e ricompense a sinistra, danno delle armi con icona e livello a destra); personaggi sbloccati come notifica di 5 s; **Infinita** come pulsante accanto a Riprova/Menu, bloccato finché lo stage non è completato in Estrema. Tasti **1-9/0** e **Spazio** in tutte le finestre di scelta. Sfera di Esperienza con animazione e suono che sale di tono. Nuovi sprite animati per i potenziamenti a terra (+22%). Note di patch con titolo, riassunto e gruppi.
+- **🧪 Test aggiunti:** `map_random`, `snake_isles` (isole, budget di fuoco, proiettili tagliati); screenshot: `shot_map`, `shot_props`, `shot_life`, `shot_loot`, `shot_patch`.
+
 ### 🆕 Aggiornamento di ottobre 2026 (v35 → v40)
 
 **🎰 Gacha, Borsa dei trinket e Super Sfere del Drago (ultime novità)**
 - **Gacha** (pulsante nel menu principale, `src/js/gacha.js` + `src/js/ui_gacha.js`): i **ticket** trovati in partita si spendono per estrarre **trinket**. Tre tipi: **Ticket 1×** (1 estrazione), **Ticket 10×** (10) e **Ticket 10× Fortunato** (10 con probabilità più alte). Si estrae prima la **rarità**, poi uno dei trinket di quella rarità (aggiungere trinket non rende i Mitici più rari).
 
-| Rarità | Ticket normali | Ticket 10× Fortunato | Valore di mercato (doppione) | Vendita in partita (stage 1) |
+| Rarità | Ticket normali | Ticket 10× Fortunato | Doppione (80% del valore di Zeno-sama) | Vendita in partita (stage 1) |
 |---|---|---|---|---|
-| Comune | 72% | 45% | 80 | 80 + 20 = 100 |
-| Raro | 20% | 32% | 180 | 180 + 50 = 230 |
-| Epico | 6% | 15% | 400 | 400 + 150 = 550 |
-| Leggendario | 1,5% | 6% | 800 | 800 + 400 = 1200 |
-| Mitico | 0,5% | 2% | 1600 | 1600 + 1000 = 2600 |
+| Comune | 72% | 45% | 64 | (80 + 20) × 0,8 = 80 |
+| Raro | 20% | 32% | 144 | (180 + 50) × 0,8 = 184 |
+| Epico | 6% | 15% | 320 | (400 + 150) × 0,8 = 440 |
+| Leggendario | 1,5% | 6% | 640 | (800 + 400) × 0,8 = 960 |
+| Mitico | 0,5% | 2% | 1280 | (1600 + 1000) × 0,8 = 2080 |
 
 - **Estrazione animata**: una colonna di Sfere del Drago gira e si ferma sulla sfera della rarità (1, 2, 3, 5 o 7 stelle: più stelle, più scintille e suoni più alti). **Leggendario**: scritta dorata. **Mitico**: lampo, raggi, schermo che trema, scritta «MITICO!» e **suono da jackpot** (`gMythic` in `audio.js`). Con 10 estrazioni i trinket compaiono uno dopo l'altro con pop-in e suono; «Salta» mostra tutto subito. Ogni carta è marcata **NUOVO** o **DUPLICATO** (il doppione paga il valore di mercato di Zeno-sama in zenny).
 - **Borsa dei trinket** (dal Gacha e dalla selezione del personaggio): tutti i trinket ottenuti, con filtro per rarità, **ricerca per nome o effetto**, ordinamento per data di ottenimento (più/meno recenti), rarità o nome. Una voce per ogni coppia trinket + rarità.
@@ -94,7 +121,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 **🌊 Ondate, élite, sfera garantita ed effetti ridotti**
 - **Ritmo a ondate** (`updateWave` in `src/js/game.js`): calma → **picco di 15 s** (spawn ×1,75, tetto ×1,2, banner rosso) → **respiro di 12 s** (spawn ×0,3, banner azzurro, **pioggia di 10-16 gemme** attorno al giocatore pari a circa il 9% di un livello, e le gemme dei nemici valgono **+50%**) → di nuovo calma per 38-52 s (× radice della durata). Il picco **non parte** durante un boss, a meno di 22 s da un'orda, durante le ondate di kamikaze o tiratori, a meno di 25 s da un boss o negli ultimi istanti; se arriva un boss a metà picco, finisce subito. Costanti in cima a `game.js` (`WAVE_SURGE`, `WAVE_REST`, `WAVE_RATE`, `REST_RATE`, `REST_GEM`...).
 - **Nemici élite** (`planElites`/`spawnElite`/`eliteDown`): da 2 a 6 per partita (uno ogni ~210 s), distribuiti tra i boss e mai a meno di 28 s da uno; nascono più forti a ogni uscita. Sono una versione grande (×1,35), dorata e con barra della vita del nemico più forte della lista (×9 vita, +45% danni, armatura, quasi immuni al respingimento, esperienza ×6). Compaiono come **stella dorata sulla barra di avanzamento**; non arrivano durante un picco o un boss. Alla sconfitta lasciano **sempre un forziere** (un potenziamento o un'evoluzione **più un oggetto garantito**, non la scelta da boss), monete e gemme.
-- **Borsa di zenny** (`bagValue`, `MapDirector.spawnLootPoint`): il mucchio di monete che ogni tanto compare sulla mappa è una **borsa** (~45% dei bottini a terra, circa una ogni 2 minuti) con il valore scritto sopra. Valore = `1000 × t / 1800`, arrotondato a 5 (min 25, max 1300): 25 all'inizio, ~335 al minuto 10, 500 al 15, **1000 al 30**. Dura 90 s, ha la freccia sul bordo schermo ed è attratta dal magnete. Aggiunge al totale della partita il valore *base*: i bonus agli zenny (Avidità, Totem della Ricchezza, Jackpot…) si applicano a fine partita su tutto.
+- **Borsa di zenny** (`bagValue`, `MapDirector.spawnLootPoint`): il mucchio di monete che ogni tanto compare sulla mappa è una **borsa** (~36% dei bottini a terra, circa una ogni 3 minuti) con il valore scritto sopra. Valore = `0,8 × 1000 × t / 1800`, arrotondato a 5 (min 20, max 1040): 20 all'inizio, ~265 al minuto 10, 400 al 15, **800 al 30** (prima del −20% agli zenny: 25-1300, 1000 al 30). Dura 90 s, ha la freccia sul bordo schermo ed è attratta dal magnete. Aggiunge al totale della partita il valore *base*: i bonus agli zenny (Avidità, Totem della Ricchezza, Jackpot…) si applicano a fine partita su tutto.
 - **Valore delle monete** (`coinValue`): ogni moneta a terra (nemici, bottini sulla mappa, Bubbles) vale `5 + 35 × t / 1800` zenny, **da 5 a 40 al minuto 30, mai oltre 40** (il tetto evita il farming con molti nemici). Il Jackpot e il Deposito di monete mantengono la propria scala.
 - **Negozio:** «Rimborsa tutto» restituisce il **100%** degli zenny spesi (senza percentuale sul pulsante).
 - **Sfera del Drago garantita** (`updateBallPlan`): ogni `clamp(durata×0,28; 100; 270)` secondi (la prima dopo il 75% dell'intervallo) ne cade una a 280-420 px dal giocatore, **mai due insieme, mai durante un boss, mai nell'ultimo minuto**; resta 150 s e la freccia ai bordi la indica. Il drop casuale dai nemici (0,07%) resta.
@@ -152,7 +179,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 - La **Fortuna** decide la rarità degli oggetti (fino a leggendario); **1% di oggetti Mitici**.
 
 **🍀 Trinket: uno alla volta, con rarità e Mitico**
-- Si porta **un solo trinket**; trovandone un altro (forziere, capsula, desiderio, Zeno) si apre una **finestra di confronto** con avviso di sostituzione.
+- Si porta **un trinket** (fino a **3** con il potenziamento del Negozio «Cimelio Extra», 2 acquisti); con tutti gli slot occupati, trovarne un altro (forziere, capsula, desiderio, Zeno) apre una **finestra di confronto** che mostra tutti quelli che porti e chiede quale sostituire (o se tenerli). L'impostazione **«Rifiuta cimeli di rarità inferiore»** vende subito quelli di rarità più bassa di tutti i tuoi.
 - Ogni trinket può avere rarità **Comune → Mitica**: le statistiche crescono con la rarità e hanno un tetto per rarità (es. danno: leggendario max 15%, mitico max 20%); i testi si aggiornano da soli. Gli altri tier sono stati ridimensionati di conseguenza. Trovare un trinket ha l'1% di chance di essere Mitico.
 - Achievement *Collezionista*: ora "Trova 6 cimeli in una partita".
 
@@ -390,7 +417,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 - Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5** (le armi poi si evolvono e hanno altri 5 livelli per evoluzione).
 - **23 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite, Raffica di Ki.
 - **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Ogni evoluzione richiede **arma al massimo + potenziamento specifico** (vedi Grimorio). Una **seconda evoluzione** per arma si sblocca **completando tutti gli stage (Normale+) con quell'arma nell'equipaggiamento**.
-- Le armi si **sbloccano** nella pool dei level up completando uno stage o raggiungendo il livello 50 con un personaggio che parte con quell'arma.
+- Le armi si **sbloccano** nella pool dei level up semplicemente **vincendo uno stage** con un personaggio che parte con quell'arma (un secondo personaggio con la stessa arma non sblocca nulla di nuovo). Con il potenziamento del Negozio «Lista Nera Armi» (fino a 10) si possono **bandire** armi: non compaiono più come nuove armi tra i potenziamenti.
 - **Passivi**: Zenkai (+15% danno), Vigore (+20 HP), Volo veloce (+8% velocità), Scouter (raccolta), Camera Gravitazionale (−8% ricarica), Armatura, Fagioli Senzu (rigenerazione), Meditazione (+12% XP).
 
 ### Esperienza, livelli e trasformazioni
@@ -401,7 +428,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 
 ### Oggetti, struttura della run e mappa
 - **Forzieri** (uno per boss e uno di rifornimento ogni 5 minuti) con ricompense e trinket.
-- **Oggetti a terra**: monete (5-40 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna, capsule.
+- **Oggetti a terra**: monete (4-32 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna, capsule.
 - **Sfere del Drago**: raccogline 7 per esprimere un desiderio (seconda vita, potere, fortuna).
 - **Eventi sulla mappa**: Altare del Potere (bonus temporaneo), Sorgente curativa, Altare del Sacrificio (arma +1 in cambio di metà vita), Fonte dell'esperienza, Deposito di monete, Totem, Stanza dello Spirito e del Tempo.
 - **Trinket (20)** in 4 rarità: Scouter rotto, Marsupio Senzu, Fascia da allenamento, Stivali gravitazionali, Radar del Drago, Orecchino Potara, Mantello Namecciano, Nyoibo, Nuvola Speedy, Capsula Hoi-Poi, Cuore di Kaioh, Aureola angelica, Orologio della Stanza del Tempo, Sfera del Drago a 4 stelle, Cristallo divino, Armatura reale Saiyan, Anello del Tempo, Specchio di Kaioh, Cuore del Drago, Furia Saiyan.
@@ -486,7 +513,10 @@ src/js/
   util.js data.js     utilità e dati (armi, personaggi, stage, nemici, boss, trinket, pet, negozio…)
   i18n*.js            traduzioni (it, en, es, fr, de, pt)
   weapons*.js         comportamento delle armi
-  world.js            terreno, ostacoli, zone di cura e trappole
+  world.js            seme della mappa (MAP), terreno, ostacoli, zone di cura e trappole, Via del Serpente
+  mapart.js           pittura degli oggetti a tema (casse, barili, lapidi, agavi, cristalli…) e decorazioni a terra
+  sea.js objlife.js   mare, laghi e lava animati / piccola vita sugli oggetti (ragni, uccelli, candele…)
+  snake_art.js        isole fluttuanti, nuvole e dettagli della Via del Serpente
   save.js             salvataggio, progressione, obiettivi, impostazioni
   gacha.js            Gacha: ticket, probabilità, Borsa dei trinket, vendita, Super Sfere
   game.js             logica di gioco (senza DOM) + MapDirector (eventi, totem, stanza)
@@ -509,6 +539,9 @@ Test headless in Node (simulano partite complete con un bot) e test end-to-end c
 
 ```bash
 node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
+node tests/map_random.js      # mappe casuali: seed, area di partenza libera, Via del Serpente su 25 seed (puppeteer)
+node tests/snake_isles.js     # isole della Via del Serpente, budget del fuoco nemico, proiettili tagliati (puppeteer)
+node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
 node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)

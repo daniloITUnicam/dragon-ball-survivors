@@ -47,7 +47,7 @@ const SK_MAP={
   cave:[{id:'quake',cd:[6,8],c:'#d8b080'}],
   dino:[{id:'rage',c:'#ff5a3d',l:T('Ruggito!','Roar!')}],
   turtle:[{id:'guard',cd:[6,9],c:'#9ad07a'}],
-  cave2:[{id:'strike',cd:[5,7],n:3,r:50,c:'#c8a070'},{id:'rage',c:'#ff7a3a'}],
+  cave2:[{id:'strike',cd:[5,7],n:3,r:50,c:'#c8a070',ex:.5},{id:'rage',c:'#ff7a3a'}],
   ninja2:[{id:'fan',cd:[4,6],n:5,sp:.22,c:'#a8b8d8',dm:.6},{id:'lunge',cd:[6,8],c:'#a8b8d8'}],
   /* Saiyan Plains */
   sol:[{id:'lunge',cd:[6,8],c:'#c9a0d8'}],
@@ -155,13 +155,13 @@ for(const id in SK_MAP){if(ENEMIES[id])ENEMIES[id].sk=SK_MAP[id];}
 
 /* ---- skill mechanics ---- */
 const SKD={
-  fan:{w:.5,rng:[60,400],start(g,e,s,ux,uy){const n=s.n||3,a0=Math.atan2(uy,ux);for(let i=0;i<n;i++)g.skShot(e,a0+(i-(n-1)/2)*(s.sp||.28),s.v||200,s);}},
-  radial:{w:.65,rng:[0,320],start(g,e,s){const n=s.n||8,o=rnd(0,TAU);for(let i=0;i<n;i++)g.skShot(e,o+i/n*TAU,s.v||130,s);g.ring(e.x,e.y,60,s.c,.4);}},
+  fan:{w:.5,rng:[60,400],start(g,e,s,ux,uy){const n=g.shotN(s.n||3),a0=Math.atan2(uy,ux);for(let i=0;i<n;i++)g.skShot(e,a0+(i-(n-1)/2)*(s.sp||.28),s.v||200,s);}},
+  radial:{w:.65,rng:[0,320],start(g,e,s){const n=g.shotN(s.n||8),o=rnd(0,TAU);for(let i=0;i<n;i++)g.skShot(e,o+i/n*TAU,s.v||130,s);g.ring(e.x,e.y,60,s.c,.4);}},
   lunge:{w:.45,rng:[70,340],dur:.42,start(g,e,s,ux,uy){e.lg=[ux,uy];g.audio.sfx('leap');},
     tick(g,e,s,dt){if(g.fx.length<440&&Math.random()<.7)g.fx.push({x:e.x+rnd(-4,4),y:e.y-e.r*.6,vx:-e.lg[0]*30,vy:-e.lg[1]*30,l:.3,m:.3,c:s.c||'#fff',s:rnd(2,4)});return{mv:[e.lg[0],e.lg[1],3.4]};},
     end(g,e){e.stun=Math.max(e.stun,.22);}},
   quake:{w:.7,rng:[0,190],start(g,e,s){const c=s.c||'#ff7a3a';g.bz.push({x:e.x,y:e.y,r:e.r*2.6+16,t:0,dur:.4,dmg:e.dmg*.85,c});g.bz.push({x:e.x,y:e.y,r:e.r*4.2+20,t:0,dur:.85,dmg:e.dmg*.85,c});g.audio.sfx('warn');}},
-  strike:{w:.55,rng:[0,430],start(g,e,s){const p=g.p,n=s.n||3;for(let i=0;i<n;i++){const a=rnd(0,TAU),r=i?rnd(40,120):0;g.bz.push({x:p.x+(p.vx||0)*.35*(i?0:1)+Math.cos(a)*r,y:p.y+(p.vy||0)*.35*(i?0:1)+Math.sin(a)*r,r:s.r||48,t:0,dur:.85+i*.13,dmg:e.dmg*.85,c:s.c||'#ffd23f'});}g.audio.sfx('warn');}},
+  strike:{w:.55,rng:[0,430],start(g,e,s){const p=g.p,n=s.n||3;for(let i=0;i<n;i++){const a=rnd(0,TAU),r=i?rnd(40,120):0;g.bz.push({x:p.x+(p.vx||0)*.35*(i?0:1)+Math.cos(a)*r,y:p.y+(p.vy||0)*.35*(i?0:1)+Math.sin(a)*r,r:s.r||48,t:0,dur:.85+i*.13+(s.ex||0),dmg:e.dmg*.85,c:s.c||'#ffd23f'});}g.audio.sfx('warn');}},   /* s.ex: extra seconds of warning before the blast (Roshi's Island: +0.5) */
   mine:{w:0,rng:[0,520],start(g,e,s){g.bz.push({x:e.x,y:e.y,r:s.r||42,t:0,dur:1.5,dmg:e.dmg*.8,c:s.c||'#ff7a3a'});}},
   guard:{w:.3,rng:[0,400],start(g,e,s){e.shield=s.d||2.4;e.shA=e.shA||0;const a=s.a||6;e.armor+=a;e.shA+=a;g.ring(e.x,e.y,e.r*2.4,s.c||'#8ad8ff',.4);}},
   summon:{w:.8,rng:[0,440],can(g,e,s){let k=0;for(const o of g.en)if(o.par===e&&!o.dead)k++;return k<5&&g.en.length<g.spawnCap()*1.15+8;},
@@ -201,7 +201,7 @@ Object.assign(Game.prototype,{
   },
   /* an enemy projectile (capped so crowds of shooters can't flood the screen) */
   skShot(e,a,v,s){
-    if(this.eb.length>230)return;
+    if(this.eb.length>=EB_CAP||!this.shotOK(.5))return;   /* a skill's bullets cost half a shot of the shared budget (see Game.shotOK) */
     this.eb.push({x:e.x,y:e.y-14,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:s.r||6,dmg:e.dmg*(s.dm||.7),life:4.5,c:s.c||'#ff7a3a'});
   },
   skEnd(e,cancel){

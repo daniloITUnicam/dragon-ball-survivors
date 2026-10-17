@@ -127,6 +127,7 @@ class Weapon{
   static create(g,id){const C={ki:KiWeapon,kame:KameWeapon,disc:DiscWeapon,spirit:SpiritWeapon,aura:AuraWeapon,flare:FlareWeapon,slash:SlashWeapon,homing:HomingWeapon,dbeam:DeathBeamWeapon,barrage:BarrageWeapon}[id]||NEWW[id];return new C(g,id);}
 }
 
+const KI_EVO_DMG=.5;   /* both evolutions of the Ki Blast hit for half (it was far too strong) */
 class KiWeapon extends Weapon{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
@@ -137,22 +138,27 @@ class KiWeapon extends Weapon{
     const base=Math.atan2(t.y-p.y,t.x-p.x),n=s.n[L],pi=this.evo>=2?1:0;
     for(let i=0;i<n;i++){
       const a=base+(i-(n-1)/2)*.17;
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi,life:1.5,hit:[],c:this.color});
+      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});
     }
     g.audio.sfx('shot');this.cd=s.cd[L]*g.S.cd*this.e2c;
   }
 }
 
+/* Kamehameha: beam duration per base level, and the width of the beam (hit box and art) of the base weapon and of its two evolutions */
+const KAME_DUR=[.95,.88,.8,.72,.64],KAME_WM0=1.2,KAME_WM1=2.6,KAME_WM2=3.1;
 class KameWeapon extends Weapon{
   constructor(g,id){super(g,id);this.beams=[];this.charge=null;}
+  /* how long the beam stays out: longer at the first levels (the weapon struggled early on), shorter at the last ones to compensate (it ticks every 0.1 s, so this is its damage per cast) */
+  get fireDur(){const b=this.lvB;return this.evo>=2?.78-.04*b:this.evo?.8-.03*b:KAME_DUR[Math.min(4,this.lv-1)];}
   /* the head shoots out of the hands in the first ~22% of the beam's life (ease-out), then the beam stays at full reach */
   static ext(b){const u=Math.min(1,b.t/(b.dur*.22));return 1-Math.pow(1-u,3);}
   fire(a){
     const g=this.g,s=this.st,L=this.L,A=g.S.area*this.e2a;
     const angs=this.evo>=2?[a,a+Math.PI]:this.evo?[a]:this.lv>=5?[a,a+Math.PI]:[a];
-    const WM=this.evo?(this.evo>=2?2.1:1.8):1,LM=(this.evo?1.12:1)*(1+Math.min(.3,.01*(g.lvl-1)));   /* +1% reach per character level, capped at +30% */
-    g.fireT=Math.max(g.fireT||0,this.evo?.8:.6);   /* arm extended while the beam is out */
-    for(const ang of angs)this.beams.push({a:ang,t:0,dur:this.evo?.8:.6,ext:0,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo});
+    const WM=this.evo?(this.evo>=2?KAME_WM2:KAME_WM1):KAME_WM0,LM=(this.evo?1.12:1)*(1+Math.min(.3,.01*(g.lvl-1)));   /* +1% reach per character level, capped at +30% */
+    const dur=this.fireDur;
+    g.fireT=Math.max(g.fireT||0,dur);   /* arm extended while the beam is out */
+    for(const ang of angs)this.beams.push({a:ang,t:0,dur,ext:0,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
   }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
@@ -171,6 +177,7 @@ class KameWeapon extends Weapon{
     }
     for(const b of this.beams){
       b.t+=dt;b.tk-=dt;b.ext=KameWeapon.ext(b);
+      if(g.eb.length)g.cutBeam(p.x,p.y-18,Math.cos(b.a),Math.sin(b.a),b.len*b.ext,b.wid);   /* the beam wipes out enemy bullets */
       if(b.tk<=0){
         b.tk=.1;const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x,oy=p.y-18;
         for(const e of g.en){
@@ -183,11 +190,20 @@ class KameWeapon extends Weapon{
     this.beams=this.beams.filter(b=>b.t<b.dur);
   }
   draw(ctx){
-    const g=this.g,p=g.p,c=this.color;
+    const g=this.g,p=g.p;
     for(const b of this.beams){
       const k=Math.sin(Math.min(1,b.t/b.dur)*Math.PI);
+      /* the original Kamehameha is a lighter sky blue with a dense, deep blue glow around it; a transformation still tints it */
+      const c=b.evo?this.color:(g.formColor||'#8fe3ff');
       ctx.save();ctx.translate(p.x+Math.cos(b.a)*14,p.y-18+Math.sin(b.a)*14);ctx.rotate(b.a);
-      VFX.beam(ctx,b.len*(b.ext||.01),b.wid,c,k,g.rt,b.a*3,b.elec,true);
+      const L=b.len*(b.ext||.01);
+      if(!b.evo&&k>.02){   /* dense blue glow under the beam */
+        ctx.save();ctx.globalCompositeOperation='lighter';
+        const gr=ctx.createLinearGradient(0,-b.wid*1.1*k,0,b.wid*1.1*k);gr.addColorStop(0,'rgba(20,70,255,0)');gr.addColorStop(.32,'rgba(30,90,255,.5)');gr.addColorStop(.5,'rgba(90,170,255,.6)');gr.addColorStop(.68,'rgba(30,90,255,.5)');gr.addColorStop(1,'rgba(20,70,255,0)');
+        ctx.globalAlpha=.85*k;ctx.fillStyle=gr;ctx.fillRect(-6,-b.wid*1.1*k,L+8,b.wid*2.2*k);
+        GLOW.at(ctx,0,0,b.wid*1.9,'#2a63ff',.8*k);GLOW.at(ctx,L,0,b.wid*1.6,'#2a63ff',.7*k);ctx.restore();
+      }
+      VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);
       ctx.restore();
       if(Math.random()<.9&&g.fx.length<420){const d=rnd(30,b.len),cs=Math.cos(b.a),sn=Math.sin(b.a),o=rnd(-.5,.5)*b.wid;g.fx.push({x:p.x+cs*d-sn*o,y:p.y-18+sn*d+cs*o,vx:cs*60+rnd(-40,40),vy:sn*60+rnd(-40,40)-20,l:rnd(.25,.5),m:.5,c:Math.random()<.5?'#ffffff':c,s:rnd(2,4)});}
     }
@@ -202,7 +218,7 @@ class DiscWeapon extends Weapon{
     const n=s.n[L]+(this.evo>=2?2:0),r=s.r[L]*(g.S.area*this.e2a);this.pos.length=0;
     for(let i=0;i<n;i++){
       const a=this.a+i*TAU/n,dx=p.x+Math.cos(a)*r,dy=p.y-14+Math.sin(a)*r;
-      this.pos.push([dx,dy]);
+      this.pos.push([dx,dy]);if(g.eb.length)g.cutC(dx,dy,11*(this.evo?1.5:1));
       for(const e of g.en){
         if(e.dead)continue;
         const ex=e.x-dx,ey=e.y-8-dy,rr=e.r+11*(this.evo?1.5:1);
@@ -254,7 +270,7 @@ class SpiritWeapon extends Weapon{
     for(const b of this.bombs){
       b.t+=dt;
       if(b.t>=b.fall){
-        b.done=true;g.audio.sfx('thunder');g.shake=Math.max(g.shake,this.evo?.9:.5);g.ring(b.x,b.y,b.rad,this.color,.6);g.burst(b.x,b.y,30+(this.evo?30:0),'#ffffff');g.bolt(b.x,b.y,b.rad,'#8ae0ff',16);g.pillar(b.x,b.y,'#8ae0ff',.7);
+        b.done=true;g.cutC(b.x,b.y,b.rad);g.audio.sfx('thunder');g.shake=Math.max(g.shake,this.evo?.9:.5);g.ring(b.x,b.y,b.rad,this.color,.6);g.burst(b.x,b.y,30+(this.evo?30:0),'#ffffff');g.bolt(b.x,b.y,b.rad,'#8ae0ff',16);g.pillar(b.x,b.y,'#8ae0ff',.7);
         for(const e of g.en){if(e.dead)continue;const dx=e.x-b.x,dy=e.y-b.y,rr=b.rad+e.r;if(dx*dx+dy*dy<rr*rr)g.hit(e,b.dmg,dx*.5,dy*.5);}
         if(this.evo){
           /* evolved: the ground trembles and is scorched; mild damage over time */
@@ -266,7 +282,7 @@ class SpiritWeapon extends Weapon{
     }
     this.bombs=this.bombs.filter(b=>!b.done);
     for(const z of this.burns){
-      z.t+=dt;
+      z.t+=dt;if(g.eb.length)g.cutC(z.x,z.y,z.rad);
       /* aftershocks: the screen keeps shaking for a short while */
       z.q-=dt;if(z.q<=0&&z.quakes>0){z.quakes--;z.q=.42;g.shake=Math.max(g.shake,.45+.05*z.quakes);g.ring(z.x,z.y,z.rad*(.5+.12*(6-z.quakes)),'#ff9a3a',.35);}
       z.tk-=dt;
@@ -323,6 +339,7 @@ class AuraWeapon extends Weapon{
   constructor(g,id){super(g,id);this.tk=0;}
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    if(g.eb.length)g.cutC(p.x,p.y-8,s.r[L]*(g.S.area*this.e2a));   /* the aura burns enemy bullets before they reach you */
     this.tk-=dt;if(this.tk>0)return;
     this.tk=.4;const r=s.r[L]*(g.S.area*this.e2a);
     for(const e of g.en){
@@ -356,7 +373,7 @@ class FlareWeapon extends Weapon{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.cd-=dt;if(this.cd>0)return;
-    let any=false;const vr=g.viewR;
+    let any=false;const vr=g.viewR;g.cutC(p.x,p.y,vr);
     for(const e of g.en){
       if(e.dead)continue;
       if(Math.hypot(e.x-p.x,e.y-p.y)<vr){e.stun=Math.max(e.stun,e.boss?s.stun[L]*.4:s.stun[L]);any=true;g.hit(e,s.dmg[L]*this.dm);}
@@ -375,7 +392,7 @@ class SlashWeapon extends Weapon{
       if(t){
         const a=Math.atan2(t.y-p.y,t.x-p.x),half=s.arc[L];
         for(const ang of(this.lv>=5&&!this.evo?[a,a+Math.PI]:[a])){
-          this.slashes.push({a:ang,half,rad,t:0,dur:.22});
+          this.slashes.push({a:ang,half,rad,t:0,dur:.22});g.cutArc(p.x,p.y-14,rad,ang,half);
           for(const e of g.en){
             if(e.dead)continue;
             const dx=e.x-p.x,dy=e.y-8-(p.y-14),d=Math.hypot(dx,dy)||1;
@@ -440,7 +457,7 @@ class DeathBeamWeapon extends Weapon{
         g.audio.sfx('kame');this.cd=s.cd[L]*g.S.cd*this.e2c;
       }else this.cd=.2;
     }
-    for(const l of this.lines)l.t+=dt;
+    for(const l of this.lines){l.t+=dt;if(this.g.eb.length)this.g.cutBeam(this.g.p.x,this.g.p.y-18,Math.cos(l.a),Math.sin(l.a),l.len,l.wid);}
     this.lines=this.lines.filter(l=>l.t<l.dur);
   }
   draw(ctx){

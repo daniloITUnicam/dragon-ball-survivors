@@ -7,7 +7,7 @@ const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
 
 /* every difficulty has its own run length (dur, seconds), the same on every stage: stage times, boss times and roster windows are stretched to fit */
 const DIFF={
-  easy:{n:T('Facile','Easy'),hp:.9,dmg:.7,spawn:.8,zenny:.7,dur:300},
+  easy:{n:T('Facile','Easy'),hp:.9,dmg:.7,spawn:.7,zenny:.7,dur:300},
   normal:{n:T('Normale','Normal'),hp:1.0,dmg:1,spawn:1,zenny:1,dur:600},
   hard:{n:T('Difficile','Hard'),hp:2,dmg:1.5,spawn:1.4,zenny:1.35,dur:900},
   extreme:{n:T('Estremo','Extreme'),hp:4,dmg:1.8,spawn:1.5,zenny:2.4,dur:1800}
@@ -67,7 +67,7 @@ const EVO_RECIPE={
 };
 const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
-/* ---------- Transformations: every character has an 8 step line ---------- */
+/* ---------- Transformations: a line of up to 8 steps per character (thresholds by step number) ---------- */
 const FORM_TIERS=[
   {lvl:14, might:.22,spd:.14,cd:0,  armor:0,regen:0,  dodge:0,  taken:.10},
   {lvl:24, might:.40,spd:.10,cd:.04,armor:0,regen:.3, dodge:0,  taken:0},
@@ -88,16 +88,22 @@ function cfgForForm(C,idx){
   }
   return cfg;
 }
+/* the Super Saiyan steps shared by every Saiyan line */
+const SSJ_FORMS=[F('Super Saiyan','Super Saiyan','#ffe24d','#ffe24d','#1aa79a'),F('Super Saiyan 2','Super Saiyan 2','#fff27a','#fff08a','#1aa79a'),
+  F('Super Saiyan 3','Super Saiyan 3','#ffc83a','#ffd23f','#1aa79a',{hs:'long'}),F('Super Saiyan God','Super Saiyan God','#ff3b4a','#ff3b4a','#ff3b4a'),F('Super Saiyan Blue','Super Saiyan Blue','#4ab8ff','#4ab8ff','#4ab8ff')];
+/* Kaioken and Ultra Instinct belong to Goku only: the other lines have their own first form and stop before Ultra Instinct */
 const LINES={
-  saiyan:[F('Kaioken','Kaioken','#ff3b2f',null,'#ff5a3d'),F('Super Saiyan','Super Saiyan','#ffe24d','#ffe24d','#1aa79a'),F('Super Saiyan 2','Super Saiyan 2','#fff27a','#fff08a','#1aa79a'),
-    F('Super Saiyan 3','Super Saiyan 3','#ffc83a','#ffd23f','#1aa79a',{hs:'long'}),F('Super Saiyan God','Super Saiyan God','#ff3b4a','#ff3b4a','#ff3b4a'),F('Super Saiyan Blue','Super Saiyan Blue','#4ab8ff','#4ab8ff','#4ab8ff'),
-    F('Ultra Istinto (segno)','Ultra Instinct (Sign)','#9fb4ff','#cfd8e8','#cfd8e8'),F('Ultra Istinto Completo','Mastered Ultra Instinct','#ffffff','#eef4ff','#ffffff')],
+  saiyan:[F('Kaioken','Kaioken','#ff3b2f',null,'#ff5a3d'),...SSJ_FORMS,F('Ultra Istinto (segno)','Ultra Instinct (Sign)','#9fb4ff','#cfd8e8','#cfd8e8'),F('Ultra Istinto Completo','Mastered Ultra Instinct','#ffffff','#eef4ff','#ffffff')],
+  /* Vegeta: basic colours up to Super Saiyan, then as always, and Ultra Ego (purple) as the final steps */
+  vegeta:[F('Orgoglio Saiyan','Saiyan Pride','#e8f0ff'),...SSJ_FORMS,F('Ultra Ego (risveglio)','Ultra Ego (Awakening)','#8a5aff','#4a2a8a','#e08aff'),F('Ultra Ego','Ultra Ego','#b46aff','#5a2ab0','#ffb0ff')],
+  /* every other Saiyan: an invented first step instead of the Kaioken */
+  saiyan2:[F('Furia Saiyan','Saiyan Fury','#ff8a3d'),...SSJ_FORMS],
   namek:[F('Aura Namecciana','Namekian Aura','#7dff9a'),F('Fusione con Nail','Nail Fusion','#d8ff9a'),F('Fusione con Dio','Kami Fusion','#fff7b0'),F('Super Namek','Super Namekian','#ffb13b',null,null,{wide:true}),
-    F('Piccolo Arancione','Orange Piccolo','#ff9d1c',null,null,{skin:'#ff9a4a'}),F('Namek Divino','Divine Namekian','#8ad8ff',null,null,{skin:'#9be0ff'}),F('Istinto Superiore (segno)','Ultra Instinct (Sign)','#9fb4ff'),F('Istinto Superiore','Ultra Instinct','#ffffff')],
+    F('Piccolo Arancione','Orange Piccolo','#ff9d1c',null,null,{skin:'#ff9a4a'}),F('Namek Divino','Divine Namekian','#8ad8ff',null,null,{skin:'#9be0ff'})],
   human:[F('Concentrazione','Focus','#9fd0ff'),F('Modalità Illuminata','Enlightened Mode','#fff7b0'),F('Potere Nascosto','Hidden Power','#ffb13b'),F('Ultimo Sforzo','Last Stand','#ff5a3d'),
-    F('Cuore Puro','Pure Heart','#8be07a'),F('Armonia Totale','Total Harmony','#c9a0ff'),F('Istinto Superiore (segno)','Ultra Instinct (Sign)','#9fb4ff'),F('Istinto Superiore','Ultra Instinct','#ffffff')],
+    F('Cuore Puro','Pure Heart','#8be07a'),F('Armonia Totale','Total Harmony','#c9a0ff')],
   android:[F('Barriera Energetica','Energy Barrier','#8ad8ff'),F('Raffica Rapida','Rapid Fire','#ffb13b'),F('Colpi Calibrati','Calibrated Shots','#ff6bd0'),F('Energia Infinita','Infinite Energy','#8be07a'),
-    F('Potenza Cyborg','Cyborg Power','#ff7a7a'),F('Equilibrio Perfetto','Perfect Balance','#ffffff'),F('Istinto Superiore (segno)','Ultra Instinct (Sign)','#9fb4ff'),F('Istinto Superiore','Ultra Instinct','#ffffff')],
+    F('Potenza Cyborg','Cyborg Power','#ff7a7a'),F('Equilibrio Perfetto','Perfect Balance','#ffffff')],
   freezer:[F('Seconda Forma','Second Form','#c9a0ff',null,null,{wide:true}),F('Terza Forma','Third Form','#e0a0ff'),F('Forma Finale','Final Form','#ffffff',null,null,{wide:false}),F('Cento Percento','100% Full Power','#ff7ad0',null,null,{wide:true}),
     F('Freezer Dorato','Golden Frieza','#ffd23f',null,null,{skin:'#ffe27a',outfit:'#ffe27a',legs:'#ffe27a',armor:'#ffb020',shoulder:'#ffb020',hair:'#ffb020',boot:'#ffb020'}),F('Freezer Nero','Black Frieza','#9a6aff',null,null,{skin:'#3a3a4a',outfit:'#3a3a4a',legs:'#3a3a4a',armor:'#e8e0f4',shoulder:'#e8e0f4',hair:'#e8e0f4',boot:'#e8e0f4'})],
   cell:[F('Semi-Perfetto','Semi-Perfect','#9aff6a',null,null,{wide:true}),F('Cell Perfetto','Perfect Cell','#b8ff7a',null,null,{wings:false,spots:true}),F('Super Perfetto','Super Perfect Cell','#ffe24d',null,'#ff3b3b',{wide:true}),
@@ -112,12 +118,12 @@ const LINES={
   pride:[F('Postura da Guerriero','Warrior Stance','#ff8a6a'),F('Muscoli Tesi','Flexed Muscles','#ff8a3a'),F('Pugno Potente','Mighty Fist','#ffb13b'),F('Aura Rossa','Red Aura','#ff3b3b'),
     F('Piena Potenza','Full Power','#ff2a6a',null,'#ff2a2a',{wide:true}),F('Oltre il Limite','Beyond the Limit','#ffd23f'),F('Orgoglio Supremo','Supreme Pride','#cfd8ff'),F('Il Più Forte','The Strongest','#ffffff')],
   god:[F('Sbadiglio','Yawn','#c9a0ff'),F('Occhi Aperti','Open Eyes','#e0b0ff'),F('Ira del Distruttore','Destroyer\'s Wrath','#ff5a9a'),F('Hakai Pronto','Hakai Ready','#b060ff'),
-    F('Dio della Distruzione','God of Destruction','#ff3b8a'),F('Postura Divina','Divine Stance','#8ad8ff'),F('Istinto Superiore (segno)','Ultra Instinct (Sign)','#9fb4ff'),F('Istinto Superiore','Ultra Instinct','#ffffff')],
+    F('Dio della Distruzione','God of Destruction','#ff3b8a'),F('Postura Divina','Divine Stance','#8ad8ff')],
   chaozu:[F('Telecinesi','Telekinesis','#e8f0ff'),F('Dodon Ray Potenziato','Charged Dodon Ray','#ffe24d'),F('Autodistruzione','Self-Destruction','#ff7a3a'),F('Mente Perfetta','Perfect Mind','#c9a0ff')],
   turles:[F('Ki Oscuro','Dark Ki','#7a3aff'),F('Frutto dell\'Albero','Fruit of the Tree','#ff7a3a',null,'#ff3b3b'),F('Potere Ancestrale','Ancestral Power','#ff3b3b',null,'#ff3b3b',{wide:true}),F('Re Saiyan Oscuro','Dark Saiyan King','#a03aff',null,'#ffffff')],
   demon:[F('Ira Demoniaca','Demon Wrath','#ff5a3d'),F('Sigillo Infernale','Infernal Seal','#d83aff'),F('Potere Oscuro','Dark Power','#8a3aff',null,'#ffd23f',{wide:true}),F('Re dei Demoni','Demon King','#ff2a4a',null,'#ffffff')],
   force:[F('Posa Ginyu','Ginyu Pose','#c9a0ff'),F('Forza Bruta','Brute Force','#ff9d1c'),F('Assalto Totale','All-Out Assault','#ff5a3d'),F('Sinergia di Squadra','Team Synergy','#ffd23f'),F('Squadra Speciale','Special Force','#ffffff')],
-  kai:[F('Allenamento di Re Kaioh','King Kai Training','#ff9d1c'),F('Kaioken x3','Kaioken x3','#ff5a3d'),F('Kaioken x10','Kaioken x10','#ff3b2f'),F('Kaioken x20','Kaioken x20','#ffffff')],
+  kai:[F('Allenamento di Re Kaioh','King Kai Training','#ff9d1c'),F('Gravità x10','Gravity x10','#ff5a3d'),F('Gravità x100','Gravity x100','#ff3b2f'),F('Maestro Celeste','Heavenly Master','#ffffff')],
   frost:[F('Maschera Gentile','Gentle Mask','#cfc6e0'),F('Veleno Latente','Latent Poison','#a06aff'),F('Forma Finale','Final Form','#ffffff'),F('Frost Furioso','Furious Frost','#ff6ad0',null,'#ff3b3b')],
   uub:[F('Ki Puro','Pure Ki','#9fd0ff'),F('Energia Bu','Buu Energy','#ff9ec7'),F('Potere Nascosto','Hidden Power','#ffb13b'),F('Campione della Terra','Champion of Earth','#ffffff')],
   bu:[F('Bu Grasso','Fat Buu','#ffb0d0'),F('Bu Cattivo','Evil Buu','#ff7ad0',null,null,{skin:'#e07aa0'}),F('Super Bu','Super Buu','#ff6aa0'),F('Bu Gotenks','Gotenks Buu','#d8a0ff'),
@@ -128,13 +134,13 @@ const LINES={
 const CHARS=[
  {id:'goku',line:'saiyan',n:T('Goku','Goku'),d:T('Parte col Kamehameha. Più veloce.','Starts with Kamehameha. Faster.'),start:['kame'],spd:1.1,might:1.1,hp:100,regen:0,xpm:1,
   cfg:{skin:'#f2b98a',outfit:'#f57c10',belt:'#2347a8',under:'#2347a8',legs:'#f57c10',hair:'#15121c',hs:'goku',boot:'#2347a8',emblem:1,wrist:'#2347a8',bootTop:'#f2c230'}},
- {id:'vegeta',line:'saiyan',n:T('Vegeta','Vegeta'),d:T('Parte col Colpo di Ki. Danno +20%.','Starts with Ki Blast. +20% damage.'),start:['ki'],spd:1,might:1.2,hp:95,regen:0,xpm:1,
+ {id:'vegeta',line:'vegeta',n:T('Vegeta','Vegeta'),d:T('Parte col Colpo di Ki. Danno +20%.','Starts with Ki Blast. +20% damage.'),start:['ki'],spd:1,might:1.2,hp:95,regen:0,xpm:1,
   cfg:{skin:'#f0b48c',outfit:'#2a4fb8',legs:'#2a4fb8',belt:'#f1efe8',armor:'#f1efe8',shoulder:'#f2c230',hair:'#15121c',hs:'vegeta',boot:'#f1efe8',gloves:'#f4f1ea',bootTop:'#f2c230'}},
  {id:'piccolo',line:'namek',n:T('Piccolo','Piccolo'),d:T('Parte col Kaioken. Più salute e rigenera.','Starts with Kaioken. More HP, regenerates.'),start:['aura'],spd:.95,might:1.1,hp:125,regen:.6,xpm:1,
   cfg:{skin:'#79c24d',outfit:'#6a3d9a',legs:'#6a3d9a',belt:'#2a58c8',shoulder:'#f4f1ea',cape:'#f4f1ea',hair:'#79c24d',hs:'antenna',boot:'#5a3a8a',turban:'#f4f1ea',pointy:true}},
  {id:'krillin',line:'human',n:T('Crilin','Krillin'),d:T('Parte col Disco Distruttore. +20% esperienza.','Starts with Destructo Disc. +20% XP.'),start:['disc'],spd:1,might:1.3,hp:105,regen:0,xpm:1.2,
   cfg:{skin:'#f5c9a0',outfit:'#e8742c',legs:'#e8742c',belt:'#1f3f9a',hair:'#f5c9a0',hs:'bald',dots:true,boot:'#1f3f9a',emblem:1,wrist:'#1f3f9a'}},
- {id:'trunks',line:'saiyan',n:T('Trunks','Trunks'),d:T('Parte con la Spada. Danno +10%, veloce.','Starts with Sword. +10% damage, fast.'),start:['slash'],spd:1.05,might:1.1,hp:100,regen:0,xpm:1,
+ {id:'trunks',line:'saiyan2',n:T('Trunks','Trunks'),d:T('Parte con la Spada. Danno +10%, veloce.','Starts with Sword. +10% damage, fast.'),start:['slash'],spd:1.05,might:1.1,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 1','Clear Stage 1'),ul:r=>r.win,price:37000,
   cfg:{skin:'#f2b98a',outfit:'#2f58c8',legs:'#3a4a6a',belt:'#f2c230',under:'#f0f0f0',sleeve:'#2f58c8',hair:'#9a7ad8',hs:'trunks',sword:true,boot:'#6a4a2a'}},
  {id:'yamcha',line:'human',n:T('Yamcha','Yamcha'),d:T('Parte coi Colpi Eccentrici. Raccolta ampliata.','Starts with Homing Orbs. Wider pickup.'),start:['homing'],spd:1.05,might:1,hp:95,regen:0,xpm:1,mag:1.5,
@@ -143,13 +149,13 @@ const CHARS=[
  {id:'tien',line:'human',n:T('Tenshinhan','Tien'),d:T('Parte con Taiyoken e Colpo di Ki. Ricarica -5%.','Starts with Solar Flare and Ki Blast. -5% cooldown.'),start:['flare','ki'],spd:1,might:.97,hp:100,regen:0,xpm:1,cd:.95,
   lock:T('Sconfiggi 12 boss in totale','Defeat 12 bosses in total'),ul:r=>r.totBosses>=12,price:21000,
   cfg:{skin:'#cfd68f',outfit:'#2f8a4a',legs:'#2f8a4a',belt:'#e8742c',hair:'#cfd68f',hs:'bald',third:true,boot:'#e8742c'}},
- {id:'gohan',line:'saiyan',n:T('Gohan','Gohan'),d:T('Parte col Colpo di Ki. Danno +1,6% a ogni livello.','Starts with Ki Blast. +1.6% damage per level.'),start:['ki'],spd:1,might:1,hp:100,regen:0,xpm:1,lvMight:.016,
+ {id:'gohan',line:'saiyan2',n:T('Gohan','Gohan'),d:T('Parte col Colpo di Ki. Danno +1,6% a ogni livello.','Starts with Ki Blast. +1.6% damage per level.'),start:['ki'],spd:1,might:1,hp:100,regen:0,xpm:1,lvMight:.016,
   lock:T('Completa lo Stage 2','Clear Stage 2'),ul:r=>r.win&&r.pos>=1,price:24000,
   cfg:{skin:'#f2b98a',outfit:'#8a4ec2',legs:'#8a4ec2',belt:'#f4f1ea',under:'#e8742c',hair:'#15121c',hs:'goku',boot:'#f4f1ea',emblem:1,wrist:'#e8742c'}},
  {id:'muten',line:'human',n:T('Genio Tartaruga','Master Roshi'),d:T('Kamehameha originale. Ricarica -15%, +10% esperienza.','Original Kamehameha. -15% cooldown, +10% XP.'),start:['kame'],spd:.95,might:1,hp:90,regen:0,xpm:1.1,cd:.85,
   lock:T('Sconfiggi 20.000 nemici in totale','Defeat 20,000 enemies in total'),ul:r=>r.totKills>=20000,price:37000,
   cfg:{skin:'#f0c9a0',outfit:'#2fa8c8',legs:'#e8e0c8',belt:'#f4f1ea',hair:'#f4f1ea',hs:'bald',shades:true,beard:true,boot:'#8a5a2a'}},
- {id:'goten',line:'saiyan',n:T('Goten','Goten'),d:T('Parte coi Colpi Eccentrici. Piccolo e velocissimo.','Starts with Homing Orbs. Small and very fast.'),start:['homing'],spd:1.15,might:1,hp:95,regen:0,xpm:1,mag:1.3,u:1.45,
+ {id:'goten',line:'saiyan2',n:T('Goten','Goten'),d:T('Parte coi Colpi Eccentrici. Piccolo e velocissimo.','Starts with Homing Orbs. Small and very fast.'),start:['homing'],spd:1.15,might:1,hp:95,regen:0,xpm:1,mag:1.3,u:1.45,
   lock:T('Sconfiggi 4.000 nemici in una partita','Defeat 4,000 enemies in one run'),ul:r=>r.kills>=4000,price:24000,
   cfg:{skin:'#f2b98a',outfit:'#d83a3a',legs:'#d83a3a',belt:'#f2c230',under:'#2347a8',hair:'#15121c',hs:'goku',boot:'#f2c230'}},
  {id:'c18',line:'android',n:T('C-18','Android 18'),d:T('Parte col Colpo di Ki. Armatura +2 e rigenera.','Starts with Ki Blast. +2 armor, regenerates.'),start:['ki'],spd:1,might:1,hp:105,regen:.2,xpm:1,armor:2,
@@ -167,20 +173,20 @@ const CHARS=[
  {id:'bu',line:'bu',n:T('Majin Bu','Majin Buu'),d:T('Kaioken e Genkidama. Molta salute, lento, rigenera.','Kaioken and Spirit Bomb. Lots of HP, slow, regenerates.'),start:['aura','spirit'],spd:.85,might:.95,hp:165,regen:.8,xpm:1,
   lock:T('Sconfiggi 60.000 nemici in totale','Defeat 60,000 enemies in total'),ul:r=>r.totKills>=60000,price:78000,
   cfg:{skin:'#ff9ec7',outfit:'#f2f0e8',legs:'#f2f0e8',belt:'#222',hair:'#ff9ec7',hs:'antenna',wide:true,boot:'#222'}},
- {id:'gotenks',line:'saiyan',n:T('Gotenks','Gotenks'),d:T('Colpi Eccentrici e Raffica. Fragile ma velocissimo.','Homing Orbs and Barrage. Fragile but very fast.'),start:['homing','barrage'],spd:1.15,might:1.05,hp:80,regen:0,xpm:1,
+ {id:'gotenks',line:'saiyan2',n:T('Gotenks','Gotenks'),d:T('Colpi Eccentrici e Raffica. Fragile ma velocissimo.','Homing Orbs and Barrage. Fragile but very fast.'),start:['homing','barrage'],spd:1.15,might:1.05,hp:80,regen:0,xpm:1,
   lock:T('Completa lo Stage 4','Clear Stage 4'),ul:r=>r.win&&r.pos>=3,price:60000,
   cfg:{skin:'#f2b98a',outfit:'#3a5ad8',legs:'#e8742c',belt:'#f2c230',under:'#e8742c',sleeve:'#e8742c',hair:'#15121c',hs:'goku',boot:'#f2c230'}},
- {id:'vegito',line:'saiyan',n:T('Vegito','Vegito'),d:T('Colpo di Ki e Kamehameha. Fusione equilibrata.','Ki Blast and Kamehameha. Balanced fusion.'),start:['ki','kame'],spd:1.05,might:1,hp:95,regen:0,xpm:1,
+ {id:'vegito',line:'saiyan2',n:T('Vegito','Vegito'),d:T('Colpo di Ki e Kamehameha. Fusione equilibrata.','Ki Blast and Kamehameha. Balanced fusion.'),start:['ki','kame'],spd:1.05,might:1,hp:95,regen:0,xpm:1,
   lock:T('Completa lo Stage 5','Clear Stage 5'),ul:r=>r.win&&r.pos>=4,price:170000,
   cfg:{skin:'#f2b98a',outfit:'#2f58c8',legs:'#f1efe8',belt:'#f2c230',under:'#f1efe8',sleeve:'#2f58c8',hair:'#15121c',hs:'vegeta',boot:'#f2c230'}}
 ,
  {id:'satan',line:'human',n:T('Mr. Satan','Mr. Satan'),d:T('Calcio Dinamite. Più esperienza, ma fragile.','Dynamite Kick. More XP, but fragile.'),start:['dyn'],spd:.95,might:.95,hp:90,regen:0,xpm:1.25,
   lock:T('Sconfiggi 2.000 nemici in totale','Defeat 2,000 enemies in total'),ul:r=>r.totKills>=2000,price:8000,
   cfg:{skin:'#d8a888',outfit:'#f4f1ea',legs:'#3a5aa0',cape:'#d8402a',belt:'#d8a020',hair:'#2a1a14',hs:'afro',stache:'#2a1a14',boot:'#d8a020',gloves:'#d8302a'}},
- {id:'raditz',line:'saiyan',n:T('Raditz','Raditz'),d:T('Doppio Sunday. Danno +10%, raccolta ampia.','Double Sunday. +10% damage, wide pickup.'),start:['dsunday'],spd:1,might:1.1,hp:100,regen:0,xpm:1,mag:1.25,
+ {id:'raditz',line:'saiyan2',n:T('Raditz','Raditz'),d:T('Doppio Sunday. Danno +10%, raccolta ampia.','Double Sunday. +10% damage, wide pickup.'),start:['dsunday'],spd:1,might:1.1,hp:100,regen:0,xpm:1,mag:1.25,
   lock:T('Sconfiggi 5 boss in totale','Defeat 5 bosses in total'),ul:r=>r.totBosses>=5,price:27000,
   cfg:{skin:'#d9a27a',outfit:'#2a2a3a',legs:'#2a2a3a',armor:'#b88a3a',shoulder:'#d9c07a',hair:'#15121c',hs:'long',boot:'#d9c07a'}},
- {id:'nappa',line:'saiyan',n:T('Nappa','Nappa'),d:T('Cannone Distruttore. Molta salute, lento.','Break Cannon. Lots of HP, slow.'),start:['breaker'],spd:.9,might:1.15,hp:130,regen:.2,xpm:1,
+ {id:'nappa',line:'saiyan2',n:T('Nappa','Nappa'),d:T('Cannone Distruttore. Molta salute, lento.','Break Cannon. Lots of HP, slow.'),start:['breaker'],spd:.9,might:1.15,hp:130,regen:.2,xpm:1,
   lock:T('Completa lo Stage 1 in Difficile','Clear Stage 1 on Hard'),ul:r=>r.win&&r.sid===0&&(r.diff==='hard'||r.diff==='extreme'),price:36000,
   cfg:{skin:'#e0a67a',outfit:'#3a3a46',legs:'#3a3a46',armor:'#c97d2e',shoulder:'#c97d2e',hs:'bald',stache:'#3a2a1a',wide:true,boot:'#c97d2e'}},
  {id:'ginyu',line:'freezer',n:T('Capitan Ginyu','Captain Ginyu'),d:T('Boomerang Ginyu. +10% esperienza.','Ginyu Boomerang. +10% XP.'),start:['boomer'],spd:1,might:1.05,hp:105,regen:0,xpm:1.1,
@@ -189,7 +195,7 @@ const CHARS=[
  {id:'zarbon',line:'freezer',n:T('Zarbon','Zarbon'),d:T('Danza Elegante. Ricarica -5%, veloce.','Elegant Dance. -5% cooldown, fast.'),start:['spiral'],spd:1.1,might:1.05,hp:95,regen:0,xpm:1,cd:.95,
   lock:T('Sconfiggi 25 boss in totale','Defeat 25 bosses in total'),ul:r=>r.totBosses>=25,price:27000,
   cfg:{skin:'#a8e8c0',outfit:'#2a2a3a',legs:'#2a2a3a',armor:'#e8e0d0',shoulder:'#f2c230',hair:'#3ba35a',hs:'long',boot:'#f2c230'}},
- {id:'bardock',line:'saiyan',n:T('Bardock','Bardock'),d:T('Lancia Ribelle. Danno +15%, veloce.','Rebel Javelin. +15% damage, fast.'),start:['javelin'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
+ {id:'bardock',line:'saiyan2',n:T('Bardock','Bardock'),d:T('Lancia Ribelle. Danno +15%, veloce.','Rebel Javelin. +15% damage, fast.'),start:['javelin'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 7','Clear Stage 7'),ul:r=>r.win&&r.sid===6,price:38000,
   cfg:{skin:'#e8b890',outfit:'#3a3a46',legs:'#3a3a46',armor:'#c97d2e',shoulder:'#c97d2e',belt:'#c97d2e',hair:'#15121c',hs:'goku',band:'#d8302a',boot:'#c97d2e',wrist:'#c8302a'}},
  {id:'c17',line:'android',n:T('C-17','Android 17'),d:T('Disco Distruttore. Armatura +1, rigenera.','Destructo Disc. +1 armor, regenerates.'),start:['disc'],spd:1.05,might:1,hp:105,regen:.3,xpm:1,armor:1,
@@ -207,7 +213,7 @@ const CHARS=[
  {id:'hit',line:'pride',n:T('Hit','Hit'),d:T('Salto Temporale. Veloce, ricarica -10%.','Time Skip. Fast, -10% cooldown.'),start:['chrono'],spd:1.15,might:1.1,hp:90,regen:0,xpm:1,cd:.9,
   lock:T('Completa lo Stage 5 in Difficile','Clear Stage 5 on Hard'),ul:r=>r.win&&r.sid===4&&(r.diff==='hard'||r.diff==='extreme'),price:160000,
   cfg:{skin:'#d8c0b0',outfit:'#3a3a5a',legs:'#3a3a5a',belt:'#e8e0d0',under:'#2a2a46',hair:'#2a2a3a',hs:'trunks',eye:'#8aa0ff',cape:'#2a2a46',boot:'#2a2a3a'}},
- {id:'kefla',line:'saiyan',n:T('Kefla','Kefla'),d:T('Meteora di Fusione. Danno +15%.','Fusion Meteor. +15% damage.'),start:['meteor'],spd:1.1,might:1.15,hp:100,regen:0,xpm:1,
+ {id:'kefla',line:'saiyan2',n:T('Kefla','Kefla'),d:T('Meteora di Fusione. Danno +15%.','Fusion Meteor. +15% damage.'),start:['meteor'],spd:1.1,might:1.15,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 8 in Difficile','Clear Stage 8 on Hard'),ul:r=>r.win&&r.sid===7&&(r.diff==='hard'||r.diff==='extreme'),price:92000,
   cfg:{skin:'#f2b98a',outfit:'#3ba35a',legs:'#e8742c',under:'#f2c230',sleeve:'#f2c230',belt:'#f2c230',hair:'#15121c',hs:'long',boot:'#f2c230',wrist:'#3ba35a'}},
  {id:'beerus',line:'god',n:T('Beerus','Beerus'),d:T('Kaioken e Sfera della Distruzione. Ricarica -8%.','Kaioken and Sphere of Destruction. -8% cooldown.'),start:['aura','hakai'],spd:1,might:1.1,hp:100,regen:0,xpm:1,cd:.92,
@@ -219,7 +225,7 @@ const CHARS=[
  {id:'whis',line:'god',n:T('Whis','Whis'),d:T('Fulmine Angelico. Velocissimo, +15% esperienza, fragile.','Angelic Bolt. Very fast, +15% XP, fragile.'),start:['chain'],spd:1.2,might:1,hp:85,regen:0,xpm:1.15,cd:.88,
   lock:T('Sconfiggi 150 boss in totale','Defeat 150 bosses in total'),ul:r=>r.totBosses>=150,price:300000,
   cfg:{skin:'#8ad0e0',outfit:'#6a3aa0',legs:'#6a3aa0',armor:'#f4f1ea',shoulder:'#f4f1ea',belt:'#f4f1ea',hair:'#e8e8f4',hs:'trunks',eye:'#7a3aa0',staff:true,boot:'#f4f1ea'}},
- {id:'gogeta',line:'saiyan',n:T('Gogeta','Gogeta'),d:T('Big Bang Kamehameha e Colpo di Ki. Danno +20%.','Big Bang Kamehameha and Ki Blast. +20% damage.'),start:['sweep','ki'],spd:1.05,might:1.2,hp:100,regen:0,xpm:1,
+ {id:'gogeta',line:'saiyan2',n:T('Gogeta','Gogeta'),d:T('Big Bang Kamehameha e Colpo di Ki. Danno +20%.','Big Bang Kamehameha and Ki Blast. +20% damage.'),start:['sweep','ki'],spd:1.05,might:1.2,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 11 in Difficile','Clear Stage 11 on Hard'),ul:r=>r.win&&r.sid===10&&(r.diff==='hard'||r.diff==='extreme'),price:260000,
   cfg:{skin:'#f2b98a',outfit:'#142a88',legs:'#f1efe8',belt:'#e8742c',under:'#f1efe8',sleeve:'#142a88',hair:'#15121c',hs:'vegeta',boot:'#f2c230',wrist:'#e8742c'}},
  {id:'dyspo',line:'pride',n:T('Dyspo','Dyspo'),d:T('Calcio Dinamite. Velocissimo, ricarica -10%, fragile.','Dynamite Kick. Super fast, -10% cooldown, fragile.'),start:['dyn'],spd:1.28,might:1,hp:80,regen:0,xpm:1,cd:.9,
@@ -256,7 +262,7 @@ const CHARS=[
  {id:'yajirobe',line:'human',n:T('Yajirobe','Yajirobe'),d:T('Spada. Molta salute, lento. Parte con un fagiolo Senzu in borsa.','Sword. Lots of HP, slow. Starts with a Senzu Bean in the bag.'),start:['slash'],spd:.9,might:1.15,hp:130,regen:.3,xpm:1,senzu:1,
   lock:T('Sconfiggi 5.000 nemici in totale','Defeat 5,000 enemies in total'),ul:r=>r.totKills>=5000,price:21000,
   cfg:{skin:'#f2c090',outfit:'#c8a040',legs:'#4a3a2a',belt:'#8a5a2a',armor:'#8a94a4',hs:'bald',sword:true,band:'#e8e0c0',boot:'#4a3a2a',wide:true}},
- {id:'saiyaman',line:'saiyan',n:T('Great Saiyaman','Great Saiyaman'),d:T('Raffica di Ki. Danno +15%. Un eroe in posa.','Ki Barrage. +15% damage. A hero striking a pose.'),start:['barrage'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
+ {id:'saiyaman',line:'saiyan2',n:T('Great Saiyaman','Great Saiyaman'),d:T('Raffica di Ki. Danno +15%. Un eroe in posa.','Ki Barrage. +15% damage. A hero striking a pose.'),start:['barrage'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 3','Clear Stage 3'),ul:r=>r.win&&r.sid===2,price:28000,
   cfg:{skin:'#f2b98a',outfit:'#3a8a4a',legs:'#3a8a4a',belt:'#f2c230',cape:'#c8302a',gloves:'#c8302a',hs:'bald',turban:'#e8e8f0',shades:true,boot:'#c8302a',wrist:'#f2c230',shoulder:'#f2c230'}},
  {id:'chaozu',line:'chaozu',n:T('Chiaotzu','Chiaotzu'),d:T('Raggio Perforante. Piccolo e veloce, raccolta ampliata, fragile.','Piercing Beam. Small and fast, wider pickup, fragile.'),start:['dbeam'],spd:1.08,might:.95,hp:85,regen:0,xpm:1.1,mag:1.3,u:1.7,
@@ -475,7 +481,7 @@ const STAGES=[
   roster:[['dem',0,8,200],['imp',0,6,240],['wolf2',30,4],['damned',50,5],['hellbomb',90,3],['gho',110,5],['mag',150,3],['ass',140,5],['firebird',190,3],['flamegiant',260,2.4],['executioner',330,1.8]],
   bosses:[['dabura',240],['hfz1',450],['hcell1',680],['omega',900,1]]},
  {id:11,n:T('Via del Serpente','Snake Way'),theme:'snake',time:900,hp:1.1,spawn:1,xp:1.4,zenny:1.4,music:11,capT:[30,40,48,48,38,16],ringT:[8,10,12,12,9,4],
-  roster:[['swsoul',0,10,300],['swsnakelet',0,6,300],['swoni',20,6,300],['swghost',150,5,450],['swbomb',150,3,450],['swspit',170,4,450],['swguard',150,6,450],['swknight',300,6,600],['swbat',300,5,600],['swhound',300,5,600],['swcaster',320,4,600],['swwarrior',450,6,750],['swbomb2',450,3,750],['swmage',470,4,750],['swbrute',600,6,750],['swlancer',600,5,750],['swreaper',620,4,750],['mbgozu',750,6],['mbmezu',750,6],['mbwraith',750,4],['mbbomb',750,3],['mbsnake',750,5],['mbking',750,4]],
+  roster:[['swsoul',0,10,300],['swsnakelet',0,6,300],['swoni',20,6,300],['swghost',150,5,450],['swbomb',150,3,450],['swspit',170,2,450],['swguard',150,6,450],['swknight',300,6,600],['swbat',300,5,600],['swhound',300,5,600],['swcaster',320,2,600],['swwarrior',450,6,750],['swbomb2',450,3,750],['swmage',470,2,750],['swbrute',600,6,750],['swlancer',600,5,750],['swreaper',620,4,750],['mbgozu',750,6],['mbmezu',750,6],['mbwraith',750,2],['mbbomb',750,3],['mbsnake',750,5],['mbking',750,4]],
   bosses:[['janembaf',900,1]]}
 ];
 
@@ -490,6 +496,7 @@ STAGE_ORDER.forEach((si,p)=>{const st=STAGES[si];st.pos=p;st.no=p+1;st.dif=STAGE
 /* ---------- Trinkets ---------- */
 /* Zeno-sama's market value of a trinket by rarity: its price in his shop (before the stage factor), the zenny a duplicate gives back and the base of the sale value */
 const ZENO_PRICE=[80,180,400,800,1600];
+const ZMUL=.8;   /* every zenny a run earns (coins, bags, bosses, elites, chests, the end-of-run payout) is 20% less than before */
 const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0ff'},{n:T('Epico','Epic'),c:'#c05aff'},{n:T('Leggendario','Legendary'),c:'#ffb020'},{n:T('Mitico','Mythic'),c:'#ff3b8a'}];
 const TRINKETS=[
  {id:'scouter',r:0,k:'眼',n:T('Scouter Rotto','Broken Scouter'),d:T('+8% probabilità di critico.','+8% crit chance.'),m:{crit:.08}},
@@ -687,7 +694,9 @@ const SHOP=[
  {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-3% ricarica per livello.','-3% cooldown per level.'),max:6,base:150,g:1.5},
  {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+7% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+7% luck per level: better chest rewards, loot and trinkets.'),max:6,base:140,g:1.5},
  {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+3% probabilità di critico per livello.','+3% crit chance per level.'),max:6,base:150,g:1.5},
- {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2400,g:3.2}
+ {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2400,g:3.2},
+ {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme (massimo 2 acquisti).','+1 trinket slot: carry up to 3 trinkets at once (2 purchases max).'),max:2,base:3000,g:3},
+ {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:350,g:1.4}
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
 const shopCost=(it,lv)=>Math.round(it.base*Math.pow(it.g,lv));
@@ -727,14 +736,14 @@ const ACHIEVEMENTS=[
  A('l50','Leggenda','Legend','Raggiungi il livello 50.','Reach level 50.',500,s=>s.run.lvl>=50,PG(s=>s.rec.lvl,50)),
  A('l70','Oltre ogni limite','Beyond Limits','Raggiungi il livello 70.','Reach level 70.',800,s=>s.run.lvl>=70,PG(s=>s.rec.lvl,70)),
  /* transformations */
- A('f1','Il fuoco dentro','Inner Fire','Attiva il Kaioken.','Activate Kaioken.',80,s=>s.run.form>=1,PG(s=>s.rec.form,1)),
+ A('f1','Il fuoco dentro','Inner Fire','Raggiungi la prima trasformazione.','Reach the first transformation.',80,s=>s.run.form>=1,PG(s=>s.rec.form,1)),
  A('f2','Capelli d\'oro','Golden Hair','Raggiungi la seconda trasformazione.','Reach the second transformation.',150,s=>s.run.form>=2,PG(s=>s.rec.form,2)),
  A('f3','Fulmini nell\'aria','Lightning in the Air','Raggiungi la terza trasformazione.','Reach the third transformation.',200,s=>s.run.form>=3,PG(s=>s.rec.form,3)),
  A('f4','Potere crescente','Rising Power','Raggiungi la quarta trasformazione.','Reach the fourth transformation.',300,s=>s.run.form>=4,PG(s=>s.rec.form,4)),
  A('f5','Potere divino','Divine Power','Raggiungi la quinta trasformazione.','Reach the fifth transformation.',500,s=>s.run.form>=5,PG(s=>s.rec.form,5)),
  A('f6','Oltre il divino','Beyond Divine','Raggiungi la sesta trasformazione.','Reach the sixth transformation.',800,s=>s.run.form>=6,PG(s=>s.rec.form,6)),
- A('f7','Segno dell\'Istinto','Sign of Instinct','Raggiungi l\'Ultra Istinto (segno).','Reach Ultra Instinct (Sign).',1500,s=>s.run.form>=7,PG(s=>s.rec.form,7)),
- A('f8','Perfetto','Perfected','Raggiungi l\'Ultra Istinto Completo.','Reach Mastered Ultra Instinct.',3000,s=>s.run.form>=8,PG(s=>s.rec.form,8)),
+ A('f7','Segno dell\'Istinto','Sign of Instinct','Raggiungi l\'Ultra Istinto (segno) con Goku.','Reach Ultra Instinct (Sign) with Goku.',1500,s=>s.run.ui>=7,PG(s=>s.rec.ui,7)),
+ A('f8','Perfetto','Perfected','Raggiungi l\'Ultra Istinto Completo con Goku.','Reach Mastered Ultra Instinct with Goku.',3000,s=>s.run.ui>=8,PG(s=>s.rec.ui,8)),
  A('k20','Oltre il limite','Past the Limit','Attiva il Kaioken ×20.','Activate Kaioken ×20.',150,s=>s.run.k20>=1,PG(s=>s.rec.k20,1)),
  /* kill streak (kills in a row, each within 4 s of the previous one) */
  A('ks50','Serie infuocata','On Fire','Fai una serie di 50 uccisioni consecutive.','Chain 50 kills in a row.',100,s=>s.run.streak>=50,PG(s=>s.rec.streak,50)),
@@ -789,9 +798,9 @@ const ACHIEVEMENTS=[
   ACHIEVEMENTS.splice(at,0,...arr);
 }
 
-/* weapons are unlocked by clearing stages with a character that starts with them (second evolution: clear all stages with the weapon) */
+/* weapons are unlocked by winning a stage with a character that starts with them (second evolution: clear all stages with the weapon) */
 for(const id of Object.keys(WEAPONS)){
-  if(id!=='ki')ACHIEVEMENTS.push(A('wu_'+id,'Maestro: '+WEAPONS[id].n.it,'Master: '+WEAPONS[id].n.en,WEAPONS[id].lv50?'Raggiungi il livello 50 con un personaggio che parte con quest\'arma.':'Completa uno stage (Normale+) con un personaggio che parte con quest\'arma.',WEAPONS[id].lv50?'Reach level 50 with a character that starts with this weapon.':'Clear a stage (Normal+) with a character that starts with this weapon.',250,s=>!!s.wu[id],PG(s=>s.wu[id]?1:0,1)));
+  if(id!=='ki')ACHIEVEMENTS.push(A('wu_'+id,'Maestro: '+WEAPONS[id].n.it,'Master: '+WEAPONS[id].n.en,'Vinci uno stage con un personaggio che parte con quest\'arma.','Win a stage with a character that starts with this weapon.',250,s=>!!s.wu[id],PG(s=>s.wu[id]?1:0,1)));
   ACHIEVEMENTS.push(A('we_'+id,'Seconda evoluzione: '+WEAPONS[id].n.it,'Second evolution: '+WEAPONS[id].n.en,'Completa tutti gli stage (Normale+) con quest\'arma nell\'equipaggiamento.','Clear every stage (Normal+) with this weapon in your build.',500,s=>!!s.we[id],PG(s=>s.we[id]?STAGES.length:(s.wc[id]||[]).length,STAGES.length)));
 }
 

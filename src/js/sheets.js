@@ -89,7 +89,7 @@ Sprites.drawBeam=function(ctx,len,wid,color,k,t){
   const sg=Sprites.beamSeg();if(!sg)return false;const im=Sprites.beamTint(color);if(!im)return false;
   const pul=(.94+.06*Math.sin(t*38)),kk=(.35+.65*k)*pul;
   const sc=Math.max(.4,wid*.034),hh=sg.h*sc*kk,mw=sg.a*sc,hw=(sg.w-sg.hd)*sc,bl=Math.max(2,len-mw*.55-hw);
-  const bh=Math.max(6,wid*.42*kk);                                              /* body is thin in the art: thickened to match the beam's hit width */
+  const bh=Math.max(6,wid*.62*kk);                                              /* body is thin in the art: thickened to match the beam's hit width */
   ctx.save();ctx.imageSmoothingEnabled=false;
   ctx.drawImage(im,sg.a,sg.by,sg.hd-sg.a,sg.bh,mw*.45,-bh/2,bl+2,bh);               /* body, stretched */
   ctx.drawImage(im,0,0,sg.a,sg.h,-mw*.55,-hh/2,mw,hh);                          /* muzzle burst */

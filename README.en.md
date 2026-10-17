@@ -47,18 +47,45 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 17, 2026 update (living maps, calmer pace, new choices)
+
+The full list with before/after numbers is in the game's own **patch notes** (📜 on the menu: release `2026-10-17`, `src/js/patches.js`).
+
+**🗺️ A different, animated map every run**
+- **Random maps** (`MAP.roll()` in `world.js`, called by `Game`): every run rolls a seed that moves obstacles, lakes, ground tones, decorations, traps, healing pools and, on Snake Way, the winding of the body and its islands. The start area (250 px) is always clear and dry. `window.__MAPSEED = 0` restores the classic map, a fixed number replays that layout (handy in tests). Test: `map_random`.
+- **Sea, lakes and lava** (`src/js/sea.js`): the water level is a noise field baked in 64×64 «pixel» chunks of 4 px, 8 phases (foam creeping in and out, wave crests, glints), with one palette each for Roshi's Island, Saiyan Plains, Planet Namek and **lava** (Hell). Leaping fish and lava bubbles that burst into sparks. Scenery only: `Sea.wet(theme,x,y)` keeps obstacles, decorations, traps and healing pools out of the water and the wet shore.
+- **Roshi's Island** redesigned from a reference picture: rippled sand, wet shoreline, foam, rocks, crates, barrels, gravestones, agaves, palms, burrows, shells, starfish. New props are painted in `src/js/mapart.js` (`MA`), themed obstacles for every map live in `OBSTACLES` (`world.js`), new ambient particles in `ambient.js`.
+- **Living props** (`src/js/objlife.js`, `ObjLife.draw`): spiders crawling along the rim of barrels and crates or hanging from a thread, gulls and crows, crabs, candles with moths, cats, flies, crystals, lanterns, lava rocks spitting embers. Visual only, off when ambient effects are off.
+- **Snake Way** (`snake_art.js`, `Snake` in `world.js`, `MapDirector.islands`): body 22,000 px per side (it was 12,000), 9 kinds of walkable **floating islands** with 3 power-ups each (once only, name announced), birds, mist and the Flying Nimbus. Tests: `snake_isles`, `snake_way`.
+
+**🧯 Less chaos, more readability**
+- **Density** (`SPAWN_K = 0.85`, `CAP_K = 0.78`): end-of-stage spawn rate 8.5× (it was 12×), enemy cap ×0.78; Easy 0.7 (it was 0.8). Sparser events (hordes, packs, Kamikaze and Gunner Waves, ground pickups, «Something appeared» events), ×1.5 in x2 mode (`evK`); the 15 s surge brings more enemies (rate ×2.6, cap ×1.5, every 110-160 s of calm, the first at 150-190 s). The pile of coins on the ground is gone. Enemies that leave the screen reappear in front of you (on the side you are heading to).
+- **Enemy fire budget** (`SHOT_*`, `EB_CAP`, `Game.shotOK/shotRefill/shotN/shotCdK`): volleys ×0.67, wait ×1.8 (×2.6 on Snake Way), a **shared pool of shots** (12, refills 6/s; Snake Way 8 and 3.4/s), at most 90 enemy bullets (it was 230). Skill bullets cost half a shot. Boss bullets are not budgeted.
+- **Weapons destroy enemy bullets** (`cutOne/cutC/cutBeam/cutArc`): beams, explosions, areas, slashes and projectiles.
+- **Difficulty**: every 90 s new enemies grow by HP +1% / damage +1% (Normal; it was +10% / +2%) and +2% / +1% / armor +5% (Extreme; it was +15% / +5% / +15%). The Giant Caveman's area strike (Roshi's Island) charges 0.5 s longer.
+
+**⚖️ Weapons, economy, unlocks**
+- Evolved Ki Blast −50% damage (`KI_EVO_DMG`). Kamehameha: beam duration 0.95 → 0.64 s over levels 1-5 (it was 0.6 s), evolutions 0.80 → 0.68 s and 0.78 → 0.62 s; width ×1.2 / ×2.6 / ×3.1 (it was ×1 / ×1.8 / ×2.1); the base beam is sky blue with a dense blue glow (`KAME_*`).
+- **Zenny −20% everywhere** (`ZMUL = 0.8`): coins 4-32, bag 20-1040, Elite 20, boss 48, first-clear bonus 160 per stage, Wish 240, Gacha duplicates 64 / 144 / 320 / 640 / 1280, sold trinkets. The Gacha pulls up to **100 at a time** (×1/×10/×100).
+- Shop: **Extra Trinket** (up to 3 trinkets, 3,000 and 9,000 zenny) and **Weapon Blacklist** (up to 10 bans, from 350 zenny ×1.4). Weapons unlock by winning a stage with an owner. Setting **«Refuse lower-rarity trinkets»**.
+- Transformations: **Kaioken and Ultra Instinct for Goku only**; the other Saiyans get «Saiyan Fury»; **Vegeta** starts at «Saiyan Pride» and ends with **Ultra Ego**; King Kai uses Gravity x10/x100 and Heavenly Master (`SSJ_FORMS`, lines `vegeta` and `saiyan2` in `data.js`).
+
+**🖥️ Interface**
+- **End of stage** redesigned (compact title with two Dragon Balls, summary and rewards on the left, per-weapon damage with icon and level on the right); unlocked characters as a 5 s notification; **Endless** as a button next to Retry/Menu, locked until the stage is cleared on Extreme. Keys **1-9/0** and **Space** in every choice window. Experience orb with an animation and a sound that climbs in pitch. New animated ground power-up sprites (+22%). Patch notes with title, summary and groups.
+- **🧪 Added tests:** `map_random`, `snake_isles` (islands, fire budget, cut bullets); screenshots: `shot_map`, `shot_props`, `shot_life`, `shot_loot`, `shot_patch`.
+
 ### 🆕 October 2026 update (v35 → v40)
 
 **🎰 Gacha, Trinket bag and Super Dragon Balls (latest additions)**
 - **Gacha** (button on the main menu, `src/js/gacha.js` + `src/js/ui_gacha.js`): the **tickets** you find in runs are spent to pull **trinkets**. Three kinds: **1× Ticket** (1 pull), **10× Ticket** (10) and **10× Lucky Ticket** (10 with better odds). A pull rolls the **rarity** first and then one of the trinkets of that rarity (adding trinkets never makes Mythics rarer).
 
-| Rarity | Normal tickets | 10× Lucky Ticket | Market value (duplicate) | Sale in a run (stage 1) |
+| Rarity | Normal tickets | 10× Lucky Ticket | Duplicate (80% of Zeno-sama value) | Sale in a run (stage 1) |
 |---|---|---|---|---|
-| Common | 72% | 45% | 80 | 80 + 20 = 100 |
-| Rare | 20% | 32% | 180 | 180 + 50 = 230 |
-| Epic | 6% | 15% | 400 | 400 + 150 = 550 |
-| Legendary | 1.5% | 6% | 800 | 800 + 400 = 1200 |
-| Mythic | 0.5% | 2% | 1600 | 1600 + 1000 = 2600 |
+| Common | 72% | 45% | 64 | (80 + 20) × 0.8 = 80 |
+| Rare | 20% | 32% | 144 | (180 + 50) × 0.8 = 184 |
+| Epic | 6% | 15% | 320 | (400 + 150) × 0.8 = 440 |
+| Legendary | 1.5% | 6% | 640 | (800 + 400) × 0.8 = 960 |
+| Mythic | 0.5% | 2% | 1280 | (1600 + 1000) × 0.8 = 2080 |
 
 - **Animated pull**: a column of Dragon Balls spins and stops on the ball of the rarity (1, 2, 3, 5 or 7 stars: more stars, more sparks and higher sounds). **Legendary**: golden lettering. **Mythic**: flash, rays, a shaking screen, "MYTHIC!" lettering and a **jackpot sound** (`gMythic` in `audio.js`). With 10 pulls the trinkets show up one after the other with a pop-in and a sound; "Skip" shows everything at once. Each card is marked **NEW** or **DUPLICATE** (a duplicate pays Zeno-sama's market value in zenny).
 - **Trinket bag** (from the Gacha and from the character screen): every trinket you obtained, with a rarity filter, **search by name or effect**, and sorting by date obtained (newest/oldest), rarity or name. One entry per trinket + rarity pair.
@@ -86,7 +113,7 @@ All keys can be rebound in **Settings → Controls**.
 **🌊 Waves, elites, guaranteed ball and reduced effects**
 - **Wave rhythm** (`updateWave` in `src/js/game.js`): calm → **15 s surge** (spawn ×1.75, cap ×1.2, red banner) → **12 s breather** (spawn ×0.3, blue banner, a **shower of 10-16 gems** around the player worth about 9% of a level, and the gems dropped by enemies are worth **+50%**) → calm again for 38-52 s (× the square root of the run length). A surge **never starts** during a boss fight, within 22 s of a horde, during kamikaze or gunner waves, within 25 s of a boss or in the last moments; a boss arriving mid-surge ends it at once. Constants at the top of `game.js` (`WAVE_SURGE`, `WAVE_REST`, `WAVE_RATE`, `REST_RATE`, `REST_GEM`...).
 - **Elite enemies** (`planElites`/`spawnElite`/`eliteDown`): 2 to 6 per run (one every ~210 s), placed between the bosses and never within 28 s of one; each is stronger than the last. They are a big (×1.35), golden version with a health bar of the toughest enemy in the roster (×9 HP, +45% damage, armor, almost immune to knockback, ×6 experience). They show as a **golden star on the progress bar**; they never arrive during a surge or a boss. When defeated they **always drop a chest** (an upgrade or evolution **plus a guaranteed trinket**, not the boss-style pick), coins and gems.
-- **Zenny bag** (`bagValue`, `MapDirector.spawnLootPoint`): the pile of coins that now and then appears on the map is a **bag** (~45% of the map loot, about one every 2 minutes) with its value written above it. Value = `1000 × t / 1800`, rounded to 5 (min 25, max 1300): 25 at the start, ~335 at minute 10, 500 at 15, **1000 at 30**. It lasts 90 s, has an off-screen arrow and is pulled in by the magnet. It adds its *base* value to the run total: zenny bonuses (Greed, Totem of Wealth, Jackpot…) are applied to everything at the end of the run.
+- **Zenny bag** (`bagValue`, `MapDirector.spawnLootPoint`): the pile of coins that now and then appears on the map is a **bag** (~36% of the map loot, about one every 3 minutes) with its value written above it. Value = `0.8 × 1000 × t / 1800`, rounded to 5 (min 20, max 1040): 20 at the start, ~265 at minute 10, 400 at 15, **800 at 30** (before the −20% on zenny: 25-1300, 1000 at 30). It lasts 90 s, has an off-screen arrow and is pulled in by the magnet. It adds its *base* value to the run total: zenny bonuses (Greed, Totem of Wealth, Jackpot…) are applied to everything at the end of the run.
 - **Coin value** (`coinValue`): every loose coin (enemies, map loot, Bubbles) is worth `5 + 35 × t / 1800` zenny, **from 5 to 40 at minute 30 and never more** (the cap prevents farming with lots of enemies). Jackpot and the coin Cache keep their own scale.
 - **Shop:** "Refund all" gives back **100%** of the zenny spent (no percentage on the button).
 - **Guaranteed Dragon Ball** (`updateBallPlan`): every `clamp(run length×0.28, 100, 270)` seconds (the first after 75% of the interval) one lands 280-420 px from the player, **never two at once, never during a boss fight, never in the last minute**; it stays 150 s and the screen-edge arrow points to it. The random drop from enemies (0.07%) stays.
@@ -144,7 +171,7 @@ All keys can be rebound in **Settings → Controls**.
 - **Luck** drives the items' rarity (up to legendary); **1% of items are Mythic**.
 
 **🍀 Trinkets: one at a time, with rarities and Mythic**
-- You carry **a single trinket**; finding another one (chest, capsule, wish, Zeno) opens a **comparison window** with a replacement warning.
+- You carry **one trinket** (up to **3** with the shop upgrade «Extra Trinket», 2 purchases); with every slot taken, finding another one (chest, capsule, wish, Zeno) opens a **comparison window** that shows everything you carry and asks which to replace (or to keep them all). The **«Refuse lower-rarity trinkets»** setting sells anything below all of yours on the spot.
 - Every trinket can have a **Common → Mythic** rarity: stats grow with rarity and are capped per rarity (e.g. damage: legendary max 15%, mythic max 20%); texts update automatically. Lower tiers were scaled down accordingly. Any trinket found has a 1% chance to be Mythic.
 - *Collector* achievement is now "Find 6 trinkets in one run".
 
@@ -381,7 +408,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 - Carry **up to 5 weapons** and **5 different passives**, each **up to level 5** (weapons then evolve and get another 5 levels per evolution).
 - **23 weapons**: Ki Blast, Kamehameha, Destructo Disc, Spirit Bomb, Kaioken (aura), Solar Flare, Sword, Homing Orbs, Piercing Beam, Rebel Javelin, Double Sunday, Break Cannon, Elegant Dance, Ginyu Boomerang, Hellzone Grenade, Time Skip, Power Impact, Sphere of Destruction, Angelic Bolt, Fusion Meteor, Big Bang Kamehameha, Dynamite Kick, Ki Barrage.
 - **Evolutions**: a maxed weapon can evolve (via chest). Each evolution needs **a maxed weapon + a specific upgrade** (see the Grimoire). A **second evolution** per weapon unlocks by **clearing every stage (Normal+) with that weapon in your build**.
-- Weapons **unlock** into the level-up pool by clearing a stage or reaching level 50 with a character that starts with it.
+- Weapons **unlock** into the level-up pool simply by **winning a stage** with a character that starts with that weapon (a second character with the same weapon unlocks nothing new). With the shop upgrade «Weapon Blacklist» (up to 10) you can **ban** weapons: they no longer show up as new weapons among the upgrades.
 - **Passives**: Zenkai (+15% damage), Vigor (+20 HP), Swift Flight (+8% speed), Scouter (pickup), Gravity Chamber (−8% cooldown), Battle Armor, Senzu Beans (regen), Meditation (+12% XP).
 
 ### Experience, levels and transformations
@@ -392,7 +419,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 
 ### Items, run structure and map
 - **Chests** (one per boss, plus a supply chest every 5 minutes) with rewards and trinkets.
-- **Ground pickups**: coins (5-40 zenny depending on the moment), zenny bag, heart, magnet, temporary damage/speed buffs, XP, luck, capsules.
+- **Ground pickups**: coins (4-32 zenny depending on the moment), zenny bag, heart, magnet, temporary damage/speed buffs, XP, luck, capsules.
 - **Dragon Balls**: collect 7 to make a wish (second life, power, fortune).
 - **Map events**: Altar of Power (temporary buff), Healing Spring, Sacrifice Altar (weapon +1 for half your HP), Experience Font, Coin Cache, Totem, Room of Spirit and Time.
 - **20 trinkets** across 4 rarities: Broken Scouter, Senzu Pouch, Training Headband, Gravity Boots, Dragon Radar, Potara Earring, Namekian Cape, Power Pole, Speedy Cloud, Hoi-Poi Capsule, Kaioh's Heart, Angel Halo, Spirit Room Clock, Four-Star Ball, Divine Crystal, Royal Saiyan Armor, Ring of Time, Kaioh Mirror, Dragon Heart, Saiyan Fury.
@@ -472,6 +499,7 @@ build.py              bundler: merges src/ into a single HTML
 src/index.html        page
 src/css/style.css     styles
 src/js/               data, i18n, weapons, world, save, game logic, sprites (+ sprites_hd: HD pipeline for enemies/bosses), audio, input, renderer, UI, app
+                      (map look & life: mapart = themed props and ground decor, sea = animated lakes/sea/lava, objlife = critters on props, snake_art = Snake Way islands)
 tests/                simulations and puppeteer tests
 docs/screens/         screenshots used in this README
 ```
@@ -480,6 +508,9 @@ docs/screens/         screenshots used in this README
 
 ```bash
 node tests/check_i18n.js      # translations in all languages
+node tests/map_random.js      # random maps: seeds, clear start area, Snake Way over 25 seeds (puppeteer)
+node tests/snake_isles.js     # Snake Way islands, enemy fire budget, cut bullets (puppeteer)
+node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
 node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Super Balls (puppeteer)
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk

@@ -1,7 +1,7 @@
 // Headless balance simulator: node tests/sim.js <stage 1-5> <diff> <N> <charIds|all> [dt]
 const fs=require('fs'),path=require('path');
 const SRC=path.join(__dirname,'..','src','js');
-let code='';for(const f of ['util','data','weapons','weapons2','world','save','gacha','game'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
+let code='const Sea={has:()=>false,wet:()=>-9,cache:new Map()};\n';for(const f of ['util','data','weapons','weapons2','mapart','world','save','gacha','game'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
 code+='\nglobalThis.__X={LINES,ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon};';
 (0,eval)(code);
 const X=globalThis.__X;

@@ -21,12 +21,12 @@ const pl=await pg.evaluate(()=>{const A=__app,d=A.save.d,P=A.progress;d.settings
   const after={...d.tickets};
   /* a forced duplicate pays the market value of Zeno-sama */
   d.bag=d.bag.filter(b=>!(b.id==='scouter'&&b.r===2));const keep=window.gachaRoll;d.tickets.t1=3;window.gachaRoll=()=>({id:'scouter',r:2});const a=P.gachaPull('t1')[0],z0=d.zenny,c=P.gachaPull('t1')[0];window.gachaRoll=keep;
-  return{noTicket,n1:r1.length,n10:r10.length,nl:rl.length,after,bag:d.bag.length,firstDup:a.dup,secDup:c.dup,coins:c.coins,paid:d.zenny-z0,price:ZENO_PRICE[2],stat:d.stats.zenny>=ZENO_PRICE[2],pulls:d.gacha.pulls,
+  return{noTicket,n1:r1.length,n10:r10.length,nl:rl.length,after,bag:d.bag.length,firstDup:a.dup,secDup:c.dup,coins:c.coins,paid:d.zenny-z0,price:dupPayout(2),stat:d.stats.zenny>=dupPayout(2),pulls:d.gacha.pulls,
     uniq:new Set(d.bag.map(b=>b.id+'@'+b.r)).size===d.bag.length,sorted:r10.every((x,i)=>!i||x.at>r10[i-1].at)};});
 ok(pl.noTicket===null,'no ticket, no pull');
 ok(pl.n1===1&&pl.n10===10&&pl.nl===10&&pl.after.t1===0&&pl.after.t10===0&&pl.after.l10===0,'1x/10x/10x lucky tickets give 1/10/10 pulls and are spent');
 ok(pl.uniq&&pl.bag>=1&&pl.bag<=21+1,'the bag keeps one entry per trinket and rarity ('+pl.bag+')');
-ok(!pl.firstDup&&pl.secDup&&pl.coins===pl.price&&pl.paid===pl.price,'a duplicate gives the Zeno-sama market value ('+pl.paid+' = '+pl.price+') and is flagged');
+ok(!pl.firstDup&&pl.secDup&&pl.coins===pl.price&&pl.paid===pl.price,'a duplicate pays 80% of the Zeno-sama market value ('+pl.paid+' = '+pl.price+') and is flagged');
 ok(pl.pulls===1+10+10+2,'pull counter ('+pl.pulls+')');
 /* ---------- save repair ---------- */
 const sv=await pg.evaluate(()=>{const o={bag:[{id:'scouter',r:0,at:1},{id:'scouter',r:0,at:2},{id:'nope',r:0,at:3},{id:'cape',r:9,at:4},{id:'cape',r:1,at:5}],equip:{id:'boots',r:3},sball:[3,3,9,0,5],tickets:{t1:-4,t10:'x',l10:2.7}};
@@ -38,7 +38,7 @@ const eq=await pg.evaluate(()=>{const A=__app,d=A.save.d,P=A.progress;d.bag=[{id
   const base=go().S.armor;
   const bad=P.equipTrinket('boots',3);const okq=P.equipTrinket('armor',4);const e1=JSON.stringify(d.equip);
   const g=go();
-  return{bad,okq,e1,tr:g.trinkets.slice(),rar:g.tRar.armor,src:g.trinSrc,picks:g.run.tpicks||0,mythic:g.run.mythic||0,armor:g.S.armor,base};});
+  return{bad,okq,e1,tr:g.trinkets.slice(),rar:g.tRar.armor,src:g.tSrc.armor,picks:g.run.tpicks||0,mythic:g.run.mythic||0,armor:g.S.armor,base};});
 ok(eq.bad===false&&eq.okq===true&&eq.tr[0]==='armor'&&eq.rar===4&&eq.src==='bag','the equipped trinket starts the run in the slot at its rarity (a trinket you do not own cannot be equipped)');
 ok(eq.picks===0&&eq.mythic===0,'and it does not count as a pick for the achievements');
 ok(eq.armor>eq.base+2,'its stats apply (Mythic Royal Saiyan Armor: armor '+eq.base.toFixed(1)+' -> '+eq.armor.toFixed(1)+')');
@@ -47,13 +47,13 @@ const sl=await pg.evaluate(()=>{const g=G,out={};const sd=g.sd,sale=r=>trinketSa
   out.mythicSale=trinketSale(4,0);out.table=[0,1,2,3,4].map(r=>trinketSale(r,0));
   const c0=g.run.coins;
   g.addTrinket('potara',1);out.m1=g.modal&&g.modal.type;g.resolveModal(0);                 /* replace the bag trinket: it stays in the bag, nothing is sold */
-  out.afterBag=g.run.coins-c0;out.src1=g.trinSrc;out.cur1=g.trinkets[0];
+  out.afterBag=g.run.coins-c0;out.src1=g.tSrc.potara;out.cur1=g.trinkets[0];
   g.addTrinket('cape',1);g.resolveModal(0);out.sold1=g.run.coins-c0-out.afterBag;out.exp1=sale(1);       /* replace a found one: it is sold */
   const c1=g.run.coins;g.addTrinket('boots',0);g.resolveModal(1);out.sold2=g.run.coins-c1;out.exp2=sale(0);out.cur2=g.trinkets[0];   /* decline: the offered one is sold */
   const c2=g.run.coins;g.tq.push({id:'scouter',rar:0,onYes(){},onNo(){},buy:true});g.drainTQ();g.resolveModal(1);out.shop=g.run.coins-c2;     /* decline in Zeno-sama's shop: not bought, not sold */
-  const c3=g.run.coins,held=g.trinkets[0],hr=g.trR(held);const v=g.sellHeld();out.end=g.run.coins-c3;out.expEnd=sale(hr);out.src3=g.trinSrc;out.again=g.sellHeld();
+  const c3=g.run.coins,held=g.trinkets[0],hr=g.trR(held);const v=g.sellHeld();out.end=g.run.coins-c3;out.expEnd=sale(hr);out.src3=g.tSrc[held];out.again=g.sellHeld();
   out.bagKept=__app.save.d.bag.some(b=>b.id==='armor'&&b.r===4);return out;});
-ok(sl.mythicSale===2600&&sl.table[0]===100,'sale value = market value + bonus: Mythic 1600+1000, Common 80+20 ('+sl.table.join('/')+')');
+ok(sl.mythicSale===2080&&sl.table[0]===80,'sale value = (market value + bonus) -20%: Mythic (1600+1000)*.8, Common (80+20)*.8 ('+sl.table.join('/')+')');
 ok(sl.m1==='tswap'&&sl.afterBag===0&&sl.src1==='run'&&sl.cur1==='potara','replacing the trinket from the bag sells nothing (it stays in the bag)');
 ok(sl.sold1===sl.exp1,'replacing a trinket found in the run sells it ('+sl.sold1+')');
 ok(sl.sold2===sl.exp2&&sl.cur2==='cape','keeping the old one sells the offered one ('+sl.sold2+')');
@@ -117,9 +117,9 @@ ok(st.saved.length===1&&st.saved[0]===st.star&&st.gone&&st.ownedHud.join()===st.
 const ui=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={},sl=ms=>new Promise(r=>setTimeout(r,ms));A.toMenu();d.settings.sandbox=false;d.bag=[];d.zenny=0;d.equip=null;
   d.tickets={t1:2,t10:2,l10:1};U.show('main');
   out.menuBtn=[...document.querySelectorAll('button')].map(x=>x.textContent);
-  U.push('gacha');out.cards=document.querySelectorAll('.tkcard').length;out.disabled=[...document.querySelectorAll('.tkcard button')].map(x=>x.disabled);
+  U.push('gacha');out.cards=document.querySelectorAll('.tkcard').length;out.disabled=[...document.querySelectorAll('.tkcard')].map(c=>c.querySelector('button').disabled);
   out.count0=[...document.querySelectorAll('.tkcount')].map(x=>x.textContent);
-  document.querySelector('[data-fid="pullt10"]').click();out.over=!!document.querySelector('.gov');out.reels=document.querySelectorAll('.greel').length;
+  document.querySelector('[data-fid="pullt10x1"]').click();out.over=!!document.querySelector('.gov');out.reels=document.querySelectorAll('.greel').length;
   document.querySelector('.gskip').click();await sl(900);
   out.cards2=document.querySelectorAll('.gcard').length;out.news=document.querySelectorAll('.gnew').length;out.dups=document.querySelectorAll('.gdup').length;out.bag=d.bag.length;out.t10=d.tickets.t10;
   out.sum=document.querySelector('.gsum')&&document.querySelector('.gsum').textContent;
@@ -131,6 +131,52 @@ ok(ui.cards===3&&ui.disabled.every(x=>x===false)&&ui.count0.join()==='× 2,× 2,
 ok(ui.over&&ui.reels===10,'a 10x pull opens the summon with 10 reels');
 ok(ui.cards2===10&&ui.news+ui.dups===10&&ui.news===ui.bag&&ui.t10===1&&ui.closed,'skipping shows the 10 trinkets at once, each flagged new or duplicate; the ticket is spent and the window closes');
 ok(ui.count.join()==='× 2,× 1,× 1','ticket counters refresh after the pull ('+ui.count.join(' ')+')');
+/* ---------- several tickets at once ---------- */
+const bk=await pg.evaluate(()=>{const A=__app,d=A.save.d,P=A.progress,o={};d.settings.sandbox=false;d.bag=[];
+  d.tickets={t1:250,t10:30,l10:3};
+  o.max=[P.gachaMaxTimes('t1'),P.gachaMaxTimes('t10'),P.gachaMaxTimes('l10')];
+  const a=P.gachaPull('t1',10);o.a=a.length;o.t1a=d.tickets.t1;
+  const b=P.gachaPull('t1',100);o.b=b.length;o.t1b=d.tickets.t1;
+  const c=P.gachaPull('t10',10);o.c=c.length;o.t10c=d.tickets.t10;
+  const e=P.gachaPull('t1',1000);o.clamp=e.length;o.t1e=d.tickets.t1;           /* never more than 100 pulls in one go */
+  d.tickets.t1=5;o.short=P.gachaPull('t1',10);o.t1s=d.tickets.t1;                  /* not enough tickets: nothing is spent */
+  d.tickets.l10=3;const l=P.gachaPull('l10',3);o.l=l.length;o.pulls=d.gacha.pulls;
+  o.noDupInBag=new Set(d.bag.map(x=>x.id+'@'+x.r)).size===d.bag.length;
+  return o;});
+ok(bk.max.join()==='100,10,10','at most 100 pulls at once: 100 / 10 / 10 tickets ('+bk.max.join('/')+')');
+ok(bk.a===10&&bk.t1a===240&&bk.b===100&&bk.t1b===140,'x1 tickets: 10 at once and 100 at once spend that many tickets');
+ok(bk.c===100&&bk.t10c===20,'10 tickets of 10x = 100 pulls');
+ok(bk.clamp===100&&bk.t1e===40,'asking for more than 100 is capped to 100');
+ok(bk.short===null&&bk.t1s===5,'without enough tickets nothing happens and nothing is spent');
+ok(bk.l===30&&bk.noDupInBag,'lucky tickets work in bulk too, and the bag keeps one entry per trinket+rarity ('+bk.pulls+' pulls counted)');
+const bu=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={},sl=ms=>new Promise(r=>setTimeout(r,ms));
+  d.settings.sandbox=false;d.bag=[];d.zenny=0;d.tickets={t1:37,t10:12,l10:0};U.show('main');U.push('gacha');
+  const q=f=>document.querySelector('[data-fid="'+f+'"]');
+  const st=l=>l.map(f=>{const b=q(f);return b?(b.disabled?'off':'on'):'-';}).join();
+  out.t1=st(['pullt1x1','pullt1x10','pullt1x100','pullt1all']);
+  out.t10=st(['pullt10x1','pullt10x10','pullt10x100','pullt10all']);
+  out.l10=st(['pulll10x1','pulll10x10']);
+  /* 10 pulls keep the 10-reel summon */
+  q('pullt1x10').click();out.reels10=document.querySelectorAll('.greel').length;out.bulk10=!!document.querySelector('.gov.bulk');
+  document.querySelector('.gskip').click();await sl(900);out.cards10=document.querySelectorAll('.gcard').length;q('gclose').click();
+  /* 100 pulls: compact summon, one reel, tiles */
+  d.tickets.t1=150;U.rebuild(true);
+  q('pullt1x100').click();out.bulk=!!document.querySelector('.gov.bulk');out.reels=document.querySelectorAll('.greel').length;
+  document.querySelector('.gskip').click();await sl(900);
+  const tiles=[...document.querySelectorAll('.gtile')];out.tiles=tiles.length;out.cnt=tiles.reduce((s,t)=>s+(+t.querySelector('.gtc').textContent.replace('×','')||0),0);
+  out.sum=document.querySelector('.gsum').textContent;out.again=(q('again')||{}).textContent;out.left=d.tickets.t1;out.bag=d.bag.length;
+  out.order=tiles.map(t=>+/ r(\d)/.exec(t.className)[1]);
+  q('again').click();await sl(300);document.querySelector('.gskip')&&document.querySelector('.gskip').click();await sl(900);out.left2=d.tickets.t1;   /* only 50 left: it pulls 50 */
+  out.cnt2=[...document.querySelectorAll('.gtile .gtc')].reduce((s,t)=>s+(+t.textContent.replace('×','')||0),0);
+  q('gclose').click();out.closed=!document.querySelector('.gov');return out;});
+ok(bu.t1==='on,on,off,-'&&bu.t10==='on,on,-,-'&&bu.l10==='off,off','ticket cards: x1 / x10 / x100 buttons, no "All" button ('+bu.t1+' | '+bu.t10+' | '+bu.l10+')');
+ok(bu.reels10===10&&!bu.bulk10&&bu.cards10===10,'10 pulls keep the 10-reel summon');
+ok(bu.bulk&&bu.reels===1,'more than 10 pulls use the compact summon (one quick reel)');
+ok(bu.tiles>=1&&bu.tiles<100&&bu.cnt===100&&bu.left===50&&bu.bag>=1,'100 pulls are grouped into tiles with their counts ('+bu.tiles+' tiles, counts add up to '+bu.cnt+')');
+ok(bu.order.every((r,i)=>i===0||bu.order[i-1]>=r),'best rarity first');
+ok(/×50/.test(bu.again||'')&&bu.left2===0&&bu.cnt2===50,'"Pull again" repeats the amount, limited by the tickets left ('+bu.again+')');
+ok(bu.closed,'the summary closes');
+
 /* mythic banner */
 const my=await pg.evaluate(async()=>{const U=__app.ui,d=__app.save.d,out={},sl=ms=>new Promise(r=>setTimeout(r,ms));d.tickets.t1=5;const keep=window.gachaRoll;
   window.gachaRoll=()=>({id:'dragonheart',r:4});U.gachaPull('t1');await sl(3300);out.banner=!!document.querySelector('.gjack:not(.leg) .gbanner');out.text=document.querySelector('.gjack .gbanner')&&document.querySelector('.gjack .gbanner').textContent;

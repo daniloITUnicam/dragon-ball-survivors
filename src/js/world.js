@@ -1,8 +1,27 @@
 'use strict';
 /* ====== World obstacles: sparse, deterministic, themed solid props (no storage needed) ====== */
+/* ====== Map seed: every run lays its map out differently (obstacles, lakes, ground tones, decor, traps, the snake's winding and its islands).
+   MAP.roll() is called when a run starts; roll(0) (or window.__MAPSEED = 0) restores the classic layout, a fixed number replays that layout. ====== */
+const MAP={
+  seed:0,ix:0,iy:0,nx:0,ny:0,p1:0,p2:0,
+  roll(seed){
+    if(seed===undefined)seed=(typeof window!=='undefined'&&window.__MAPSEED!==undefined)?window.__MAPSEED:((Math.random()*2147483646)|0)+1;
+    this.seed=seed|0;
+    if(!this.seed){this.ix=this.iy=this.nx=this.ny=this.p1=this.p2=0;}
+    else{
+      const r=n=>hash((this.seed^Math.imul(n,7919))|0,n*104729+13);
+      this.ix=Math.floor(r(1)*200000)-100000;this.iy=Math.floor(r(2)*200000)-100000;
+      this.nx=r(3)*900;this.ny=r(4)*900;this.p1=r(5)*Math.PI*2;this.p2=r(6)*Math.PI*2;
+    }
+    World.cache.clear();World.zc.clear();Snake._is.clear();if(typeof Sea!=='undefined')Sea.cache.clear();
+  }
+};
+const mhash=(a,b)=>hash(a+MAP.ix,b+MAP.iy);
 const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4;
+const OB_DENS={beach:.24,waste:.2,redrock:.19,plains:.17,arena:.17,hell:.18};   /* share of the 230 px cells that hold a prop (default .15) */
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
+const OBS=(w,r,W,H,art,sc)=>({w,r,W,H,art,sc});   /* sc: the sprite is drawn that many times larger than the base 3.1 px per art unit (r is already the scaled collision radius) */
 /* rock sprites (atlas rocks.png, same order as assets/sprites/rocks/rock_<n>.png): [w,h] in sprite px. 0 flat slab with lichen, 1-3 big boulders, 4/5/9/10/11 spires, 6 mid, 7-19 small stones.
    Drawn at ROCK_S world px per sprite px (wide ones are shrunk to ROCK_MAXW); the collision circle comes from the sprite footprint, not from the painted fallback. */
 const ROCKD=[[91,55],[163,110],[161,94],[123,79],[34,66],[56,63],[90,53],[43,27],[42,32],[38,56],[24,45],[16,26],[45,28],[30,17],[23,14],[40,29],[49,30],[48,32],[16,9],[40,25]];
@@ -17,15 +36,18 @@ const OBSTACLES={
     OB(4,11,22,14,R=>{R(-8,-6,16,6,'#8a8f98');R(-6,-10,12,5,'#a0a6b0');R(-3,-9,5,2,'#c0c6d0');},RK_MIX),
     OB(1.1,21,40,28,(R)=>{tri(R,0,0,24,18,'#8a7a62','#a89a80');R(-3,-24,6,3,'#f4f1ea');}),
     OB(.5,16,26,26,R=>{R(-10,-12,20,12,'#e8e4d8');R(-10,-14,20,3,'#e8742c');R(-4,-8,8,8,'#6ac0e8');R(-1,-20,2,6,'#8a8f98');}),
-    rkDef(.8,RK_BIG,R=>{R(-12,-8,24,8,'#8a8f98');R(-9,-14,18,7,'#a0a6b0');})
+    rkDef(.8,RK_BIG,R=>{R(-12,-8,24,8,'#8a8f98');R(-9,-14,18,7,'#a0a6b0');}),
+    OBS(1.6,19.8,16,14,MA.haybale,2.2),OBS(1.2,20.0,24,16,MA.fence,2.0),OBS(.6,11.4,20,26,MA.sign,1.9),OBS(.9,20.7,16,14,MA.crate,2.3)
   ],
   namek:[
     OB(4,6,30,46,(R,C)=>{R(-1.5,-28,3,28,'#b8d7c0');C(R,0,-33,10,'#7bd6a6');C(R,-3,-36,6,'#9ee8bf');}),
     OB(3,12,22,30,R=>{R(-8,-22,16,22,'#4a9fb4');R(-8,-22,4,22,'#7acce0');R(-9,-26,18,5,'#8ad8a8');R(-3,-10,2,10,'#2f7f94');}),
     OB(1.2,22,40,28,R=>{tri(R,0,0,24,19,'#3f9e8a','#6ad0b0');R(-4,-22,8,3,'#b8f0d8');}),
-    OB(.28,30,50,32,(R,C)=>{R(-20,-10,40,7,'#7a5ab0');R(-17,-14,34,5,'#9a7ad0');R(-12,-18,24,5,'#b898e8');C(R,0,-20,9,'#6ad0e8');R(-6,-24,12,4,'#d8f4ff');R(-22,-6,44,3,'#4a3a7a');R(-14,-3,3,3,'#f2c230');R(11,-3,3,3,'#f2c230');})
+    OB(.28,30,50,32,(R,C)=>{R(-20,-10,40,7,'#7a5ab0');R(-17,-14,34,5,'#9a7ad0');R(-12,-18,24,5,'#b898e8');C(R,0,-20,9,'#6ad0e8');R(-6,-24,12,4,'#d8f4ff');R(-22,-6,44,3,'#4a3a7a');R(-14,-3,3,3,'#f2c230');R(11,-3,3,3,'#f2c230');}),
+    OBS(1.4,18.0,24,24,MA.crystalN,1.8)
   ],
   waste:[
+    OBS(1.6,20.7,16,14,MA.crate,2.3),OBS(1.6,16.1,14,19,MA.barrel,2.3),OBS(1.4,16.0,16,20,MA.tomb,2.0),OBS(1,17.1,24,16,MA.skullpile,1.9),OBS(1.2,9.0,20,26,MA.cactus,1.5),
     OB(3,15,26,16,R=>{R(-11,-8,22,8,'#8a3a3a');R(-7,-13,14,6,'#6a2a2a');R(-5,-12,4,4,'#8ac0d8');R(2,-12,4,4,'#8ac0d8');R(-9,-3,5,3,'#222');R(5,-3,5,3,'#222');}),
     OB(3,14,26,34,R=>{R(-6,-26,12,26,'#5a5650');R(-4,-22,3,4,'#2a2622');R(1,-14,3,4,'#2a2622');R(-6,-28,5,3,'#5a5650');}),
     OB(3,16,28,14,R=>{R(-11,-5,22,5,'#6a6460');R(-8,-9,16,5,'#7a746e');R(-3,-12,8,4,'#8a847e');R(4,-8,6,3,'#4a4642');},RK_MIX),
@@ -35,56 +57,93 @@ const OBSTACLES={
   other:[
     OB(4,8,18,30,R=>{R(-2,-26,4,26,'#ff9ad8');R(-4,-16,8,16,'#ff7ac0');R(-1,-24,1.5,12,'#ffd0f0');}),
     OB(3,14,30,22,(R,C)=>{C(R,-6,-6,6,'#fff0ff');C(R,3,-8,8,'#ffe0ff');C(R,10,-5,5,'#fff0ff');R(-12,-1,26,1,'#d8b0ff');}),
-    OB(.4,26,44,36,(R,C)=>{for(let i=0;i<22;i++){const hw=Math.sqrt(1-(i/22)*(i/22))*17;R(-hw,-i-4,hw*2,1,'#ff9ec7');}R(-17,-4,34,4,'#e87aa0');R(-3,-14,6,10,'#f4f1ea');R(-1,-34,2,10,'#8a4fc0');C(R,0,-35,2,'#ffd23f');})
+    OB(.4,26,44,36,(R,C)=>{for(let i=0;i<22;i++){const hw=Math.sqrt(1-(i/22)*(i/22))*17;R(-hw,-i-4,hw*2,1,'#ff9ec7');}R(-17,-4,34,4,'#e87aa0');R(-3,-14,6,10,'#f4f1ea');R(-1,-34,2,10,'#8a4fc0');C(R,0,-35,2,'#ffd23f');}),
+    OBS(1.2,11.4,14,21,MA.lantern,1.9)
   ],
   void:[
     OB(4,8,18,40,R=>{R(-4,-34,8,34,'#2a3a6a');R(-.6,-34,1.2,34,'#6ad0ff');R(-5,-36,10,3,'#3a4a8a');}),
     OB(3,12,24,12,R=>{R(-9,-5,18,5,'#3a4a8a');R(-6,-8,12,4,'#4a5a9a');R(-2,-7,5,1,'#6ad0ff');}),
-    OB(.5,18,36,26,R=>{R(-14,-8,28,8,'#2a3a6a');R(-11,-12,22,5,'#3a4a8a');R(-8,-17,16,5,'#4a5a9a');R(-3,-17,6,1,'#ff6aa0');})
+    OB(.5,18,36,26,R=>{R(-14,-8,28,8,'#2a3a6a');R(-11,-12,22,5,'#3a4a8a');R(-8,-17,16,5,'#4a5a9a');R(-3,-17,6,1,'#ff6aa0');}),
+    OBS(2,16.2,24,24,MA.crystalV,1.8)
   ],
   beach:[
     OB(5,6,30,42,(R,C)=>{R(-1.5,-24,3,24,'#8a6a3a');R(0,-30,2.5,8,'#8a6a3a');for(const [a,b] of [[-10,-30],[-6,-34],[6,-34],[10,-30],[0,-36]])C(R,a,b,4,'#2f9a4a');C(R,0,-31,3,'#5ac05a');}),
     OB(3,10,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');},RK_SMALL),
     OB(.3,26,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),
     OB(2,9,20,16,(R,C)=>{C(R,-4,-6,6,'#d8a8d8');C(R,3,-5,6,'#e8c0e8');R(-2,-3,4,3,'#8a6a3a');}),
-    rkDef(.5,RK_BIG,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');})
+    rkDef(.5,RK_BIG,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),
+    OBS(2.2,20.7,16,14,MA.crate,2.3),OBS(.9,18.9,16,24,MA.crate2,2.1),OBS(2,16.1,14,19,MA.barrel,2.3),OBS(1.2,16.0,16,20,MA.tomb,2.0),OBS(.7,16.0,16,20,MA.tomb2,2.0),OBS(2.2,8.4,26,16,MA.agave,1.2),OBS(.8,18.0,18,18,MA.rockpile,2.0)
   ],
   redrock:[
     OB(4,14,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');},RK_MIX),
     OB(3,8,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');},RK_SPIRE),
     OB(.4,17,30,22,(R,C)=>{C(R,0,-10,10,'#d8d8e8');R(-10,-3,20,3,'#8a8a9a');R(-4,-14,8,6,'#6ad0ff');R(-3,-13,2,1,'#fff');R(-12,-2,24,2,'#4a4a5a');}),
     OB(2,10,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),
-    rkDef(.7,RK_BIG,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');})
+    rkDef(.7,RK_BIG,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),
+    OBS(1.6,9.0,20,26,MA.cactus,1.5),OBS(.8,17.1,24,16,MA.skullpile,1.9),OBS(.8,16.1,14,19,MA.barrel,2.3),OBS(.8,20.7,16,14,MA.crate,2.3)
   ],
   arena:[
     OB(4,9,18,38,R=>{R(-5,-30,10,30,'#b8b0a0');R(-6,-32,12,3,'#d8d0c0');R(-6,-3,12,3,'#8a8274');R(-1,-24,1.4,14,'#6a6254');}),
     OB(4,12,26,14,R=>{R(-10,-5,20,5,'#9a9284');R(-7,-9,14,5,'#b0a898');R(1,-7,6,3,'#7a7264');R(-9,-3,3,3,'#6a6254');},RK_MIX),
     OB(2,5,16,34,R=>{R(-.8,-30,1.6,30,'#6a6254');R(-1.6,-31,3.2,1.6,'#9a9284');}),
     OB(.5,14,28,22,R=>{R(-11,-8,22,8,'#8a8274');R(-8,-14,16,7,'#b0a898');R(-2,-20,4,7,'#d8d0c0');}),
-    rkDef(.6,RK_BIG,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');})
+    rkDef(.6,RK_BIG,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');}),
+    OBS(1.6,18.0,16,22,MA.pillar,2.0),OBS(1,11.4,18,34,MA.banner,1.9),OBS(1,16.1,14,19,MA.barrel,2.3),OBS(1,20.7,16,14,MA.crate,2.3)
   ],
   sky:[
     OB(4,8,16,34,R=>{R(-4,-30,8,30,'#f4f1ea');R(-5,-32,10,3,'#fff');R(-5,-3,10,3,'#c8c0d8');R(-1,-28,1,24,'#d8d0e0');}),
     OB(3,11,26,20,(R,C)=>{C(R,-6,-6,6,'#fff');C(R,3,-8,8,'#eaf4ff');C(R,10,-5,5,'#fff');R(-10,-1,22,1,'#bcd8f4');}),
     OB(2,10,20,32,R=>{R(-6,-4,12,4,'#c8c0d8');R(-3,-20,6,16,'#e8e0f0');R(-5,-27,10,8,'#f4f1ea');R(-2,-30,4,3,'#ffd23f');}),
-    OB(.5,17,34,30,R=>{R(-14,-24,28,4,'#e8503a');R(-12,-20,3,20,'#f4f1ea');R(9,-20,3,20,'#f4f1ea');R(-14,-3,28,3,'#c8c0d8');R(-8,-27,16,4,'#d8402a');})
+    OB(.5,17,34,30,R=>{R(-14,-24,28,4,'#e8503a');R(-12,-20,3,20,'#f4f1ea');R(9,-20,3,20,'#f4f1ea');R(-14,-3,28,3,'#c8c0d8');R(-8,-27,16,4,'#d8402a');}),
+    OBS(1,11.4,14,21,MA.lantern,1.9)
   ],
   hell:[
     OB(4,13,24,18,R=>{R(-9,-7,18,7,'#3a1a1a');R(-6,-12,12,6,'#5a2a22');R(-3,-4,6,2,'#ff7a1a');R(-1,-10,2,3,'#ff9a3a');}),
     OB(3,8,14,36,R=>{tri(R,0,0,32,5,'#d8d0c0','#f4f0e4');R(-1,-24,2,3,'#3a1a1a');}),
-    OB(.6,16,28,24,(R,C)=>{C(R,0,-10,10,'#e8e0d0');R(-5,-12,3,4,'#1a0a0a');R(2,-12,3,4,'#1a0a0a');R(-1,-8,2,3,'#3a1a1a');R(-4,-3,8,3,'#d8d0c0');R(-3,-2,1,2,'#3a1a1a');R(0,-2,1,2,'#3a1a1a');})
+    OB(.6,16,28,24,(R,C)=>{C(R,0,-10,10,'#e8e0d0');R(-5,-12,3,4,'#1a0a0a');R(2,-12,3,4,'#1a0a0a');R(-1,-8,2,3,'#3a1a1a');R(-4,-3,8,3,'#d8d0c0');R(-3,-2,1,2,'#3a1a1a');R(0,-2,1,2,'#3a1a1a');}),
+    OBS(2,17.1,20,16,MA.spikes,1.9),OBS(2,26.0,22,15,MA.lavarock,2.0),OBS(1.4,17.1,24,16,MA.skullpile,1.9),OBS(1,16.0,16,20,MA.tomb2,2.0)
   ]
 };
 /* ====== Snake Way: the only walkable ground is the snake's body, a winding corridor along the x axis ====== */
+const ISLE_KINDS=['kingkai','kami','kame','korin','capsule','grandkai','shrine','nimbus','temple'];
 const Snake={
-  HW:150,XMAX:12000,
-  f(x){return 230*Math.sin(x*.0042)+60*Math.sin(x*.0113+1.1);},
-  df(x){return 230*.0042*Math.cos(x*.0042)+60*.0113*Math.cos(x*.0113+1.1);},
+  HW:150,XMAX:22000,IS:1900,
+  f(x){return 230*Math.sin(x*.0042+MAP.p1)+60*Math.sin(x*.0113+1.1+MAP.p2);},
+  df(x){return 230*.0042*Math.cos(x*.0042+MAP.p1)+60*.0113*Math.cos(x*.0113+1.1+MAP.p2);},
   cx(x){return Math.max(-this.XMAX,Math.min(this.XMAX,x));},
-  /* push a point back onto the body (rad = how much of the body width the object itself takes) */
+  /* floating islands beside the body (walkable, they hold power-ups): one about every IS px on both sides of the start, none near it */
+  _is:new Map(),
+  island(i){
+    let o=this._is.get(i);if(o!==undefined)return o;
+    const n=Math.abs(i),sg=i<0?-1:1,x=sg*(1050+(n-1)*this.IS+(mhash(n*3+(i<0?50:0),7)-.5)*400);
+    if(n<1||Math.abs(x)>this.XMAX-500)o=null;
+    else{
+      const side=mhash(i*5+1,3)<.5?-1:1,r=100+mhash(i*7+2,11)*50,k=Math.sqrt(1+this.df(x)**2);
+      o={id:i,x,y:this.f(x)+side*(this.HW*k+r*.45),r,side,kind:ISLE_KINDS[(((n-1)*2+(i<0?1:0))*4)%ISLE_KINDS.length]};   /* 4 is coprime with 9: any 9 neighbours in a row show every kind once */
+    }
+    this._is.set(i,o);return o;
+  },
+  /* the islands whose centre lies between x0 and x1 */
+  islandsIn(x0,x1){
+    const out=[];
+    for(const sg of[-1,1]){
+      const lo=Math.max(0,sg>0?x0:-x1),hi=sg>0?x1:-x0;if(hi<0)continue;
+      for(let n=Math.max(1,Math.floor((lo-1050)/this.IS)+1);n<=Math.ceil((hi-1050)/this.IS)+2;n++){const o=this.island(sg*n);if(o&&o.x>=x0&&o.x<=x1)out.push(o);}
+    }
+    return out;
+  },
+  /* push a point back onto the walkable ground: the body, or an island attached to it (rad = how much of the ground width the object itself takes) */
   clamp(o,rad){
-    o.x=this.cx(o.x);const s=this.df(o.x),k=Math.sqrt(1+s*s),lim=Math.max(8,this.HW-(rad||0))*k,c=this.f(o.x),dy=o.y-c;
-    if(dy>lim)o.y=c+lim;else if(dy<-lim)o.y=c-lim;
+    o.x=this.cx(o.x);rad=rad||0;
+    const s=this.df(o.x),k=Math.sqrt(1+s*s),lim=Math.max(8,this.HW-rad)*k,c=this.f(o.x),dy=o.y-c;
+    if(Math.abs(dy)<=lim)return;
+    let bx=o.x,by=dy>lim?c+lim:c-lim,bd=Math.abs(o.y-by);
+    for(const I of this.islandsIn(o.x-260,o.x+260)){
+      const dx=o.x-I.x,ey=o.y-I.y,d=Math.hypot(dx,ey),L=Math.max(8,I.r-rad);
+      if(d<=L)return;
+      if(d-L<bd){bd=d-L;bx=I.x+dx/d*L;by=I.y+ey/d*L;}
+    }
+    o.x=bx;o.y=by;
   },
   /* random point on the body at about horizontal distance d from x0 (side: -1/1), spread across the width */
   spot(x0,d,side,spread){
@@ -99,14 +158,14 @@ const World={
     const k=cx*100003+cy;let c=this.cache.get(k);
     if(c!==undefined)return c;
     c=null;const defs=OBSTACLES[theme];
-    if(defs&&hash(cx*7+3,cy*13+5)<.15){
-      const x=(cx+.15+hash(cx+11,cy+3)*.7)*OB_CELL,y=(cy+.15+hash(cx+5,cy+17)*.7)*OB_CELL;
-      if(x*x+y*y>260*260){
-        let tot=0;for(const d of defs)tot+=d.w;let q=hash(cx+31,cy+9)*tot,ti=0;
+    if(defs&&mhash(cx*7+3,cy*13+5)<(OB_DENS[theme]||.15)){
+      const x=(cx+.15+mhash(cx+11,cy+3)*.7)*OB_CELL,y=(cy+.15+mhash(cx+5,cy+17)*.7)*OB_CELL;
+      if(x*x+y*y>260*260&&!(Sea.wet(theme,x,y)>-.05)){   /* never in the water or on the wet shore */
+        let tot=0;for(const d of defs)tot+=d.w;let q=mhash(cx+31,cy+9)*tot,ti=0;
         for(;ti<defs.length-1;ti++){q-=defs[ti].w;if(q<=0)break;}
-        c={x,y,t:ti,r:defs[ti].r*1.5,f:hash(cx+2,cy+8)<.5?-1:1};
+        c={x,y,t:ti,r:defs[ti].r*1.5,f:mhash(cx+2,cy+8)<.5?-1:1};
         const rk=defs[ti].rk;
-        if(this.rockOn&&rk){const v=rk[Math.floor(hash(cx+19,cy+23)*rk.length)],sc=rockScale(v),wd=ROCKD[v][0]*sc,ht=ROCKD[v][1]*sc;
+        if(this.rockOn&&rk){const v=rk[Math.floor(mhash(cx+19,cy+23)*rk.length)],sc=rockScale(v),wd=ROCKD[v][0]*sc,ht=ROCKD[v][1]*sc;
           c.v=v;c.s=sc;c.r=Math.max(6,Math.min(.36*wd,.55*ht));}
       }
     }
@@ -119,16 +178,17 @@ const World={
   zone(theme,cx,cy){
     const k=cx*100003+cy;let c=this.zc.get(k);
     if(c!==undefined)return c;
-    c=null;const q=hash(cx*5+1,cy*9+2);
+    c=null;const q=mhash(cx*5+1,cy*9+2);
     if(theme==='snake'){   /* only on the body: one row of cells, y follows the path */
-      if(cy===0&&q<.2&&Math.abs(cx)<26){const x=(cx+.2+hash(cx+3,cy+7)*.6)*ZONE_CELL;if(Math.abs(x)>340){const y=Snake.f(x)+(hash(cx+9,cy+1)-.5)*Snake.HW*.8;c=q<.06?{kind:'heal',x,y,r:82,ph:0,id:k}:{kind:'trap',x,y,r:46+hash(cx+4,cy+4)*16,ph:hash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};}}
+      if(cy===0&&q<.2&&Math.abs(cx)<26){const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL;if(Math.abs(x)>340){const y=Snake.f(x)+(mhash(cx+9,cy+1)-.5)*Snake.HW*.8;c=q<.06?{kind:'heal',x,y,r:82,ph:0,id:k}:{kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};}}
       this.zc.set(k,c);return c;
     }
     if(q<.2){
-      const x=(cx+.2+hash(cx+3,cy+7)*.6)*ZONE_CELL,y=(cy+.2+hash(cx+9,cy+1)*.6)*ZONE_CELL;
-      if(x*x+y*y>340*340){
+      const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL,y=(cy+.2+mhash(cx+9,cy+1)*.6)*ZONE_CELL;
+      const dry=!Sea.has(theme)||[[0,0],[100,0],[-100,0],[0,100],[0,-100]].every(o=>Sea.wet(theme,x+o[0],y+o[1])<-.03);   /* no pool or trap in a lake */
+      if(x*x+y*y>340*340&&dry){
         if(q<.06)c={kind:'heal',x,y,r:82,ph:0,id:k};
-        else c={kind:'trap',x,y,r:46+hash(cx+4,cy+4)*16,ph:hash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};
+        else c={kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};
       }
     }
     if(this.zc.size>2000)this.zc.clear();

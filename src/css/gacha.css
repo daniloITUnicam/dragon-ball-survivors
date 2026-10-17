@@ -146,3 +146,20 @@
   .gcard .cd{min-height:0}
   .bagdet{flex:1 1 100%;position:static}
 }
+
+/* several tickets at once */
+.gpb{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
+.gpb .btn{display:flex;flex-direction:column;align-items:center;line-height:1.1;padding:6px 12px;min-width:84px}
+.gpb .btn small.gtu{font:600 10px var(--body);opacity:.75;letter-spacing:.04em;margin-top:1px}
+.gov.bulk{--z:128px}
+.gov .gtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px;width:min(1040px,96vw);max-height:56vh;overflow:auto;padding:4px}
+.gtile{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:0 8px;align-items:center;padding:6px 10px;border-radius:10px;border:2px solid var(--c);background:linear-gradient(170deg,rgba(255,255,255,.08),rgba(10,8,24,.92) 60%);opacity:0;animation:gpop .35s cubic-bezier(.2,1.5,.4,1) forwards;animation-delay:var(--d,0s)}
+.gtile .glyph{font-size:26px;width:34px;grid-row:1/3}
+.gtile .gtn{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+.gtile .gtn b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtile .gtn small{font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--c);opacity:.85}
+.gtile .gtc{font:800 16px var(--display);color:#fff;grid-column:3;grid-row:1}
+.gtile .gnew,.gtile .gdup{grid-column:3;grid-row:2;justify-self:end;font:800 10px var(--body);padding:1px 7px;border-radius:99px}
+.gtile .gnew{background:#2a8f3e;color:#eaffea}.gtile .gdup{background:#4a566e;color:#fff}
+.gtile.r3{box-shadow:0 0 14px rgba(255,176,32,.75)}.gtile.r4{box-shadow:0 0 20px rgba(255,59,138,.9)}
+@media(max-width:700px){.gov .gtiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:50vh}}

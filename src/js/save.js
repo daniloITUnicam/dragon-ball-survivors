@@ -9,12 +9,12 @@ class SaveData{
   defaults(){
     const nl=(typeof navigator!=='undefined'&&(navigator.language||'en').slice(0,2).toLowerCase())||'en',lang=['it','es','fr','de','pt'].includes(nl)?nl:'en';
     return{
-      zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),
+      zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
-      tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,sball:[],gacha:{pulls:0,mythics:0,legend:0},
+      tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],debug:[8]}
@@ -36,7 +36,8 @@ class SaveData{
     if(d.shop.dash){let sum=0;for(let i=0;i<d.shop.dash;i++)sum+=Math.round(120*Math.pow(1.5,i));d.zenny+=sum;}   /* the dash upgrade left the shop: refund it */
     delete d.shop.dash;if(d.testBuys)delete d.testBuys.dash;
     for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
-    for(const k of['clears','x2'])while(d[k].length<STAGES.length)d[k].push(0);
+    d.banned=(Array.isArray(d.banned)?d.banned:[]).filter((id,i,a)=>WEAPONS[id]&&a.indexOf(id)===i).slice(0,d.shop.ban||0);   /* weapon blacklist: one slot per "Weapon Blacklist" purchase */
+    for(const k of['clears','x2','xc'])while(d[k].length<STAGES.length)d[k].push(0);
     /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..7 without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
     {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok)seen.add(b.id+'@'+b.r);return ok;});
@@ -64,11 +65,11 @@ class Progress{
   }
   statsView(g){
     const s=this.d.stats,b=g?g.bank:null,r=g?g.run:null,bk=k=>(b&&b[k])||0,rk=k=>(r&&r[k])||0;
-    const run=g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,evos:r.evos,trinkets:r.tpicks||0,legendary:r.legendary,bosses:r.bossKills,coins:r.coins,mythic:rk('mythic'),k20:rk('k20'),streak:rk('streak')}
-           :{kills:0,t:0,lvl:0,form:0,evos:0,trinkets:0,legendary:0,bosses:0,coins:0,mythic:0,k20:0,streak:0};
+    const run=g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,ui:g.C.id==='goku'?g.formsUnlocked:0,evos:r.evos,trinkets:r.tpicks||0,legendary:r.legendary,bosses:r.bossKills,coins:r.coins,mythic:rk('mythic'),k20:rk('k20'),streak:rk('streak')}
+           :{kills:0,t:0,lvl:0,form:0,ui:0,evos:0,trinkets:0,legendary:0,bosses:0,coins:0,mythic:0,k20:0,streak:0};
     /* personal records (all-time best of a single run), used for the progress bars of the "in one run" achievements */
     const sr=s.rec||{},mx=o=>Math.max(0,...Object.values(o||{}).map(v=>+(v&&v.kills!==undefined?v.kills:v)||0));
-    const rec={kills:Math.max(mx(this.d.best),run.kills),t:Math.max(s.maxTime||0,run.t),lvl:Math.max(s.maxLevel||0,run.lvl),form:Math.max(mx(this.d.maxForm),run.form)};
+    const rec={kills:Math.max(mx(this.d.best),run.kills),t:Math.max(s.maxTime||0,run.t),lvl:Math.max(s.maxLevel||0,run.lvl),form:Math.max(mx(this.d.maxForm),run.form),ui:Math.max(((this.d.maxForm||{}).goku)||0,run.ui)};
     for(const k of ['evos','trinkets','legendary','bosses','coins','mythic','k20','streak'])rec[k]=Math.max(sr[k]||0,run[k]);
     return{
       kills:s.kills+(g?g.kills-b.kills:0),bosses:s.bosses+(g?g.run.bossKills-b.bossKills:0),clears:this.d.clears,
@@ -109,16 +110,18 @@ class Progress{
     if(!this.d.x2[g.stageIdx]){this.d.x2[g.stageIdx]=1;this.save.write();this.notify({type:'x2',stage:g.stageIdx});}
   }
   /* zenny: (coins + kills + time + bosses + clear) * stage mult * shop/trinket gold * x2 * (win?1:.75) */
+  /* level / evolution of every weapon at the end of the run (shown beside its damage) */
+  weaponLevels(g){const o={};for(const [id,w] of g.weapons)o[id]={lv:w.lv,evo:w.evo|0};return o;}
   rewardLines(g,win,firstWin){
     const idx=g.stageIdx,b=g.bank;
     return[
       {k:'coins',v:g.run.coins-b.coins},
-      {k:'clear',v:firstWin?200*(idx+1):0}
+      {k:'clear',v:firstWin?Math.round(200*ZMUL*(idx+1)):0}
     ];
   }
   /* opts.keep: the run was ended by the game itself (a new release is being installed) - no 25% penalty for not winning */
   finishRun(g,win,opts){
-    if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins};
+    if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins,ws:this.weaponLevels(g)};
     const d=this.d,st=d.stats,idx=g.stageIdx,stg=STAGES[idx],b=g.bank;
     if(g.formsUnlocked>(d.maxForm[g.C.id]||0))d.maxForm[g.C.id]=g.formsUnlocked;
     const firstWin=!!win&&!b.cleared;
@@ -135,12 +138,14 @@ class Progress{
     st.zenny+=total;d.zenny+=total;
     const tks={};for(const k of TICKET_KINDS){const n=(g.run.tk[k]||0)-((b.tk&&b.tk[k])||0);if(n>0){d.tickets[k]+=n;tks[k]=n;}}   /* the tickets found in the run */
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
+    if(firstWin&&g.diffId==='extreme')d.xc[idx]=1;   /* this stage has been cleared on Extreme: it unlocks Endless for the stage */
     if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
     g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};
-    if(g.diffId!=='easy')for(const id of g.C.start){
-      if((win||g.lvl>=50)&&!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}
+    /* a weapon is unlocked by simply winning a map with a character that starts with it (once per weapon: a second owner of the same weapon unlocks nothing new) */
+    if(win)for(const id of g.C.start){
+      if(!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}
     }
     /* second evolution: clear every stage (Normal or Hard) with the weapon in your build */
     if(win&&g.diffId!=='easy')for(const id of g.weapons.keys()){
@@ -150,7 +155,7 @@ class Progress{
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0};
+    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,xc:!!d.xc[idx],ws:this.weaponLevels(g)};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);
@@ -170,11 +175,18 @@ class Progress{
     this.checkAch(null);this.save.write();
     return true;
   }
+  /* weapon blacklist: ban / unban a weapon (one ban per purchase of the shop upgrade) */
+  toggleBan(id){
+    const d=this.d,i=d.banned.indexOf(id);
+    if(i>=0){d.banned.splice(i,1);this.save.write();return true;}
+    if(!WEAPONS[id]||d.banned.length>=(d.shop.ban||0))return false;
+    d.banned.push(id);this.save.write();return true;
+  }
   /* turning Test off: undo every shop level bought for free while it was on; returns how many */
   revertTest(){
     let n=0;const tb=this.d.testBuys||{};
     for(const id of Object.keys(tb)){const k=Math.min(tb[id],this.d.shop[id]||0);n+=k;const v=(this.d.shop[id]||0)-k;if(v>0)this.d.shop[id]=v;else delete this.d.shop[id];}
-    this.d.testBuys={};
+    this.d.testBuys={};this.d.banned=this.d.banned.slice(0,this.d.shop.ban||0);
     /* trinkets pulled for free in Test mode go back too (and the slot empties if it held one) */
     const nb=this.d.bag.length;this.d.bag=this.d.bag.filter(b=>!b.t);n+=nb-this.d.bag.length;
     if(this.d.equip&&!this.d.bag.some(b=>b.id===this.d.equip.id&&b.r===this.d.equip.r))this.d.equip=null;
@@ -183,7 +195,7 @@ class Progress{
   refundAll(){
     let sum=0;
     const tb=this.d.testBuys||{};for(const it of SHOP){const lv=(this.d.shop[it.id]||0)-(tb[it.id]||0);for(let i=0;i<lv;i++)sum+=shopCost(it,i);}
-    this.d.zenny+=sum;this.d.shop={};this.d.testBuys={};this.save.write();   /* full refund */
+    this.d.zenny+=sum;this.d.shop={};this.d.testBuys={};this.d.banned=[];this.save.write();   /* full refund */
     return sum;
   }
 }

@@ -6,24 +6,24 @@ const sstep=(a,b,x)=>{const k=clamp((x-a)/(b-a),0,1);return k*k*(3-2*k);};
 const vnoise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
 /* per-theme recipe: wt=lake threshold, tint=[dry,lush], parts=[kind,count], crit=[kind,count], ev=[kind,period,duration,offset] */
 const AMB={
-  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2]],crit:[['rabbit',3]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm']},
-  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1]],crit:[['frog',3]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog']},
-  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2]],crit:[['scorpion',3],['weed',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm']},
-  other:{tint:['#ffc0f0','#7a58c0'],parts:[['mote',14],['sparkle',16],['feather',5]],mist:['#ffb0f0',.12],wx:['feather']},
-  beach:{wt:.6,tint:['#fff0b8','#c8a860'],shore:'rgba(90,60,10,.18)',parts:[['firefly',6],['bird',3],['sparkle',10],['leaf',3]],crit:[['crab',5]],shadow:1,rays:1,grade:[255,170,90],wx:['rain','storm','rain']},
-  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2]],crit:[['lizard',3]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand']},
+  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2],['petal',9]],crit:[['rabbit',3]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm']},
+  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1],['petal',7]],crit:[['frog',3]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog']},
+  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2],['tumble',1]],crit:[['scorpion',3],['weed',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm']},
+  other:{tint:['#ffc0f0','#7a58c0'],parts:[['mote',14],['sparkle',16],['feather',5],['halo',4],['petal',5]],mist:['#ffb0f0',.12],wx:['feather']},
+  beach:{wt:.6,tint:['#fff0b8','#c8a860'],shore:'rgba(90,60,10,.18)',parts:[['firefly',6],['bird',3],['sparkle',10],['leaf',3],['petal',4]],crit:[['crab',5]],shadow:1,rays:1,grade:[255,170,90],wx:['rain','storm','rain']},
+  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2],['tumble',1]],crit:[['lizard',3]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand']},
   arena:{tint:['#e8e0d0','#8a8272'],parts:[['firefly',4],['mote',10],['flash',3],['confetti',4]],crit:[['pigeon',3]],spot:1,grade:[255,200,120],mist:['#e8e0d0',.08],wx:['wind','storm','wind']},
-  sky:{back:['#5c98e0',.9],tint:['#ffffff','#a8c8f0'],parts:[['bird',4],['wind',10],['sparkle',8],['feather',3]],rays:1,hi:1,grade:[255,190,120],wx:['gale']},
-  hell:{back:['hell',.84],tint:['#ff7a2a','#12080a'],parts:[['ember',26],['ash',14],['wisp',5],['bird',3]],crit:[['salamander',2]],heat:1,nn:1,wx:['ashfall']},
-  void:{back:['#03051a',.8],tint:['#6a4aff','#0a0e22'],parts:[['mote',14],['sparkle',14],['meteor',1]],stars:1,nn:1,wx:['meteor']}
+  sky:{back:['#5c98e0',.9],tint:['#ffffff','#a8c8f0'],parts:[['bird',4],['wind',10],['sparkle',8],['feather',3],['cloudlet',3]],rays:1,hi:1,grade:[255,190,120],wx:['gale']},
+  hell:{back:['hell',.84],wt:.64,tint:['#ff7a2a','#12080a'],parts:[['ember',26],['ash',14],['wisp',5],['bird',3],['soul',6]],crit:[['salamander',2]],heat:1,nn:1,wx:['ashfall']},
+  void:{back:['#03051a',.8],tint:['#6a4aff','#0a0e22'],parts:[['mote',14],['sparkle',14],['meteor',1],['shard',6]],stars:1,nn:1,wx:['meteor']}
 };
 const WV={plains:['#ffffff',.07,1.4],namek:['#bfffe6',.08,1.1],waste:['#fff0c8',.05,1],redrock:['#ffb080',.05,1.1],other:['#ffd0ff',.07,.8],beach:['#ffffff',.06,1.2],arena:['#ffffff',.035,.6],sky:['#8fb4ec',.09,1],void:['#6a8aff',.13,1.6],hell:['#ff4a10',.1,1.5]};
 const NC={plains:[8,18,62],namek:[4,22,40],waste:[26,14,40],other:[34,12,58],beach:[4,22,66],redrock:[40,12,28],arena:[12,16,40],sky:[10,24,78]};
 const FFC={plains:['#d8ff7a','#fff6a8'],namek:['#9affc8','#7affd8'],beach:['#6ad0ff','#9ae8ff'],redrock:['#ffb070','#ff9a4a'],waste:['#ffd890','#ffc070'],arena:['#fff2c0','#ffe08a'],other:['#ffd0ff','#ff9ae8'],sky:['#ffffff','#cfe8ff']};
 const BIRDC={plains:'#2a2a34',namek:'#e8fff4',waste:'#1a1410',beach:'#ffffff',redrock:'#3a2a20',sky:'#ffffff',hell:'#1a0a14'};
 const FOOTC={plains:'#d6e8bc',namek:'#bfffe6',waste:'#d8c4a0',other:'#ffe0ff',beach:'#f4e8c0',redrock:'#d89a78',arena:'#d8d0c0',sky:'#ffffff',hell:'#ff8a3a',void:'#6ad0ff'};
-const DAYK={butterfly:1,seed:1,bird:1,flash:0},NIGHTK={firefly:1};
-const ADDK={firefly:1,mote:1,sparkle:1,ember:1,wisp:1,flash:1,meteor:1};
+const DAYK={butterfly:1,seed:1,bird:1,petal:1,flash:0},NIGHTK={firefly:1};
+const ADDK={firefly:1,mote:1,sparkle:1,ember:1,wisp:1,flash:1,meteor:1,soul:1,shard:1,halo:1};
 const FLOWC=['#ff6a8a','#ffd23f','#ffffff','#b890ff'];
 /* animated obstacles: m=sway|bob|flag, a=amplitude (world px), g=[ax,ay,radius,colour,alpha,pulse speed] glows (art units), em=[kind,ax,ay,rate/s] emitters */
 const OBA={
@@ -48,14 +48,11 @@ const Ambient={
   sm:.016,slow:0,fast:0,foot:0,wd:.5,evI:0,evK:'',cx:0,cy:0,vw:800,vh:500,pre:true,
   sw(t,ph){return (Math.sin(t*1.7+ph)*.55+Math.sin(t*.63+ph*1.9)*.45)*(.55+.6*this.wd);},
   /* ---------- lakes (walkable, decorative) ---------- */
-  water(theme,tx,ty){
-    const c=AMB[theme];if(!c||!c.wt||tx*tx+ty*ty<40)return false;
-    return vnoise(tx*.085,ty*.085)*.65+vnoise(tx*.21+30,ty*.21+17)*.35>c.wt;
-  },
+  water(theme,tx,ty){return Sea.wet(theme,tx*64+32,ty*64+32)>0;},
   beginTerrain(theme,x0,y0,x1,y1){
     const c=AMB[theme];this.wx0=x0-1;this.wy0=y0-1;this.ww=x1-x0+3;this.wh=y1-y0+3;
     const n=this.ww*this.wh;if(!this.wg||this.wg.length<n)this.wg=new Uint8Array(n);
-    if(!c||!c.wt){this.wg.fill(0,0,n);return;}
+    if(!c||!c.wt||Sea.has(theme)){this.wg.fill(0,0,n);return;}   /* the lakes are drawn by Sea, not tile by tile */
     for(let j=0;j<this.wh;j++)for(let i=0;i<this.ww;i++)this.wg[j*this.ww+i]=this.water(theme,this.wx0+i,this.wy0+j)?1:0;
   },
   isW(tx,ty){const i=tx-this.wx0,j=ty-this.wy0;return i>=0&&j>=0&&i<this.ww&&j<this.wh&&this.wg[j*this.ww+i]===1;},
@@ -91,7 +88,7 @@ const Ambient={
     return c.back[1];
   },
   /* biome level 0..4 (dry..lush); baked into tinted tile variants by the renderer */
-  lvl(tx,ty){const n=vnoise(tx*.07+50,ty*.07+9);return n<.32?0:n<.43?1:n<.57?2:n<.68?3:4;},
+  lvl(tx,ty){const n=vnoise(tx*.07+50+MAP.nx,ty*.07+9+MAP.ny);return n<.32?0:n<.43?1:n<.57?2:n<.68?3:4;},
   /* soft travelling light bands over the whole view (replaces per-tile wave fills) */
   waves(ctx,theme,cx,cy,vw,vh,t){
     const w=WV[theme];if(!w||!this.on||this.lod<.5)return;
@@ -229,6 +226,12 @@ const Ambient={
       case'leaf':p.m=rnd(8,12);p.s=rnd(1,1.8);p.c=pick(th==='namek'?['#7bd6a6','#9ee8bf','#4fb98a']:th==='beach'?['#2f9a4a','#5ac05a','#a8c850']:['#5ac05a','#c8b040','#3f9e4a','#e08a2a']);break;
       case'firefly':p.m=rnd(7,11);p.c=pick(FFC[th]||['#d8ff7a','#fff6a8']);break;
       case'splash':p.m=.38;p.s=1;p.c='#dfeaff';break;
+      case'petal':p.m=rnd(9,13);p.s=rnd(1.3,2.1);p.c=pick(th==='namek'?['#b8ffe0','#8ae8c8','#ffffff']:th==='other'?['#ffc0f0','#ffe0ff','#c8a0ff']:th==='beach'?['#ffd0a0','#ff9ab8','#ffffff']:['#ffb0c8','#ffffff','#ffe27a','#ff8aa8']);break;
+      case'tumble':{const dir=Math.random()<.78?1:-1;p.m=rnd(16,24);p.vx=dir*rnd(55,95);p.s=rnd(5,8);p.c=th==='redrock'?'#7a4a30':'#a8884a';if(!pre)p.x=dir>0?this.cx-80:this.cx+W+80;break;}   /* a tumbleweed rolling past */
+      case'soul':p.m=rnd(8,12);p.vx=rnd(-6,6);p.vy=-rnd(12,24);p.s=rnd(3,5);p.c=pick(['#9ae8ff','#c8f4ff','#b8a0ff']);break;
+      case'shard':p.m=rnd(10,14);p.s=rnd(3,6);p.vx=rnd(-7,7);p.vy=rnd(-7,7);p.c=pick(['#8a6aff','#6ad0ff','#ff6ad8']);break;
+      case'cloudlet':p.m=rnd(16,22);p.s=rnd(24,42);p.vx=rnd(34,60);p.vy=rnd(-3,3);if(!pre)p.x=this.cx-90;break;
+      case'halo':p.m=rnd(7,10);p.s=rnd(5,8);p.vy=-rnd(10,18);p.vx=rnd(-4,4);break;
       case'mote':p.m=rnd(7,11);p.s=rnd(2,3.6);p.vy=-rnd(5,12);p.c=th==='namek'?'#aaffd8':th==='other'?'#ffd0ff':th==='arena'?'#ffe9a8':'#6ad0ff';if(th==='arena'){p.vy=rnd(-3,3);p.vx=rnd(-5,5);p.s=rnd(1.2,2);}break;
       case'sparkle':p.m=rnd(1.6,3);p.s=rnd(2.5,4.5);p.c=th==='void'?'#bfd0ff':th==='beach'?'#fff6c0':'#ffffff';break;
       case'dust':p.m=rnd(2,3.5);p.s=rnd(8,18);p.vy=rnd(-14,14);p.c=th==='waste'?'#e0cca8':th==='arena'?'#d8d0c0':'#e0a080';break;
@@ -304,7 +307,7 @@ const Ambient={
      if(k==='rain')ex('splash',34*I);else if(k==='storm')ex('splash',62*I);else if(k==='wind'&&theme==='arena')ex('dust',16*I);}
     /* footsteps */
     if(p&&p.mv&&dt>0){this.foot-=dt;if(this.foot<=0){this.foot=.17;
-      const onW=c.wt&&this.water(theme,Math.floor(p.x/64),Math.floor(p.y/64));
+      const onW=c.wt&&Sea.wet(theme,p.x,p.y)>.012;
       this.puffAt(onW?'ring':(theme==='hell'?'ember':theme==='void'?'mote':'puff'),p.x+rnd(-3,3),p.y+4);}}
     const px=p?p.x:cx+vw/2,py=p?p.y:cy+vh/2,wd=this.wd;
     const x0=cx-150,x1=cx+vw+150,y0=cy-150,y1=cy+vh+150;
@@ -328,6 +331,11 @@ const Ambient={
         case'ring':q.s+=dt*34;break;
         case'splash':q.s+=dt*36;break;
         case'bird':if(q.s>1.2)q.vy=Math.sin(q.l*.7+q.ph)*18;break;
+        case'petal':q.vx=(8+q.s*4)*(.4+wd)+Math.sin(q.l*1.5+q.ph)*14;q.vy=10+q.s*5+Math.sin(q.l*2.4+q.ph)*7;break;
+        case'tumble':q.vy=Math.sin(q.l*5+q.ph)*22;break;
+        case'soul':q.vx+=Math.sin(q.l*1.3+q.ph)*14*dt;break;
+        case'shard':q.vx+=Math.sin(q.l*.6+q.ph)*5*dt;q.vy+=Math.cos(q.l*.5+q.ph)*5*dt;break;
+        case'halo':q.vx=Math.sin(q.l*.9+q.ph)*6;break;
       }
       q.x+=q.vx*dt;q.y+=q.vy*dt;
       if(q.x<x0||q.x>x1||q.y<y0||q.y>y1)dead=true;
@@ -406,6 +414,9 @@ const Ambient={
     const env=clamp(Math.min(q.l/.7,(q.m-q.l)/.9),0,1),x=q.x,y=q.y;
     switch(q.k){
       case'butterfly':{const w=Math.abs(Math.sin(t*18+q.ph))*3.2+.4;ctx.fillStyle=q.c;ctx.fillRect(x-w,y-1,w,3);ctx.fillRect(x,y-1,w,3);ctx.fillStyle='#2a2a30';ctx.fillRect(x-.5,y-1,1,4);break;}
+      case'petal':{const w=2.2*Math.abs(Math.cos(q.l*3+q.ph))+.7;ctx.globalAlpha=env;ctx.fillStyle=q.c;ctx.beginPath();ctx.ellipse(x,y,w*q.s*.9,1.1*q.s,q.l*1.2+q.ph,0,TAU);ctx.fill();ctx.globalAlpha=1;break;}
+      case'tumble':{ctx.save();ctx.translate(x,y);ctx.rotate(q.l*(q.vx>0?4.2:-4.2));ctx.globalAlpha=env*.85;ctx.strokeStyle=q.c;ctx.lineWidth=1.3;const r=q.s;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.moveTo(-r,0);ctx.lineTo(r,0);ctx.moveTo(0,-r);ctx.lineTo(0,r);ctx.moveTo(-r*.7,-r*.7);ctx.lineTo(r*.7,r*.7);ctx.moveTo(r*.7,-r*.7);ctx.lineTo(-r*.7,r*.7);ctx.stroke();ctx.restore();ctx.globalAlpha=1;break;}
+      case'cloudlet':{ctx.globalAlpha=.3*env;ctx.fillStyle='#ffffff';const s=q.s;for(const [dx,dy,r] of[[0,0,.5],[.5,.1,.42],[-.5,.1,.4],[.15,-.25,.38]]){ctx.beginPath();ctx.arc(x+dx*s,y+dy*s,r*s,0,TAU);ctx.fill();}ctx.globalAlpha=1;break;}
       case'seed':ctx.globalAlpha=.8*env;ctx.fillStyle='#fff';ctx.fillRect(x,y,q.s,q.s);ctx.fillRect(x-q.s*2,y+q.s*.4,q.s*2,.8);ctx.globalAlpha=1;break;
       case'leaf':{const w=3*Math.abs(Math.cos(q.l*3+q.ph))+.6;ctx.globalAlpha=env;ctx.fillStyle=q.c;ctx.fillRect(x,y,w*q.s,2.2*q.s);ctx.globalAlpha=1;break;}
       case'dust':ctx.globalAlpha=.3*env;ctx.strokeStyle=q.c;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-q.s,y-q.vy*.04);ctx.stroke();ctx.globalAlpha=1;break;
@@ -429,6 +440,9 @@ const Ambient={
       case'mote':{const r=q.s*3;ctx.globalAlpha=.7*env;ctx.drawImage(GLOW.spr(q.c),x-r,y-r,r*2,r*2);break;}
       case'sparkle':{const k=Math.sin(Math.min(1,q.l/q.m)*Math.PI),s=q.s*k;ctx.globalAlpha=.9*k;ctx.fillStyle=q.c;ctx.fillRect(x-s,y-.5,s*2,1);ctx.fillRect(x-.5,y-s,1,s*2);break;}
       case'ember':{const fl=.6+.4*Math.sin(q.l*30+q.ph),a=clamp(1-q.l/q.m,0,1);ctx.globalAlpha=a*fl;ctx.drawImage(GLOW.spr(q.c),x-q.s*4,y-q.s*4,q.s*8,q.s*8);ctx.globalAlpha=a;ctx.fillStyle='#fff3c0';ctx.fillRect(x-.7,y-.7,1.4,1.4);break;}
+      case'soul':{const pu=.6+.4*Math.sin(t*3+q.ph),s=q.s;ctx.globalAlpha=env*.55*pu;ctx.drawImage(GLOW.spr(q.c),x-s*4,y-s*4,s*8,s*8);ctx.globalAlpha=env*.8;ctx.fillStyle='#f0fcff';ctx.beginPath();ctx.ellipse(x,y,s*.7,s,0,0,TAU);ctx.fill();ctx.strokeStyle=q.c;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x,y+s);for(let k=1;k<=4;k++)ctx.lineTo(x+Math.sin(t*5+k+q.ph)*s*.5,y+s+k*s*.9);ctx.stroke();break;}
+      case'shard':{ctx.save();ctx.translate(x,y);ctx.rotate(q.l*.6+q.ph);const s=q.s,pu=.55+.45*Math.sin(t*2.2+q.ph);ctx.globalAlpha=env*.9*pu;ctx.fillStyle=q.c;ctx.beginPath();ctx.moveTo(0,-s*1.6);ctx.lineTo(s*.7,0);ctx.lineTo(0,s*1.6);ctx.lineTo(-s*.7,0);ctx.closePath();ctx.fill();ctx.globalAlpha=env*.5*pu;ctx.drawImage(GLOW.spr(q.c),-s*3,-s*3,s*6,s*6);ctx.restore();break;}
+      case'halo':{const k=Math.min(1,q.l/q.m);ctx.globalAlpha=env*.8*(1-k*.4);ctx.strokeStyle='#ffe58a';ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(x,y,q.s,q.s*.34,0,0,TAU);ctx.stroke();ctx.strokeStyle='#ffffff';ctx.lineWidth=.7;ctx.stroke();break;}
       case'wisp':{const pu=.6+.4*Math.sin(t*4+q.ph);ctx.globalAlpha=env*.7*pu;ctx.drawImage(GLOW.spr(q.c),x-12,y-12,24,24);ctx.globalAlpha=env;ctx.fillStyle='#e8fbff';ctx.fillRect(x-1,y-2.5,2,4);break;}
       case'flash':{if(q.l>.32)break;const k=1-q.l/.32;ctx.globalAlpha=k;ctx.drawImage(GLOW.spr('#ffffff'),x-16,y-16,32,32);ctx.fillStyle='#fff';ctx.fillRect(x-14*k,y-.6,28*k,1.2);ctx.fillRect(x-.6,y-14*k,1.2,28*k);break;}
       case'meteor':{const a=1-q.l/q.m,L=q.s,nx=q.vx/Math.hypot(q.vx,q.vy),ny=q.vy/Math.hypot(q.vx,q.vy);

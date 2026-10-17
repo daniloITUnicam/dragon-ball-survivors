@@ -220,7 +220,7 @@ class UI{
     const refBtns=[h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
       h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire')),
       h('button',{class:'btn small alt','data-fid':'cbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn'))];
-    return h('div',null,this.header('chooseChar',claim?()=>{sel.claim=false;sel.peek=null;this.pop();}:null,refBtns),
+    return h('div',{class:'cscr'},this.header('chooseChar',claim?()=>{sel.claim=false;sel.peek=null;this.pop();}:null,refBtns),
       claim?h('div',{class:'claimbar'},'🐉 '+this.t('sbClaimBar')):null,
       h('div',{class:'row topact'},startBtn),
       h('div',{class:'split'},h('div',{class:'grid chars'},cards),detail));
@@ -320,12 +320,23 @@ class UI{
       const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost);
       return h('div',{class:'card shopi'},
         glyph(it.k,'#ffd23f'),h('div',{class:'col'},h('div',{class:'cn'},this.tr(it.n)),h('div',{class:'cd'},this.tr(it.d)),
-          h('div',{class:'pips'},Array.from({length:it.max},(_,i)=>h('i',{class:i<lv?'on':''})))),
+          h('div',{class:'pips'},Array.from({length:it.max},(_,i)=>h('i',{class:i<lv?'on':''}))),
+          it.id==='ban'&&lv>0?h('button',{class:'btn small primary banman','data-fid':'shbanm',onclick:()=>{this.sfx();this.push('bans');}},this.t('banManage',{a:d.banned.length,b:lv})):null),
         h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},
           maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost))));
     });
     return h('div',null,this.header('shopTitle'),h('p',{class:'sub'},this.t('shopDesc')),h('div',{class:'grid shop'},cards),
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));
+  }
+  /* weapon blacklist: every purchase of the shop upgrade gives one ban; banned weapons never come up as new weapons among the level-up cards */
+  screen_bans(){
+    const d=this.save,cap=d.shop.ban||0,ids=Object.keys(WEAPONS).filter(id=>d.wu[id]||d.banned.includes(id)||this.testAll());
+    const cards=ids.map(id=>{
+      const w=WEAPONS[id],on=d.banned.includes(id);
+      return h('button',{class:'bancard'+(on?' on':''),style:'--c:'+w.c,'data-fid':'ban'+id,onclick:()=>{if(this.app.progress.toggleBan(id)){this.sfx(on?'uiBack':'uiStart');this.rebuild(true);}else this.sfx('uiErr');}},
+        glyph(w.k,w.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(w.n)),h('div',{class:'cd'},this.t(on?'banOn':'banOff'))));
+    });
+    return h('div',null,this.header('banTitle'),h('p',{class:'sub'},this.t('banDesc',{a:d.banned.length,b:cap})),h('div',{class:'bangrid'},cards));
   }
   screen_ach(){
     const d=this.save,st=this.achF||(this.achF={hide:false,near:false,q:''});

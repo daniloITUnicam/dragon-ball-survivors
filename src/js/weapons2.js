@@ -1,5 +1,5 @@
 'use strict';
-/* ====== Roster-signature weapons (unlocked by reaching level 50 with their owner). Balanced a bit below the classics. ====== */
+/* ====== Roster-signature weapons (unlocked by winning a stage with their owner). Balanced a bit below the classics. ====== */
 Object.assign(WS,{
   javelin:{cd:[1.5,1.4,1.25,1.1,1,.9],n:[1,1,2,2,3,4],dmg:[14,16,18,21,24,27],pi:[2,2,3,3,4,6]},
   dsunday:{cd:[1.5,1.4,1.3,1.2,1.1,1],n:[2,2,2,3,3,4],dmg:[9,10.5,12,13.5,15,17],rad:[36,40,44,48,54,64]},
@@ -96,7 +96,7 @@ class BoomerWeapon extends NW{
       const k=b.t/b.dur;if(k>=1){b.done=true;continue;}
       if(k>.5&&!b.turn){b.turn=true;b.hit.clear();}
       const r=Math.sin(k*Math.PI)*b.d;
-      b.x=p.x+Math.cos(b.a)*r;b.y=p.y-14+Math.sin(b.a)*r*.9;
+      b.x=p.x+Math.cos(b.a)*r;b.y=p.y-14+Math.sin(b.a)*r*.9;if(g.eb.length)g.cutC(b.x,b.y,17*this.area());
       for(const e of g.en){
         if(e.dead||b.hit.has(e))continue;
         const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+17*this.area();
@@ -133,6 +133,7 @@ class HellzoneWeapon extends NW{
     for(const z of this.zs){
       z.t+=dt;
       if(z.t<0)continue;
+      if(g.eb.length)g.cutC(z.x,z.y,z.rad);
       if(!z.on){z.on=true;g.ring(z.x,z.y,z.rad*1.2,this.color,.35);g.burst(z.x,z.y,16,'#ff9a2a');g.shake=Math.max(g.shake,.1);}
       z.tk-=dt;if(z.tk<=0){z.tk=.45;for(const e of g.en){if(e.dead)continue;const dx=e.x-z.x,dy=e.y-z.y,rr=z.rad+e.r;if(dx*dx+dy*dy<rr*rr)g.hit(e,s.dmg[L]*this.dm,0,0);}}
       if(Math.random()<.5&&g.fx.length<420){const a=rnd(0,TAU),d=rnd(0,z.rad);g.fx.push({x:z.x+Math.cos(a)*d,y:z.y+Math.sin(a)*d*.8,vx:rnd(-10,10),vy:rnd(-90,-40),l:rnd(.3,.6),m:.6,c:Math.random()<.5?'#ffb13b':'#ff5a1a',s:rnd(2,4)});}
@@ -169,7 +170,7 @@ class ChronoWeapon extends NW{
     if(this.fxT>0){this.fxT=Math.max(0,this.fxT-dt/1.4);this.T0+=dt;}
     for(const h of this.pend){
       h.t-=dt;
-      if(h.t<=0&&!h.done){h.done=true;
+      if(h.t<=0&&!h.done){h.done=true;g.cutC(p.x,p.y,this.fxR*1.2);
         for(const e of g.en){if(e.dead||!this.inView(e,this.fxR))continue;g.hit(e,s.dmg[L]*this.dm,0,0);if(g.fx.length<420){const a=rnd(0,TAU);for(let k=0;k<3;k++)g.fx.push({x:e.x+Math.cos(a)*10*k,y:e.y-10+Math.sin(a)*10*k,vx:Math.cos(a)*120,vy:Math.sin(a)*120,l:.3,m:.3,c:'#cfd8ff',s:3});}}
         g.shake=Math.max(g.shake,.08);
       }
@@ -205,7 +206,7 @@ class ShockWeapon extends NW{
     }
     for(const w of this.rs){
       w.t+=dt;if(w.t<0)continue;
-      const prev=w.r;w.r=w.max*Math.min(1,w.t/.55);
+      const prev=w.r;w.r=w.max*Math.min(1,w.t/.55);if(g.eb.length)g.cutC(p.x,p.y,w.r);
       for(const e of g.en){
         if(e.dead||w.hit.has(e))continue;
         const d=Math.hypot(e.x-p.x,(e.y-p.y)/.82);
@@ -242,7 +243,7 @@ class HakaiWeapon extends NW{
       b.t+=dt;
       const t=g.nearest(b.x,b.y,620);
       if(t){const [ux,uy]=unit(t.x-b.x,t.y-8-b.y);const sp2=Math.min(130,40+b.t*90);b.x+=ux*sp2*dt;b.y+=uy*sp2*dt;}
-      b.tk-=dt;
+      b.tk-=dt;if(g.eb.length)g.cutC(b.x,b.y,b.rad);
       for(const e of g.en){
         if(e.dead)continue;
         const dx=e.x-b.x,dy=e.y-8-b.y,rr=b.rad+e.r;
@@ -282,7 +283,7 @@ class ChainWeapon extends NW{
       if(cur){
         const pts=[[p.x,p.y-20]],used=new Set(),jumps=s.jumps[L]+g.S.proj+this.e2n*2;
         for(let i=0;i<jumps&&cur;i++){
-          used.add(cur);pts.push([cur.x,cur.y-10]);g.hit(cur,s.dmg[L]*this.dm,0,0);
+          used.add(cur);pts.push([cur.x,cur.y-10]);g.hit(cur,s.dmg[L]*this.dm,0,0);g.cutC(cur.x,cur.y-10,34);
           let nx=null,bd=230*230*this.area();
           for(const e of g.en){if(e.dead||used.has(e))continue;const dx=e.x-cur.x,dy=e.y-cur.y,d=dx*dx+dy*dy;if(d<bd){bd=d;nx=e;}}
           cur=nx;
@@ -329,7 +330,7 @@ class MeteorWeapon extends NW{
     for(const m of this.ms){
       m.t+=dt;
       if(m.t>=m.fall&&!m.done){
-        m.done=true;const R=m.rad,L2=this.L;
+        m.done=true;const R=m.rad,L2=this.L;g.cutC(m.x,m.y,R);
         g.ring(m.x,m.y,R*1.3,'#ff8a2a',.4);g.burst(m.x,m.y,18,'#ffb13b');g.burst(m.x,m.y,8,'#ffffff');g.shake=Math.max(g.shake,.1);
         for(const e of g.en){if(e.dead)continue;const dx=e.x-m.x,dy=e.y-m.y,rr=R+e.r;if(dx*dx+dy*dy<rr*rr)g.hit(e,s.dmg[L2]*this.dm,dx*.6,dy*.6);}
       }
@@ -369,7 +370,7 @@ class SweepWeapon extends NW{
       a.cur=a.a+a.t/a.dur*TAU*1.15;this.tk-=dt;
       if(this.tk<=0){
         this.tk=.12;const len=s.len[L]*this.area()*this.reach()*SweepWeapon.ext(a),wid=s.wid[L]*this.area(),angs=this.evo>=2?[a.cur,a.cur+TAU/3,a.cur+TAU*2/3]:this.evo?[a.cur,a.cur+Math.PI]:[a.cur];
-        for(const ang of angs){const cs=Math.cos(ang),sn=Math.sin(ang);
+        for(const ang of angs){const cs=Math.cos(ang),sn=Math.sin(ang);g.cutBeam(p.x,p.y-18,cs,sn,len,wid);
           for(const e of g.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-8-(p.y-18),al=dx*cs+dy*sn,pe=-dx*sn+dy*cs;if(al>-10&&al<len&&Math.abs(pe)<wid/2+e.r)g.hit(e,s.dmg[L]*this.dm,cs*30,sn*30);}}
       }
       g.shake=Math.max(g.shake,.06);
@@ -403,7 +404,7 @@ class DynWeapon extends NW{
     for(const b of this.bs){
       b.t+=dt;
       if(b.t>=0&&!b.did){
-        b.did=true;g.shake=Math.max(g.shake,.1);
+        b.did=true;g.cutC(p.x,p.y,b.R);g.shake=Math.max(g.shake,.1);
         for(const e of g.en){if(e.dead||!this.inView(e,b.R+e.r))continue;const [ux,uy]=unit(e.x-p.x,e.y-p.y);g.hit(e,s.dmg[L]*this.dm,ux*340,uy*340);}
       }
     }

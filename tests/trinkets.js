@@ -31,7 +31,7 @@ const r2=await pg.evaluate(()=>{const g=G,o={};g.t=100;g.en=[];g.eb=[];
  g.p.hp=5;step(120);o.noRegen=g.p.hp===5;
  /* buying while holding one: comparison window */
  const it=tr.items.find(x=>x.id!=='boots'),c0=g.run.coins;
- g.zenoBuy(it);o.modal=g.modal&&g.modal.type;o.cur=g.modal&&g.modal.cur.id;o.nw=g.modal&&g.modal.nw.id===it.id;
+ g.zenoBuy(it);o.modal=g.modal&&g.modal.type;o.cur=g.modal&&g.modal.curs[0].id;o.nw=g.modal&&g.modal.nw.id===it.id;
  window.__it=it;window.__c0=c0;return o;});
 ok(r2.start==='boots','single trinket equipped');
 ok(!r2.ability&&!r2.pet&&!r2.senzu,'abilities, pet and Senzu are off inside the shop');

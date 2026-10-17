@@ -1,51 +1,56 @@
 /* every ESC_EVERY seconds new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
-const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=90,ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08};
+const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=90,ESC_N={hp:.01,dmg:.01,arm:0,xp:.05},ESC_X={hp:.02,dmg:.01,arm:.05,xp:.08};   /* every 90 s new enemies get only a tiny step of HP / damage (1%; before 10% / 2%) */
+/* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
+const SPAWN_K=.85,CAP_K=.78;
+/* enemy fire: a volley is smaller (x0.67), the shooters wait longer between volleys, and all of them share a "shot budget" that refills at a fixed rate,
+   so a crowd of shooters can never drown the screen in bullets (Snake Way is the calmest: its shooters are the most numerous and the most dangerous) */
+const SHOT_N_K=.67,SHOT_CD_K=1.8,SHOT_CD_SNAKE=2.6,SHOT_RATE=6,SHOT_RATE_SNAKE=3.4,SHOT_BANK=12,SHOT_BANK_SNAKE=8,EB_CAP=90;
 const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
 /* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
 const GEM_CAP=90,GEM_KEEP=55;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
-const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=1.75,WAVE_CAP=1.2,REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35;
+const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35;
 const TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
-    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
+    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;MAP.roll();World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
     this.diffId=o.diff;this.D=DIFF[o.diff];this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
-    this.p={x:0,y:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
+    this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
-    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tq=[];
+    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;
     this.run={bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
     this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;
-    this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
-    this.spAcc=0;this.hordeT=130*Math.sqrt(this.TS);this.packT=40;{const all=this.stage.bosses,mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back */
+    this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
+    this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=this.stage.bosses,mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back */
       this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false}));}
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
-    this.wave={ph:'calm',until:rnd(52,68),n:0};this.elitePlan=this.planElites();this.ballEvery=clamp(this.dur*.28,100,270);this.ballAt=this.ballEvery*.75;
+    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.ballEvery=clamp(this.dur*.28,100,270);this.ballAt=this.ballEvery*.75;
     /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 7 are owned), later and farther away, and it is guarded */
     this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<7)&&Math.random()<SUP_CHANCE?{at:this.dur*rnd(.28,.55),done:false}:null;
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
-    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.bombT=rnd(90,150);this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=rnd(60,100);this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
+    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.bombT=this.stage.no===1?1e9:rnd(180,260)*this.evK;this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     for(const id of this.C.start)this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
-    this.trinSrc='';{const eq=this.save.equip,td=eq&&TRINKETS.find(x=>x.id===eq.id);
-      if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.trinSrc='bag';this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
+    {const eq=this.save.equip,td=eq&&TRINKETS.find(x=>x.id===eq.id);
+      if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.tSrc={[eq.id]:'bag'};this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
     this.recalc();this.p.hp=this.p.maxHp;
   }
   get viewR(){return Math.hypot(this.vw,this.vh)/2+50;}
@@ -122,7 +127,7 @@ class Game{
   }
   levelOptions(){
     const pool=this.upgradePool();
-    if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id))pool.push({type:'w',id,lv:0});
+    if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
     const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
@@ -179,41 +184,70 @@ class Game{
   addZenny(v){this.run.coins+=v;}
 
   /* ---------- trinkets ---------- */
-  /* only ONE trinket can be carried: a new one opens a comparison window (replace / keep) */
+  /* one trinket can be carried; the shop's "Trinket slot" upgrade adds up to two more. When every slot is taken a new one opens a comparison window (replace one / keep them) */
+  get tcap(){return Math.min(3,1+(this.save.shop.tslot||0));}
   trR(id){const r=this.tRar[id];if(r!=null)return r;const t=TRINKETS.find(x=>x.id===id);return t?t.r:0;}
   rarOf(id){const t=TRINKETS.find(x=>x.id===id);return Math.random()<.01?4:(t?t.r:0);}    /* 1%: it turns out mythic */
   /* a trinket found during the run is not kept: it is sold for zenny when something replaces it and at the end of the run (the one from the bag is never sold) */
   sellTrinket(id,rar,why){
     const t=TRINKETS.find(x=>x.id===id);if(!t)return 0;
     const v=trinketSale(rar,this.sd);this.addZenny(v);this.run.tsold=(this.run.tsold||0)+1;
-    if(why!=='end'){this.floatText(this.p.x,this.p.y-70,this.env.tr(T('Venduto: ','Sold: '))+this.env.tr(t.n)+'  +Z '+v,1);this.audio.sfx('coin');}
+    if(why!=='end'){this.floatText(this.p.x,this.p.y-70,this.env.tr(why==='auto'?T('Rifiutato: ','Refused: '):T('Venduto: ','Sold: '))+this.env.tr(t.n)+'  +Z '+v,1);this.audio.sfx('coin');}
     return v;
   }
   sellHeld(){
-    const id=this.trinkets[0];if(!id||this.trinSrc!=='run')return 0;
-    this.trinSrc='sold';return this.sellTrinket(id,this.trR(id),'end');
+    let v=0;
+    for(const id of this.trinkets)if(this.tSrc[id]==='run'){this.tSrc[id]='sold';v+=this.sellTrinket(id,this.trR(id),'end');}
+    return v;
   }
-  equipTrinket(id,rar){
+  /* takes a trinket out of its slot (a found one is sold; the one from the bag just goes back to the bag) */
+  dropTrinket(id){
+    const i=this.trinkets.indexOf(id);if(i<0)return -1;
+    const t=TRINKETS.find(x=>x.id===id);
+    if(this.tSrc[id]==='run')this.sellTrinket(id,this.trR(id));
+    this.trinkets.splice(i,1);delete this.tRar[id];delete this.tSrc[id];
+    if(t&&t.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
+    return i;
+  }
+  /* the slot of the weakest carried trinket (the one a full inventory gives up) */
+  weakestTrinket(){let b=null,br=9;for(const id of this.trinkets){const r=this.trR(id);if(r<br){br=r;b=id;}}return b;}
+  equipTrinket(id,rar,replaceId){
     const t=TRINKETS.find(x=>x.id===id);if(!t)return false;
-    const old=this.trinkets[0],ot=old&&TRINKETS.find(x=>x.id===old);
-    if(old&&this.trinSrc==='run')this.sellTrinket(old,this.trR(old));
-    this.trinSrc='run';
-    this.trinkets=[id];this.tRar={[id]:rar};this.save.trin[id]=1;this.run.tpicks=(this.run.tpicks||0)+1;if(rar>=3)this.run.legendary++;if(rar>=4)this.run.mythic=(this.run.mythic||0)+1;
-    if(ot&&ot.sp==='barrier'&&!this.totemFx.guard)this.barrierReady=false;
+    let at=-1;
+    if(replaceId&&this.trinkets.includes(replaceId))at=this.dropTrinket(replaceId);
+    else if(this.trinkets.includes(id))at=this.dropTrinket(id);
+    if(this.trinkets.length>=this.tcap)at=this.dropTrinket(this.weakestTrinket());
+    if(at<0||at>this.trinkets.length)at=this.trinkets.length;
+    this.trinkets.splice(at,0,id);this.tRar[id]=rar;this.tSrc[id]='run';
+    this.save.trin[id]=1;this.run.tpicks=(this.run.tpicks||0)+1;if(rar>=3)this.run.legendary++;if(rar>=4)this.run.mythic=(this.run.mythic||0)+1;
     if(t.sp==='barrier'){this.barrierReady=true;}
     this.audio.sfx('trinket');this.recalc();return true;
+  }
+  /* setting "refuse lower rarities": with every slot taken, a trinket of a lower rarity than everything you carry is sold at once; the comparison window only opens for the same rarity or better */
+  autoRefuse(rar,buy){
+    if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.tcap)return false;
+    return rar<Math.min(...this.trinkets.map(x=>this.trR(x)));
   }
   addTrinket(id,rar,cb){
     if(!TRINKETS.find(x=>x.id===id))return false;
     if(rar==null)rar=this.rarOf(id);
-    if(!this.trinkets.length){const ok=this.equipTrinket(id,rar);if(ok&&cb&&cb.onYes)cb.onYes();return ok;}
-    this.tq.push({id,rar,onYes:cb&&cb.onYes,onNo:cb&&cb.onNo,buy:cb&&cb.buy});this.drainTQ();return false;
+    const buy=!!(cb&&cb.buy),yes=()=>{if(cb&&cb.onYes)cb.onYes();},no=()=>{if(cb&&cb.onNo)cb.onNo();};
+    if(this.trinkets.includes(id)){   /* already carried: a better copy upgrades it in place, otherwise the new one is sold */
+      if(rar>this.trR(id)){const ok=this.equipTrinket(id,rar,id);if(ok)yes();return ok;}
+      if(!buy)this.sellTrinket(id,rar);
+      no();return false;
+    }
+    if(this.trinkets.length<this.tcap){const ok=this.equipTrinket(id,rar);if(ok)yes();return ok;}
+    if(this.autoRefuse(rar,buy)){this.sellTrinket(id,rar,'auto');this.run.trefused=(this.run.trefused||0)+1;no();return false;}
+    this.tq.push({id,rar,onYes:cb&&cb.onYes,onNo:cb&&cb.onNo,buy});this.drainTQ();return false;
   }
   drainTQ(){
     if(this.modal||!this.tq.length||this.ended)return;
-    const n=this.tq.shift(),cid=this.trinkets[0];
-    if(!cid){this.equipTrinket(n.id,n.rar);if(n.onYes)n.onYes();return this.drainTQ();}
-    this.modal={type:'tswap',cur:{id:cid,rar:this.trR(cid)},nw:{id:n.id,rar:n.rar},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
+    const n=this.tq.shift();
+    if(this.trinkets.includes(n.id)||this.trinkets.length<this.tcap||this.autoRefuse(n.rar,n.buy)){   /* the situation changed while it was waiting: decide again */
+      this.addTrinket(n.id,n.rar,{onYes:n.onYes,onNo:n.onNo,buy:n.buy});return this.drainTQ();
+    }
+    this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),src:this.tSrc[id]})),nw:{id:n.id,rar:n.rar},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
   }
   rarityWeights(){
     const si=this.sd,L=this.S.luck;
@@ -236,12 +270,12 @@ class Game{
   chestRewards(isFinal,boss,elite){
     const R=[],elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     if(elig.length)R.push({k:'evo',id:pick(elig).id});
-    else{const pool=shuffle(this.upgradePool());if(pool.length)R.push({k:'up',o:pool.pop()});else R.push({k:'zenny',v:Math.round(40*(1+this.sd))});}
+    else{const pool=shuffle(this.upgradePool());if(pool.length)R.push({k:'up',o:pool.pop()});else R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
     if(boss){
-      {const o=this.rollTrinketList(this.pickCount());if(o.length)R.push({k:'pick',opts:o,rars:o.map(id=>this.rarOf(id))});else R.push({k:'zenny',v:Math.round(60*(1+this.sd))});}
+      {const o=this.rollTrinketList(this.pickCount());if(o.length)R.push({k:'pick',opts:o,rars:o.map(id=>this.rarOf(id))});else R.push({k:'zenny',v:Math.round(60*ZMUL*(1+this.sd))});}
     }else{
       const bonus=Math.min(.4,this.S.luck*.9);
-      if(elite||Math.random()<bonus){const id=this.rollTrinket();if(id)R.push({k:'trinket',id,rar:this.rarOf(id)});else if(elite)R.push({k:'zenny',v:Math.round(40*(1+this.sd))});}
+      if(elite||Math.random()<bonus){const id=this.rollTrinket();if(id)R.push({k:'trinket',id,rar:this.rarOf(id)});else if(elite)R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
     }
     return R;
   }
@@ -264,8 +298,9 @@ class Game{
     }else if(m.type==='pick'){
       const id=m.opts[i];if(id)this.addTrinket(id,(m.rars||[])[i]);
     }else if(m.type==='tswap'){
-      if(i===0){this.equipTrinket(m.nw.id,m.nw.rar);if(m.onYes)m.onYes();}
-      else{if(!m.buy)this.sellTrinket(m.nw.id,m.nw.rar);if(m.onNo)m.onNo();}   /* kept the old one: a found trinket is sold, an offer in Zeno-sama's shop is simply not bought */
+      const rep=m.curs[i];   /* one of the carried trinkets is replaced; the last button keeps them all */
+      if(rep){this.equipTrinket(m.nw.id,m.nw.rar,rep.id);if(m.onYes)m.onYes();}
+      else{if(!m.buy)this.sellTrinket(m.nw.id,m.nw.rar);if(m.onNo)m.onNo();}   /* kept the old ones: a found trinket is sold, an offer in Zeno-sama's shop is simply not bought */
     }else if(m.type==='trial'){this.endTrial();
     }else if(m.type==='wish'){
       const w=m.options[i]||m.options[0];
@@ -273,7 +308,7 @@ class Game{
       if(w==='revive'){this.revives++;this.say(this.env.tr(T('Desiderio: una seconda vita!','Wish: a second life!')),'#8be07a',3);}
       else if(w==='power'){for(const x of this.weapons.values())if(x.lv<WMAX){x.upgrade();if(x.lv<WMAX)x.upgrade();}this.say(this.env.tr(T('Desiderio: potere!','Wish: power!')),'#ffd23f',3);}
       else if(w==='tickets'){this.addTicket('t10',1);this.say(this.env.tr(T('Desiderio: 10 ticket!','Wish: 10 tickets!')),'#ffd23f',3);}
-      else{this.addZenny(300);const id=this.rollTrinket();if(id)this.addTrinket(id);this.say(this.env.tr(T('Desiderio: fortuna!','Wish: fortune!')),'#ffb13b',3);}
+      else{this.addZenny(Math.round(300*ZMUL));const id=this.rollTrinket();if(id)this.addTrinket(id);this.say(this.env.tr(T('Desiderio: fortuna!','Wish: fortune!')),'#ffb13b',3);}
       this.heal(this.p.maxHp);this.balls=0;this.ballSet=[];this.recalc();
     }
     this.modal=null;this.drainTQ();
@@ -548,7 +583,7 @@ class Game{
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
     if(e.boss){
       this.run.bossKills++;this.bossAlive--;
-      const pay=Math.round(60*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
+      const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 20%: a 10x ticket */
       this.chests.push({x:e.x,y:e.y,final:e.final,t:0,boss:true});
@@ -620,8 +655,8 @@ class Game{
   pickLoot(){const w=this.lootWeights(),o=Object.keys(w).filter(k=>w[k]>0);return o.length?wpick(o,k=>w[k]):null;}
   lootOnField(k){return this.loot.some(l=>l.k===k&&!l.dead);}
   /* zenny bag: its value follows the moment it appears, 1000 at minute 30 (a straight line, in steps of 5, at least 25); the coin buffs (S.gold) apply on top when the run pays out */
-  coinValue(t){return clamp(Math.round(5+35*(t===undefined?this.t:t)/1800),5,40);}   /* a loose coin: 5 zenny at the start, 40 at minute 30 and never more */
-  bagValue(t){return clamp(Math.round(1000*(t===undefined?this.t:t)/1800/5)*5,25,1300);}
+  coinValue(t){return clamp(Math.round(ZMUL*(5+35*(t===undefined?this.t:t)/1800)),4,32);}   /* a loose coin: 4 zenny at the start, 32 at minute 30 and never more (it was 5 -> 40, then -20% on every zenny) */
+  bagValue(t){return clamp(Math.round(ZMUL*1000*(t===undefined?this.t:t)/1800/5)*5,20,1040);}
   spawnLoot(k,x,y){
     const v=k==='coin'?this.coinValue():k==='bag'?this.bagValue():k==='xp'?Math.round(this.need*.3):0;
     this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
@@ -731,8 +766,8 @@ class Game{
   dmgMul(){return ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  spawnCap(){if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd));const pr=Math.min(1,this.prog());return Math.round(24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7));}
-  spawnRate(){return(1+11*Math.pow(Math.min(1,this.prog()),1.35))*this.stageMul(this.stage.spawn)*this.D.spawn;}
+  spawnCap(){if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K);}
+  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn;}
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -796,7 +831,7 @@ class Game{
       this.say(this.env.tr(T('ONDATA! RESISTI 15 SECONDI','SURGE! HOLD ON FOR 15 SECONDS')),'#ff5a3d',2.2);this.audio.sfx('warn');this.shake=Math.max(this.shake,.25);
     }else if(w.ph==='surge'){
       if(t>=w.until){w.ph='rest';w.until=t+WAVE_REST;this.waveRest();}
-    }else if(t>=w.until){w.ph='calm';w.until=t+rnd(38,52)*clamp(Math.sqrt(this.TS),.75,1.4);}
+    }else if(t>=w.until){w.ph='calm';w.until=t+rnd(WAVE_GAP[0],WAVE_GAP[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK;}
   }
   /* the breather: a ring of gems around the player (about 9% of a level in total), to be picked up in peace */
   waveRest(){
@@ -835,7 +870,7 @@ class Game{
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
     this.chests.push({x:e.x,y:e.y,final:false,t:0,elite:true});
-    const pay=Math.round(25*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
+    const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
     this.say(this.env.tr(T('ÉLITE SCONFITTO! Apri il forziere','ELITE DEFEATED! Open the chest')),'#ffd23f',2.4);
@@ -1088,8 +1123,8 @@ class Game{
       this.spAcc+=this.spawnRate()*fin*wv.rate*dt;
       const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length<cap)this.spawnOne();}
-      if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*Math.sqrt(this.TS);this.spawnHorde();}
-      if(this.t>=this.packT){this.packT+=40;this.spawnPack();}
+      if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
+      if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
     }
     for(const b of this.bossQ)if(!inTrial&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final);}
 
@@ -1104,12 +1139,12 @@ class Game{
     if(this.streak>0){this.streakT-=dt;if(this.streakT<=0)this.streak=0;}if(this.streakPop>0)this.streakPop-=dt;
     /* suicide-bomber waves: every few minutes, for 50-90 seconds */
     if(inTrial){}else if(!this.bombOn){this.bombT-=dt;if(this.bombT<=0&&this.stage.roster.some(r=>ENEMIES[r[0]].ai==='explode'&&this.t>=r[1])){this.bombOn=true;this.bombEnd=this.t+rnd(50,90);this.say(this.env.tr(T('ONDATA DI KAMIKAZE!','KAMIKAZE WAVE!')),'#ff7a3a',2.4);this.audio.sfx('boss');}else if(this.bombT<=0)this.bombT=20;}
-    else if(this.t>=this.bombEnd){this.bombOn=false;this.bombT=rnd(150,240);for(const e of this.en)if(e.ai==='explode'&&!(e.fuse>0)){e.dead=true;this.burst(e.x,e.y-8,5,'#ffb13b');}}
+    else if(this.t>=this.bombEnd){this.bombOn=false;this.bombT=rnd(260,380)*this.evK;for(const e of this.en)if(e.ai==='explode'&&!(e.fuse>0)){e.dead=true;this.burst(e.x,e.y-8,5,'#ffb13b');}}
     /* ranged-enemy wave: 60 seconds (first stage: 30), then they leave */
     if(!inTrial){
       if(this.shootOn){this.shootQT-=dt;if(this.shootQT<=0){this.shootQT+=8;this.shootQ=4;}}   /* 4 shooters per 8 s (first stage) */
       if(!this.shootOn){this.shootT-=dt;if(this.shootT<=0){if(this.stage.roster.some(r=>(ENEMIES[r[0]].ai==='ranged'||ENEMIES[r[0]].ai==='hover')&&this.t>=r[1])&&!this.bossAlive){this.shootOn=true;this.shootEnd=this.t+(this.stage.no===1?30:60);this.shootQ=4;this.shootQT=8;this.say(this.env.tr(T('ONDATA DI TIRATORI!','GUNNER WAVE!')),'#6ad0ff',2.6);this.audio.sfx('boss');}else this.shootT=20;}}
-      else if(this.t>=this.shootEnd){this.shootOn=false;this.shootT=rnd(130,200);for(const e of this.en)if(!e.boss&&(e.ai==='ranged'||e.ai==='hover')){e.dead=true;this.burst(e.x,e.y-8,5,'#6ad0ff');}}
+      else if(this.t>=this.shootEnd){this.shootOn=false;this.shootT=rnd(240,340)*this.evK;for(const e of this.en)if(!e.boss&&(e.ai==='ranged'||e.ai==='hover')){e.dead=true;this.burst(e.x,e.y-8,5,'#6ad0ff');}}
     }
     /* glossary: remember enemies the player has actually met */
     this.seenT-=dt;
@@ -1305,7 +1340,7 @@ class Game{
   }
 
   explodeAt(x,y,rad,dmg,c,skip){
-    this.ring(x,y,rad,c,.4);this.burst(x,y,14,c);this.burst(x,y,8,'#ffffff');this.shake=Math.max(this.shake,.12);
+    this.ring(x,y,rad,c,.4);this.burst(x,y,14,c);this.burst(x,y,8,'#ffffff');this.shake=Math.max(this.shake,.12);this.cutC(x,y,rad);
     for(const o of this.en){if(o.dead||o===skip)continue;const dx=o.x-x,dy=o.y-8-y,rr=rad+o.r;if(dx*dx+dy*dy<rr*rr)this.hit(o,dmg,dx*.4,dy*.4);}
   }
   updateProjectiles(dt){
@@ -1323,6 +1358,7 @@ class Game{
       if(b.hm>0){b.hm-=dt;const ca=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);let da=Math.atan2(p.y-14-b.y,p.x-b.x)-ca;da=Math.atan2(Math.sin(da),Math.cos(da));const na=ca+clamp(da,-2.3*dt,2.3*dt);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp;}
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
       if(b.life<=0){b.dead=true;continue;}
+      if(this.eb.length)this.cutC(b.x,b.y,b.r);   /* a ki shot cancels the enemy bullet it meets (and keeps flying) */
       for(const e of this.en){
         if(e.dead||b.hit.includes(e))continue;
         const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+b.r;
@@ -1336,19 +1372,20 @@ class Game{
   }
 
   updateEnemies(dt){
-    const p=this.p,grid=new Map();
+    const p=this.p,grid=new Map();this.shotRefill(dt);
     for(const e of this.en){
       if(e.dead)continue;
       const k=(Math.floor(e.x/40)+5000)*10000+(Math.floor(e.y/40)+5000);
       let c=grid.get(k);if(!c){c=[];grid.set(k,c);}c.push(e);
     }
-    const vr=this.viewR*1.45,tslow=this.slowT>0;
+    const vr=this.viewR*1.3,tslow=this.slowT>0;
     for(const e of this.en){
       if(e.atk>0)e.atk-=dt;
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,dist=Math.hypot(dx,dy)||1;
-      if(!e.boss&&dist>vr){const a=rnd(0,TAU),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
+      if(!e.boss&&dist>vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
+        const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
       const ux=dx/dist,uy=dy/dist;
       let mx=0,my=0,sp=e.spd*(e.slow>0?.6:1)*(tslow?(e.boss?.75:.55):1);
       if(e.slow>0)e.slow-=dt;
@@ -1365,10 +1402,14 @@ class Game{
           else if(dist>250){mx=ux;my=uy;}else if(dist<190){mx=-ux;my=-uy;}else{mx=-uy*.6;my=ux*.6;}
           e.sh-=dt;
           if(e.sh<=0){
-            const s=e.def.shoot;e.sh=s.cd+rnd(0,.8);e.atk=.36;
-            const base=Math.atan2(dy,dx);
-            if(s.ring){for(let i=0;i<s.n;i++){const a=i/s.n*TAU+e.ph;this.eb.push({x:e.x,y:e.y-14,vx:Math.cos(a)*s.spd,vy:Math.sin(a)*s.spd,r:6,dmg:e.dmg,life:5,c:'#c9a0ff'});}}
-            else for(let i=0;i<s.n;i++){const a=base+(i-(s.n-1)/2)*s.sp;this.eb.push({x:e.x,y:e.y-14,vx:Math.cos(a)*s.spd,vy:Math.sin(a)*s.spd,r:6,dmg:e.dmg,life:5,c:'#6ad0ff'});}
+            const s=e.def.shoot,n=this.shotN(s.n);
+            if(!this.shotOK(n)||this.eb.length>=EB_CAP)e.sh=.4+rnd(0,.6);   /* the shared budget is empty: try again in a moment */
+            else{
+              e.sh=s.cd*this.shotCdK()+rnd(0,.8);e.atk=.36;
+              const base=Math.atan2(dy,dx);
+              if(s.ring){for(let i=0;i<n;i++){const a=i/n*TAU+e.ph;this.eb.push({x:e.x,y:e.y-14,vx:Math.cos(a)*s.spd,vy:Math.sin(a)*s.spd,r:6,dmg:e.dmg,life:5,c:'#c9a0ff'});}}
+              else for(let i=0;i<n;i++){const a=base+(i-(n-1)/2)*s.sp;this.eb.push({x:e.x,y:e.y-14,vx:Math.cos(a)*s.spd,vy:Math.sin(a)*s.spd,r:6,dmg:e.dmg,life:5,c:'#6ad0ff'});}
+            }
           }
           break;}
         case'charge':
@@ -1434,6 +1475,38 @@ class Game{
       if(e.ai!=='explode'&&!e.under&&dist<e.r+8)this.hurt(e.dmg,e);
     }
   }
+  /* ---- enemy fire budget (see SHOT_* above) ---- */
+  shotN(n){return Math.max(1,Math.round(n*SHOT_N_K));}
+  shotCdK(){return this.stage.theme==='snake'?SHOT_CD_SNAKE:SHOT_CD_K;}
+  shotOK(n){
+    if(this.sbk==null)this.sbk=this.stage.theme==='snake'?SHOT_BANK_SNAKE:SHOT_BANK;
+    if(this.sbk<n)return false;
+    this.sbk-=n;return true;
+  }
+  shotRefill(dt){
+    const sn=this.stage.theme==='snake',bank=sn?SHOT_BANK_SNAKE:SHOT_BANK;
+    this.sbk=Math.min(bank,(this.sbk==null?bank:this.sbk)+(sn?SHOT_RATE_SNAKE:SHOT_RATE)*dt);
+  }
+  /* ---- the player's attacks cancel enemy bullets: every weapon reports the area it covers ---- */
+  cutOne(b){
+    if(b.dead)return;
+    b.dead=true;
+    if(this.fx.length<(FXL.on?160:380)){this.burst(b.x,b.y,2,b.c);this.fx.push({x:b.x,y:b.y,vx:0,vy:0,l:.16,m:.16,c:'#ffffff',s:b.r*.9});}
+  }
+  cutC(x,y,r){
+    const E=this.eb;if(!E.length)return;
+    for(const b of E){if(b.dead)continue;const dx=b.x-x,dy=b.y-y,rr=r+b.r;if(dx*dx+dy*dy<rr*rr)this.cutOne(b);}
+  }
+  /* a beam: from (ox,oy) along (cs,sn), len long and wid wide */
+  cutBeam(ox,oy,cs,sn,len,wid){
+    const E=this.eb;if(!E.length)return;
+    for(const b of E){if(b.dead)continue;const dx=b.x-ox,dy=b.y-oy,al=dx*cs+dy*sn,pe=-dx*sn+dy*cs;if(al>-10&&al<len&&Math.abs(pe)<wid/2+b.r)this.cutOne(b);}
+  }
+  /* a cone: radius rad around (x,y), centred on angle ang, half-width half */
+  cutArc(x,y,rad,ang,half){
+    const E=this.eb;if(!E.length)return;
+    for(const b of E){if(b.dead)continue;const dx=b.x-x,dy=b.y-y,d=Math.hypot(dx,dy);if(d>rad+b.r)continue;if(d<24||Math.abs(angDiff(Math.atan2(dy,dx),ang))<=half)this.cutOne(b);}
+  }
   updateBullets(dt){
     const p=this.p;
     for(const b of this.eb){
@@ -1443,6 +1516,18 @@ class Game{
       if(dx*dx+dy*dy<(b.r+8)*(b.r+8)){this.hurt(b.dmg,b);b.dead=true;}
     }
   }
+  /* an experience gem is collected: a little burst, a ring and a star that rise from it, and a chime that climbs the more gems you collect in a row */
+  gemPick(g){
+    const c=g.v<2.2?'#5ad0ff':g.v<11?'#ffb13b':'#ff5a3d',now=this.rt;
+    this.gemCombo=now-(this.gemT||-9)<.75?Math.min(14,(this.gemCombo||0)+1):0;this.gemT=now;
+    if(this.gemFxT!==now){this.gemFxT=now;this.gemFxN=0;}
+    if(this.gemFxN++<3&&this.fx.length<(FXL.on?160:420)){
+      this.burst(g.x,g.y-6,g.v>=11?9:5,c);this.ring(g.x,g.y-4,g.v>=11?30:20,c,.28);
+      this.fx.push({x:g.x,y:g.y-8,vx:rnd(-12,12),vy:-rnd(70,110),l:.5,m:.5,c:'#ffffff',s:g.v>=11?4:3});   /* a bright star floating up */
+    }
+    if(g.v>=11)this.floatText(g.x,g.y-22,'+'+Math.round(g.v)+' XP',2);
+    this.audio.pitchK=this.gemCombo;this.audio.sfx('gem');
+  }
   updatePickups(dt){
     const p=this.p,S=this.S;
     if(this.gm.length>GEM_CAP)this.mergeGems();
@@ -1451,7 +1536,7 @@ class Game{
       const dx=p.x-g.x,dy=p.y-g.y,d=Math.hypot(dx,dy);
       if(d<S.magnet)g.att=true;
       if(g.att){const sp=380+d;g.x+=dx/d*sp*dt;g.y+=dy/d*sp*dt;}
-      if(d<14){g.dead=true;this.addXp(g.v);this.audio.sfx('gem');}
+      if(d<14){g.dead=true;this.addXp(g.v);this.gemPick(g);}
     }
     for(const l of this.loot){
       if(l.dead)continue;
@@ -1501,11 +1586,11 @@ class Game{
     this.run.zeno=(this.run.zeno||0)+1;
     const p=this.p,cx=p.x,cy=p.y,pk=ZENO_PRICE,items=[],used=[];
     /* rarity follows Luck (higher luck -> better odds up to legendary); 1% of the items are mythic */
-    const L=this.S.luck,si=this.sd,W=[62/(1+L*.6),27*(1+.05*si+L*.8),9.5*(1+.1*si+L*1.6),1.5*(1+.15*si+L*2.4)],WT=W.reduce((a,b)=>a+b,0),cur=this.trinkets[0];   /* Luck pushes the stock towards higher rarities */
+    const L=this.S.luck,si=this.sd,W=[62/(1+L*.6),27*(1+.05*si+L*.8),9.5*(1+.1*si+L*1.6),1.5*(1+.15*si+L*2.4)],WT=W.reduce((a,b)=>a+b,0);   /* Luck pushes the stock towards higher rarities */
     for(let i=0;i<4;i++){
       let r=4;if(Math.random()>=.01){let q=Math.random()*WT;r=0;for(let k=0;k<4;k++){q-=W[k];if(q<=0){r=k;break;}}}
       /* trinkets with stats can appear at any rarity; special-effect ones only at their own */
-      const pool=TRINKETS.filter(t=>t.id!==cur&&!used.includes(t.id)&&(t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4));
+      const pool=TRINKETS.filter(t=>!this.trinkets.includes(t.id)&&!used.includes(t.id)&&(t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4));
       const c=pool.length?pick(pool):null;if(!c)continue;
       used.push(c.id);items.push({id:c.id,rar:r,x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
     }
@@ -1530,7 +1615,7 @@ class Game{
     }
     if(tr.t>=tr.dur||Math.hypot(p.x-tr.exit.x,p.y-tr.exit.y)<44)this.endZeno();
   }
-  /* buying: free slot -> equip; otherwise a comparison window asks whether to replace the carried trinket */
+  /* buying: free slot -> equip; otherwise a comparison window asks which carried trinket to replace */
   zenoBuy(it){
     const tr=this.trial,t=TRINKETS.find(x=>x.id===it.id);
     if(!tr||!t)return;tr.hold=0;
@@ -1539,9 +1624,8 @@ class Game{
       this.burst(tr.cx+it.x,tr.cy+it.y-10,22,RARITY[it.rar].c);this.ring(tr.cx+it.x,tr.cy+it.y,60,RARITY[it.rar].c,.5);this.audio.sfx('buy');
       this.say(this.env.tr(t.n),RARITY[it.rar].c,2.2);this.floatText(tr.zx,tr.zy-70,this.env.tr(T('Grazie! Hihi!','Thank you! Hehe!')),1);
     };
-    if(!this.trinkets.length){this.equipTrinket(it.id,it.rar);done();return;}
     tr.lock=it;
-    this.tq.push({id:it.id,rar:it.rar,onYes:done,onNo:()=>{},buy:true});this.drainTQ();
+    this.addTrinket(it.id,it.rar,{onYes:done,onNo:()=>{},buy:true});
   }
   endZeno(){
     if(!this.trial||!this.trial.zeno)return;
@@ -1590,7 +1674,7 @@ class Game{
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
 class MapDirector{
-  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.needT=12;this.lootT=rnd(30,45);this.featT=rnd(70,100);this.chestT=200;this.totemT=rnd(120,170);
+  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.needT=12;this.lootT=rnd(45,70);this.featT=rnd(120,170);this.chestT=200;this.totemT=rnd(120,170);
     const bq=g.bossQ;this.trials=[];
     if(bq.length){this.trials.push({t:Math.max(60,bq[0].t-50),done:false});const fin=bq[bq.length-1];if(fin.t-70>bq[0].t+60)this.trials.push({t:fin.t-70,done:false});}
   }
@@ -1598,14 +1682,15 @@ class MapDirector{
     const g=this.g,p=g.p;
     for(const tr of this.trials)if(!tr.done&&g.t>=tr.t){tr.done=true;this.spawnChamber();}
     if(!this.secretDone&&g.t>=this.secretAt&&!g.cleared){this.secretDone=true;this.spawnSecret();}
+    this.islands(dt);
     this.lootT-=dt;this.helpT.heal-=dt;this.helpT.magnet-=dt;this.needT-=dt;if(this.needT<=0){this.needT=12;this.needHelp();}
-    if(this.lootT<=0){this.lootT=rnd(45,75)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
+    if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
     this.chestT-=dt;
     if(this.chestT<=0){this.chestT=300;const[x,y]=this.pos(220,380);g.chests.push({x,y,final:false,t:0,supply:true});g.floatText(p.x,p.y-70,g.env.tr(T('Un forziere è apparso!','A chest appeared!')),5);}
     if(!this.totemDone)this.totemT-=dt;
     if(!this.totemDone&&this.totemT<=0&&!g.feat.some(f=>f.kind==='totem')){this.totemDone=true;const[x,y]=this.pos(230,400);g.feat.push({kind:'totem',x,y,t:0,ttl:900,used:false,dead:false});g.say(g.env.tr(T('Un Totem è apparso sulla mappa!','A Totem appeared on the map!')),'#8be07a',2.6);g.audio.sfx('shrine');}
     this.featT-=dt;
-    if(this.featT<=0){this.featT=rnd(80,130);this.spawnFeature();}
+    if(this.featT<=0){this.featT=rnd(130,200);this.spawnFeature();}
     for(const f of g.feat){
       f.t+=dt;
       const d=Math.hypot(p.x-f.x,p.y-f.y);
@@ -1620,9 +1705,25 @@ class MapDirector{
     g.feat=g.feat.filter(f=>!f.dead);
   }
   pos(rmin,rmax){const a=rnd(0,TAU),d=rnd(rmin,rmax);return this.g.spawnSpot(a,d,0);}
+  /* Snake Way: every island beside the body holds three power-ups, laid on it the first time you come within ~1000 px (once per island, no cooldowns), and its name is announced */
+  islands(dt){
+    const g=this.g,p=g.p;if(g.stage.theme!=='snake'||g.trial)return;
+    this.isT=(this.isT||0)-dt;if(this.isT>0)return;
+    this.isT=.5;const seen=this.isSeen||(this.isSeen=new Set());
+    for(const I of Snake.islandsIn(p.x-1100,p.x+1100)){
+      if(seen.has(I.id)||Math.hypot(I.x-p.x,I.y-p.y)>1000)continue;
+      seen.add(I.id);
+      const ks=SnakeArt.loot[I.kind],a0=I.side>0?-Math.PI/2:Math.PI/2;   /* the items sit on the side facing the body, away from the landmark */
+      ks.forEach((k,i)=>{
+        const a=a0+(i-1)*.95,d=I.r*(i===1?.3:.4);
+        g.loot.push({k,x:I.x+Math.cos(a)*d,y:I.y+Math.sin(a)*d*.8,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id});
+      });
+      g.say(g.env.tr(SnakeArt.names[I.kind]),'#ffe9a0',2.4);
+    }
+  }
   spawnLootPoint(){
     /* a regular drop around the player: coins are common, everything else is picked by the loot director (rarity + what the player needs) */
-    const g=this.g,k=Math.random()<.45?'bag':(g.pickLoot()||'bag'),[x,y]=this.pos(150,330);
+    const g=this.g,k=Math.random()<.36?'bag':(g.pickLoot()||'bag'),[x,y]=this.pos(150,330);
     g.spawnLoot(k,x,y);g.loot[g.loot.length-1].ttl=k==='bag'?90:60;
     if(k==='bag')g.floatText(g.p.x,g.p.y-70,g.env.tr(T('Una borsa di zenny è apparsa!','A zenny bag appeared!')),5);
   }
@@ -1645,7 +1746,6 @@ class MapDirector{
     if(g.nt>=100&&hpR<.4)c.push(['spring',6]);
     if(g.nt>=170&&near&&hpR>.45)c.push(['altar',7]);
     if(g.nt>=100&&gap>0&&gap<=3)c.push(['font',8]);
-    if(g.nt>=80)c.push(['cache',2]);
     if(!c.length)return;
     const kind=wpick(c,x=>x[1])[0],[x,y]=this.pos(260,460);
     g.feat.push({kind,x,y,t:0,ttl:100,used:false,dead:false});
@@ -1686,9 +1786,6 @@ class MapDirector{
       g.say(g.env.tr(T('Sacrificio: ','Sacrifice: '))+g.env.tr(cand[0].def.n)+' +1','#ff5a5a',2.4);g.audio.sfx('evolve');g.ring(f.x,f.y,120,'#ff5a5a',.5);
     }else if(f.kind==='font'){
       g.addXp(g.need*.4/g.S.xp);g.say(g.env.tr(T('Fonte dell\'esperienza','Experience font')),'#8ad8ff',2);g.audio.sfx('pickup');g.ring(f.x,f.y,100,'#8ad8ff',.5);
-    }else if(f.kind==='cache'){
-      for(let i=0;i<4;i++)g.loot.push({k:'coin',x:f.x+rnd(-30,30),y:f.y+rnd(-30,30),v:Math.round(5*(1+g.nt/450)),t:0});
-      g.audio.sfx('coin');
     }
     f.used=true;f.dead=true;
   }

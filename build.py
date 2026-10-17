@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','i18n4','weapons','weapons2','weapon_elec','world','config','save','gacha','cloud','game','skills','sprites','sprites_hd','sheets','menubg','audio','input','ambient','zeno_sprite','renderer','uiicons','ui','ui2','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','i18n','i18n2','i18n3','i18n4','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','cloud','game','skills','sprites','sprites_hd','sheets','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','renderer','uiicons','ui','ui2','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -122,7 +122,7 @@ if _sd.is_dir():
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
 js = js.replace('__SPRITE_PACK__', json.dumps(_pack, separators=(',', ':')))
-css = '\n'.join((ROOT/'src/css'/f).read_text(encoding='utf8') for f in ['style.css','gacha.css'])
+css = '\n'.join((ROOT/'src/css'/f).read_text(encoding='utf8') for f in ['style.css','gacha.css','skin.css'])
 html = (ROOT/'src/index.html').read_text(encoding='utf8')
 glyphs = re.search(r"GLYPHS='([^']+)'", js).group(1)
 html = html.replace('__GLYPHS__', urllib.parse.quote(''.join(dict.fromkeys(glyphs))))

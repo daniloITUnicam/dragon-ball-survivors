@@ -18,8 +18,13 @@ Object.assign(UI.prototype,{
   screen_patch(){
     const lang=this.save.settings.lang,seen=this.patchOpened!==undefined?this.patchOpened:(this.save.patchSeen||''),
       seenIdx=PATCHES.findIndex(p=>p.id===seen);   /* releases above this index were not read yet; -1 = none was */
+    const li=x=>h('li',null,this.tr(x));
+    /* an item is a plain T() line or a group {g,l}: the groups get a small heading and their own list */
     const sec=(cls,icon,key,list)=>list&&list.length
-      ?h('div',{class:'pnsec '+cls},h('h4',null,icon+' '+this.t(key)),h('ul',null,list.map(x=>h('li',null,this.tr(x)))))
+      ?h('div',{class:'pnsec '+cls},h('h4',null,icon+' '+this.t(key)),
+          list.some(x=>x&&x.l)
+            ?list.map(x=>x&&x.l?h('div',{class:'pngrp'},h('h5',null,this.tr(x.g)),h('ul',null,x.l.map(li))):h('ul',null,li(x)))
+            :h('ul',null,list.map(li)))
       :null;
     return h('div',{class:'patchs'},this.header('patchTitle'),
       h('div',{class:'pnlist'},PATCHES.map((p,i)=>{
@@ -27,6 +32,7 @@ Object.assign(UI.prototype,{
         return h('section',{class:'pncard'+(i===0?' latest':''),'data-patch':p.id},
           h('div',{class:'pnhead'},h('div',{class:'pndate'},patchDate(p,lang)),
             i===0?h('span',{class:'pntag'},this.t('patchLatest')):null,fresh?h('span',{class:'pntag nu'},this.t('patchNewTag')):null),
+          p.name?h('div',{class:'pnname'},this.tr(p.name)):null,p.sum?h('p',{class:'pnsum'},this.tr(p.sum)):null,
           sec('new','✨','patchNew',p.new),sec('fix','🔧','patchFix',p.fix),sec('bal','⚖️','patchBal',p.bal));
       })));
   }

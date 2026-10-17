@@ -25,10 +25,20 @@ class App{
     document.addEventListener('fullscreenchange',()=>{const s=this.save.d.settings,on=!!document.fullscreenElement;if(s.fullscreen!==on){s.fullscreen=on;this.save.write();if(this.ui.active&&this.ui.top.name==='settings')this.ui.rebuild(true);}});
     const unlock=()=>{this.audio.unlock();this.audio.applyVolumes();if(this.state==='menu')this.audio.play('menu');};
     addEventListener('pointerdown',unlock);addEventListener('keydown',unlock);addEventListener('gamepadconnected',unlock);
+    /* choice windows: the number keys pick option 1-9 (0 = the tenth), Space presses the highlighted button (the chest's "Collect", or the card in focus) */
     addEventListener('keydown',e=>{
-      if(this.state==='modal'&&this.game&&this.game.modal&&this.game.modal.type!=='chest'&&this.game.modal.type!=='trial'&&this.game.modal.type!=='pick'){
-        const i=['Digit1','Digit2','Digit3','Numpad1','Numpad2','Numpad3'].indexOf(e.code);
-        if(i>=0)this.resolveModal(i%3);
+      const m=this.game&&this.game.modal;
+      if(this.state!=='modal'||!m||e.repeat||e.ctrlKey||e.altKey||e.metaKey)return;
+      const dg=/^(?:Digit|Numpad)(\d)$/.exec(e.code);
+      if(dg){
+        const i=+dg[1]===0?9:+dg[1]-1,n={level:(m.options||[]).length,totem:(m.opts||[0,1]).length,wish:(m.options||[]).length,tswap:(m.curs||[0]).length+1,pick:(m.opts||[]).length,chest:1}[m.type]||0;
+        if(i<n)this.resolveModal(i);
+        return;
+      }
+      if(e.code==='Space'&&m.type!=='trial'){
+        const root=this.ui.modalEl&&this.ui.modalEl.isConnected?this.ui.modalEl:document,ae=document.activeElement;
+        const b=ae&&ae.tagName==='BUTTON'&&root.contains(ae)?ae:root.querySelector('[data-focus]');
+        if(b&&!b.disabled){e.preventDefault();b.click();}
       }
     });
     const cv=this.canvas;
