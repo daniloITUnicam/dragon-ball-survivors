@@ -247,6 +247,7 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     /* ground items */
     for(const gm of (g.trial?[]:g.gm)){
+      if(gm.held)continue;   /* carried gems are drawn with the companion */
       const col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9;
       ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gm.y-r);ctx.lineTo(gm.x+r*.8,gm.y);ctx.lineTo(gm.x,gm.y+r);ctx.lineTo(gm.x-r*.8,gm.y);ctx.closePath();ctx.fill();
       ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gm.y-r*.5,2,r*.5);
@@ -412,6 +413,10 @@ this.W=1;this.H=1;this.Z=1;
       const f=1+Math.sin(t*14)*.07;
       GLOW.at(ctx,p.x,p.y-24,(40+g.formIdx*5)*f,g.formColor,.65);
       GLOW.at(ctx,p.x,p.y-24,(26+g.formIdx*3)*f,'#ffffff',.2);
+    }
+    if(g.perfAura&&!g.dying){      /* a trinket at 100% perfection: the silver-white Ultra Instinct glow */
+      const f=1+Math.sin(t*3.2)*.08;GLOW.at(ctx,p.x,p.y-24,52*f,'#cfeaff',.5);GLOW.at(ctx,p.x,p.y-24,30*f,'#ffffff',.24);
+      if(!FXL.on){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle='rgba(235,246,255,.55)';for(let i=0;i<5;i++){const a=t*1.3+i*TAU/5,rr=17+4*Math.sin(t*3+i);ctx.fillRect(p.x+Math.cos(a)*rr-1,p.y-24+Math.sin(a)*rr*1.35-1,2,2);}ctx.restore();}
     }
     if(g.barrierReady){ctx.strokeStyle='rgba(138,216,255,.8)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y-20,30,0,TAU);ctx.stroke();}
     {const ab=g.abil;
@@ -922,6 +927,9 @@ this.W=1;this.H=1;this.Z=1;
     ctx.fillStyle='rgba(0,0,0,.26)';ctx.beginPath();ctx.ellipse(q.x,q.y,7,2.4,0,0,TAU);ctx.fill();
     if(q.cd<=0)GLOW.at(ctx,q.x,q.y-12+bob,20+3*Math.sin(t*5),d.c,.45);
     ctx.save();ctx.translate(q.x,q.y+bob);ctx.scale(q.face*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();
+    /* the XP gems it is carrying float above its head */
+    if(q.hold&&q.hold.length&&!g.trial)for(let i=0;i<q.hold.length;i++){const gm=q.hold[i],col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9,gy=gm.y+bob*.5+Math.sin(t*6+i*2)*1.2;
+      GLOW.at(ctx,gm.x,gy,r*3,col,.45);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gy-r);ctx.lineTo(gm.x+r*.8,gy);ctx.lineTo(gm.x,gy+r);ctx.lineTo(gm.x-r*.8,gy);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gy-r*.5,2,r*.5);}
   }
   drawPillar(o){
     const ctx=this.ctx,x=o.x,y=o.y,r=o.r;
@@ -1091,13 +1099,19 @@ this.W=1;this.H=1;this.Z=1;
       for(let i=0;i<5;i++){ctx.fillStyle=i<lv?P.c:'rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(px0+ps/2+(i-2)*6.4*U,py0+ps-5.5*U,2.3*U,0,TAU);ctx.fill();}
       px0+=ps+4*U;
     }
-    /* trinkets */
-    let tx2=m;const ty=(pshown?py0+ps:wy+sz)+7*U,ts=26*U;
-    for(const id of g.trinkets){
+    /* trinkets: one slot per slot you own (empty ones are dashed), the frame in the rarity colour, a perfection bar under the icon and, at 100%, the Ultra Instinct halo */
+    let tx2=m;const ty=(pshown?py0+ps:wy+sz)+7*U,ts=30*U,nslot=Math.max(g.tcap,g.trinkets.length);
+    for(let si=0;si<nslot;si++){
+      const id=g.trinkets[si];
+      if(!id){ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(tx2,ty,ts,ts);ctx.save();ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.6*U;ctx.setLineDash([4*U,3*U]);ctx.strokeRect(tx2,ty,ts,ts);ctx.restore();
+        txt('+',tx2+ts/2,ty+ts*.68,'rgba(255,255,255,.35)','center',F(20,900));tx2+=ts+3*U;continue;}
       this.zones.push({x:tx2,y:ty,w:ts,h:ts,k:'trinket',id});
-      const t=TRINKETS.find(x=>x.id===id),tc=RARITY[g.trR(id)].c;
-      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(tx2,ty,ts,ts);ctx.strokeStyle=tc;ctx.lineWidth=2*U;ctx.strokeRect(tx2,ty,ts,ts);
-      txt(t.k,tx2+ts/2,ty+ts*.76,tc,'center',F(17,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      const t=TRINKETS.find(x=>x.id===id),rr=g.trR(id),tc=RARITY[rr].c,pf=g.trP(id),has=hasPf(t),perfect=has&&pf>=100;
+      if(perfect)GLOW.at(ctx,tx2+ts/2,ty+ts/2,ts*(1.05+.12*Math.sin(g.rt*4)),'#cfeaff',.4);
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(tx2,ty,ts,ts);ctx.fillStyle=hexA(tc,.16);ctx.fillRect(tx2,ty,ts,ts);
+      ctx.strokeStyle=perfect?'#f4faff':tc;ctx.lineWidth=2*U;ctx.strokeRect(tx2,ty,ts,ts);
+      txt(t.k,tx2+ts/2,ty+ts*.68,tc,'center',F(19,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      if(has){const bx=tx2+3*U,bw2=ts-6*U,by=ty+ts-6*U;ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(bx,by,bw2,3*U);ctx.fillStyle=perfColor(pf);ctx.fillRect(bx,by,bw2*pf/100,3*U);}
       tx2+=ts+3*U;
     }
     /* form label */
@@ -1274,7 +1288,7 @@ this.W=1;this.H=1;this.Z=1;
       const it=zt.look||zt.near;
       if(it){
         const td=TRINKETS.find(q=>q.id===it.id),col=RARITY[it.rar].c,aff=g.run.coins>=it.price,full=false;
-        const lines=trinStats(td,it.rar).map(x=>[tr(x.t),true]);
+        const lines=trinStats(td,it.rar,it.pf).map(x=>[tr(x.t),true]);if(hasPf(td)&&it.pf!=null)lines.push([tr2('Perfezione: '+it.pf+'%','Perfection: '+it.pf+'%'),true]);
         if(td.x)lines.push([tr(td.x),true,1]);else if(td.sp)lines.push([tr(td.d),true,1]);
         const cc=g.trinkets.length>=g.tcap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&TRINKETS.find(q=>q.id===cc);
         const pw=Math.min(268*U,W-16*U),lh=18*U,ph=(78+Math.max(1,lines.length)*18+(it.sold?0:20))*U;

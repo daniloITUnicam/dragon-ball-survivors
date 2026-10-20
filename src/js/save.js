@@ -40,7 +40,7 @@ class SaveData{
     for(const k of['clears','x2','xc'])while(d[k].length<STAGES.length)d[k].push(0);
     /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..3 (v53: it used to be 1..7) without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
-    {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok)seen.add(b.id+'@'+b.r);return ok;});
+    {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok){seen.add(b.id+'@'+b.r);b.p=Number.isFinite(+b.p)?Math.max(0,Math.min(100,Math.round(+b.p))):PF_NOM;}return ok;});   /* v54: every bag trinket has a perfection (older ones: the nominal 50%) */
       if(d.equip&&!seen.has(d.equip.id+'@'+d.equip.r))d.equip=null;
       {const raw=[...new Set((Array.isArray(d.sball)?d.sball:[]).filter(n=>n>=1&&n<=7))],N=3,keep=raw.filter(n=>n<=N);   /* v53: only 3 Super Dragon Balls exist; whoever owned 3+ of the old 7 keeps a complete set */
         for(let n=1;keep.length<Math.min(N,raw.length)&&n<=N;n++)if(!keep.includes(n))keep.push(n);

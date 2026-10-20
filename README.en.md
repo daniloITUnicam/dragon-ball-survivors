@@ -47,6 +47,17 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update, part 3 (trinket Perfection, companions, 4-trinket chests)
+
+The full before/after numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20c`, `src/js/patches.js`).
+
+- **Companion** (`Game.updatePet`, `petFindGem`, `petRelease`, `PET_*` constants): fetches XP gems within 340 px of you but outside your pick-up range, carries up to 3 above its head (`gem.held`, drawn in `Renderer.drawPet`) and hands them over when it is back; **shockwave** (≥ 5 enemies within 165 px over at least 3 quadrants, 210 px, 12 + 1.1/level, 5 s cooldown).
+- **Trinket Perfection 0–100%** (`PF_SPREAD`, `pfK`, `rollPf`, `hasPf`, `trinMods(t,r,pf)` in `data.js`): stats −12% … +12% around the rarity value (50% = nominal); rarity ranges never overlap (worst Mythic > best Legendary); effect-only trinkets have none. In a run `Game.tPf`/`trP(id)`; offers (chest, boss pick, Zeno's shop) carry their `pf`; the gacha stores `bag[].p` (a better duplicate ⇒ updates `p`, `res.up`), old saves start at 50 (`Save.normalize`).
+- **Ultra Instinct aura** at 100% (`Game.perfAura`, `Renderer.drawPlayer`; pulsing frame in `style`/`gacha.css`); **consistent Mythics**: only trinkets with stats (`rarOf`).
+- **UI**: `UI.perfBar` (bag, character screen, chest, Zeno's shop, pause, tooltips); bag sort «Perfection»; **trinket swap** with % difference, Better/Worse/Equal verdict and zenny you get; **HUD slots** 30 px with a Perfection bar and dashed empty slots; setting **«Skip lower trinkets»** (`trinScore`/`autoRefuse`: rarity, then Perfection).
+- **Boss chest: 4 trinkets** (`TRIN_PICK`, `pickCount`; before 4 + up to 6 with Luck).
+- **🧪 Added test:** `v54` (Perfection and ranges, 4-trinket chest, Mythics, skip-lower, companion carrying XP, shockwave, gacha/migration, swap window, aura, bag sort).
+
 ### 🆕 October 20, 2026 update, part 2 (weapon slots, TAB, Tamagami, a harsher world)
 
 The full before/after numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20b`, `src/js/patches.js`).
@@ -235,7 +246,7 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 - **Luck** drives the items' rarity (up to legendary); **1% of items are Mythic**.
 
 **🍀 Trinkets: one at a time, with rarities and Mythic**
-- You carry **one trinket** (up to **3** with the shop upgrade «Extra Trinket», 2 purchases); with every slot taken, finding another one (chest, capsule, wish, Zeno) opens a **comparison window** that shows everything you carry and asks which to replace (or to keep them all). The **«Refuse lower-rarity trinkets»** setting sells anything below all of yours on the spot.
+- You carry **one trinket** (up to **3** with the shop upgrade «Extra Trinket», 2 purchases); with every slot taken, finding another one (chest, capsule, wish, Zeno) opens a **comparison window** that shows everything you carry and asks which to replace (or to keep them all). The **«Skip lower trinkets»** setting (before «Refuse lower-rarity trinkets») sells anything worse than all of yours on the spot (lower rarity, or the same rarity with less **Perfection**). Every trinket has a **Perfection** 0–100% (stats −12%…+12%, 100% = Ultra Instinct aura): see update part 3.
 - Every trinket can have a **Common → Mythic** rarity: stats grow with rarity and are capped per rarity (e.g. damage: legendary max 15%, mythic max 20%); texts update automatically. Lower tiers were scaled down accordingly. Any trinket found has a 1% chance to be Mythic.
 - *Collector* achievement is now "Find 6 trinkets in one run".
 
@@ -581,6 +592,7 @@ node tests/pose.js            # weapon animations: armless frames, IK, Kamehameh
 node tests/hpbar.js           # Health bar with the live portrait (puppeteer); screenshots: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: balance, TAB, weapons per run, zenny bags, Senzu, totems, Tamagami, water and lava (puppeteer)
+node tests/v54.js             # v54 trinkets and companions: Perfection, 4-trinket chest, skip-lower, companion (XP + shockwave), gacha, swap window, aura (puppeteer)
 node tests/eco52.js           # v52 economy: Reroll/Skip/Ban, Zeno, tickets, coin streak, Achievements, Objectives, quests (puppeteer)
 node tests/ui52.js            # v52 interface: gear, character search/sort, Quick Start, notifications (puppeteer)
 node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Super Balls (puppeteer)

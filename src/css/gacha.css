@@ -163,3 +163,18 @@
 .gtile .gnew{background:#2a8f3e;color:#eaffea}.gtile .gdup{background:#4a566e;color:#fff}
 .gtile.r3{box-shadow:0 0 14px rgba(255,176,32,.75)}.gtile.r4{box-shadow:0 0 20px rgba(255,59,138,.9)}
 @media(max-width:700px){.gov .gtiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:50vh}}
+
+/* ---- v54: trinket perfection (0-100%) and the Ultra Instinct shimmer at 100% ---- */
+.perf{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--pc,#9aa4b0)}
+.perf .pbar{flex:1 1 60px;max-width:150px;height:6px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden;position:relative}
+.perf .pbar i{display:block;height:100%;width:var(--p,0%);background:var(--pc,#9aa4b0);border-radius:4px;box-shadow:0 0 6px var(--pc,#9aa4b0)}
+.perf.sm{margin:3px 0 0}.perf.sm .pbar{max-width:none;height:4px}
+.perf.ui .pbar i{background:linear-gradient(90deg,#9fd8ff,#ffffff,#9fd8ff,#ffffff);background-size:200% 100%;animation:uiShim 1.6s linear infinite}
+.perf.ui{color:#e8f4ff;text-shadow:0 0 8px #8ad8ff}
+@keyframes uiShim{from{background-position:0 0}to{background-position:-200% 0}}
+.tcard.perfect,.tscol.perfect,.tslot.perfect{box-shadow:0 0 0 1px #cfeaff,0 0 16px rgba(190,230,255,.65);animation:uiAura 2.2s ease-in-out infinite}
+@keyframes uiAura{0%,100%{box-shadow:0 0 0 1px #cfeaff,0 0 10px rgba(190,230,255,.45)}50%{box-shadow:0 0 0 1px #ffffff,0 0 24px rgba(220,242,255,.85)}}
+.tsdelta{font-weight:800;font-size:14px;margin:6px 0 2px}.tsdelta.up{color:#9affb0}.tsdelta.down{color:#ff9a9a}.tsdelta.eq{color:#fff}
+.tsverdict{display:inline-block;margin:4px 0;padding:2px 10px;border-radius:999px;font-weight:900;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor}
+.tsverdict.up{color:#9affb0}.tsverdict.down{color:#ff9a9a}.tsverdict.eq{color:#ffe08a}
+.tssell{margin-top:6px;font-size:13px;opacity:.9;display:flex;gap:4px;align-items:center}

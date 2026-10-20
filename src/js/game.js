@@ -13,6 +13,8 @@ const BERS_T=6,BERS_T2=8,BERS_AIM=.5;   /* Broly's Berserk: seconds (base / fina
 const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
 /* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
 const GEM_CAP=90,GEM_KEEP=55;
+/* companion (v54): XP gems it can fetch (px from the player), carried at once, run speed; shockwave when surrounded: enemies needed / radius they count in / radius hit / damage / cooldown (s) */
+const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35;
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
@@ -31,7 +33,7 @@ class Game{
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
-    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tSrc={};this.tq=[];
+    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
@@ -58,7 +60,7 @@ class Game{
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
     {const eq=this.save.equip,td=eq&&TRINKETS.find(x=>x.id===eq.id);
-      if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.tSrc={[eq.id]:'bag'};this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
+      if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){const be=this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.tPf={[eq.id]:be&&be.p!=null?be.p:PF_NOM};this.tSrc={[eq.id]:'bag'};this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
     this.recalc();this.p.hp=this.p.maxHp;
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
@@ -74,7 +76,7 @@ class Game{
   /* ---------- stats ---------- */
   tMods(){
     const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0};
-    for(const id of this.trinkets){const t=TRINKETS.find(x=>x.id===id);if(t&&t.m){const tmx=trinMods(t,this.trR(id));for(const k in tmx)m[k]+=tmx[k];}}
+    for(const id of this.trinkets){const t=TRINKETS.find(x=>x.id===id);if(t&&t.m){const tmx=trinMods(t,this.trR(id),this.trP(id));for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
   recalc(){
@@ -208,8 +210,10 @@ class Game{
   /* ---------- trinkets ---------- */
   /* one trinket can be carried; the shop's "Trinket slot" upgrade adds up to two more. When every slot is taken a new one opens a comparison window (replace one / keep them) */
   get tcap(){return Math.min(3,1+(this.save.shop.tslot||0));}
+  trP(id){const p=this.tPf[id];return p!=null?p:PF_NOM;}   /* perfection (0-100) of a carried trinket */
+  get perfAura(){return this.trinkets.some(id=>hasPf(TRINKETS.find(x=>x.id===id))&&this.trP(id)>=100);}   /* a carried trinket at 100% perfection: Ultra Instinct aura */
   trR(id){const r=this.tRar[id];if(r!=null)return r;const t=TRINKETS.find(x=>x.id===id);return t?t.r:0;}
-  rarOf(id){const t=TRINKETS.find(x=>x.id===id);return Math.random()<.01?4:(t?t.r:0);}    /* 1%: it turns out mythic */
+  rarOf(id){const t=TRINKETS.find(x=>x.id===id);return Math.random()<.01&&t&&t.m&&(!t.sp||t.x)?4:(t?t.r:0);}    /* 1%: it turns out mythic (only trinkets with stats can: an effect alone has nothing to scale) */
   /* a trinket found during the run is not kept: it is sold for zenny when something replaces it and at the end of the run (the one from the bag is never sold) */
   sellTrinket(id,rar,why){
     const t=TRINKETS.find(x=>x.id===id);if(!t)return 0;
@@ -227,49 +231,52 @@ class Game{
     const i=this.trinkets.indexOf(id);if(i<0)return -1;
     const t=TRINKETS.find(x=>x.id===id);
     if(this.tSrc[id]==='run')this.sellTrinket(id,this.trR(id));
-    this.trinkets.splice(i,1);delete this.tRar[id];delete this.tSrc[id];
+    this.trinkets.splice(i,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];
     if(t&&t.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
     return i;
   }
   /* the slot of the weakest carried trinket (the one a full inventory gives up) */
-  weakestTrinket(){let b=null,br=9;for(const id of this.trinkets){const r=this.trR(id);if(r<br){br=r;b=id;}}return b;}
-  equipTrinket(id,rar,replaceId){
+  weakestTrinket(){let b=null,br=1e9;for(const id of this.trinkets){const r=this.trinScore(id,this.trR(id),this.trP(id));if(r<br){br=r;b=id;}}return b;}
+  equipTrinket(id,rar,replaceId,pf){
     const t=TRINKETS.find(x=>x.id===id);if(!t)return false;
     let at=-1;
     if(replaceId&&this.trinkets.includes(replaceId))at=this.dropTrinket(replaceId);
     else if(this.trinkets.includes(id))at=this.dropTrinket(id);
     if(this.trinkets.length>=this.tcap)at=this.dropTrinket(this.weakestTrinket());
     if(at<0||at>this.trinkets.length)at=this.trinkets.length;
-    this.trinkets.splice(at,0,id);this.tRar[id]=rar;this.tSrc[id]='run';
+    this.trinkets.splice(at,0,id);this.tRar[id]=rar;this.tPf[id]=pf!=null?pf:rollPf(this.S.luck);this.tSrc[id]='run';
     this.save.trin[id]=1;this.run.tpicks=(this.run.tpicks||0)+1;if(rar>=3)this.run.legendary++;if(rar>=4)this.run.mythic=(this.run.mythic||0)+1;
     if(t.sp==='barrier'){this.barrierReady=true;}
     this.audio.sfx('trinket');this.recalc();return true;
   }
-  /* setting "refuse lower rarities": with every slot taken, a trinket of a lower rarity than everything you carry is sold at once; the comparison window only opens for the same rarity or better */
-  autoRefuse(rar,buy){
+  /* setting "skip lower trinkets": with every slot taken, a trinket worse than everything you carry (lower rarity, or the same rarity with less perfection) is sold at once;
+     the comparison window only opens for one that beats at least one of your trinkets */
+  trinScore(id,rar,pf){const t=TRINKETS.find(x=>x.id===id);return rar*1000+(hasPf(t)?(pf!=null?pf:PF_NOM):PF_NOM);}
+  autoRefuse(id,rar,pf,buy){
     if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.tcap)return false;
-    return rar<Math.min(...this.trinkets.map(x=>this.trR(x)));
+    return this.trinScore(id,rar,pf)<Math.min(...this.trinkets.map(x=>this.trinScore(x,this.trR(x),this.trP(x))));
   }
   addTrinket(id,rar,cb){
     if(!TRINKETS.find(x=>x.id===id))return false;
     if(rar==null)rar=this.rarOf(id);
+    const pf=cb&&cb.pf!=null?cb.pf:rollPf(this.S.luck);
     const buy=!!(cb&&cb.buy),yes=()=>{if(cb&&cb.onYes)cb.onYes();},no=()=>{if(cb&&cb.onNo)cb.onNo();};
-    if(this.trinkets.includes(id)){   /* already carried: a better copy upgrades it in place, otherwise the new one is sold */
-      if(rar>this.trR(id)){const ok=this.equipTrinket(id,rar,id);if(ok)yes();return ok;}
+    if(this.trinkets.includes(id)){   /* already carried: a better copy (higher rarity, or the same rarity with more perfection) upgrades it in place, otherwise the new one is sold */
+      if(rar>this.trR(id)||(rar===this.trR(id)&&hasPf(TRINKETS.find(x=>x.id===id))&&pf>this.trP(id))){const ok=this.equipTrinket(id,rar,id,pf);if(ok)yes();return ok;}
       if(!buy)this.sellTrinket(id,rar);
       no();return false;
     }
-    if(this.trinkets.length<this.tcap){const ok=this.equipTrinket(id,rar);if(ok)yes();return ok;}
-    if(this.autoRefuse(rar,buy)){this.sellTrinket(id,rar,'auto');this.run.trefused=(this.run.trefused||0)+1;no();return false;}
-    this.tq.push({id,rar,onYes:cb&&cb.onYes,onNo:cb&&cb.onNo,buy});this.drainTQ();return false;
+    if(this.trinkets.length<this.tcap){const ok=this.equipTrinket(id,rar,null,pf);if(ok)yes();return ok;}
+    if(this.autoRefuse(id,rar,pf,buy)){this.sellTrinket(id,rar,'auto');this.run.trefused=(this.run.trefused||0)+1;no();return false;}
+    this.tq.push({id,rar,pf,onYes:cb&&cb.onYes,onNo:cb&&cb.onNo,buy});this.drainTQ();return false;
   }
   drainTQ(){
     if(this.modal||!this.tq.length||this.ended)return;
     const n=this.tq.shift();
-    if(this.trinkets.includes(n.id)||this.trinkets.length<this.tcap||this.autoRefuse(n.rar,n.buy)){   /* the situation changed while it was waiting: decide again */
-      this.addTrinket(n.id,n.rar,{onYes:n.onYes,onNo:n.onNo,buy:n.buy});return this.drainTQ();
+    if(this.trinkets.includes(n.id)||this.trinkets.length<this.tcap||this.autoRefuse(n.id,n.rar,n.pf,n.buy)){   /* the situation changed while it was waiting: decide again */
+      this.addTrinket(n.id,n.rar,{pf:n.pf,onYes:n.onYes,onNo:n.onNo,buy:n.buy});return this.drainTQ();
     }
-    this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),src:this.tSrc[id]})),nw:{id:n.id,rar:n.rar},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
+    this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),pf:this.trP(id),src:this.tSrc[id]})),nw:{id:n.id,rar:n.rar,pf:n.pf},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
   }
   rarityWeights(){
     const si=this.sd,L=this.S.luck;
@@ -285,8 +292,8 @@ class Game{
     }
     const any=TRINKETS.filter(t=>!this.trinkets.includes(t.id)&&!excl.includes(t.id));return any.length?pick(any).id:null;
   }
-  /* boss trinket choice: 4 options, up to 10 with Luck */
-  pickCount(){return Math.min(10,4+Math.round(this.S.luck*6.7));}
+  /* boss chest trinket choice: always TRIN_PICK (4) options; Luck improves their rarity instead (rarityWeights) */
+  pickCount(){return TRIN_PICK;}
   rollTrinketList(n){const out=[];for(let i=0;i<n;i++){const id=this.rollTrinket(out);if(!id)break;out.push(id);}return out;}
   /* one reward per chest (evolution has priority, otherwise one normal upgrade); Luck can add a trinket */
   chestRewards(isFinal,boss,elite){
@@ -294,10 +301,10 @@ class Game{
     if(elig.length)R.push({k:'evo',id:pick(elig).id});
     else{const pool=shuffle(this.upgradePool());if(pool.length)R.push({k:'up',o:pool.pop()});else R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
     if(boss){
-      {const o=this.rollTrinketList(this.pickCount());if(o.length)R.push({k:'pick',opts:o,rars:o.map(id=>this.rarOf(id))});else R.push({k:'zenny',v:Math.round(60*ZMUL*(1+this.sd))});}
+      {const o=this.rollTrinketList(this.pickCount());if(o.length)R.push({k:'pick',opts:o,rars:o.map(id=>this.rarOf(id)),pfs:o.map(()=>rollPf(this.S.luck))});else R.push({k:'zenny',v:Math.round(60*ZMUL*(1+this.sd))});}
     }else{
       const bonus=Math.min(.4,this.S.luck*.9);
-      if(elite||Math.random()<bonus){const id=this.rollTrinket();if(id)R.push({k:'trinket',id,rar:this.rarOf(id)});else if(elite)R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
+      if(elite||Math.random()<bonus){const id=this.rollTrinket();if(id)R.push({k:'trinket',id,rar:this.rarOf(id),pf:rollPf(this.S.luck)});else if(elite)R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
     }
     return R;
   }
@@ -316,18 +323,18 @@ class Game{
       for(const r of m.rewards){
         if(r.k==='evo')this.evolveWeapon(r.id);
         else if(r.k==='up')this.applyOption(r.o);
-        else if(r.k==='trinket')this.addTrinket(r.id,r.rar);
+        else if(r.k==='trinket')this.addTrinket(r.id,r.rar,{pf:r.pf});
         else if(r.k==='zenny')this.addZenny(r.v);
       }
       const pk=m.rewards.find(r=>r.k==='pick');
-      if(pk){this.modal={type:'pick',opts:pk.opts,rars:pk.rars};return;}
+      if(pk){this.modal={type:'pick',opts:pk.opts,rars:pk.rars,pfs:pk.pfs};return;}
     }else if(m.type==='totem'){
       this.applyTotem((m.opts||['luck','risk'])[i]||'luck');
     }else if(m.type==='pick'){
-      const id=m.opts[i];if(id)this.addTrinket(id,(m.rars||[])[i]);
+      const id=m.opts[i];if(id)this.addTrinket(id,(m.rars||[])[i],{pf:(m.pfs||[])[i]});
     }else if(m.type==='tswap'){
       const rep=m.curs[i];   /* one of the carried trinkets is replaced; the last button keeps them all */
-      if(rep){this.equipTrinket(m.nw.id,m.nw.rar,rep.id);if(m.onYes)m.onYes();}
+      if(rep){this.equipTrinket(m.nw.id,m.nw.rar,rep.id,m.nw.pf);if(m.onYes)m.onYes();}
       else{if(!m.buy)this.sellTrinket(m.nw.id,m.nw.rar);if(m.onNo)m.onNo();}   /* kept the old ones: a found trinket is sold, an offer in Zeno-sama's shop is simply not bought */
     }else if(m.type==='trial'){this.endTrial();
     }else if(m.type==='wish'){
@@ -723,7 +730,7 @@ class Game{
     this.rg.v+=v;this.rg.n++;
   }
   mergeGems(){
-    const p=this.p,list=this.gm.filter(g=>!g.att&&!g.dead).map(g=>({g,d:Math.hypot(g.x-p.x,g.y-p.y)})).sort((a,b)=>b.d-a.d);
+    const p=this.p,list=this.gm.filter(g=>!g.att&&!g.dead&&!g.held).map(g=>({g,d:Math.hypot(g.x-p.x,g.y-p.y)})).sort((a,b)=>b.d-a.d);
     let n=this.gm.length-GEM_KEEP;
     for(const o of list){if(n<=0)break;o.g.dead=true;this.rgAdd(o.g.v,o.g.x,o.g.y);n--;}
   }
@@ -1449,17 +1456,55 @@ class Game{
     this.pet={d,x:this.p.x-34,y:this.p.y+4,cd:d.cd*.35,t:0,face:1,fl:0,act:0};
   }
   petReady(){return !!this.pet&&this.pet.cd<=0;}
+  /* the companion goes for XP gems the player cannot reach, carries up to PET_CARRY of them above its head and hands them over (they fly the last bit to you);
+     and when five or more enemies close in from three sides it releases a shockwave (every 5 s) */
+  petFindGem(q){
+    const p=this.p;let b=null,bd=1e9;
+    for(const g of this.gm){
+      if(g.dead||g.att||g.held)continue;
+      const dp=Math.hypot(g.x-p.x,g.y-p.y);if(dp<=this.S.magnet+8||dp>PET_SEEK)continue;   /* inside your own pick-up range it is yours anyway */
+      const d=Math.hypot(g.x-q.x,g.y-q.y);if(d<bd){bd=d;b=g;}
+    }
+    return b;
+  }
+  petRelease(q){for(const g of q.hold){g.held=false;g.att=true;}q.hold.length=0;q.tg=null;}
   updatePet(dt){
     const q=this.pet;if(!q)return;
-    const p=this.p;q.t+=dt;if(q.cd>0)q.cd-=dt;if(q.fl>0)q.fl-=dt;if(q.act>0)q.act-=dt;
+    const p=this.p;q.t+=dt;if(q.cd>0)q.cd-=dt;if(q.fl>0)q.fl-=dt;if(q.act>0)q.act-=dt;if(q.sw>0)q.sw-=dt;if(q.seekT>0)q.seekT-=dt;
+    q.hold=(q.hold||[]).filter(g=>!g.dead);
+    if(this.trial){if(q.hold.length)this.petRelease(q);}
     const tx=p.x-p.face*34+Math.sin(q.t*1.7)*8,ty=p.y+8+Math.cos(q.t*2.3)*5;
     const dx=tx-q.x,dy=ty-q.y,d=Math.hypot(dx,dy);
-    if(d>420){q.x=tx;q.y=ty;}else{const k=Math.min(1,dt*(d>60?5:3));q.x+=dx*k;q.y+=dy*k;}
-    if(Math.abs(dx)>3)q.face=dx>0?1:-1;
+    let chase=null;
+    if(!this.trial&&q.hold.length<PET_CARRY&&!(q.seekT>0)){
+      if(!q.tg||q.tg.dead||q.tg.att||q.tg.held||Math.hypot(q.tg.x-p.x,q.tg.y-p.y)>PET_SEEK+30)q.tg=this.petFindGem(q);
+      chase=q.tg;
+      if(chase&&d>PET_SEEK+160){q.tg=null;chase=null;q.seekT=1.5;}   /* too far from you: give up for a moment */
+    }
+    if(chase){
+      const gx=chase.x-q.x,gy=chase.y-q.y,gd=Math.hypot(gx,gy)||1,st=Math.min(gd,PET_SPD*dt);
+      q.x+=gx/gd*st;q.y+=gy/gd*st;if(Math.abs(gx)>3)q.face=gx>0?1:-1;
+      if(gd<14){chase.held=true;q.hold.push(chase);q.tg=null;if(this.fx.length<380)this.fx.push({x:q.x,y:q.y-14,vx:0,vy:-30,l:.35,m:.35,c:'#9adfff',s:3});}
+    }else{
+      if(d>420){q.x=tx;q.y=ty;}else{const k=Math.min(1,dt*(d>60?5:3));q.x+=dx*k;q.y+=dy*k;}
+      if(Math.abs(dx)>3)q.face=dx>0?1:-1;
+      /* back at your side: hand the gems over */
+      if(q.hold.length&&Math.hypot(p.x-q.x,p.y-q.y)<58)this.petRelease(q);
+    }
+    q.hold.forEach((g,i)=>{g.x=q.x;g.y=q.y-24-i*7;});
     if(this.trial)return;
-    /* passive: the pet scoops up XP gems close to it */
-    const r2=140*140;
-    for(const g of this.gm){if(g.att)continue;const gx=q.x-g.x,gy=q.y-g.y;if(gx*gx+gy*gy<r2)g.att=true;}
+    /* surrounded: five or more enemies close to you, spread over at least three sides */
+    if(!(q.sw>0)){
+      let n=0,qm=0;
+      for(const e of this.en){if(e.dead)continue;const ex=e.x-p.x,ey=e.y-p.y;if(ex*ex+ey*ey<(PET_SW_NEAR+e.r)**2){n++;qm|=1<<((ex>=0?1:0)+(ey>=0?2:0));}}
+      const quad=(qm&1)+((qm>>1)&1)+((qm>>2)&1)+((qm>>3)&1);
+      if(n>=PET_SW_N&&quad>=3){
+        q.sw=PET_SW_CD;q.act=.5;q.fl=.4;const c=q.d.c,R=PET_SW_R;
+        this.ring(p.x,p.y,R,c,.55);this.ring(p.x,p.y,R*.6,'#ffffff',.35);this.burst(q.x,q.y-12,12,c);this.audio.sfx('shrine');this.shake=Math.max(this.shake,.18);
+        for(const e of this.en){if(e.dead)continue;const ex=e.x-p.x,ey=e.y-p.y;if(ex*ex+ey*ey<(R+e.r)**2){this.hit(e,PET_SW_DMG+this.lvl*1.1,ex*.6,ey*.6);e.stun=Math.max(e.stun||0,e.boss?.25:.6);}}
+        this.floatText(p.x,p.y-56,this.env.tr(T('Onda d\'urto!','Shockwave!')),1);
+      }
+    }
   }
   usePet(){
     if(this.abBlocked())return false;
@@ -1697,6 +1742,7 @@ class Game{
     if(this.gm.length>GEM_CAP)this.mergeGems();
     this.updateRedGem(dt);
     for(const g of this.gm){
+      if(g.held)continue;   /* carried by the companion */
       const dx=p.x-g.x,dy=p.y-g.y,d=Math.hypot(dx,dy);
       if(d<S.magnet)g.att=true;
       if(g.att){const sp=380+d;g.x+=dx/d*sp*dt;g.y+=dy/d*sp*dt;}
@@ -1759,7 +1805,7 @@ class Game{
       /* trinkets with stats can appear at any rarity; special-effect ones only at their own */
       const pool=TRINKETS.filter(t=>!this.trinkets.includes(t.id)&&!used.includes(t.id)&&(t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4));
       const c=pool.length?pick(pool):null;if(!c)continue;
-      used.push(c.id);items.push({id:c.id,rar:r,x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
+      used.push(c.id);items.push({id:c.id,rar:r,pf:rollPf(L),x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
     }
     items.forEach((it,i)=>{it.x=(i-(items.length-1)/2)*112;if(it.rar>=2){it.price=Math.round(it.price*.7);it.disc=true;}});   /* Epic and above: -30% */
     if(items.length)pick(items).free=true;   /* one random item is always free */
@@ -1794,7 +1840,7 @@ class Game{
       this.say(this.env.tr(t.n),RARITY[it.rar].c,2.2);this.floatText(tr.zx,tr.zy-70,this.env.tr(T('Grazie! Hihi!','Thank you! Hehe!')),1);
     };
     tr.lock=it;
-    this.addTrinket(it.id,it.rar,{onYes:done,onNo:()=>{},buy:true});
+    this.addTrinket(it.id,it.rar,{pf:it.pf,onYes:done,onNo:()=>{},buy:true});
   }
   endZeno(){
     if(!this.trial||!this.trial.zeno)return;

@@ -1,6 +1,6 @@
 # TODO — Dragon Ball: Survivors
 
-Aggiornato il 20 ottobre 2026 (v53). Voci con 🎨 = **serve uno sprite / un asset dall'utente** (ricordarlo ogni volta che si parla di sprite).
+Aggiornato il 20 ottobre 2026 (v54). Voci con 🎨 = **serve uno sprite / un asset dall'utente** (ricordarlo ogni volta che si parla di sprite).
 
 ## 🎨 Asset da fornire
 - [ ] 🎨 Piccolo — **Cannone Speciale Makankosappo** (sprite e animazione dell'abilità unica).
@@ -13,7 +13,6 @@ Aggiornato il 20 ottobre 2026 (v53). Voci con 🎨 = **serve uno sprite / un ass
 - [ ] 🎨 Suggerire sprite per le altre abilità.
 
 ## 🗓 Rilasci pianificati
-- **v54 – Cimeli e compagni**: i compagni raccolgono XP visibile e la portano al giocatore, onda d'urto quando circondati (5 s), forzieri 6→4 cimeli, impostazione «salta cimeli inferiori», schermata scambio cimelio migliorata, rework cimeli (indicatore di perfezione 0–100%, mitico con statistiche coerenti, aura Ultra Istinto al 100%, ordinamento borsa), UI slot cimeli.
 - **v55 – Boss e personaggi**: trasformazioni dei nemici (+50% HP, +20% statistiche), morte del boss finale, Piccolo (Makankosappo, Hellzone Grenade), Toppo, Gotenks (SSJ…), Freezer su Namek, Dodoria, Cell, Androidi canonici, Dr. Gero, Super Buu, Regno degli Dei, Stanza del Tempo.
 - **v56 – Audio / grafica**: ragni dei barili, ombre dei gabbiani, critici rossi + font arcade, suono level-up, Dyspo.
 - **Refactor #95**: estrarre `TrinketSystem`, `ZenoShop`, `Director/Spawner`, `Loot`, `Forms` da `Game`; HUD/mondo/overlay da `Renderer` (nessun cambio di comportamento, suite completa dopo ogni estrazione).
@@ -30,4 +29,5 @@ Aggiornato il 20 ottobre 2026 (v53). Voci con 🎨 = **serve uno sprite / un ass
 
 ## ✅ Fatto
 - v52: vedi le note di patch (`2026-10-20`) e il README.
+- v54 (Cimeli e compagni, sezione 4 della richiesta del 20 ottobre): note di patch `2026-10-20c` — Perfezione 0–100% per cimelio (tiro ±12%, aura Ultra Istinto al 100%, Mitici coerenti, ordinamento borsa, scambio migliorato, slot HUD, «Salta i cimeli inferiori»), forziere del boss a 4 cimeli, compagno che porta l'XP e onda d'urto.
 - v53 (Gameplay / bilanciamento / armi, sezione 3 della richiesta del 20 ottobre): note di patch `2026-10-20b`. Indicatori TAB: foglio dell'utente integrato (`assets/src/tgt_src.jpg` → `tools/gen_tgt.py` → `assets/tgt.webp`). Sprite dei Tamagami (normali, Furia, statue) integrati dai fogli dell'utente (`assets/src/tama/` → `tools/import_tama.py` → `assets/sprites/tama*.png`).

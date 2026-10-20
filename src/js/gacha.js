@@ -54,9 +54,12 @@ Object.assign(Progress.prototype,{
     const out=[],now=Date.now(),own=new Set(d.bag.map(b=>trinketKey(b.id,b.r)));
     for(let i=0;i<K.n*times;i++){
       const g=gachaRoll(K.lucky),key=trinketKey(g.id,g.r),dup=own.has(key);
-      const res={id:g.id,r:g.r,dup,coins:0,at:now+i};
-      if(dup){if(!test){res.coins=dupPayout(g.r);d.zenny+=res.coins;d.stats.zenny+=res.coins;}}
-      else{own.add(key);const b={id:g.id,r:g.r,at:now+i};if(test)b.t=1;d.bag.push(b);}
+      const pf=hasPf(TRINKETS.find(t=>t.id===g.id))?rollPf(K.lucky?.5:0):PF_NOM,res={id:g.id,r:g.r,dup,coins:0,at:now+i,p:pf};
+      if(dup){
+        if(!test){res.coins=dupPayout(g.r);d.zenny+=res.coins;d.stats.zenny+=res.coins;}
+        const ob=d.bag.find(x=>x.id===g.id&&x.r===g.r);if(ob&&hasPf(TRINKETS.find(t=>t.id===g.id))&&pf>(ob.p!=null?ob.p:PF_NOM)){res.up=ob.p!=null?ob.p:PF_NOM;ob.p=pf;}   /* a duplicate with a better roll upgrades the one you own (and still pays zenny) */
+      }
+      else{own.add(key);const b={id:g.id,r:g.r,at:now+i,p:pf};if(test)b.t=1;d.bag.push(b);}
       if(!test){const gs=d.gacha;gs.pulls++;if(g.r===4)gs.mythics++;if(g.r===3)gs.legend++;}
       out.push(res);
     }

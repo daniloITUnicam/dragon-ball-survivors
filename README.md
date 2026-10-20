@@ -55,6 +55,17 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026, parte 3 (Perfezione dei cimeli, compagni, forzieri a 4 cimeli)
+
+Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20c`, `src/js/patches.js`).
+
+- **Compagno** (`Game.updatePet`, `petFindGem`, `petRelease`, costanti `PET_*`): va a prendere le gemme XP entro 340 px da te ma fuori dal tuo raggio di raccolta, ne porta fino a 3 sopra la testa (`gem.held`, disegnate in `Renderer.drawPet`) e le consegna al ritorno; **onda d'urto** (≥ 5 nemici entro 165 px su almeno 3 quadranti, 210 px, 12 + 1,1/livello, ricarica 5 s).
+- **Perfezione dei cimeli 0–100%** (`PF_SPREAD`, `pfK`, `rollPf`, `hasPf`, `trinMods(t,r,pf)` in `data.js`): statistiche −12% … +12% attorno al valore della rarità (50% = nominale); fasce di rarità non sovrapposte (Mitico minimo > Leggendario massimo); i cimeli solo-effetto non ne hanno. In partita `Game.tPf`/`trP(id)`; le offerte (forziere, scelta del boss, negozio di Zeno) portano il loro `pf`; il gacha salva `bag[].p` (doppione migliore ⇒ aggiorna `p`, `res.up`), i salvataggi vecchi ripartono da 50 (`Save.normalize`).
+- **Aura Ultra Istinto** a 100% (`Game.perfAura`, `Renderer.drawPlayer`; cornice pulsante in `style`/`gacha.css`); **Mitici coerenti**: solo cimeli con statistiche (`rarOf`).
+- **Interfaccia**: `UI.perfBar` (borsa, scheda personaggio, forziere, negozio di Zeno, pausa, suggerimenti); ordinamento borsa «Perfezione»; **scambio cimelio** con differenza %, verdetto Migliore/Peggiore/Pari e zenny incassati; **slot HUD** 30 px con barra di Perfezione e slot vuoti tratteggiati; impostazione **«Salta i cimeli inferiori»** (`trinScore`/`autoRefuse`: rarità, poi Perfezione).
+- **Forziere del boss: 4 cimeli** (`TRIN_PICK`, `pickCount`; prima 4 + fino a 6 con la Fortuna).
+- **🧪 Test aggiunto:** `v54` (Perfezione e fasce, forziere a 4, Mitici, salta-inferiori, compagno che porta XP, onda d'urto, gacha/migrazione, scambio, aura, ordinamento della borsa).
+
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 2 (armi a scelta, TAB, Tamagami, mondo più severo)
 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20b`, `src/js/patches.js`).
@@ -243,7 +254,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - La **Fortuna** decide la rarità degli oggetti (fino a leggendario); **1% di oggetti Mitici**.
 
 **🍀 Trinket: uno alla volta, con rarità e Mitico**
-- Si porta **un trinket** (fino a **3** con il potenziamento del Negozio «Cimelio Extra», 2 acquisti); con tutti gli slot occupati, trovarne un altro (forziere, capsula, desiderio, Zeno) apre una **finestra di confronto** che mostra tutti quelli che porti e chiede quale sostituire (o se tenerli). L'impostazione **«Rifiuta cimeli di rarità inferiore»** vende subito quelli di rarità più bassa di tutti i tuoi.
+- Si porta **un trinket** (fino a **3** con il potenziamento del Negozio «Cimelio Extra», 2 acquisti); con tutti gli slot occupati, trovarne un altro (forziere, capsula, desiderio, Zeno) apre una **finestra di confronto** che mostra tutti quelli che porti e chiede quale sostituire (o se tenerli). L'impostazione **«Salta i cimeli inferiori»** (prima «Rifiuta cimeli di rarità inferiore») vende subito quelli peggiori di tutti i tuoi (rarità più bassa, o stessa rarità con meno **Perfezione**). Ogni cimelio ha una **Perfezione** 0–100% (statistiche −12%…+12%, 100% = aura Ultra Istinto): vedi l'aggiornamento parte 3.
 - Ogni trinket può avere rarità **Comune → Mitica**: le statistiche crescono con la rarità e hanno un tetto per rarità (es. danno: leggendario max 15%, mitico max 20%); i testi si aggiornano da soli. Gli altri tier sono stati ridimensionati di conseguenza. Trovare un trinket ha l'1% di chance di essere Mitico.
 - Achievement *Collezionista*: ora "Trova 6 cimeli in una partita".
 
@@ -614,6 +625,7 @@ node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, 
 node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: bilanciamento, TAB, armi per partita, sacchi di zenny, Senzu, totem, Tamagami, acqua e lava (puppeteer)
+node tests/v54.js             # v54 cimeli e compagni: Perfezione, forziere a 4, salta-inferiori, compagno (XP + onda d'urto), gacha, scambio, aura (puppeteer)
 node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)
 node tests/ui52.js            # v52 interfaccia: ingranaggio, ricerca/ordine personaggi, Avvio rapido, notifiche (puppeteer)
 node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)

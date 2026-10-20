@@ -550,17 +550,25 @@ const TRINKETS=[
 
 /* ---- trinket rarity instances: the same trinket can be found at any rarity (common .. mythic); stats scale with it and are capped per rarity ---- */
 const RS=[.35,.55,.75,1,1.33];                       /* stat scale per rarity, legendary = 1 */
-const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20};   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%) */
+const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20};   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
 const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown']};
-function trinMods(t,r){
+/* Perfection (v54): every trinket you find or pull comes with a roll of 0-100% that moves its stats by -12% .. +12% around the rarity's value (50% = the nominal one).
+   The ranges of two neighbouring rarities never overlap (the best Common is still below the worst Rare, ... the worst Mythic is above the best Legendary), so a higher rarity is always stronger.
+   At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
+const PF_SPREAD=[.88,1.12],PF_NOM=50;
+const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
+function rollPf(luck){let q=Math.random();if(luck>0)q=Math.pow(q,1/(1+luck*1.2));return Math.min(100,Math.round(q*104));}   /* about 4% of the rolls are a perfect 100 */
+const hasPf=t=>!!(t&&t.m);
+const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
+function trinMods(t,r,pf){
   if(!t||!t.m)return{};
   if(r==null)r=t.r;
-  const k=RS[r]/RS[t.r],o={};
-  for(const key in t.m){const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*1000)/1000;}
+  const k=RS[r]/RS[t.r],o={},f=pfK(pf);
+  for(const key in t.m){const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
   return o;
 }
-function trinStats(t,r){
-  const m=trinMods(t,r),out=[];
+function trinStats(t,r,pf){
+  const m=trinMods(t,r,pf),out=[];
   for(const key in m){
     const v=m[key];if(!v)continue;const L=TLAB[key]||[key,key];
     if(key==='armor'||key==='regen'){const n=Math.round(v*10)/10;out.push({k:key,v,t:T('+'+String(n).replace('.',',')+' '+L[0],'+'+n+' '+L[1])});}
@@ -569,12 +577,13 @@ function trinStats(t,r){
   }
   return out;
 }
-function trinDesc(t,r){
+function trinDesc(t,r,pf){
   if(!t.m||(t.sp&&!t.x))return t.d;
-  const st=trinStats(t,r);
+  const st=trinStats(t,r,pf);
   return T(st.map(x=>x.t.it).join(', ')+'.'+(t.x?' '+t.x.it:''),st.map(x=>x.t.en).join(', ')+'.'+(t.x?' '+t.x.en:''));
 }
 for(const t of TRINKETS)if(t.m&&!(t.sp&&!t.x))t.d=trinDesc(t,t.r);   /* the shown text always matches the (capped) stats */
+const TRIN_PICK=4;    /* trinkets offered by a boss chest (it was 4 + up to 6 more with Luck, 10 at most) */
 
 /* ---------- Pets: a companion per race. Passive: collects XP gems; active: one ability on a cooldown ---------- */
 const PETS=[

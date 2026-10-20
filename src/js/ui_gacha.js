@@ -13,22 +13,24 @@ Object.assign(UI.prototype,{
   /* ---------- helpers ---------- */
   tdef(id){return TRINKETS.find(x=>x.id===id);},
   /* name, rarity and effect text of a trinket at a rarity, in the language of the player */
-  tinfo(id,r){const t=this.tdef(id);return{t,c:RARITY[r].c,name:this.tr(t.n),rar:this.tr(RARITY[r].n),desc:this.tr(trinDesc(t,r)),stats:trinStats(t,r)};},
+  tinfo(id,r,p){const t=this.tdef(id),pf=hasPf(t)?(p!=null?p:PF_NOM):null;return{t,c:RARITY[r].c,name:this.tr(t.n),rar:this.tr(RARITY[r].n),desc:this.tr(trinDesc(t,r,pf)),stats:trinStats(t,r,pf),perf:pf};},
+  /* perfection of a trinket: a bar (0-100%) and, at 100%, the Ultra Instinct shimmer */
+  perfBar(p,compact){if(p==null)return null;return h('div',{class:'perf'+(p>=100?' ui':'')+(compact?' sm':''),style:'--p:'+p+'%;--pc:'+perfColor(p),title:this.t('perfLabel')+' '+p+'%'+(p>=100?' · '+this.t('perfUI'):'')},h('span',{class:'pbar'},h('i')),compact?null:h('b',null,this.t('perfLabel')+' '+p+'%'+(p>=100?' ✦':'')));},
   fmtDate(ts){try{return new Date(ts).toLocaleString(this.app.i18n.lang,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return new Date(ts).toISOString().slice(0,16).replace('T',' ');}},
   /* a trinket as a small card (bag) */
   tcard(id,r,o){
-    o=o||{};const i=this.tinfo(id,r);
-    return h(o.btn?'button':'div',{class:'tcard r'+r+(o.sel?' sel':'')+(o.eq?' eq':''),style:'--c:'+i.c,'data-fid':o.fid,onclick:o.onclick,title:i.name+' · '+i.rar+'\n'+i.desc},
-      glyph(i.t.k,i.c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),h('div',{class:'cd'},i.desc)));
+    o=o||{};const i=this.tinfo(id,r,o.p);
+    return h(o.btn?'button':'div',{class:'tcard r'+r+(o.sel?' sel':'')+(o.eq?' eq':'')+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c,'data-fid':o.fid,onclick:o.onclick,title:i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')+'\n'+i.desc},
+      glyph(i.t.k,i.c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar+(i.perf!=null?' · '+i.perf+'%':'')),h('div',{class:'cd'},i.desc),this.perfBar(i.perf,true)));
   },
   /* ---------- trinket slot in the character screen ---------- */
   trinketSlot(){
     const d=this.save,eq=d.equip,t=eq&&this.tdef(eq.id);
     if(eq&&!t)d.equip=null;
-    const i=t?this.tinfo(eq.id,eq.r):null;
-    const slot=h('button',{class:'tslot'+(t?' on r'+eq.r:''),style:t?'--c:'+i.c:'','data-fid':'tslot',title:t?i.name+' · '+i.rar+'\n'+i.desc:this.t('slotEmpty'),
+    const be=t&&d.bag.find(b=>b.id===eq.id&&b.r===eq.r),i=t?this.tinfo(eq.id,eq.r,be&&be.p):null;
+    const slot=h('button',{class:'tslot'+(t?' on r'+eq.r+(i.perf!=null&&i.perf>=100?' perfect':''):''),style:t?'--c:'+i.c:'','data-fid':'tslot',title:t?i.name+' · '+i.rar+'\n'+i.desc:this.t('slotEmpty'),
       onclick:()=>{this.sfx();this.push('bag',{pick:true});}},
-      t?[glyph(t.k,i.c),h('span',{class:'tsn'},i.name)]:h('span',{class:'tplus'},'+'));
+      t?[glyph(t.k,i.c),h('span',{class:'tsn'},i.name),this.perfBar(i.perf,true)]:h('span',{class:'tplus'},'+'));
     return h('div',{class:'tslotwrap'},h('span',{class:'lbl'},this.t('trinketSlot')),slot,
       t?h('button',{class:'btn tiny alt unq','data-fid':'tunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null);this.rebuild(true);}},'✕ '+this.t('bagUnequip')):null);
   },
@@ -125,17 +127,17 @@ Object.assign(UI.prototype,{
       let bestSnd=-1;
       if(bulk){
         /* the same trinket at the same rarity is shown once with its count; the best come first, new ones before duplicates */
-        const grp=new Map();for(const x of res){const k=trinketKey(x.id,x.r),e=grp.get(k)||{x,c:0,nw:false,coins:0};e.c++;e.coins+=x.coins||0;if(!x.dup)e.nw=true;grp.set(k,e);}
+        const grp=new Map();for(const x of res){const k=trinketKey(x.id,x.r),e=grp.get(k)||{x,c:0,nw:false,coins:0,p:-1,up:false};e.c++;e.coins+=x.coins||0;if(!x.dup)e.nw=true;if(x.p>e.p)e.p=x.p;if(x.up!=null)e.up=true;grp.set(k,e);}
         [...grp.values()].sort((p,q)=>q.x.r-p.x.r||(q.nw-p.nw)||q.c-p.c).forEach((e,ix)=>{
-          const i=this.tinfo(e.x.id,e.x.r);bestSnd=Math.max(bestSnd,e.x.r);
+          const i=this.tinfo(e.x.id,e.x.r,e.p);bestSnd=Math.max(bestSnd,e.x.r);
           cards.append(h('div',{class:'gtile r'+e.x.r,style:'--c:'+i.c+';--d:'+Math.min(ix,40)*.02+'s',title:i.name+' · '+i.rar+'\n'+i.desc},glyph(i.t.k,i.c),
-            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar)),
+            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(e.up?' ↑':''))),
             h('span',{class:'gtc'},'×'+e.c),e.nw?h('span',{class:'gnew'},this.t('gNew')):h('span',{class:'gdup'},this.t('gDup'))));
         });
         if(!skip)snd('gPop'+best);
       }
       else for(const x of res){
-        const i=this.tinfo(x.id,x.r),el=h('div',{class:'gcard r'+x.r,style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),h('div',{class:'cd'},i.desc),
+        const i=this.tinfo(x.id,x.r,x.p),el=h('div',{class:'gcard r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),h('div',{class:'cd'},i.desc),x.up!=null?h('span',{class:'gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null,
           x.dup?h('span',{class:'gdup'},this.t('gDup'),x.coins?[' · +',zAmt(x.coins,true)]:null):h('span',{class:'gnew'},this.t('gNew')));
         cards.append(el);bestSnd=Math.max(bestSnd,x.r);
         if(!skip){snd('gPop'+x.r);sparks(el,i.c,2+x.r*3,40);}
@@ -176,22 +178,22 @@ Object.assign(UI.prototype,{
   /* ---------- trinket bag ---------- */
   screen_bag(a){
     a=a||{};const d=this.save,pick=!!a.pick,st=this.bagF||(this.bagF={q:'',rar:[1,1,1,1,1],sort:'new'});
-    const all=d.bag.map(b=>({b,i:this.tinfo(b.id,b.r)}));
+    const all=d.bag.map(b=>({b,i:this.tinfo(b.id,b.r,b.p)}));
     const eqk=d.equip?trinketKey(d.equip.id,d.equip.r):'';
     if(!this.bagSel||!d.bag.some(b=>trinketKey(b.id,b.r)===this.bagSel))this.bagSel=eqk&&d.bag.some(b=>trinketKey(b.id,b.r)===eqk)?eqk:(d.bag[0]?trinketKey(d.bag[0].id,d.bag[0].r):'');
     const grid=h('div',{class:'baggrid'}),det=h('div',{class:'bagdet'}),shown=h('span',{class:'achshown'});
-    const sorts={new:(x,y)=>y.b.at-x.b.at,old:(x,y)=>x.b.at-y.b.at,rar:(x,y)=>y.b.r-x.b.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.b.r-x.b.r};
+    const sorts={new:(x,y)=>y.b.at-x.b.at,old:(x,y)=>x.b.at-y.b.at,rar:(x,y)=>y.b.r-x.b.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.b.r-x.b.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.b.r-x.b.r};
     const fill=()=>{
       const q=RAR_NORM(st.q.trim());
       const list=all.filter(o=>st.rar[o.b.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
-      grid.replaceChildren(...(list.length?list.map(o=>{const k=trinketKey(o.b.id,o.b.r);return this.tcard(o.b.id,o.b.r,{btn:true,sel:k===this.bagSel,eq:k===eqk,fid:'t'+k,onclick:()=>{this.sfx();this.bagSel=k;this.rebuild(true);}});}):[h('p',{class:'sub'},this.t(all.length?'bagNone':'bagEmpty'))]));
+      grid.replaceChildren(...(list.length?list.map(o=>{const k=trinketKey(o.b.id,o.b.r);return this.tcard(o.b.id,o.b.r,{p:o.b.p,btn:true,sel:k===this.bagSel,eq:k===eqk,fid:'t'+k,onclick:()=>{this.sfx();this.bagSel=k;this.rebuild(true);}});}):[h('p',{class:'sub'},this.t(all.length?'bagNone':'bagEmpty'))]));
       shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
     };
     const sel=d.bag.find(b=>trinketKey(b.id,b.r)===this.bagSel);
     if(sel){
-      const i=this.tinfo(sel.id,sel.r),isEq=this.bagSel===eqk;
+      const i=this.tinfo(sel.id,sel.r,sel.p),isEq=this.bagSel===eqk;
       det.style.setProperty('--c',i.c);
-      det.append(...[glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),
+      det.append(...[glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),
         h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
         i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(i.t.x||i.t.d))):null,
         h('p',{class:'cd'},this.t('bagGot',{d:this.fmtDate(sel.at)})),
@@ -202,7 +204,7 @@ Object.assign(UI.prototype,{
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
     const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;this.rebuild(true);}},this.tr(RARITY[r].n))));
     const search=h('input',{type:'text',class:'achsearch','data-fid':'bagq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
-    const sortSel=h('select',{class:'bagsort','data-fid':'bsort',onchange:e=>{st.sort=e.target.value;fill();}},['new','old','rar','name'].map(k=>h('option',{value:k,selected:st.sort===k?'':null},this.t(({new:'bagSort_new',old:'bagSort_old',rar:'bagSort_rar',name:'bagSort_name'})[k]))));
+    const sortSel=h('select',{class:'bagsort','data-fid':'bsort',onchange:e=>{st.sort=e.target.value;fill();}},['new','old','rar','perf','name'].map(k=>h('option',{value:k,selected:st.sort===k?'':null},this.t(({new:'bagSort_new',old:'bagSort_old',rar:'bagSort_rar',perf:'bagSort_perf',name:'bagSort_name'})[k]))));
     sortSel.value=st.sort;
     fill();
     return h('div',null,this.header('bagTitle'),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,

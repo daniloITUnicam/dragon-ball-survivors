@@ -208,7 +208,7 @@ ok(bg.slot&&/\+/.test(bg.slotEmpty),'the character screen has the trinket slot w
 ok(bg.screen==='bag'&&bg.cards===8,'clicking the + opens the bag with every trinket found ('+bg.cards+')');
 ok(bg.crit.length>=2&&bg.crit.every(n=>/Scouter|Crystal/.test(n)),'search by effect: "crit" -> '+bg.crit.join(', '));
 ok(bg.noCommon===6&&bg.all===8,'the rarity chips hide a rarity ('+bg.noCommon+' left without Common) and bring it back');
-ok(bg.byRar==='Mythic','sorted by rarity the Mythic comes first ('+bg.byRar+')');
+ok(/^Mythic/.test(bg.byRar),'sorted by rarity the Mythic comes first ('+bg.byRar+')');
 ok(bg.oldest==='Broken Scouter'&&bg.newest==='Senzu Pouch','sorted by date obtained: oldest "'+bg.oldest+'", newest "'+bg.newest+'"');
 ok(bg.afterEquip==='chars'&&bg.eq&&bg.slotFull,'equipping from the slot goes back to the character screen with the trinket in it ('+bg.slotFull+')');
 ok(bg.unq===null,'the slot can be emptied again');
