@@ -4,9 +4,7 @@ dist/_bundle.js
 dist/
 _cs/
 
-# sprite di lavoro (restano in locale): sul repo servono solo questi tre file
-assets/sprites/*
-!assets/sprites/fxkame.png
-!assets/sprites/sprites.json
-!assets/sprites/README.md
+# sprite di lavoro (le CARTELLE con i frame grezzi restano in locale).
+# I fogli finali assets/sprites/<id>.png + sprites.json vanno sul repo: sono quelli che build.py incorpora nel gioco.
+assets/sprites/*/
 assets/sprite test/
