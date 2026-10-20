@@ -47,6 +47,29 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update (revamped menus, stronger shop, Achievements, daily quests)
+
+The full list with before/after numbers is in the game's own **patch notes** (📜 on the menu: release `2026-10-20`, `src/js/patches.js`).
+
+**🧭 Menus and interface** (`ui3.js`, `ui4.js`)
+- ⚙ Settings in the stage and character screens; new **Gameplay** tab (Screen shake, Damage numbers, Refuse lower-rarity trinkets, Auto-open tickets).
+- Character screen: **search** (name, race, universe, series, starting weapon) and **sorting** (`CH_SORTS`, `CHAR_META`), saved in `settings.charSort/charDesc`.
+- **⚡ Quick Start** (`UI.qsTargets`, `screen_quick`): the character with its trinket slot, the suggested stage and what is left to unlock; «Another suggestion».
+- Pause: an **«i» on weapons** with numeric stats (`weaponStatRows`): final value, base and a green «+» with the amount added.
+- Window enter/leave animations, notifications that slide back up over 3 s, the Endless description on hover; patch notes opened from the menu stay «read» even after a cloud sync (`Cloud.newerPatch`, `pushSeen`).
+- «Power» → **«Damage»**.
+
+**💰 Shop and economy** (`data.js` `SHOP`, `game.js`, `gacha.js`)
+- Stronger upgrades and base prices +20%; new **Reroll / Skip / Ban** (up to 5 each) on the level-up window (`Game.rerollLevel/skipLevel/banLevel`, `banRun`). Total Shop cost: **115,166** zenny (before: 73,115).
+- Bosses: 10× ticket at **100%**; Elites: 1× ticket at 100%; **buy tickets** (1× 1,000, 10× 10,000, −20% on Saturday and Sunday; `ticketPrice`, `Progress.buyTicket`); **auto-open** tickets (setting).
+- **Kill streak**: +50 coins every 50 kills in a row, hidden bar −1% every 0.5 s (`CK_*`, `Game.cstk`).
+- Zeno-sama: Epic and above −30%, one random free item per visit, music no longer slowed, a bigger bounce.
+- x2 mode no longer gives the final zenny multiplier.
+
+**🏆 Achievements, Objectives and quests** (`quests.js`, `ui4.js`)
+- New **Achievement** screen (`screen_unl`): what to do to unlock characters, weapons, second evolutions + 14 challenges by difficulty with tickets; «???» on a weapon until it is unlocked.
+- **Objectives** (`screen_ach`): zenny goals only (36 new) + **daily quests** (5 every 6 hours, a bonus when all are done; `dqList`, `Progress.checkDaily`). Search, «Hide completed», «Closest to completion» saved in `settings.objF/achF`.
+
 ### 🆕 October 17, 2026 update, part 2 (Endless mode, map events, weapon animations)
 
 The full list with before/after numbers is in the game's own **patch notes** (📜 on the menu: release `2026-10-17b`, `src/js/patches.js`).
@@ -543,6 +566,8 @@ node tests/events.js          # map events: the 11 stages, announcements, transf
 node tests/pose.js            # weapon animations: armless frames, IK, Kamehameha / Ki Blast, poses, sprite frames 10-15 (puppeteer)
 node tests/hpbar.js           # Health bar with the live portrait (puppeteer); screenshots: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
+node tests/eco52.js           # v52 economy: Reroll/Skip/Ban, Zeno, tickets, coin streak, Achievements, Objectives, quests (puppeteer)
+node tests/ui52.js            # v52 interface: gear, character search/sort, Quick Start, notifications (puppeteer)
 node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Super Balls (puppeteer)
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk

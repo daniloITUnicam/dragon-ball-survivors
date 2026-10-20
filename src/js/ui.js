@@ -20,6 +20,9 @@ function zIcon(){
   return e;
 }
 const zAmt=(n,raw)=>h('span',{class:'zv'},zIcon(),raw?n:fmtN(n));
+/* a ticket as an item: "+1 [ticket 10×]" (the same icon in the Achievement cards, the notifications and the "found" message) */
+const TK_LAB={t1:'1×',t10:'10×',l10:'10×'},TK_NAME={t1:T('Ticket 1×','1× Ticket'),t10:T('Ticket 10×','10× Ticket'),l10:T('Ticket Lucky 10×','Lucky 10× Ticket')};
+const tkChip=(kind,n)=>h('span',{class:'tkr',title:(window.__app&&__app.ui?__app.ui.tr(TK_NAME[kind]):TK_NAME[kind].en)},'+'+(n||1)+' ',h('i',{class:'tkico '+kind},h('b',null,TK_LAB[kind])),kind==='l10'?h('small',{class:'tkl'},'Lucky'):null);
 
 class UI{
   constructor(app){
@@ -50,12 +53,13 @@ class UI{
   tr(o){return this.app.i18n.t(o);}
   get save(){return this.app.save.d;}
   sfx(n){this.app.audio.sfx(n||'click');}
-  btn(key,fn,cls,raw){return h('button',{class:'btn '+(cls||''),onclick:()=>{this.sfx();fn();}},raw?key:this.t(key));}
+  btn(key,fn,cls,raw){return h('button',{class:'btn '+(cls||''),'data-fid':raw?null:'b_'+key,onclick:()=>{this.sfx();fn();}},raw?key:this.t(key));}
   /* ---- screen stack ---- */
   show(name,args){this.stack=[];this.root.innerHTML='';this.push(name,args);}
   push(name,args){
     const prev=this.top;if(prev)prev.el.classList.add('hidden');
     const el=this['screen_'+name](args);el.classList.add('screen');
+    el.classList.add('enter');setTimeout(()=>el.classList.remove('enter'),360);   /* a short fade/slide when a screen opens (not when it is rebuilt in place) */
     this.root.append(el);this.stack.push({name,args,el});this.focusFirst();
   }
   pop(){
@@ -132,8 +136,10 @@ class UI{
         WIP_URL?h('div',{class:'wip','aria-hidden':'true',title:'Work in progress'},h('div',{class:'wipin'},h('img',{src:WIP_URL,alt:'W.I.P.',draggable:'false'}))):null),
       h('div',{class:'menu'},
         this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),
+        h('button',{class:'btn quickbtn','data-fid':'quick',title:this.t('quickStartD'),onclick:()=>{this.sfx('uiStart');this.quickStart();}},'⚡ '+this.t('quickStart')),
         this.btn('shop',()=>this.push('shop')),
         this.btn('gachaBtn',()=>this.push('gacha')),
+        this.btn('unl',()=>this.push('unl')),
         this.btn('ach',()=>this.push('ach')),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         s.sandbox?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
@@ -164,7 +170,7 @@ class UI{
     if(d.sball.length>=7)cards.unshift(h('button',{class:'card stage superc','data-fid':'superc',onclick:()=>{this.sfx('uiStart');this.push('superWish');}},
       h('div',{class:'sballs'},[1,2,3,4,5,6,7].map(n=>gball(n,34))),h('div',{class:'cn'},this.t('sbStage')),h('div',{class:'cd'},this.t('sbStageD'))));
     const diffs=Object.keys(DIFF).map(k=>h('button',{class:'btn small'+(sel.diff===k?'':' alt'),'data-fid':'df'+k,onclick:()=>{this.sfx();sel.diff=k;d.diff=k;this.app.save.write();this.rebuild(true);}},this.tr(DIFF[k].n)));
-    return h('div',null,this.header('chooseStage'),
+    return h('div',null,this.header('chooseStage',null,this.gearBtn()),
       h('div',{class:'row topact'},this.btn('next',()=>this.push('chars'),'primary')),
       h('div',{class:'row'},h('span',{class:'lbl'},this.t('difficulty')),diffs,
         /* the explanation lives in the tooltip (on the wrapper too, so it also shows while the button is locked) */
@@ -179,13 +185,23 @@ class UI{
     const peekId=sel.peek&&!this.charOpen(sel.peek)?sel.peek:null;
     const C=CHARS.find(c=>c.id===(peekId||sel.char));
     this.anim=[];
-    const cards=CHARS.map((c,ci)=>{
+    const mk=(c,ci)=>{
       const open=this.charOpen(c.id),cv=document.createElement('canvas');cv.width=78;cv.height=96;
-      this.anim.push({cv,c,open,seed:hash(ci,7),key:'',w:78,h:96,base:90,k:(c.u||1.95)/Sprites.S*1.1});
+      this.anim.push({cv,c,open,seed:hash(ci,7),key:'',w:78,h:96,base:90,k:(c.u||1.95)/Sprites.S*1.1,card:true});
       const isSel=peekId?c.id===peekId:c.id===sel.char;
       return h('button',{class:'char'+(isSel?' sel':'')+(open?'':' locked'),'data-fid':'c'+c.id,onclick:()=>{this.sfx();if(open){sel.char=c.id;sel.peek=null;}else sel.peek=c.id;this.rebuild(true);}},
         cv,h('b',null,open?this.tr(c.n):'???'));
-    });
+    };
+    /* the grid is filled by the search box / sort selector without rebuilding the whole screen (so typing keeps its focus) */
+    const grid=h('div',{class:'grid chars'}),cnt=h('span',{class:'chcount'});
+    const fill=()=>{
+      this.anim=(this.anim||[]).filter(a=>!a.card);
+      const list=this.charList();
+      grid.replaceChildren(...(list.length?list.map(({c,i})=>mk(c,i)):[h('p',{class:'sub'},this.tr(T('Nessun personaggio trovato.','No characters found.')))]));
+      cnt.textContent=list.length+' / '+CHARS.length;
+    };
+    fill();
+    const tools=this.charTools(fill,cnt);
     const line=LINES[C.line||'saiyan'];
     const big=document.createElement('canvas');big.width=170;big.height=190;
     this.anim.push({cv:big,c:C,open:!peekId,seed:.3,key:'',w:170,h:190,base:178,k:(C.u||1.95)/Sprites.S*2.9,big:true,forms:peekId?0:Math.min(((d.maxForm||{})[C.id]||0),LINES[C.line||'saiyan'].length)});
@@ -217,13 +233,15 @@ class UI{
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
       this.petPicker());
     /* Glossary and Grimoire live here (top right of the character screen) instead of the main menu */
-    const refBtns=[h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
+    const refBtns=[this.gearBtn(),h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
       h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire')),
-      h('button',{class:'btn small alt','data-fid':'cbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn'))];
+      h('button',{class:'btn small alt','data-fid':'cbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn')),
+      h('button',{class:'btn small alt','data-fid':'cunl',onclick:()=>{this.sfx();this.push('unl');}},'🏆 '+this.t('unl')),
+      h('button',{class:'btn small alt','data-fid':'cobj',onclick:()=>{this.sfx();this.push('ach');}},'🎯 '+this.t('ach'))];
     return h('div',{class:'cscr'},this.header('chooseChar',claim?()=>{sel.claim=false;sel.peek=null;this.pop();}:null,refBtns),
       claim?h('div',{class:'claimbar'},'🐉 '+this.t('sbClaimBar')):null,
-      h('div',{class:'row topact'},startBtn),
-      h('div',{class:'split'},h('div',{class:'grid chars'},cards),detail));
+      h('div',{class:'row topact'},startBtn,peekId?null:h('button',{class:'btn quickbtn','data-fid':'cquick',title:this.t('quickStartD'),onclick:()=>{this.sfx('uiStart');this.quickStart(sel.char);}},'⚡ '+this.t('quickStart'))),
+      h('div',{class:'split'},h('div',{class:'chcol'},tools,grid),detail));
   }
   /* ---- pet picker (companion shown under the character list) ---- */
   petPicker(){
@@ -255,7 +273,8 @@ class UI{
   animate(dt){
     this.animT=(this.animT||0)+dt;
     if(this.top&&this.top.name==='stages'){this.animStages(dt);return;}
-    const t=this.animT,list=this.anim;if(!list||!list.length||!this.top||this.top.name!=='chars')return;
+    if(this.top&&this.top.name==='quick')this.animStages(dt);
+    const t=this.animT,list=this.anim;if(!list||!list.length||!this.top||(this.top.name!=='chars'&&this.top.name!=='quick'))return;
     for(const a of list){
       if(!a.cv.isConnected)continue;
       const par=a.cv.parentElement,hot=a.big||(par&&(par.matches(':hover')||par.classList.contains('sel')||par===document.activeElement));
@@ -325,7 +344,11 @@ class UI{
         h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},
           maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost))));
     });
-    return h('div',null,this.header('shopTitle'),h('p',{class:'sub'},this.t('shopDesc')),h('div',{class:'grid shop'},cards),
+    /* what is left to buy: every remaining level of every upgrade at its current price */
+    const rest=SHOP.reduce((s,it)=>{let t=0;for(let l=d.shop[it.id]||0;l<it.max;l++)t+=shopCost(it,l);return s+t;},0),all=SHOP.reduce((s,it)=>{let t=0;for(let l=0;l<it.max;l++)t+=shopCost(it,l);return s+t;},0);
+    return h('div',null,this.header('shopTitle'),h('p',{class:'sub'},this.t('shopDesc')),
+      h('p',{class:'sub shoptot','data-fid':'shtot'},this.tr(T('Costo per comprare tutto: ','Cost to buy everything: ')),zAmt(all,true),' · ',this.tr(T('ancora da comprare: ','still to buy: ')),zAmt(rest,true)),
+      h('div',{class:'grid shop'},cards),
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));
   }
   /* weapon blacklist: every purchase of the shop upgrade gives one ban; banned weapons never come up as new weapons among the level-up cards */
@@ -337,42 +360,6 @@ class UI{
         glyph(w.k,w.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(w.n)),h('div',{class:'cd'},this.t(on?'banOn':'banOff'))));
     });
     return h('div',null,this.header('banTitle'),h('p',{class:'sub'},this.t('banDesc',{a:d.banned.length,b:cap})),h('div',{class:'bangrid'},cards));
-  }
-  screen_ach(){
-    const d=this.save,st=this.achF||(this.achF={hide:false,near:false,q:''});
-    let sv=null;try{sv=this.app.progress.statsView(null);}catch(e){}
-    const norm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    const fmtV=(v,u)=>u==='t'?fmtT(v):Math.floor(v).toLocaleString();
-    /* one row per achievement: progress [current, target] drives the bar and the "closest to completion" sorting */
-    const rows=ACHIEVEMENTS.map(a=>{
-      const ok=!!d.ach[a.id];let pr=[ok?1:0,1];
-      if(a.prog&&sv){try{pr=a.prog(sv);}catch(e){}}
-      if(ok)pr=[pr[1],pr[1],pr[2]];
-      return{a,ok,cur:pr[0],max:pr[1]||1,u:pr[2],ratio:Math.min(1,(pr[0]||0)/(pr[1]||1))};
-    });
-    const done=rows.filter(r=>r.ok).length;
-    const card=r=>h('div',{class:'card achi'+(r.ok?' done':'')},glyph(r.ok?'★':'☆',r.ok?'#ffd23f':'#6a7a90'),
-      h('div',{class:'col'},h('div',{class:'cn'},this.tr(r.a.n)),h('div',{class:'cd'},this.tr(r.a.d)),
-        h('div',{class:'achbar'+(r.ok?' full':'')},h('i',{style:'width:'+Math.round(r.ratio*100)+'%'})),
-        h('div',{class:'achmeta'},h('span',{class:'achprog'},fmtV(r.cur,r.u)+' / '+fmtV(r.max,r.u)),h('span',{class:'cl'},'+',zAmt(r.a.reward,true),r.ok?' ✓':''))));
-    const grid=h('div',{class:'grid ach'}),shown=h('span',{class:'achshown'});
-    const btnHide=h('button',{class:'btn small','data-fid':'achhide'}),btnNear=h('button',{class:'btn small','data-fid':'achnear'});
-    const fill=()=>{
-      const q=norm(st.q.trim());
-      let list=rows.filter(r=>!(st.hide&&r.ok)&&(!q||norm(this.tr(r.a.n)+' '+this.tr(r.a.d)).includes(q)));
-      if(st.near)list=list.slice().sort((x,y)=>(x.ok-y.ok)||(y.ratio-x.ratio));
-      grid.replaceChildren(...(list.length?list.map(card):[h('p',{class:'sub'},this.tr(T('Nessun obiettivo trovato.','No achievements found.')))]));
-      shown.textContent=this.tr(T('Mostrati','Shown'))+' '+list.length+' / '+rows.length;
-      btnHide.className='btn small'+(st.hide?'':' alt');btnHide.textContent=(st.hide?'☑ ':'☐ ')+this.tr(T('Nascondi ottenuti','Hide completed'));
-      btnNear.className='btn small'+(st.near?'':' alt');btnNear.textContent=(st.near?'☑ ':'☐ ')+this.tr(T('Più vicini al completamento','Closest to completion'));
-    };
-    btnHide.onclick=()=>{this.sfx();st.hide=!st.hide;fill();};
-    btnNear.onclick=()=>{this.sfx();st.near=!st.near;fill();};
-    const search=h('input',{type:'text',class:'achsearch','data-fid':'achq',placeholder:'🔍 '+this.tr(T('Cerca per nome o descrizione…','Search by name or description…')),value:st.q,autocomplete:'off',spellcheck:'false',
-      oninput:e=>{st.q=e.target.value;fill();}});
-    fill();
-    return h('div',null,this.header('achTitle'),h('p',{class:'sub'},this.t('achCount',{a:done,b:ACHIEVEMENTS.length})),
-      h('div',{class:'achtools'},search,btnHide,btnNear,shown),grid);
   }
 }
 

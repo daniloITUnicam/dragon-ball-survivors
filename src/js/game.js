@@ -1,6 +1,7 @@
 /* every ESC_EVERY seconds (60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
+const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.02;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1% every 0.5 s (2% per second) */
 const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
@@ -28,12 +29,12 @@ class Game{
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
-    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;
+    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
-    this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
+    this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
     this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
-    this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;
+    this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=this.stage.bosses,mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back */
       this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false}));}
@@ -74,19 +75,19 @@ class Game{
     const C=this.C,P=this.pass,sl=id=>this.save.shop[id]||0,tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     const S={};
-    S.might=BASE_POWER*C.might*(1+.15*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.05*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
-    S.spd=C.spd*(1+.08*(P.speed||0))*(1+.03*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
-    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.08*(P.haste||0)-.03*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
-    S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.15*sl('magnet')+tm.magnet+sh.magnet);
-    S.armor=(P.armor||0)+(C.armor||0)+1*sl('armor')+(fm?fm.armor:0)+tm.armor;
-    S.regen=C.regen+.5*(P.regen||0)+.5*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
-    S.xp=C.xpm*(1+.12*(P.growth||0))*(1+.08*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
-    S.gold=1+.15*sl('gold')+tm.gold;
-    S.crit=.05+.03*sl('crit')+tm.crit;S.critDmg=1.75;
+    S.might=BASE_POWER*C.might*(1+.15*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
+    S.spd=C.spd*(1+.08*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
+    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.08*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
+    S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
+    S.armor=(P.armor||0)+(C.armor||0)+1.25*sl('armor')+(fm?fm.armor:0)+tm.armor;
+    S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
+    S.xp=C.xpm*(1+.12*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
+    S.gold=1+.18*sl('gold')+tm.gold;
+    S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=fm?(fm.idx>=6?2:fm.idx>=3?1:0):0;
-    S.luck=Math.min(.9,.07*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,.09*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
@@ -96,7 +97,7 @@ class Game{
     {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(this.cdMin(.3),S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
     this.abPassive(S);
     this.S=S;
-    const mh=Math.round((C.hp+20*(P.vit||0)+12*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
+    const mh=Math.round((C.hp+20*(P.vit||0)+15*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
     if(mh>this.p.maxHp)this.p.hp+=mh-this.p.maxHp;else if(this.p.hp>mh)this.p.hp=mh;
     this.p.maxHp=mh;
     const e=this.formEntry;this.formColor=e?e.aura:null;
@@ -126,11 +127,11 @@ class Game{
     for(const [id,w] of this.weapons){if(w.lv<WMAX)pool.push({type:'w',id,lv:w.lv});else if(w.canXl())pool.push({type:'w',id,lv:w.lv,xl:w.xl});}   /* Endless: a finished weapon keeps levelling (xl) */
     const slots=this.passCount();
     for(const id in PASS){const lv=this.pass[id]||0;if(lv<5&&(lv>0||slots<MAX_PASSIVES))pool.push({type:'p',id,lv});}
-    return pool;
+    return this.banRun&&this.banRun.size?pool.filter(o=>!this.banRun.has(this.optKey(o))):pool;
   }
   levelOptions(){
     const pool=this.upgradePool();
-    if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
+    if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id)&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
     const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
@@ -289,9 +290,15 @@ class Game{
   }
 
   /* ---------- modal flow ---------- */
+  /* shop helpers on the level-up window: redraw the 3 cards, skip the choice, ban a weapon / upgrade for the rest of the run */
+  levelRedraw(m){m.options=this.levelOptions();m.rec=undefined;m.recWhy=undefined;const rc=this.recommend(m.options);if(rc){m.rec=rc.i;m.recWhy=rc.why;}}
+  rerollLevel(){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.rr>0))return false;this.ru.rr--;m.banMode=false;this.levelRedraw(m);return true;}
+  skipLevel(){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.sk>0))return false;this.ru.sk--;return true;}   /* the caller then closes the window with resolveModal(-1): nothing is taken */
+  banLevel(i){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.bn>0))return false;const k=this.optKey(m.options[i]||{});if(!k)return false;
+    this.ru.bn--;this.banRun.add(k);m.banMode=false;this.levelRedraw(m);return true;}
   resolveModal(i){
     const m=this.modal;if(!m)return;
-    if(m.type==='level'){this.applyOption(m.options[i]||m.options[0]);}
+    if(m.type==='level'){if(i>=0)this.applyOption(m.options[i]||m.options[0]);}
     else if(m.type==='chest'){
       for(const r of m.rewards){
         if(r.k==='evo')this.evolveWeapon(r.id);
@@ -642,7 +649,7 @@ class Game{
       this.run.bossKills++;this.bossAlive--;
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
-      if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 20%: a 10x ticket */
+      if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
       this.chests.push({x:e.x,y:e.y,final:e.final,t:0,boss:true});
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
       this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
@@ -658,6 +665,8 @@ class Game{
   /* every kill within STREAK_WIN s of the last one grows the streak (HUD counter, top right); reaching a milestone pays a little XP (a few % of a level) */
   bumpStreak(){
     const n=++this.streak;this.streakT=STREAK_WIN;this.streakPop=.28;if(n>(this.run.streak||0))this.run.streak=n;
+    /* coin streak: a hidden bar refilled by every kill and drained 1% every 0.5 s; every CK_EVERY kills in a row pay CK_COINS coins */
+    this.cstk++;this.cstkT=1;if(this.cstk%CK_EVERY===0){this.addZenny(CK_COINS);this.run.cstkPaid=(this.run.cstkPaid||0)+CK_COINS;this.audio.sfx('coin');this.floatText(this.p.x,this.p.y-46,'+Z '+CK_COINS,1);}
     const ix=STREAK_MS.indexOf(n);if(ix<0&&!(n>2000&&n%500===0))return;
     const p=this.p,t=ix<0?5:ix,col=STREAK_COL[Math.min(5,Math.floor(t*.6+.4))],xp=this.need*(.03+.008*Math.min(8,t));
     this.addXp(xp);this.audio.sfx('pkxp');
@@ -805,7 +814,7 @@ class Game{
   addTicket(kind,n,at){
     n=n||1;this.run.tk[kind]+=n;const p=at||this.p,c=kind==='l10'?'#ff9ad0':kind==='t10'?'#ffd23f':'#9ad8ff';
     this.audio.sfx('ticket');this.ring(p.x,p.y,90,c,.6);this.burst(p.x,p.y-14,22,c);this.pillar(p.x,p.y,c,.9);this.flash=Math.max(this.flash||0,.15);this.flashC=c;
-    this.say(this.env.tr(kind==='t1'?T('TICKET 1x ottenuto!','1x TICKET found!'):kind==='t10'?T('TICKET 10x ottenuto!','10x TICKET found!'):T('TICKET 10x FORTUNATO ottenuto!','10x LUCKY TICKET found!')),c,2.8);
+    this.progress.notify({type:'tfound',kind,n});   /* the message is a notification with the ticket icon (top right) */
   }
   /* Endless: from here on the enemies grow every ENDLESS_MILE levels (not every minute), coins dry up, weapons can reach Lv 100, Zeno's Shop opens every 5 minutes */
   continueAfterWin(){
@@ -1206,6 +1215,7 @@ class Game{
     if(this.slowT>0)this.slowT-=dt;
     for(const k in this.lootCd)if(this.lootCd[k]>0)this.lootCd[k]-=dt;
     if(this.streak>0){this.streakT-=dt;if(this.streakT<=0)this.streak=0;}if(this.streakPop>0)this.streakPop-=dt;
+    if(this.cstk>0){this.cstkT-=dt*CK_DRAIN;if(this.cstkT<=0){this.cstk=0;this.cstkT=0;}}
     /* the stage's own Dragon Ball event (see events.js): every few minutes, 30-45 seconds */
     if(!inTrial)this.evUpdate(dt);
     /* ranged-enemy wave: 60 seconds (first stage: 30), then they leave */
@@ -1670,10 +1680,12 @@ class Game{
       const c=pool.length?pick(pool):null;if(!c)continue;
       used.push(c.id);items.push({id:c.id,rar:r,x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
     }
-    items.forEach((it,i)=>{it.x=(i-(items.length-1)/2)*112;});
+    items.forEach((it,i)=>{it.x=(i-(items.length-1)/2)*112;if(it.rar>=2){it.price=Math.round(it.price*.7);it.disc=true;}});   /* Epic and above: -30% */
+    if(items.length)pick(items).free=true;   /* one random item is always free */
+    for(const it of items)if(it.free)it.price=0;
     this.trial={zeno:true,phase:'zeno',t:0,dur:60,cx,cy,R:300,boss:null,stash:this.en,ret:{x:cx,y:cy},killed:false,obs:[],btn:[],trp:[],items,zx:cx,zy:cy-112,exit:{x:cx,y:cy+215},hold:0,near:null,zj:0,lock:null};
     this.en=[];this.eb=[];this.pr=[];this.bz=[];this.jbeams=[];p.x=cx;p.y=cy+95;p.inv=1;this.banner=null;
-    this.flash=.7;this.flashC='#ffffff';this.ring(cx,cy+95,260,'#e0b8ff',.8);this.audio.sfx('transform');if(this.audio.slowMusic)this.audio.slowMusic(.86);
+    this.flash=.7;this.flashC='#ffffff';this.ring(cx,cy+95,260,'#e0b8ff',.8);this.audio.sfx('transform');
     this.floatText(cx,cy-60,this.env.tr(T('Benvenuto! Resta sopra un oggetto per comprarlo.','Welcome! Stand on an item to buy it.')),1);
   }
   updateZeno(dt,tr){
@@ -1705,7 +1717,6 @@ class Game{
   }
   endZeno(){
     if(!this.trial||!this.trial.zeno)return;
-    if(this.audio.slowMusic)this.audio.slowMusic(1);
     this.endTrial();
     this.say(this.env.tr(T('Il portale si richiude...','The portal closes...')),'#e0b8ff',2);
   }

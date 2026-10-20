@@ -121,7 +121,24 @@ class Cloud{
   apply(rd){
     const sd=this.sd,keepSet=sd.d.settings,keepBinds=sd.d.binds;
     const nd=sd.normalize(rd);nd.settings=keepSet;nd.binds=keepBinds;nd.cloud={uid:this.uid};nd.updated=rd.updated||Date.now();
+    nd.patchSeen=Cloud.newerPatch(sd.d.patchSeen,nd.patchSeen);   /* the patch notes read on this device stay read after the cloud save is applied */
     sd.d=nd;this.silentWrite();this.notify({type:'applied'});
+  }
+  /* the more recent of two patch-note ids (PATCHES[0] is the newest; unknown / empty ids count as the oldest) */
+  static newerPatch(a,b){
+    const rank=id=>{const i=typeof PATCHES!=='undefined'?PATCHES.findIndex(p=>p.id===id):-1;return i<0?1e9:i;};
+    return rank(a)<=rank(b)?(a||b||''):(b||a||'');
+  }
+  /* the account remembers the patch notes you read: updates only that field of the cloud row (progress and its timestamp stay untouched) */
+  async pushSeen(id){
+    if(!this.signedIn||this.busy||this.pending||!this.ready)return;
+    try{
+      const t=await this.token(),r=await this.fetchRemote();if(!r||!r.data)return;
+      const nid=Cloud.newerPatch(r.data.patchSeen,id);if(nid===r.data.patchSeen)return;
+      r.data.patchSeen=nid;
+      await this.req('/rest/v1/saves?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+        body:[{user_id:this.uid,data:r.data,updated_at:r.updated_at}]});
+    }catch(e){}
   }
   /* reconcile local save and cloud save (login / start / tab focus) */
   async sync(){

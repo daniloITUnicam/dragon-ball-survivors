@@ -12,9 +12,9 @@ class SaveData{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
-      diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
+      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,endAuto:false,endPrio:[]},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},endAuto:false,endPrio:[]},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],debug:[8]}
@@ -77,6 +77,7 @@ class Progress{
       shopBuys:s.shopBuys,shopMax:s.shopMax,zenny:s.zenny,perfect:s.perfect+(g?g.run.perfect-b.perfect:0),
       hardClears:s.hardClears,x2Clears:s.x2Clears,extremeClears:s.extremeClears||0,runs:s.runs,
       zeno:(s.zeno||0)+rk('zeno')-bk('zeno'),zbuys:(s.zbuys||0)+rk('zbuy')-bk('zbuy'),
+      playT:(s.playT||0)+(g?Math.max(0,g.t-bk('t')):0),wins:s.wins||0,evos:(s.evos||0)+rk('evos')-bk('evos'),elites:(s.elites||0)+rk('elites')-bk('elites'),
       unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,wc:this.d.wc||{},rec,run
     };
   }
@@ -100,8 +101,9 @@ class Progress{
     if(this.blocked(g))return[];
     const v=this.statsView(g),out=[];
     for(const a of ACHIEVEMENTS){
-      if(!this.d.ach[a.id]&&a.test(v)){this.d.ach[a.id]=Date.now();this.d.zenny+=a.reward;out.push(a.id);this.notify({type:'ach',a});}
+      if(!this.d.ach[a.id]&&a.test(v)){this.d.ach[a.id]=Date.now();this.d.zenny+=a.reward;if(a.tk)for(const k in a.tk)this.d.tickets[k]=(this.d.tickets[k]||0)+a.tk[k];out.push(a.id);this.notify({type:'ach',a});}
     }
+    this.checkDaily(g,v);
     if(out.length)this.save.write();
     return out;
   }
@@ -127,12 +129,13 @@ class Progress{
     const firstWin=!!win&&!b.cleared;
     const lines=this.rewardLines(g,win,firstWin);
     const raw=lines.reduce((s,l)=>s+l.v,0);
-    const mult=stg.zenny*g.S.gold*g.D.zenny*(g.x2?2:1)*(win||(opts&&opts.keep)?1:.75);
+    const mult=stg.zenny*g.S.gold*g.D.zenny*(win||(opts&&opts.keep)?1:.75);   /* x2 mode: no money multiplier at the end (it only makes the run twice as fast) */
     const total=Math.floor(raw*mult);
     const first=!b.counted;
     st.kills+=g.kills-b.kills;st.bosses+=g.run.bossKills-b.bossKills;st.chests+=g.run.chests-b.chests;
     st.balls+=g.run.balls-b.balls;st.wishes+=g.run.wishes-b.wishes;st.perfect+=g.run.perfect-b.perfect;
     if(first)st.runs++;
+    st.playT=(st.playT||0)+Math.max(0,g.t-(b.t||0));st.evos=(st.evos||0)+(g.run.evos||0)-(b.evos||0);st.elites=(st.elites||0)+(g.run.elites||0)-(b.elites||0);if(win&&!b.cleared)st.wins=(st.wins||0)+1;
     st.zeno=(st.zeno||0)+(g.run.zeno||0)-(b.zeno||0);st.zbuys=(st.zbuys||0)+(g.run.zbuy||0)-(b.zbuy||0);
     {const rc=st.rec||(st.rec={});for(const [k,v] of Object.entries({evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary,bosses:g.run.bossKills,coins:g.run.coins,mythic:g.run.mythic||0,k20:g.run.k20||0,streak:g.run.streak||0}))rc[k]=Math.max(rc[k]||0,v||0);}
     st.zenny+=total;d.zenny+=total;
@@ -142,7 +145,7 @@ class Progress{
     if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
-    g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,t:g.t,counted:true,cleared:b.cleared||!!win};   g.run.minC=g.run.coins;
+    g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,evos:g.run.evos||0,elites:g.run.elites||0,t:g.t,counted:true,cleared:b.cleared||!!win};   g.run.minC=g.run.coins;
     /* a weapon is unlocked by simply winning a map with a character that starts with it (once per weapon: a second owner of the same weapon unlocks nothing new) */
     if(win)for(const id of g.C.start){
       if(!d.wu[id]){d.wu[id]=1;this.notify({type:'weapon',id,evo2:false});}

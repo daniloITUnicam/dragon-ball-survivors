@@ -440,3 +440,113 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .bancard.on .cn{text-decoration:line-through;opacity:.8}
 .bancard.on::after{content:'\1F6AB';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:22px}
 .banman{margin-top:6px;align-self:flex-start}
+
+/* ---- v52: notifications of unlocks retreat upward in 3 s; every window opens with a smooth fade/zoom ---- */
+.toast.retire{animation:toastRetire 3s cubic-bezier(.45,0,.8,.55) both}
+@keyframes toastRetire{0%{opacity:1;transform:none}25%{opacity:.9}100%{opacity:0;transform:translateY(-130%)}}
+.toast.collapse{max-height:0!important;margin-top:-5px;padding-top:0;padding-bottom:0;transition:max-height .35s ease,margin .35s ease,padding .35s ease;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.toast.retire{animation:toastFade 3s linear both}@keyframes toastFade{to{opacity:0}}}
+/* windows: a soft backdrop fade, the title drops in, the cards rise one after the other with a little overshoot; closing fades out */
+.screen.enter{animation:scrIn .3s cubic-bezier(.2,.8,.3,1) both}
+@keyframes scrIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.screen.modal{animation:mdIn .38s ease-out both}
+.screen.modal.leaving{animation:mdOut .22s ease-in both}
+@keyframes mdIn{from{opacity:0}to{opacity:1}}
+@keyframes mdOut{from{opacity:1}to{opacity:0}}
+.screen.modal>h2{animation:mdTitle .55s cubic-bezier(.2,.9,.25,1.15) .04s both}
+@keyframes mdTitle{from{opacity:0;transform:translateY(-26px) scale(.9)}to{opacity:1;transform:none}}
+.screen.modal>.sub,.screen.modal>.row,.screen.modal>.tswap,.screen.modal>.tswarn{animation:mdFade .5s ease .22s both}
+@keyframes mdFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card.opt{animation:rise2 .5s cubic-bezier(.2,.9,.25,1.12) both;animation-delay:var(--d,0s)}
+@keyframes rise2{0%{opacity:0;transform:translateY(34px) scale(.93)}60%{opacity:1}100%{opacity:1;transform:none}}
+.screen.modal.noanim,.screen.modal.noanim *{animation:none!important}
+.screen.pausescr{animation:mdIn .25s ease-out both}
+@media (prefers-reduced-motion:reduce){.screen.enter,.screen.modal,.screen.modal>*,.card.opt,.screen.pausescr{animation:none!important}}
+
+/* ---- v52: settings gear, character search + sorting, Quick Start ---- */
+.btn.gear{font-size:20px;line-height:1;padding:6px 12px 5px;min-width:44px}
+.menu .btn.quickbtn,.row.topact .btn.quickbtn{--p1:#3fd6a0;--p2:#1f9f78;--p3:#13745a;--pl:rgba(200,255,235,.8);--ol:#04241b;text-transform:uppercase;letter-spacing:.04em}
+.menu .btn.quickbtn::before,.row.topact .btn.quickbtn::before{background:linear-gradient(180deg,var(--pl) 0,var(--p1) 12%,var(--p2) 58%,var(--p3) 100%)}
+.chcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:10px}
+.chcol>.grid.chars{flex:none;width:100%}
+.chtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:3;padding:6px 8px;border-radius:12px;background:linear-gradient(180deg,rgba(18,8,4,.94),rgba(12,5,2,.9));border:2px solid rgba(255,170,60,.28);box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.chsearchw{position:relative;flex:1 1 170px;min-width:130px}
+.chsearch{width:100%;box-sizing:border-box;padding:7px 30px 7px 12px;border-radius:999px;border:2px solid rgba(255,190,90,.3);background:rgba(6,10,22,.75);color:#fff;font:700 14px 'Rajdhani',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s}
+.chsearch:focus{border-color:#ffd23f;box-shadow:0 0 0 3px rgba(255,210,63,.2)}
+.chclear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:12px;line-height:22px;padding:0;cursor:pointer}
+.chclear:hover{background:rgba(255,120,60,.6)}
+select.chsort{flex:0 0 auto;border-radius:999px;padding:7px 14px;font:800 13px 'Rajdhani',sans-serif;letter-spacing:.03em;border:2px solid rgba(255,190,90,.3);background:linear-gradient(180deg,#2d4c86,#1c3260);color:#fff;cursor:pointer;outline:none}
+select.chsort:focus{border-color:#ffd23f}
+.btn.small.chdir{min-width:40px;padding:6px 12px 5px;font-size:16px}
+.chcount{margin-left:auto;font:800 12px 'Rajdhani',sans-serif;color:#cdbf9a;letter-spacing:.06em}
+.qsscr{align-items:center}
+.qsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;width:min(1100px,96vw);align-items:stretch}
+.qscard{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;background:var(--panel);border:3px solid var(--line)}
+.qscard .lbl{font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--gold)}
+.qschar{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.qsprev{flex:0 0 150px;display:flex;justify-content:center}
+.qsside{flex:1 1 150px;display:flex;flex-direction:column;gap:6px;min-width:150px}
+.qsstage canvas.stprev{width:100%;height:auto;border-radius:8px;border:2px solid var(--line);margin-bottom:6px}
+.qsg{display:flex;gap:10px;align-items:flex-start}
+.qsgoal{border-color:var(--c,var(--line))}
+.qsmore{margin-top:auto}
+@media (max-width:640px){.chcount{display:none}.chtools{gap:6px}}
+/* Endless: the description opens above the button on hover / focus */
+.endwrap{position:relative;display:inline-block}
+.etip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translate(-50%,8px);width:min(460px,88vw);padding:12px 16px;background:linear-gradient(180deg,#1c1008,#0d0603);border:2px solid #ffb02e;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.7),0 0 18px rgba(255,150,30,.25);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:40;text-align:left;font:600 15px/1.4 'Rajdhani',sans-serif;color:#f6ead0}
+.endwrap:hover .etip,.endwrap:focus-within .etip{opacity:1;transform:translate(-50%,0)}
+.etip .etn{display:block;color:#ffd23f;font-size:18px;letter-spacing:.05em;margin-bottom:4px}
+.etip ul{margin:0;padding-left:18px}.etip li{margin:3px 0}
+.etip .etlock{margin:0 0 6px;color:#ff8a7a;font-weight:800}
+.etip .etred{margin:8px 0 0;color:#ff4a3a;font-weight:800;text-shadow:0 0 8px rgba(255,60,40,.5)}
+/* weapon info in the pause screen */
+.winfo{position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:8px;border-radius:50%;border:2px solid #7fd4ff;color:#7fd4ff;font:900 13px/1 'Rajdhani',sans-serif;font-style:italic;cursor:help;vertical-align:middle;outline:none;background:rgba(20,40,70,.6)}
+.winfo:hover,.winfo:focus{background:#7fd4ff;color:#0a1830}
+.wtip{display:none;position:absolute;left:28px;top:-6px;z-index:60;width:min(340px,80vw);padding:10px 14px;background:linear-gradient(180deg,#1a0f08,#0c0603);border:2px solid var(--c,#ffb02e);border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.75);text-align:left;font:600 14px/1.35 'Rajdhani',sans-serif;color:#f1e6cc;font-style:normal;cursor:default}
+.winfo:hover .wtip,.winfo:focus .wtip{display:block}
+.wth{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.wth b{color:var(--c,#ffd23f);font-size:17px}.wth i{color:#cdbf9a;font-style:normal;font-size:13px}
+.wtip p{margin:4px 0 8px;color:#d9ccaa}
+.wtr{display:grid;gap:2px}.wtrow{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+.wtrow span{color:#bfb596}.wtrow b{color:#fff}.gp{color:#4cff7a;font-style:normal;font-weight:900;text-shadow:0 0 6px rgba(70,255,120,.6)}
+.wtrow b em.gp:first-of-type{color:#9bd6a8;font-weight:600;text-shadow:none;margin-left:6px}.wtrow b em.gb{color:#9bd6a8;font-style:normal;font-weight:600}
+.wtip small{display:block;margin-top:6px;color:#9d9378;font-size:12px}
+
+/* v52 – level-up helpers (Reroll / Skip / Ban) */
+.lvtools{margin-top:14px;gap:10px;justify-content:center;flex-wrap:wrap}
+.lvtools .btn.locked{opacity:.4}
+.screen.modal.banmode .card.opt{outline:2px dashed #ff6b6b;outline-offset:-3px;animation:banPulse 1.2s ease-in-out infinite}
+.screen.modal.banmode h2{color:#ff8a8a}
+@keyframes banPulse{50%{outline-color:rgba(255,107,107,.35)}}
+.tkbuy{margin-top:8px;width:100%}.tkbuy .zv{display:inline-flex;gap:3px;vertical-align:middle}.tkoff{color:#9affb0;font-weight:700}
+
+/* v52 – Achievement screen, daily quests */
+.card.achi .uic{flex:none;display:flex;align-items:center;justify-content:center;width:56px;min-height:56px;margin-right:10px}
+.card.achi .uic .tport{width:52px;height:52px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(8,14,30,.7)}
+.card.achi.unlc{position:relative}
+.card.achi .tierb{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:9px;border:1.5px solid var(--tc,#8be07a);color:var(--tc,#8be07a);font:800 11px/1.5 'Rajdhani',sans-serif;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle}
+.card.achi.unlc[style*="--tc"]{border-left:4px solid var(--tc)}
+.card.achi .unex{color:#ffd23f;font-size:12px;margin-top:2px}
+.card.achw .ctip{left:auto;right:10px;top:10px;pointer-events:none}
+.card.achw:hover>.ctip{display:block}
+.wtip.ctip p{margin:4px 0 8px}
+.unlsec{flex-wrap:wrap;justify-content:center;margin:2px 0 6px}
+.dqbox{width:100%;max-width:1100px;margin:4px 0 14px;padding:12px 14px;border-radius:14px;border:2px solid rgba(127,212,255,.35);background:linear-gradient(180deg,rgba(20,40,80,.55),rgba(8,14,30,.65))}
+.dqhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:17px}
+.dqtimer{font:700 13px 'Rajdhani',sans-serif;color:#9ad8ff;font-variant-numeric:tabular-nums}
+.dqbonus{margin-top:10px;text-align:center;font-weight:700;color:#ffd23f}
+.dqbonus.done{color:#8be07a}
+.card.achi.dq.done{border-color:#8be07a}
+
+/* v52 – item icons in rewards: ticket chip "+1 [10×]", weapon glyph in unlock notifications */
+.tkr{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;font-weight:800;color:#ffe7a0}
+.tkico{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:20px;padding:0 6px;border-radius:4px;background:linear-gradient(135deg,#ffe08a,#ff9d1c);color:#2a1200;font:900 12px/1 'Rajdhani',sans-serif;box-shadow:inset 0 0 0 1.5px rgba(122,74,6,.8),0 1px 3px rgba(0,0,0,.5);vertical-align:middle}
+.tkico::before,.tkico::after{content:'';position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#1c1208}
+.tkico::before{left:-3px}.tkico::after{right:-3px}
+.tkico.t1{background:linear-gradient(135deg,#bfe9ff,#5aaef0)}
+.tkico.t10{background:linear-gradient(135deg,#fff3b0,#ffc83a 50%,#ff9d1c)}
+.tkico.l10{background:linear-gradient(115deg,#ff7ad0,#ffd23f 35%,#7ad0ff 70%,#c05aff)}
+.tkl{font:800 10px/1 'Rajdhani',sans-serif;letter-spacing:.08em;color:#ff9ad0;text-transform:uppercase}
+.tgl{display:inline-block;min-width:1.3em;text-align:center;font-weight:900;color:var(--c,#ffd23f);text-shadow:0 0 6px var(--c,#ffd23f)}
+.toast .zv{display:inline-flex;align-items:center;gap:3px;vertical-align:middle}
+/* the pause menu rows span the screen: only their buttons catch the mouse, so the HUD tooltips underneath keep working */
+.pausescr>.row{pointer-events:none}.pausescr>.row>*{pointer-events:auto}

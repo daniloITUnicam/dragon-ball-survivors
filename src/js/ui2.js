@@ -46,8 +46,7 @@ Object.assign(UI.prototype,{
     if(tab==='general'){
       body=[select(this.t('lang'),'lang',LANGS),
         toggle(this.t('fullscreen'),'fullscreen'),
-        toggle(this.t('showFps'),'fps'),toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
-        toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        toggle(this.t('showFps'),'fps'),
         toggle(this.t('streamerMode'),'streamer',this.t('streamerDesc')),
         row(this.t('sandboxOpt'),h('button',{class:'btn small'+(s.sandbox?'':' alt'),'data-fid':'tsandbox',onclick:()=>{
           if(!this.sbArm){this.sbArm=true;this.toast({type:'info',msg:this.t(s.sandbox?'sbWarnOff':'sbWarnOn')});setTimeout(()=>{if(this.sbArm){this.sbArm=false;if(this.top&&this.top.name==='settings')this.rebuild(true);}},6000);this.sfx();this.rebuild(true);return;}
@@ -60,6 +59,10 @@ Object.assign(UI.prototype,{
           if(this.resetArm){this.app.save.reset();this.app.applySettings();this.resetArm=false;this.toast({type:'info',msg:this.t('resetDone')});this.show('main');}
           else{this.resetArm=true;this.toast({type:'info',msg:this.t('resetConfirm')});setTimeout(()=>{this.resetArm=false;},4000);}
         }},this.t('reset')))];
+    }else if(tab==='gameplay'){
+      body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
+        toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
       const pc=v=>Math.round(v*100)+'%';
       body=[slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc)];
@@ -78,7 +81,7 @@ Object.assign(UI.prototype,{
         s.dayNight?select(this.t('dnLen'),'dnLen',[['180','3 min'],['300','5 min'],['480','8 min']]):null,
         s.dayNight?h('p',{class:'sub'},this.t('dnShareDesc')):null];
     }else body=this.controlsPanel();
-    const tabs=['general','audio','video','world','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
+    const tabs=['general','gameplay','audio','video','world','controls'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'tab'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t('tab_'+k)));
     return h('div',null,this.header('settings'),h('div',{class:'row tabs'},tabs),h('div',{class:'settings'},body));
   },
   controlsPanel(){
@@ -108,12 +111,12 @@ Object.assign(UI.prototype,{
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
     const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},glyph(w.def.k,w.color),
-      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)+(w.xl>0?' · Lv '+w.lvShow:'')),pips(w.lv,WMAX),
+      h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)+(w.xl>0?' · Lv '+w.lvShow:''),this.weaponInfo(w,g)),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
     const kr=(k,v)=>h('div',{class:'krow'},h('span',null,k===null?t('passSlots').replace(/\s*[:(]?\s*\{a\}\s*\/\s*\{b\}\)?/,''):t(k)),h('b',null,v));
     const stats=[kr('stHp',Math.round(p.hp)+' / '+p.maxHp),kr('stPower','x'+S.might.toFixed(2)),kr('stSpeed','x'+S.spd.toFixed(2)),kr('stCooldown','x'+S.cd.toFixed(2)),
       kr('stArmor',S.armor.toFixed(1)),kr('stRegen',S.regen.toFixed(1)+'/s'),kr('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')'),kr('stDodge',Math.round(S.dodge*100)+'%'),
-      kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+(S.gold*(g.x2?2:1)).toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
+      kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+S.gold.toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
     const fe=g.formEntry;
     const ups=[kr(null,g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
@@ -139,6 +142,8 @@ Object.assign(UI.prototype,{
     const btns=h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
         this.btn('glossary',()=>this.push('glossary'),'alt'),
+        this.btn('unl',()=>this.push('unl'),'alt'),
+        this.btn('ach',()=>this.push('ach'),'alt'),
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
         this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
     return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
@@ -177,7 +182,7 @@ Object.assign(UI.prototype,{
   },
   card(info,i,onclick,extra){
     const fc=info.cat&&CAT_COL[info.cat];
-    return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(i*.3)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
+    return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
@@ -194,17 +199,28 @@ Object.assign(UI.prototype,{
     return h('div',{class:'row trrow'},b);
   },
   openModal(m,g){
-    this.closeModal();
+    const again=!!(this.modalEl&&this.modalEl.isConnected&&this.modalEl.classList.contains('modal')&&this.modalEl.dataset.mt===m.type);   /* the same window rebuilt in place (e.g. after a purchase): no new intro animation */
+    this.closeModal(true);
     let el;
     if(m.type==='level'){
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('levelUpTitle',{n:g.lvl})),
+      /* shop helpers: Reroll (redraw the 3 cards), Skip (take nothing), Ban (remove a weapon / upgrade from the run) */
+      const ru=g.ru,r0=g.ru0,redo=()=>this.openModal(g.modal,g);
+      const tb=(id,icon,lab,n,fn,on)=>r0[id]>0?h('button',{class:'btn small'+(on?' primary':' alt')+(n>0?'':' locked'),disabled:n<=0&&!on,'data-fid':'lv'+id,title:this.tr(SHOP.find(x=>x.id===(id==='rr'?'rr':id==='sk'?'sk':'bn')).d),onclick:()=>{const r=fn();if(r){this.sfx(id==='bn'?'uiBack':'uiTab');redo();}else if(r===false)this.sfx('uiErr');}},icon+' '+this.tr(lab)+' ('+n+')'):null;
+      const tools=[tb('rr','🎲',T('Reroll','Reroll'),ru.rr,()=>g.rerollLevel()),
+        tb('sk','⏭',T('Salta','Skip'),ru.sk,()=>{if(!g.skipLevel())return false;this.sfx('uiTab');this.app.resolveModal(-1);return null;}),
+        tb('bn','🚫',T('Ban','Ban'),ru.bn,()=>{m.banMode=!m.banMode;return true;},m.banMode)].filter(Boolean);
+      el=h('div',{class:'screen modal'+(m.banMode?' banmode':'')},h('h2',null,m.banMode?this.tr(T('Scegli cosa bandire','Choose what to ban')):this.t('levelUpTitle',{n:g.lvl})),
+        m.banMode?h('p',{class:'sub'},this.tr(T('Clicca un\'arma o un potenziamento: non uscirà più per il resto della partita.','Click a weapon or upgrade: it will not show up again for the rest of the run.'))):null,
         h('div',{class:'cards'},m.options.map((o,i)=>{
-          const c=this.card(this.describe(o),i,()=>{this.sfx('lvl');this.app.resolveModal(i);});
-          if(m.rec===i){   /* recommended card: star + short reason */
+          const c=this.card(this.describe(o),i,()=>{
+            if(m.banMode){if(g.banLevel(i)){this.sfx('uiBack');redo();}else this.sfx('uiErr');return;}
+            this.sfx('lvl');this.app.resolveModal(i);});
+          if(m.rec===i&&!m.banMode){   /* recommended card: star + short reason */
             const WHY={evo:T('Per evolvere un\'arma','Evolves a weapon'),wevo:T('Arma quasi evoluta','Nearly evolved'),hp:T('Poca salute','Low health'),armor:T('Poca armatura','Low armor')};
             c.classList.add('recd');c.append(h('span',{class:'recstar',title:this.tr(WHY[m.recWhy]||WHY.evo)},'★'),h('span',{class:'recwhy'},'★ '+this.tr(WHY[m.recWhy]||WHY.evo)));
           }
-          return c;})));
+          return c;})),
+        tools.length?h('div',{class:'row lvtools'},tools):null);
     }else if(m.type==='chest'){
       el=h('div',{class:'screen modal'},h('h2',null,this.t('chestTitle')),
         h('div',{class:'cards'},m.rewards.map((r,i)=>this.card(this.describeReward(r),i,null,' reveal'))),
@@ -266,6 +282,7 @@ Object.assign(UI.prototype,{
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
         h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
     }
+    if(el.classList.contains('modal')){el.dataset.mt=m.type;if(again)el.classList.add('noanim');}
     this.modalEl=el;this.root.append(el);
     const f=this.focusables(el)[0];if(f)setTimeout(()=>f.focus({preventScroll:true}),30);
     if(this.top)this.top.el.classList.add('hidden');
@@ -287,7 +304,13 @@ Object.assign(UI.prototype,{
     if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX),h('p',null,T2('Mangia un fagiolo: recuperi il 40% della salute. Se la borsa è piena, i nuovi ne curano comunque una parte.','Eat a bean: restores 40% of your health. Pick-ups beyond a full bag still heal you.'))]);
     return null;
   },
-  closeModal(){if(this.modalEl){this.modalEl.remove();this.modalEl=null;}},
+  /* the window fades out (0.22 s) instead of vanishing; instant=true when another one is about to replace it */
+  closeModal(instant){
+    const m=this.modalEl;if(!m)return;this.modalEl=null;
+    if(instant||!m.classList.contains('modal')){m.remove();return;}
+    m.classList.add('leaving');m.style.pointerEvents='none';try{if(m.contains(document.activeElement))document.activeElement.blur();}catch(e){}
+    setTimeout(()=>m.remove(),240);
+  },
   /* ---------- end of run ---------- */
   /* damage dealt by each weapon (icon, name, level, bar, damage, share) */
   dmgSummary(res){
@@ -322,7 +345,7 @@ Object.assign(UI.prototype,{
           res.sandbox?h('p',{class:'sub'},this.t('sbNoReward')):
           h('div',{class:'rewards compact'},
             res.lines.filter(l=>l.v>0||l.k==='coins').map(l=>h('div',{class:'rline'},h('span',null,this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
-            h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2)+(res.x2?' (x2)':''))),
+            h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))),
             h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
           tk.length||(!res.sandbox&&res.sold)?h('div',{class:'echips'},
             tk.map(k=>h('span',{class:'tchip',title:this.t('ticketsFound')},h('i',{class:'tk'}),res.tickets[k]+'× '+this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10'))),
@@ -331,9 +354,14 @@ Object.assign(UI.prototype,{
       h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':!canEnd?true:null,onclick:()=>{this.sfx();this.app.retry();}},this.t('retry')),
         h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.toMenu();}},this.t('toMenu')),
-        showEnd?h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',title:canEnd?this.t('endlessGo')+'\n'+this.t('endlessDesc'):lockWhy,
-          onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')):null),
-      showEnd?h('p',{class:'sub endesc'},this.t('endlessDesc')):null);
+        showEnd?h('span',{class:'endwrap'},
+          h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',
+            onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')),
+          /* the explanation opens above the button on hover / focus (readable, not a line at the bottom of the screen) */
+          h('div',{class:'etip',role:'tooltip'},h('b',{class:'etn'},'∞ '+this.t('endlessBtn')),
+            canEnd?null:h('p',{class:'etlock'},'🔒 '+lockWhy),
+            h('ul',null,String(this.t('endlessDesc')).split(/(?<=[.!?])\s+/).filter(Boolean).map(x=>h('li',null,x))),
+            (STAGES[res.stage]&&STAGES[res.stage].endNote)?h('p',{class:'etred'},this.tr(STAGES[res.stage].endNote)):null)):null));
   },
   /* ---------- toasts ---------- */
   /* a small face of a character (first frame of its emote sheet, otherwise the head of its sprite) for the notifications; null when nothing can be drawn */
@@ -349,15 +377,22 @@ Object.assign(UI.prototype,{
   },
   toast(n){
     let title='',body='',cls='info';
-    if(n.type==='ach'){title=this.t('achUnlocked');body=this.tr(n.a.n)+'  +Z '+n.a.reward;cls='ach';this.sfx('ach');}
+    if(n.type==='ach'){title=this.t('achUnlocked');body=[this.tr(n.a.n),'  ',h('span',{class:'zv'},'+',zIcon(),n.a.reward),n.a.tk?Object.keys(n.a.tk).map(k=>['  ',tkChip(k,n.a.tk[k])]):null];cls='ach';this.sfx('ach');}
+    else if(n.type==='quest'){title=this.tr(T('Missione completata!','Quest complete!'));body=[this.tr(dqText(n.q)),'  ',h('span',{class:'zv'},'+',zIcon(),n.q.reward)];cls='ach';this.sfx('ach');}
+    else if(n.type==='qbonus'){title=this.tr(T('Tutte le missioni giornaliere!','All daily quests done!'));body=[this.tr(T('Bonus','Bonus')),'  ',h('span',{class:'zv'},'+',zIcon(),n.v)];cls='ach';this.sfx('ach');}
+    else if(n.type==='tfound'){title=this.tr(n.kind==='l10'?T('Ticket fortunato trovato!','Lucky ticket found!'):T('Ticket trovato!','Ticket found!'));body=[tkChip(n.kind,n.n),' ',this.tr(TK_NAME[n.kind])];cls='ach tfound';}
     else if(n.type==='unlock'){title=this.t('charUnlocked');body=this.tr(n.c.n);cls='unlock';this.sfx('ach');}
-    else if(n.type==='weapon'){const w=WEAPONS[n.id];title=this.t(n.evo2?'evo2Unlocked':'weaponUnlocked');body=this.tr(n.evo2?w.evo2:w.n);cls='ach';this.sfx('ach');}
+    else if(n.type==='weapon'){const w=WEAPONS[n.id];title=this.t(n.evo2?'evo2Unlocked':'weaponUnlocked');body=[h('span',{class:'tgl',style:'--c:'+w.c},w.k),' ',this.tr(n.evo2?w.evo2:w.n)];cls='ach';this.sfx('ach');}
     else if(n.type==='x2'){title=this.t('x2Unlocked');body=this.t('x2UnlockedBody',{n:n.stage+1});cls='ach';this.sfx('ach');}
     else{body=n.msg;}
     /* the face of the character on the right: the one unlocked, or the one that earned the achievement */
     const pc=n.type==='unlock'?n.c:n.type==='ach'?((this.app.game&&this.app.game.C)||CHARS.find(c=>c.id===this.save.lastChar)):null,pv=pc?this.portrait(pc,72):null;
     const el=h('div',{class:'toast '+cls+(pv?' hasp':'')},title?h('b',null,title):null,h('span',null,body),pv);
-    this.toastBox.append(el);setTimeout(()=>el.classList.add('out'),4200);setTimeout(()=>el.remove(),4800);
+    this.toastBox.append(el);
+    if(n.type&&n.type!=='info'){   /* unlocks / achievements: after a pause the notification slides back up and fades away over 3 seconds */
+      setTimeout(()=>{el.style.maxHeight=el.offsetHeight+'px';el.classList.add('retire');},3500);
+      setTimeout(()=>el.classList.add('collapse'),6500);setTimeout(()=>el.remove(),6850);
+    }else{setTimeout(()=>el.classList.add('out'),4200);setTimeout(()=>el.remove(),4800);}
   },
   /* ---------- sandbox panel (in game) ---------- */
   toggleSandbox(g){

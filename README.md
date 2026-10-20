@@ -55,6 +55,29 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026 (menu rinnovati, negozio potenziato, Achievement, missioni giornaliere)
+
+Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20`, `src/js/patches.js`).
+
+**🧭 Menu e interfaccia** (`ui3.js`, `ui4.js`)
+- ⚙ Impostazioni in Selezione stage e Selezione personaggio; nuova scheda **Partita** (Tremolio schermo, Numeri dei danni, Rifiuta cimeli di rarità inferiore, Apertura automatica ticket).
+- Selezione personaggio: **ricerca** (nome, razza, universo, serie, arma di partenza) e **ordinamento** (`CH_SORTS`, `CHAR_META`), salvati in `settings.charSort/charDesc`.
+- **⚡ Avvio rapido** (`UI.qsTargets`, `screen_quick`): personaggio con slot cimelio, stage consigliato, cosa manca da sbloccare; «Un altro suggerimento».
+- Pausa: **«i» sulle armi** con le statistiche numeriche (`weaponStatRows`): valore finale, base e «+» verde con la quantità aggiunta.
+- Animazioni di ingresso/uscita delle finestre, notifiche che si ritirano verso l'alto in 3 s, descrizione dell'Infinita al passaggio del mouse; le note di patch aperte dal menu restano «lette» anche dopo la sincronizzazione cloud (`Cloud.newerPatch`, `pushSeen`).
+- «Potenza» → **«Danno»**.
+
+**💰 Negozio ed economia** (`data.js` `SHOP`, `game.js`, `gacha.js`)
+- Potenziamenti più forti e prezzi base +20%; nuovi **Reroll / Salta / Ban** (fino a 5 ciascuno) sulla finestra di level-up (`Game.rerollLevel/skipLevel/banLevel`, `banRun`). Costo totale del Negozio: **115.166** zenny (prima 73.115).
+- Boss: ticket 10× al **100%**; Élite: ticket 1× al 100%; **acquisto ticket** (1× 1.000, 10× 10.000, −20% sabato e domenica; `ticketPrice`, `Progress.buyTicket`); **apertura automatica** dei ticket (impostazione).
+- **Serie di uccisioni**: +50 monete ogni 50 uccisioni di fila, barra nascosta −1% ogni 0,5 s (`CK_*`, `Game.cstk`).
+- Zeno-sama: Epico e oltre −30%, un oggetto gratis a caso per visita, musica non più rallentata, rimbalzo più marcato.
+- La modalità x2 non dà più il moltiplicatore di zenny finale.
+
+**🏆 Achievement, Obiettivi e missioni** (`quests.js`, `ui4.js`)
+- Nuova schermata **Achievement** (`screen_unl`): cosa fare per sbloccare personaggi, armi, seconde evoluzioni + 14 sfide per difficoltà con ticket; «???» sull'arma finché non è sbloccata.
+- **Obiettivi** (`screen_ach`): solo traguardi in zenny (36 nuovi) + **missioni giornaliere** (5 ogni 6 ore, bonus se completate tutte; `dqList`, `Progress.checkDaily`). Ricerca, «Nascondi completati», «Più vicini al completamento» salvati in `settings.objF/achF`.
+
 ### 🆕 Aggiornamento del 17 ottobre 2026, parte 2 (modalità Infinita, eventi di mappa, animazioni delle armi)
 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17b`, `src/js/patches.js`).
@@ -493,7 +516,7 @@ Ogni stage ha **nemici dedicati** (oltre 130 varianti totali, ciascuno con IA di
 
 ### Progressione permanente
 - **Negozio** (12 potenziamenti, costo crescente, fino al livello 6 ciascuno; Seconda Vita fino a 2): Avidità, Studio, Vitalità, Rigenerazione, Potenza, Agilità, Magnetismo, Armatura, Tempo, Fortuna, Occhio acuto, **Seconda Vita** (revive).
-- **Obiettivi**: 90 achievement con ricompensa in zenny (uccisioni, boss, maestria con le armi, seconde evoluzioni, saghe…).
+- **Obiettivi**: traguardi con ricompensa in zenny (uccisioni, boss, élite, vittorie, ore di gioco…) + **5 missioni giornaliere** che cambiano ogni 6 ore. Le condizioni di sblocco di personaggi e armi sono nella schermata **Achievement**.
 - **Personaggi**: 4 disponibili subito (Goku, Vegeta, Piccolo, Crilin); gli altri si sbloccano con una **condizione** (completare stage, anche in Difficile, raggiungere un livello, sconfiggere tot nemici/boss) **oppure comprandoli** con zenny.
 - Salvataggio automatico nel browser (localStorage); reset dalle Impostazioni.
 
@@ -576,6 +599,8 @@ node tests/events.js          # eventi di mappa: i 11 stage, annunci, trasformaz
 node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, Kamehameha / Colpo di Ki, pose, frame 10-15 degli sprite (puppeteer)
 node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
+node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)
+node tests/ui52.js            # v52 interfaccia: ingranaggio, ricerca/ordine personaggi, Avvio rapido, notifiche (puppeteer)
 node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)

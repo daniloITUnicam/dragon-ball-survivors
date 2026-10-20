@@ -84,6 +84,13 @@ const XpBar={
       const b=P(153,88,114,52,rx0,y),cy=b.y+b.h*.53;
       put(tx.pct,b.h*.62,'#ffd23f',b.x+b.w/2,cy,'center',b.w-14*s);
     }
+    {   /* the level, big, at the start of the bar (the plates are too small to read at a glance) */
+      const fs=chH*1.12,bx=cx0+12*s,cy=cy0+chH*.52;
+      ctx.save();ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=4*s;
+      const w1=put('LV',fs*.56,'#f5c84a',bx,cy+fs*.06,'left');
+      put(String(tx.lv),fs,'#ffffff',bx+w1+4*s,cy,'left');
+      ctx.restore();
+    }
     ctx.restore();
   }
 };

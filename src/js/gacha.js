@@ -9,10 +9,14 @@ const GACHA={
   stars:[1,2,3,5,7],                              /* dragon-ball stars shown on the slot for each rarity: more stars = rarer */
   sell:[20,50,150,400,1000],                      /* extra zenny when a trinket found in a run is sold (on top of its market value) */
   kinds:{t1:{n:1,lucky:false},t10:{n:10,lucky:false},l10:{n:10,lucky:true}},
-  bossChance:.20,                                 /* chance that a boss drops a 10x ticket */
+  bossChance:1,                                   /* every boss drops a 10x ticket */
   maxPulls:100                                    /* most pulls in one go (tickets spent together) */
 };
 const TICKET_KINDS=['t1','t10','l10'];
+/* tickets bought with zenny: a 1x ticket costs TICKET_PRICE.t1, a 10x ticket 10 times as much; on Saturday and Sunday the 10x ticket is 20% cheaper. The Lucky ticket is not for sale. */
+const TICKET_PRICE={t1:1000,t10:10000},TICKET_WEEKEND=.2;
+const isWeekend=(d)=>{const w=(d||new Date()).getDay();return w===0||w===6;};
+const ticketPrice=(kind,d)=>{const b=TICKET_PRICE[kind];return b?Math.round(b*(kind==='t10'&&isWeekend(d)?1-TICKET_WEEKEND:1)):0;};
 const trinketKey=(id,r)=>id+'@'+r;
 /* the trinkets that can come out at rarity r (the same rule as Zeno-sama's stock: stat trinkets at any rarity, effect-only ones at their own) */
 function gachaPool(r){return TRINKETS.filter(t=>t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4);}
@@ -31,6 +35,11 @@ const dupPayout=r=>Math.round(ZENO_PRICE[r]*ZMUL);
 
 Object.assign(Progress.prototype,{
   ticketCount(){const t=this.d.tickets;return t.t1+t.t10+t.l10;}
+  ,buyTicket(kind,n){
+    n=Math.max(1,Math.floor(+n)||1);const pr=ticketPrice(kind),d=this.d;
+    if(!pr||d.settings.sandbox||d.zenny<pr*n)return false;
+    d.zenny-=pr*n;d.tickets[kind]+=n;this.save.write();return true;
+  }
   ,addTickets(kind,n){if(!GACHA.kinds[kind]||!(n>0))return;this.d.tickets[kind]+=n;this.save.write();}
   ,bagHas(id,r){return this.d.bag.some(b=>b.id===id&&b.r===r);}
   /* spend a ticket and pull: returns the list of results [{id,r,dup,coins,at}] or null when there is no ticket. Test mode: free, nothing counted, new trinkets are flagged to be removed when Test is turned off. */

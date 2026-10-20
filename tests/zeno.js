@@ -38,7 +38,7 @@ ok(r3a.notBought&&r3b,'the bubble distance never buys, and far away no bubble');
 const r3=await pg.evaluate(()=>{const g=G,tr=g.trial,o={};const it=tr.items[0],c0=g.run.coins;
  g.p.x=tr.cx+it.x;g.p.y=tr.cy+it.y;step(70);
  o.bought=it.sold&&g.trinkets.includes(it.id);o.paid=c0-g.run.coins===it.price;
- const poor=tr.items[1];g.run.coins=0;g.p.x=tr.cx+poor.x;g.p.y=tr.cy+poor.y;step(80);o.poorBlocked=!poor.sold;
+ const poor=tr.items.find(x=>!x.free&&!x.sold&&x!==it);g.run.coins=0;g.p.x=tr.cx+poor.x;g.p.y=tr.cy+poor.y;step(80);o.poorBlocked=!poor.sold;
  return o;});
 ok(r3.bought&&r3.paid,'standing on an item buys the trinket and charges the coins');
 ok(r3.poorBlocked,'cannot buy without coins');

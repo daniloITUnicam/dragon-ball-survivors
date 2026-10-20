@@ -7,6 +7,7 @@ Object.assign(UI.prototype,{
     if(!PATCHES.length)return;
     const sv=this.app.save;this.save.patchSeen=PATCHES[0].id;
     sv.silent=true;try{sv.write();}finally{sv.silent=false;}
+    if(this.app.cloud&&this.app.cloud.pushSeen)this.app.cloud.pushSeen(PATCHES[0].id);   /* ...and the signed-in account keeps it too */
   },
   patchBtn(){
     if(!PATCHES.length)return null;

@@ -185,7 +185,8 @@ class AudioSys{
         const cu=f[f.cur];if(cu.g){cu.g.gain.cancelScheduledValues(c.currentTime);cu.g.gain.value=1;}
         f.out.gain.cancelScheduledValues(c.currentTime);f.out.gain.setTargetAtTime(name==='menu'?1.15:1.05,c.currentTime,.35);
       }
-      f.on=true;const pr=f[f.cur].el.play();if(pr&&pr.catch)pr.catch(()=>{});
+      f.on=true;for(const w of['a','b'])try{f[w].el.playbackRate=this.slow||1;}catch(e){}   /* a file created while the music is slowed starts at the same speed */
+      const pr=f[f.cur].el.play();if(pr&&pr.catch)pr.catch(()=>{});
       if(!this.loopT)this.loopT=setInterval(()=>this.loopTick(),200);
     }
   }

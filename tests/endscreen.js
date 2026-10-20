@@ -10,7 +10,7 @@ const run=(diff,win,pre)=>pg.evaluate((diff,win,pre)=>{const A=__app,d=A.save.d;
   g.finish(win);return true;},diff,win,null);
 await run('normal',true);await wait(500);
 let o=await pg.evaluate(()=>({cols:!!document.querySelector('.endcols'),rows:document.querySelectorAll('.wrow').length,names:[...document.querySelectorAll('.wn')].map(x=>x.textContent).join(','),lv:[...document.querySelectorAll('.wlv')].length,
-  chips:[...document.querySelectorAll('.tchip')].map(x=>x.textContent),text:document.querySelector('.end').textContent,end:(()=>{const e=document.querySelector('[data-fid="endless"]');return e&&{dis:e.disabled,txt:e.textContent,lk:!!e.querySelector('.lk'),title:e.title};})(),
+  chips:[...document.querySelectorAll('.tchip')].map(x=>x.textContent),text:document.querySelector('.end').textContent,end:(()=>{const e=document.querySelector('[data-fid="endless"]');return e&&{dis:e.disabled,txt:e.textContent,lk:!!e.querySelector('.lk'),title:e.title+((e.closest('.endwrap')||{querySelector:()=>null}).querySelector('.etip')||{textContent:''}).textContent};})(),
   btns:[...document.querySelectorAll('.end .row .btn')].map(x=>x.textContent),h:document.querySelector('.end').getBoundingClientRect().height,vh:innerHeight}));
 ok(o.cols&&o.rows===4&&/Kame/i.test(o.names),'two columns: weapon stats (icon, name, bar, damage) on the right ('+o.rows+' rows: '+o.names+')');
 ok(o.lv>=1,'weapon levels are shown beside the names');
@@ -27,7 +27,7 @@ const cl=await pg.evaluate(()=>{document.querySelector('[data-fid="endless"]').c
 ok(cl.st==='play'&&cl.cont,'the Endless button continues the run');
 /* a later defeat on the same stage: still locked (win needed), other stage unaffected */
 await run('normal',false);await wait(500);
-o=await pg.evaluate(()=>{const e=document.querySelector('[data-fid="endless"]');return{dis:e.disabled,title:e.title};});
+o=await pg.evaluate(()=>{const e=document.querySelector('[data-fid="endless"]');return{dis:e.disabled,title:e.title+((e.closest('.endwrap')||{querySelector:()=>null}).querySelector('.etip')||{textContent:''}).textContent};});
 ok(o.dis&&/Vinci|Win/i.test(o.title),'after a defeat the button says to win the stage first ('+o.title+')');
 /* the stage cleared on Extreme belongs to that stage only */
 const other=await pg.evaluate(()=>{const d=__app.save.d;return d.xc.filter(x=>x).length;});

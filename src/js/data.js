@@ -687,20 +687,23 @@ const ABIL={
   kpiccolo:AB('regen','#8be07a','Rigenerazione Demoniaca','Demon Regeneration',50,1.3),
 };
 const SHOP=[
- {id:'gold',k:'金',n:T('Avidità','Greed'),d:T('+15% zenny per livello.','+15% zenny per level.'),max:6,base:90,g:1.5},
- {id:'exp',k:'学',n:T('Studio','Study'),d:T('+8% esperienza per livello.','+8% experience per level.'),max:6,base:100,g:1.5},
- {id:'hp',k:'命',n:T('Vitalità','Vitality'),d:T('+12 salute massima per livello.','+12 max HP per level.'),max:6,base:80,g:1.5},
- {id:'regen',k:'豆',n:T('Rigenerazione','Regeneration'),d:T('+0,5 salute/s per livello.','+0.5 HP/s per level.'),max:6,base:110,g:1.5},
- {id:'might',k:'力',n:T('Potenza','Power'),d:T('+5% danno per livello.','+5% damage per level.'),max:6,base:130,g:1.5},
- {id:'speed',k:'速',n:T('Agilità','Agility'),d:T('+3% velocità per livello.','+3% speed per level.'),max:6,base:100,g:1.5},
- {id:'magnet',k:'引',n:T('Magnetismo','Magnetism'),d:T('+15% raccolta per livello.','+15% pickup range per level.'),max:6,base:70,g:1.5},
- {id:'armor',k:'鎧',n:T('Armatura Saiyan','Saiyan Armor'),d:T('+1 armatura per livello.','+1 armor per level.'),max:6,base:160,g:1.5},
- {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-3% ricarica per livello.','-3% cooldown per level.'),max:6,base:150,g:1.5},
- {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+7% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+7% luck per level: better chest rewards, loot and trinkets.'),max:6,base:140,g:1.5},
- {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+3% probabilità di critico per livello.','+3% crit chance per level.'),max:6,base:150,g:1.5},
- {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2400,g:3.2},
- {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme (massimo 2 acquisti).','+1 trinket slot: carry up to 3 trinkets at once (2 purchases max).'),max:2,base:3000,g:3},
- {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:350,g:1.4}
+ {id:'gold',k:'金',n:T('Avidità','Greed'),d:T('+18% zenny per livello.','+18% zenny per level.'),max:6,base:108,g:1.5},
+ {id:'exp',k:'学',n:T('Studio','Study'),d:T('+10% esperienza per livello.','+10% experience per level.'),max:6,base:120,g:1.5},
+ {id:'hp',k:'命',n:T('Vitalità','Vitality'),d:T('+15 salute massima per livello.','+15 max HP per level.'),max:6,base:96,g:1.5},
+ {id:'regen',k:'豆',n:T('Rigenerazione','Regeneration'),d:T('+0,6 salute/s per livello.','+0.6 HP/s per level.'),max:6,base:132,g:1.5},
+ {id:'might',k:'力',n:T('Danno','Damage'),d:T('+6% danno per livello.','+6% damage per level.'),max:6,base:156,g:1.5},
+ {id:'speed',k:'速',n:T('Agilità','Agility'),d:T('+4% velocità per livello.','+4% speed per level.'),max:6,base:120,g:1.5},
+ {id:'magnet',k:'引',n:T('Magnetismo','Magnetism'),d:T('+20% raccolta per livello.','+20% pickup range per level.'),max:6,base:84,g:1.5},
+ {id:'armor',k:'鎧',n:T('Armatura Saiyan','Saiyan Armor'),d:T('+1,25 armatura per livello.','+1.25 armor per level.'),max:6,base:192,g:1.5},
+ {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-4% ricarica per livello.','-4% cooldown per level.'),max:6,base:180,g:1.5},
+ {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+9% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+9% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
+ {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+4% probabilità di critico per livello.','+4% crit chance per level.'),max:6,base:180,g:1.5},
+ {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2880,g:3.2},
+ {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme (massimo 2 acquisti).','+1 trinket slot: carry up to 3 trinkets at once (2 purchases max).'),max:2,base:3600,g:3},
+ {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:420,g:1.4},
+ {id:'rr',k:'換',n:T('Reroll','Reroll'),d:T('+1 reroll a partita: al level-up ritira tutte e 3 le carte potenziamento. Fino a 5.','+1 reroll per run: on a level-up, redraws all 3 upgrade cards. Up to 5.'),max:5,base:500,g:1.6},
+ {id:'sk',k:'跳',n:T('Skip','Skip'),d:T('+1 skip a partita: al level-up salti la scelta senza prendere nulla. Fino a 5.','+1 skip per run: on a level-up, skip the choice and take nothing. Up to 5.'),max:5,base:400,g:1.6},
+ {id:'bn',k:'除',n:T('Ban','Ban'),d:T('+1 ban a partita: al level-up bandisci un\'arma o un potenziamento (a tua scelta) per il resto della partita. Fino a 5.','+1 ban per run: on a level-up, ban a weapon or upgrade (your choice) for the rest of the run. Up to 5.'),max:5,base:700,g:1.7}
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
 const shopCost=(it,lv)=>Math.round(it.base*Math.pow(it.g,lv));

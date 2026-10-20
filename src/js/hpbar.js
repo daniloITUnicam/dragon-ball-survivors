@@ -96,7 +96,7 @@ const HpBar={
     };
     {   /* the plate under the medallion: the level */
       const pl=M.plate,bx=x+pl[0]*s,by=y+pl[1]*s,bw=pl[2]*s,bh=pl[3]*s;
-      put(tx.plate,bh*.8,bx+bw/2,by+bh*.5,'center',bw-8*s,'#fff1a0','#ff9a2a');
+      put(tx.plate,bh*1.05,bx+bw/2,by+bh*.5,'center',bw+4*s,'#fff1a0','#ff9a2a');   /* big enough to read the level at a glance */
     }
     {   /* HP numbers above the right end of the bar */
       const rx0=x+L.Lw+mid,ht=M.hpText,px=Math.max(11,ch.h*s*.17),x1=rx0+ht.x1*s,yy=y+ht.y*s-px*.15;

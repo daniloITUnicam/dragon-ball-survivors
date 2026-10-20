@@ -67,7 +67,7 @@ const ts=await pg.evaluate(()=>{const g=G,out={},r0=Math.random;
   const e1=g.run.tk.t1;g.eliteDown({x:g.p.x,y:g.p.y,r:10});out.elite=g.run.tk.t1-e1;
   g.modal=null;g.balls=6;g.collectLoot({k:'ball',x:g.p.x,y:g.p.y,star:7});out.wishOptions=g.modal&&g.modal.options.slice();const t0=g.run.tk.t10;g.resolveModal(3);out.wish=g.run.tk.t10-t0;out.log=g.wishLog.slice(-1)[0];
   out.chance=GACHA.bossChance;return out;});
-ok(ts.chance===.2&&ts.boss20===1&&ts.bossNo===1,'a boss drops a 10x ticket with 20% chance');
+ok(ts.chance===1&&ts.boss20===1&&ts.bossNo===2,'every boss drops a 10x ticket (100%)');
 ok(ts.elite===1,'an Elite drops a 1x ticket');
 ok(ts.wishOptions.length===4&&ts.wishOptions[3]==='tickets'&&ts.wish===1&&ts.log==='tickets','the Dragon Ball wish can be 10 tickets (a 10x ticket)');
 const fl=await pg.evaluate(()=>{const g=G,d=__app.save.d,t0={...d.tickets},run={...g.run.tk};g.finish(false);const t1={...d.tickets};

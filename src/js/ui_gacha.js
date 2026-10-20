@@ -47,7 +47,13 @@ Object.assign(UI.prototype,{
         h('div',{class:'cn'},this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10')),
         h('div',{class:'cd'},this.t(k==='t1'?'tkT1D':k==='t10'?'tkT10D':'tkL10D')),
         h('div',{class:'tkcount'},test?'∞':'× '+n),
-        h('div',{class:'gpb'},presets.map(btn)));
+        h('div',{class:'gpb'},presets.map(btn)),
+        TICKET_PRICE[k]?(()=>{
+          const pr=ticketPrice(k),wk=k==='t10'&&isWeekend(),can=!test&&d.zenny>=pr;
+          return h('button',{class:'btn small tkbuy'+(can?'':' alt'),disabled:!can,'data-fid':'buy'+k,
+            title:this.tr(k==='t10'?T('Ticket 10×: 10 estrazioni, '+fmtN(TICKET_PRICE.t10)+' zenny. Sabato e domenica costa il 20% in meno ('+fmtN(ticketPrice('t10',new Date(2026,0,3)))+').'+(wk?' Oggi lo sconto è attivo!':''),'10× ticket: 10 pulls, '+fmtN(TICKET_PRICE.t10)+' zenny. On Saturday and Sunday it costs 20% less ('+fmtN(ticketPrice('t10',new Date(2026,0,3)))+').'+(wk?' The discount is active today!':'')):T('Ticket 1×: 1 estrazione, '+fmtN(TICKET_PRICE.t1)+' zenny.','1× ticket: 1 pull, '+fmtN(TICKET_PRICE.t1)+' zenny.')),
+            onclick:()=>{if(this.app.progress.buyTicket(k,1)){this.sfx('buy');this.rebuild(true);}else this.sfx('uiErr');}},
+            this.tr(T('Compra','Buy'))+' · ',zAmt(pr,true),wk?h('small',{class:'tkoff'},' −20%'):null);})():null);
     });
     const total=[0,1,2,3,4].reduce((s,r)=>s+gachaPool(r).length,0);
     const rates=h('details',{class:'grates'},h('summary',null,this.t('gRates')),
@@ -143,6 +149,14 @@ Object.assign(UI.prototype,{
         can?h('button',{class:'btn primary','data-fid':'again',onclick:()=>{this.sfx('uiStart');this.gachaPull(kind,again);}},this.t('gAgain')+(again>1?' ×'+again:'')+(test?'':' ('+left+')')):null,
         h('button',{class:'btn alt','data-fid':'gbag2',onclick:()=>{this.sfx();this.closeReveal();this.push('bag',{});}},'🎒 '+this.t('bagBtn')),
         h('button',{class:'btn alt','data-back':true,'data-fid':'gclose',onclick:()=>{this.sfx('uiBack');this.closeReveal();this.rebuild(true);}},this.t('gClose')));
+      /* setting "auto-open": the next 1x / 10x ticket opens by itself, one at a time, until the player closes the window or presses Stop */
+      const nk=(!test&&this.save.settings.tkAuto&&!bulk)?['t1','t10'].sort((a,b)=>(b===kind)-(a===kind)).find(k=>this.save.tickets[k]>0):null;
+      if(nk){
+        const at=setTimeout(()=>{if(!gone&&this.gov===ov)this.gachaPull(nk,1);},2400);
+        const st0=ov.__stop;ov.__stop=()=>{clearTimeout(at);st0();};
+        const stop=h('button',{class:'btn small bad','data-fid':'gstop',onclick:()=>{clearTimeout(at);stop.remove();this.sfx('uiBack');}},'⏹ '+this.tr(T('Ferma apertura automatica','Stop auto-open')));
+        foot.prepend(stop);
+      }
       ov.append(h('div',{class:'gsum'},h('span',{class:'good'},this.t('gSummary',{n:nNew,d:nDup})),coins?h('span',null,'+',zAmt(coins,true)):null),foot);
       const f=(can?foot.querySelector('[data-fid="again"]'):null)||foot.querySelector('[data-fid="gclose"]');if(f)f.focus({preventScroll:true});
     };

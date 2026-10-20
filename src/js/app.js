@@ -32,7 +32,7 @@ class App{
       const dg=/^(?:Digit|Numpad)(\d)$/.exec(e.code);
       if(dg){
         const i=+dg[1]===0?9:+dg[1]-1,n={level:(m.options||[]).length,totem:(m.opts||[0,1]).length,wish:(m.options||[]).length,tswap:(m.curs||[0]).length+1,pick:(m.opts||[]).length,chest:1}[m.type]||0;
-        if(i<n)this.resolveModal(i);
+        if(i<n){if(m.type==='level'&&m.banMode){const b=this.ui.modalEl&&this.ui.modalEl.querySelector('[data-fid="o'+i+'"]');if(b)b.click();}else this.resolveModal(i);}   /* ban mode: the number key bans that card */
         return;
       }
       if(e.code==='Space'&&m.type!=='trial'){
