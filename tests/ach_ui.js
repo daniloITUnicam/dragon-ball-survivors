@@ -45,7 +45,7 @@ const h1=await ev(()=>({n:document.querySelectorAll('.card.achi').length,done:do
 ok(h1.done===0&&h1.n===h0-2,'hide completed removes the 2 obtained ('+h0+' -> '+h1.n+')');
 /* closest first: with 250/1000 kills (25%) the first incomplete card must be the highest ratio */
 await ev(()=>document.querySelector('[data-fid="achnear"]').click());await wait(200);
-const n1=await ev(()=>[...document.querySelectorAll('.card.achi')].slice(0,3).map(c=>{const w=parseFloat(c.querySelector('.achbar i').style.width);return w;}));
+const n1=await ev(()=>[...document.querySelectorAll('.card.achi:not(.dq)')].slice(0,3).map(c=>{const w=parseFloat(c.querySelector('.achbar i').style.width);return w;}));
 ok(n1.length===3&&n1[0]>=n1[1]&&n1[1]>=n1[2],'closest-first sorting is non-increasing ('+n1.join('%, ')+'%)');
 await pg.screenshot({path:'/tmp/ach.png'});
 /* reward sanity */

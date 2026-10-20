@@ -31,7 +31,7 @@ ok(pl.pulls===1+10+10+2,'pull counter ('+pl.pulls+')');
 /* ---------- save repair ---------- */
 const sv=await pg.evaluate(()=>{const o={bag:[{id:'scouter',r:0,at:1},{id:'scouter',r:0,at:2},{id:'nope',r:0,at:3},{id:'cape',r:9,at:4},{id:'cape',r:1,at:5}],equip:{id:'boots',r:3},sball:[3,3,9,0,5],tickets:{t1:-4,t10:'x',l10:2.7}};
   const d=__app.save.normalize(o);return{bag:d.bag.map(b=>b.id+b.r),equip:d.equip,sball:d.sball,tk:d.tickets};});
-ok(JSON.stringify(sv.bag)==='["scouter0","cape1"]'&&sv.equip===null&&JSON.stringify(sv.sball)==='[3,5]'&&sv.tk.t1===0&&sv.tk.t10===0&&sv.tk.l10===2,'a damaged save is repaired: '+JSON.stringify(sv));
+ok(JSON.stringify(sv.bag)==='["scouter0","cape1"]'&&sv.equip===null&&JSON.stringify(sv.sball)==='[1,3]'&&sv.tk.t1===0&&sv.tk.t10===0&&sv.tk.l10===2,'a damaged save is repaired: '+JSON.stringify(sv));
 /* ---------- equip and the run ---------- */
 const eq=await pg.evaluate(()=>{const A=__app,d=A.save.d,P=A.progress;d.bag=[{id:'armor',r:4,at:Date.now()},{id:'scouter',r:0,at:Date.now()+1}];d.equip=null;
   const go=()=>{A.startGame({stage:5,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.sb.nospawn=true;g.sb.god=true;g.modal=null;window.G=g;return g;};
@@ -81,37 +81,39 @@ ok(tm.free&&tm.flagged>=1&&tm.gone,'Test mode: free pulls, and the trinkets obta
 /* ---------- Super Dragon Balls ---------- */
 const sb=await pg.evaluate(()=>{const A=__app,d=A.save.d,P=A.progress,out={};d.sball=[];d.settings.sandbox=false;
   out.stages=STAGES.filter(s=>s.sup).map(s=>s.no).sort((a,b)=>a-b);out.last=STAGE_ORDER.slice(-SUPER_STAGES).every(i=>STAGES[i].sup);out.nSup=STAGES.filter(s=>s.sup).length;
-  out.a=P.addSuperBall(4);out.dup=P.addSuperBall(4);out.bad=P.addSuperBall(8);d.settings.sandbox=true;out.sbx=P.addSuperBall(2);d.settings.sandbox=false;
+  out.a=P.addSuperBall(2);out.dup=P.addSuperBall(2);out.bad=P.addSuperBall(4);d.settings.sandbox=true;out.sbx=P.addSuperBall(1);d.settings.sandbox=false;
   out.have=d.sball.slice();
-  for(const n of[1,2,3,5,6])P.addSuperBall(n);out.six=d.sball.length;out.early=P.useSuperBalls('lucky');
-  P.addSuperBall(7);out.seven=d.sball.length;
+  P.addSuperBall(1);out.six=d.sball.length;out.early=P.useSuperBalls('lucky');
+  P.addSuperBall(3);out.seven=d.sball.length;
   out.noReward=P.useSuperBalls('xx');out.stillSeven=d.sball.length;
   const l0=d.tickets.l10;out.lucky=P.useSuperBalls('lucky');out.l10=d.tickets.l10-l0;out.zero=d.sball.length;
-  for(let n=1;n<=7;n++)P.addSuperBall(n);const lock=CHARS.find(c=>!d.unlocked.includes(c.id));out.locked=!!lock;out.owned=P.useSuperBalls('char',lock.id);out.unlocked=d.unlocked.includes(lock.id);out.zero2=d.sball.length;
+  for(let n=1;n<=3;n++)P.addSuperBall(n);const lock=CHARS.find(c=>!d.unlocked.includes(c.id));out.locked=!!lock;out.owned=P.useSuperBalls('char',lock.id);out.unlocked=d.unlocked.includes(lock.id);out.zero2=d.sball.length;
   out.again=P.useSuperBalls('char','goku');return out;});
 ok(sb.nSup===3&&sb.last,'the last 3 stages of the campaign hold Super Dragon Balls (stage numbers '+sb.stages.join(', ')+')');
-ok(sb.a===4&&sb.dup===0&&sb.bad===0&&sb.sbx===0&&JSON.stringify(sb.have)==='[4]','each Super Ball is stored once, only 1-7, never in test/sandbox runs');
-ok(sb.six===6&&sb.early===false&&sb.seven===7&&sb.noReward===false&&sb.stillSeven===7,'seven are needed to use them, and an unknown reward spends nothing');
-ok(sb.lucky&&sb.l10===1&&sb.zero===0,'7 Super Balls -> one 10x Lucky ticket, and they are spent');
-ok(sb.locked&&sb.owned&&sb.unlocked&&sb.zero2===0&&sb.again===false,'7 Super Balls -> a locked character of your choice, for free');
+ok(sb.a===2&&sb.dup===0&&sb.bad===0&&sb.sbx===0&&JSON.stringify(sb.have)==='[2]','each Super Ball is stored once, only 1-3, never in test/sandbox runs');
+ok(sb.six===2&&sb.early===false&&sb.seven===3&&sb.noReward===false&&sb.stillSeven===3,'all three are needed to use them, and an unknown reward spends nothing');
+ok(sb.lucky&&sb.l10===1&&sb.zero===0,'3 Super Balls -> one 10x Lucky ticket, and they are spent');
+ok(sb.locked&&sb.owned&&sb.unlocked&&sb.zero2===0&&sb.again===false,'3 Super Balls -> a locked character of your choice, for free');
 /* the stage: normal balls are replaced by Super Dragon Balls */
 const st=await pg.evaluate(()=>{const A=__app,d=A.save.d,out={};d.sball=[];
   const sup=STAGES.findIndex(s=>s.sup),norm=STAGES.findIndex(s=>!s.sup);
   const trySt=i=>{A.startGame({stage:i,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.sb.nospawn=true;g.sb.god=true;g.modal=null;window.G=g;return g;};
   const r0=Math.random;Math.random=()=>0.1;let g=trySt(sup);out.planLow=!!g.supPlan;Math.random=()=>0.9;g=trySt(sup);out.planHigh=!!g.supPlan;Math.random=r0;
-  d.sball=[1,2,3,4,5,6,7];Math.random=()=>0.1;g=trySt(sup);out.planFull=!!g.supPlan;Math.random=r0;d.sball=[];     /* never when all 7 are owned */
+  d.sball=[1,2,3];Math.random=()=>0.1;g=trySt(sup);out.planFull=!!g.supPlan;Math.random=r0;d.sball=[];     /* never when all 3 are owned */
   out.chance=SUP_CHANCE;
   g=trySt(sup);g.supPlan={at:0,done:false};g.t=3;g.ballAt=0;g.updateBallPlan();out.ballOnSup=g.loot.some(l=>l.k==='ball');g.updateSuperPlan();
   const l=g.loot.find(x=>x.k==='sball');out.has=!!l;out.star=l&&l.star;out.far=l&&Math.hypot(l.x-g.p.x,l.y-g.p.y);g.updateSuperPlan();out.once=g.loot.filter(x=>x.k==='sball').length;
-  g.en=[];g.p.x=l.x-200;g.p.y=l.y;g.update(1/30);out.guard=g.en.length;out.near=!!l.guard;
-  g.p.x=l.x;g.p.y=l.y;g.update(1/30);out.saved=d.sball.slice();out.gone=!!l.dead;out.ownedHud=[...g.ballOwned()];
+  g.en=[];g.p.x=l.x-200;g.p.y=l.y;g.update(1/30);out.guard=g.en.filter(e=>e.tama).length;out.near=!!l.lock;
+  g.p.x=l.x;g.p.y=l.y;g.update(1/30);out.lockedStill=!l.dead;
+  const tb=g.en.find(e=>e.tama);if(tb){tb.hp=1;g.damageEnemy(tb,99999,0,0,false);}
+  g.p.x=l.x;g.p.y=l.y;g.update(1/30);g.update(1/30);out.saved=d.sball.slice();out.gone=!!l.dead;out.ownedHud=[...g.ballOwned()];
   g=trySt(norm);g.ballAt=0;g.t=g.ballEvery+10;g.updateBallPlan();out.ballNormal=g.loot.some(l=>l.k==='ball');out.supNormal=!!g.supPlan;
   return out;});
 ok(st.planLow&&!st.planHigh&&st.chance>=.4&&st.chance<=.7,'a Super Ball is planned only by chance ('+Math.round(st.chance*100)+'% of the runs in those stages)');
-ok(!st.planFull,'no new Super Ball is planned when you already hold all 7');
+ok(!st.planFull,'no new Super Ball is planned when you already hold all 3');
 ok(!st.ballOnSup&&st.ballNormal&&!st.supNormal,'normal Dragon Balls are replaced in the last stages and still exist elsewhere');
-ok(st.has&&st.far>=500&&st.once===1&&st.star>=1&&st.star<=7,'the Super Ball lands far away, once ('+Math.round(st.far)+' px, star '+st.star+')');
-ok(st.near&&st.guard>=10,'guardians close in when you get near ('+st.guard+' enemies)');
+ok(st.has&&st.far>=500&&st.once===1&&st.star>=1&&st.star<=3,'the Super Ball lands far away, once ('+Math.round(st.far)+' px, star '+st.star+')');
+ok(st.near&&st.guard===1&&st.lockedStill,'a Tamagami wakes when you get near and the ball stays locked until it falls ('+st.guard+' guardian)');
 ok(st.saved.length===1&&st.saved[0]===st.star&&st.gone&&st.ownedHud.join()===st.saved.join(),'picking it up stores it in the save for good');
 /* ---------- screens ---------- */
 const ui=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={},sl=ms=>new Promise(r=>setTimeout(r,ms));A.toMenu();d.settings.sandbox=false;d.bag=[];d.zenny=0;d.equip=null;
@@ -211,18 +213,18 @@ ok(bg.oldest==='Broken Scouter'&&bg.newest==='Senzu Pouch','sorted by date obtai
 ok(bg.afterEquip==='chars'&&bg.eq&&bg.slotFull,'equipping from the slot goes back to the character screen with the trinket in it ('+bg.slotFull+')');
 ok(bg.unq===null,'the slot can be emptied again');
 /* Super Shenron in the stage menu */
-const ss=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={};d.sball=[1,2,3,4,5,6];U.show('main');U.push('stages');out.before=!!document.querySelector('.superc');
-  d.sball=[1,2,3,4,5,6,7];U.rebuild();const sc=document.querySelector('.superc');out.after=!!sc;out.first=!!sc&&sc.parentNode.firstElementChild===sc;
+const ss=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={};d.sball=[1,2];U.show('main');U.push('stages');out.before=!!document.querySelector('.superc');
+  d.sball=[1,2,3];U.rebuild();const sc=document.querySelector('.superc');out.after=!!sc;out.first=!!sc&&sc.parentNode.firstElementChild===sc;
   sc.click();out.screen=U.top.name;out.opts=document.querySelectorAll('.supbox .card').length;
   const nUn=d.unlocked.length;document.querySelector('[data-fid="sbchar"]').click();out.next=U.top.name;out.claimBar=!!document.querySelector('.claimbar');
   document.querySelector('.char.locked').click();out.claimBtn=!!document.querySelector('[data-fid="sbclaim"]');out.price=!!document.querySelector('[data-fid="buychar"]');
   document.querySelector('[data-fid="sbclaim"]').click();out.unl=d.unlocked.length-nUn;out.spent=d.sball.length;
   U.pop();out.gone=!document.querySelector('.superc');
-  d.sball=[1,2,3,4,5,6,7];U.rebuild();const l0=d.tickets.l10;document.querySelector('.superc').click();document.querySelector('[data-fid="sblucky"]').click();out.lucky=d.tickets.l10-l0;out.toGacha=U.top.name;out.spent2=d.sball.length;
+  d.sball=[1,2,3];U.rebuild();const l0=d.tickets.l10;document.querySelector('.superc').click();document.querySelector('[data-fid="sblucky"]').click();out.lucky=d.tickets.l10-l0;out.toGacha=U.top.name;out.spent2=d.sball.length;
   return out;});
-ok(!ss.before&&ss.after&&ss.first,'the Super Shenron scenario appears first in the stage menu only with all 7 Super Balls');
+ok(!ss.before&&ss.after&&ss.first,'the Super Shenron scenario appears first in the stage menu only with all 3 Super Balls');
 ok(ss.screen==='superWish'&&ss.opts===2,'it offers two rewards');
 ok(ss.next==='chars'&&ss.claimBar&&ss.claimBtn&&!ss.price,'"free character" takes you to the character screen, where a locked one is claimed instead of bought');
-ok(ss.unl===1&&ss.spent===0&&ss.gone,'claiming unlocks it, spends the 7 balls and the scenario disappears');
+ok(ss.unl===1&&ss.spent===0&&ss.gone,'claiming unlocks it, spends the 3 balls and the scenario disappears');
 ok(ss.lucky===1&&ss.toGacha==='gacha'&&ss.spent2===0,'"10x Lucky tickets" gives the ticket and sends you to the Gacha');
 console.log(errs.length?errs.slice(0,3):'no page errors');await b.close();process.exit(errs.length||process.exitCode?1:0);})();

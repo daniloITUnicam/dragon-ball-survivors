@@ -110,6 +110,7 @@ class App{
     this.joy.on=false;
     const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
     for(const b of st.bosses)if(BOSSES[b[0]])defs.push(BOSSES[b[0]].sp);
+    if(st.sup)for(const id of['tama1','tama1f','tama2','tama2f','tama3','tama3f'])defs.push(BOSSES[id].sp);
     Sprites._wq=[];Sprites.warm(defs);
   }
   pause(){if(this.state!=='play')return;const tp=document.getElementById('tip');if(tp)tp.style.display='none';this.state='pause';this.ui.show('pause');}
@@ -138,7 +139,7 @@ class App{
   toMenu(){if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
-    for(const a of['interact','pet','kaioken','senzu','dash'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
+    for(const a of['interact','pet','kaioken','senzu','dash','target'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
     this.renderer.keyHints=h;
   }
   loop(now){
@@ -149,7 +150,7 @@ class App{
     const dt=Math.min(.05,(now-this.last)/1000);this.last=now;
     const I=this.input,g=this.game,r=this.renderer;
     I.poll(dt);
-    this.canvas.classList.toggle('bgblur',this.state==='menu');
+    this.canvas.classList.toggle('bgblur',this.state==='menu');I.noTab=this.state==='play';
     this.hintT-=dt;if(this.hintT<=0){this.hintT=.5;this.keyHints();}
     if(this.state==='play'&&g){
       if(I.pressed('pause')){this.pause();}
@@ -161,6 +162,7 @@ class App{
         if(I.pressed('kaioken'))g.toggleKaioken();
         if(I.pressed('senzu'))g.useSenzu();
         if(I.pressed('dash'))g.dash();
+        if(I.pressed('target'))g.cycleTarget();
         if(I.pressed('debug')&&g.sandbox)this.ui.toggleSandbox(g);
         g.update(dt);
         this.trackT-=dt;

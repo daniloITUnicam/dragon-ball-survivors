@@ -1,6 +1,6 @@
 'use strict';
 /* ====== Input: keyboard + any gamepad (Gamepad API), fully rebindable ====== */
-const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','senzu','dash','debug'];
+const ACTIONS=['up','down','left','right','confirm','cancel','pause','interact','pet','kaioken','senzu','dash','target','debug'];
 const PAD_NAMES=['A / ✕','B / ○','X / □','Y / △','LB / L1','RB / R1','LT / L2','RT / R2','Select / Share','Start / Options','L3','R3','D-Up','D-Down','D-Left','D-Right','Home'];
 class Input{
   constructor(save){
@@ -27,7 +27,7 @@ class Input{
     if(down){
       this.keys.add(e.code);this.latch.add(e.code);this.mode='kb';
       const t=e.target&&e.target.tagName;
-      if((e.code.startsWith('Arrow')||e.code==='Space')&&t!=='INPUT'&&t!=='SELECT')e.preventDefault();
+      if((e.code.startsWith('Arrow')||e.code==='Space'||(e.code==='Tab'&&this.noTab))&&t!=='INPUT'&&t!=='SELECT')e.preventDefault();
     }else this.keys.delete(e.code);
   }
   getPad(){

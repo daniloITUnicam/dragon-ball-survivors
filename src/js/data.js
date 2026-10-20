@@ -7,7 +7,7 @@ const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
 
 /* every difficulty has its own run length (dur, seconds), the same on every stage: stage times, boss times and roster windows are stretched to fit */
 const DIFF={
-  easy:{n:T('Facile','Easy'),hp:.9,dmg:.7,spawn:.7,zenny:.7,dur:300},
+  easy:{n:T('Facile','Easy'),hp:.72,dmg:.7,spawn:.7,zenny:.7,dur:300},
   normal:{n:T('Normale','Normal'),hp:1.0,dmg:1,spawn:1,zenny:1,dur:600},
   hard:{n:T('Difficile','Hard'),hp:2,dmg:1.5,spawn:1.4,zenny:1.35,dur:900},
   extreme:{n:T('Estremo','Extreme'),hp:4,dmg:1.8,spawn:1.5,zenny:2.4,dur:1800}
@@ -36,8 +36,7 @@ const WEAPONS={
   chain:{n:T('Fulmine Angelico','Angelic Bolt'),d:T('Fulmine che salta tra i nemici.','Lightning that jumps between foes.'),evo:T('Fulmine del Cielo',"Heaven's Bolt"),evoD:T('Più salti, più danno.','More jumps, more damage.'),evo2:T('Tempesta Angelica','Angelic Storm'),evo2D:T('Due salti in più, raggio maggiore.','Two extra jumps, wider reach.'),k:'雷',c:'#8ad8ff',lv50:1},
   meteor:{n:T('Meteora di Fusione','Fusion Meteor'),d:T('Piovono meteore sui nemici.','Meteors rain on foes.'),evo:T('Pioggia di Meteore','Meteor Shower'),evoD:T('Più meteore, esplosioni maggiori.','More meteors, bigger blasts.'),evo2:T('Cataclisma Cometa','Comet Cataclysm'),evo2D:T('Una meteora in più, area maggiore.','One extra meteor, wider.'),k:'星',c:'#ff9a3a',lv50:1},
   sweep:{n:T('Big Bang Kamehameha','Big Bang Kamehameha'),d:T('Un raggio ruota tutto intorno a te.','A beam sweeps all around you.'),evo:T('Big Bang Doppio','Twin Big Bang'),evoD:T('Due raggi opposti.','Two opposing beams.'),evo2:T('Big Bang Trinità','Triple Big Bang'),evo2D:T('Tre raggi che ruotano.','Three rotating beams.'),k:'爆',c:'#59c8ff',lv50:1},
-  dyn:{n:T('Calcio Dinamite','Dynamite Kick'),d:T('Esplosione ravvicinata che spinge via.','Close blast that knocks back.'),evo:T('Calcio Dinamite Super','Super Dynamite Kick'),evoD:T('Doppia esplosione.','Double blast.'),evo2:T('Calcio Campione','Champion Kick'),evo2D:T('Esplosioni più ampie e potenti.','Wider, stronger blasts.'),k:'蹴',c:'#ffe24d',lv50:1},
-  barrage:{n:T('Raffica di Ki','Ki Barrage'),d:T('Raffica di colpi a ventaglio.','Fan of rapid shots.'),evo:T('Raffica Ultra','Ultra Barrage'),evoD:T('Sedici colpi per raffica.','Sixteen shots per burst.'),evo2:T('Raffica Infinita','Infinite Barrage'),evo2D:T('Raffica quasi continua.','Nearly continuous barrage.'),k:'乱',c:'#ffdd55'}
+  dyn:{n:T('Calcio Dinamite','Dynamite Kick'),d:T('Esplosione ravvicinata che spinge via.','Close blast that knocks back.'),evo:T('Calcio Dinamite Super','Super Dynamite Kick'),evoD:T('Doppia esplosione.','Double blast.'),evo2:T('Calcio Campione','Champion Kick'),evo2D:T('Esplosioni più ampie e potenti.','Wider, stronger blasts.'),k:'蹴',c:'#ffe24d',lv50:1}
 };
 const MAX_WEAPONS=5;
 /* seconds a kind of floor item stays away after one appeared (rarity scale: coin common, heal/xp uncommon, haste/dmg rare, magnet/luck very rare, capsule epic) */
@@ -51,14 +50,14 @@ const SENZU_MAX=3;   /* Senzu bag capacity */
 const MAX_PASSIVES=5;   /* max different secondary upgrades per run (each up to level 5) */
 
 const PASS={
-  might:{n:T('Zenkai','Zenkai'),d:T('+15% danno.','+15% damage.'),k:'力',c:'#ff7b4a'},
+  might:{n:T('Zenkai','Zenkai'),d:T('+10% danno.','+10% damage.'),k:'力',c:'#ff7b4a'},
   vit:{n:T('Vigore','Vigor'),d:T('+20 salute massima.','+20 max HP.'),k:'命',c:'#ff6b8a'},
-  speed:{n:T('Volo veloce','Swift Flight'),d:T('+8% velocità.','+8% speed.'),k:'速',c:'#7ae0ff'},
+  speed:{n:T('Volo veloce','Swift Flight'),d:T('+6% velocità.','+6% speed.'),k:'速',c:'#7ae0ff'},
   magnet:{n:T('Scouter','Scouter'),d:T('Raccolta più ampia.','Wider pickup range.'),k:'引',c:'#7dff9a'},
-  haste:{n:T('Camera Gravitazionale','Gravity Chamber'),d:T('-8% ricarica.','-8% cooldown.'),k:'修',c:'#c9a0ff'},
+  haste:{n:T('Camera Gravitazionale','Gravity Chamber'),d:T('-5% ricarica.','-5% cooldown.'),k:'修',c:'#c9a0ff'},
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
-  growth:{n:T('Meditazione','Meditation'),d:T('+12% esperienza.','+12% experience.'),k:'学',c:'#ffe9a0'}
+  growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'}
 };
 
 /* Evolution recipes: a weapon at max level + the listed passive (any level) -> next evolution (opened from a chest).
@@ -67,7 +66,7 @@ const EVO_RECIPE={
   ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','might'],flare:['magnet','growth'],
   slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['haste','might'],breaker:['armor','might'],
   spiral:['speed','regen'],boomer:['magnet','haste'],hellzone:['regen','armor'],chrono:['haste','growth'],shock:['armor','vit'],hakai:['growth','might'],
-  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen'],barrage:['speed','haste']
+  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen']
 };
 const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
@@ -171,13 +170,13 @@ const CHARS=[
  {id:'freezer',line:'freezer',n:T('Freezer','Frieza'),d:T('Parte col Raggio Perforante. Danno +20%, meno salute.','Starts with Piercing Beam. +20% damage, less HP.'),start:['dbeam'],spd:1,might:1.2,hp:88,regen:0,xpm:1,
   lock:T('Sconfiggi 40 boss in totale','Defeat 40 bosses in total'),ul:r=>r.totBosses>=40,price:76000,
   cfg:{skin:'#f2eef6',outfit:'#f2eef6',legs:'#f2eef6',armor:'#8a4fc0',shoulder:'#8a4fc0',hair:'#8a4fc0',hs:'horns',boot:'#8a4fc0'}},
- {id:'cell',line:'cell',n:T('Cell','Cell'),d:T('Parte con la Raffica di Ki. Rigenera, +10% esperienza.','Starts with Ki Barrage. Regenerates, +10% XP.'),start:['barrage'],spd:1,might:1.05,hp:105,regen:.4,xpm:1.1,
+ {id:'cell',line:'cell',n:T('Cell','Cell'),d:T('Parte con il Colpo di Ki. Rigenera, +10% esperienza.','Starts with Ki Blast. Regenerates, +10% XP.'),start:['ki'],spd:1,might:1.05,hp:105,regen:.4,xpm:1.1,
   lock:T('Raggiungi il livello 40 in una partita','Reach level 40 in a run'),ul:r=>r.lvl>=40,price:58000,
   cfg:{skin:'#6fbf4a',outfit:'#6fbf4a',legs:'#6fbf4a',armor:'#262626',hair:'#262626',hs:'horns',spots:true,wings:true,boot:'#262626'}},
  {id:'bu',line:'bu',n:T('Majin Bu','Majin Buu'),d:T('Kaioken e Genkidama. Molta salute, lento, rigenera.','Kaioken and Spirit Bomb. Lots of HP, slow, regenerates.'),start:['aura','spirit'],spd:.85,might:.95,hp:165,regen:.8,xpm:1,
   lock:T('Sconfiggi 60.000 nemici in totale','Defeat 60,000 enemies in total'),ul:r=>r.totKills>=60000,price:78000,
   cfg:{skin:'#ff9ec7',outfit:'#f2f0e8',legs:'#f2f0e8',belt:'#222',hair:'#ff9ec7',hs:'antenna',wide:true,boot:'#222'}},
- {id:'gotenks',line:'saiyan2',n:T('Gotenks','Gotenks'),d:T('Colpi Eccentrici e Raffica. Fragile ma velocissimo.','Homing Orbs and Barrage. Fragile but very fast.'),start:['homing','barrage'],spd:1.15,might:1.05,hp:80,regen:0,xpm:1,
+ {id:'gotenks',line:'saiyan2',n:T('Gotenks','Gotenks'),d:T('Colpi Eccentrici e Colpo di Ki. Fragile ma velocissimo.','Homing Orbs and Ki Blast. Fragile but very fast.'),start:['homing','ki'],spd:1.15,might:1.05,hp:80,regen:0,xpm:1,
   lock:T('Completa lo Stage 4','Clear Stage 4'),ul:r=>r.win&&r.pos>=3,price:60000,
   cfg:{skin:'#f2b98a',outfit:'#3a5ad8',legs:'#e8742c',belt:'#f2c230',under:'#e8742c',sleeve:'#e8742c',hair:'#15121c',hs:'goku',boot:'#f2c230'}},
  {id:'vegito',line:'saiyan2',n:T('Vegito','Vegito'),d:T('Colpo di Ki e Kamehameha. Fusione equilibrata.','Ki Blast and Kamehameha. Balanced fusion.'),start:['ki','kame'],spd:1.05,might:1,hp:95,regen:0,xpm:1,
@@ -235,13 +234,13 @@ const CHARS=[
  {id:'dyspo',line:'pride',n:T('Dyspo','Dyspo'),d:T('Calcio Dinamite. Velocissimo, ricarica -10%, fragile.','Dynamite Kick. Super fast, -10% cooldown, fragile.'),start:['dyn'],spd:1.28,might:1,hp:80,regen:0,xpm:1,cd:.9,
   lock:T('Completa lo Stage 5','Clear Stage 5'),ul:r=>r.win&&r.sid===4,price:52000,
   cfg:{skin:'#e8a860',outfit:'#c8302a',legs:'#3a3a4a',belt:'#f2c230',hair:'#f4e0a0',hs:'long',ears:true,eye:'#ff5a3d',boot:'#3a3a4a',wrist:'#f2c230'}},
- {id:'caulifla',line:'caulifla',n:T('Caulifla','Caulifla'),d:T('Raffica di Ki. Danno +15%, veloce.','Ki Barrage. +15% damage, fast.'),start:['barrage'],spd:1.1,might:1.15,hp:95,regen:0,xpm:1,
+ {id:'caulifla',line:'caulifla',n:T('Caulifla','Caulifla'),d:T('Colpo di Ki. Danno +15%, veloce.','Ki Blast. +15% damage, fast.'),start:['ki'],spd:1.1,might:1.15,hp:95,regen:0,xpm:1,
   lock:T('Completa lo Stage 6','Clear Stage 6'),ul:r=>r.win&&r.sid===5,price:54000,
   cfg:{skin:'#e8b890',outfit:'#d8402a',legs:'#2a2a3a',belt:'#f4f1ea',under:'#2a2a3a',hair:'#15121c',hs:'vegeta',boot:'#f4f1ea',wrist:'#f4f1ea'}},
  {id:'gero',line:'android',n:T('Dr. Gero','Dr. Gero'),d:T('Doppio Sunday. Rigenera, +10% esperienza, lento.','Double Sunday. Regenerates, +10% XP, slow.'),start:['dsunday'],spd:.88,might:1.1,hp:100,regen:.5,xpm:1.1,
   lock:T('Sconfiggi 100 boss in totale','Defeat 100 bosses in total'),ul:r=>r.totBosses>=100,price:18000,
   cfg:{skin:'#e8c4a0',outfit:'#4a4a5a',legs:'#4a4a5a',belt:'#c8a040',hair:'#d0d0d8',hs:'bald',stache:'#f4f4f4',shades:true,boot:'#2a2a34',cape:'#6a6a7a'}},
- {id:'c21',line:'android',n:T('C-21','Android 21'),d:T('Pioggia di colpi: Raffica e Boomerang. +15% esperienza.','Barrage and Boomerang. +15% XP.'),start:['barrage','boomer'],spd:1.05,might:1.05,hp:105,regen:.3,xpm:1.15,
+ {id:'c21',line:'android',n:T('C-21','Android 21'),d:T('Colpo di Ki e Boomerang. +15% esperienza.','Ki Blast and Boomerang. +15% XP.'),start:['ki','boomer'],spd:1.05,might:1.05,hp:105,regen:.3,xpm:1.15,
   lock:T('Completa lo Stage 8','Clear Stage 8'),ul:r=>r.win&&r.sid===7,price:54000,
   cfg:{skin:'#ff9ec7',outfit:'#3a3a56',legs:'#f4f1ea',belt:'#e8a8d0',under:'#f4f1ea',sleeve:'#f4f1ea',hair:'#f4f1ea',hs:'long',eye:'#ff3b5a',boot:'#3a3a56'}},
  {id:'kale',line:'kale',n:T('Kale','Kale'),d:T('Big Bang Kamehameha. Danno +25%, molta salute, ricarica lenta.','Big Bang Kamehameha. +25% damage, lots of HP, slower cooldown.'),start:['sweep'],spd:.95,might:1.25,hp:125,regen:0,xpm:1,cd:1.1,
@@ -266,7 +265,7 @@ const CHARS=[
  {id:'yajirobe',line:'human',n:T('Yajirobe','Yajirobe'),d:T('Spada. Molta salute, lento. Parte con un fagiolo Senzu in borsa.','Sword. Lots of HP, slow. Starts with a Senzu Bean in the bag.'),start:['slash'],spd:.9,might:1.15,hp:130,regen:.3,xpm:1,senzu:1,
   lock:T('Sconfiggi 5.000 nemici in totale','Defeat 5,000 enemies in total'),ul:r=>r.totKills>=5000,price:21000,
   cfg:{skin:'#f2c090',outfit:'#c8a040',legs:'#4a3a2a',belt:'#8a5a2a',armor:'#8a94a4',hs:'bald',sword:true,band:'#e8e0c0',boot:'#4a3a2a',wide:true}},
- {id:'saiyaman',line:'saiyan2',n:T('Great Saiyaman','Great Saiyaman'),d:T('Raffica di Ki. Danno +15%. Un eroe in posa.','Ki Barrage. +15% damage. A hero striking a pose.'),start:['barrage'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
+ {id:'saiyaman',line:'saiyan2',n:T('Great Saiyaman','Great Saiyaman'),d:T('Colpo di Ki. Danno +15%. Un eroe in posa.','Ki Blast. +15% damage. A hero striking a pose.'),start:['ki'],spd:1.05,might:1.15,hp:100,regen:0,xpm:1,
   lock:T('Completa lo Stage 3','Clear Stage 3'),ul:r=>r.win&&r.sid===2,price:28000,
   cfg:{skin:'#f2b98a',outfit:'#3a8a4a',legs:'#3a8a4a',belt:'#f2c230',cape:'#c8302a',gloves:'#c8302a',hs:'bald',turban:'#e8e8f0',shades:true,boot:'#c8302a',wrist:'#f2c230',shoulder:'#f2c230'}},
  {id:'chaozu',line:'chaozu',n:T('Chiaotzu','Chiaotzu'),d:T('Raggio Perforante. Piccolo e veloce, raccolta ampliata, fragile.','Piercing Beam. Small and fast, wider pickup, fragile.'),start:['dbeam'],spd:1.08,might:.95,hp:85,regen:0,xpm:1.1,mag:1.3,u:1.7,
@@ -449,7 +448,20 @@ const BOSSES={
   hcell6:{n:T('Cell Nero','Black Cell'),hp:0,spd:118,r:32,u:4.0,dmg:58,pats:['ckame','solar','ctail','cjr','rush','cross','bigring'],cd:.9,c:'#9a6aff',mini:true,rnd:true,arm:2,
     sp:H({skin:'#34344a',outfit:'#34344a',legs:'#34344a',armor:'#9a6aff',hair:'#9a6aff',hs:'horns',spots:true,wings:true,wide:true,eye:'#ff3b3b',boot:'#9a6aff'},4.0)},
   jiren:{n:T('Jiren','Jiren'),hp:150000,spd:90,r:36,u:3.8,dmg:58,pats:['cross','mix','bigring'],cd:1.35,c:'#e03a3a',sp:H({skin:'#a0a8b8',outfit:'#c8302a',legs:'#c8302a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#e8e8f0',hs:'bald',eye:'#3a3a4a',wide:true,boot:'#2a2a3a'},3.8),p2:'jiren2',p2at:0.7},
-  jiren2:{n:T('Jiren (Piena Potenza)','Jiren (Full Power)'),hp:0,spd:108,r:42,u:4.5,dmg:72,pats:['rage','cross','bigring'],cd:0.98,c:'#ff2a2a',p2:'jiren3',p2at:0.42,sp:H({skin:'#b8bfd0',outfit:'#e03a2a',legs:'#e03a2a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#e8e8f0',hs:'bald',eye:'#ff2a2a',wide:true,boot:'#2a2a3a'},4.5)}
+  jiren2:{n:T('Jiren (Piena Potenza)','Jiren (Full Power)'),hp:0,spd:108,r:42,u:4.5,dmg:72,pats:['rage','cross','bigring'],cd:0.98,c:'#ff2a2a',p2:'jiren3',p2at:0.42,sp:H({skin:'#b8bfd0',outfit:'#e03a2a',legs:'#e03a2a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#e8e8f0',hs:'bald',eye:'#ff2a2a',wide:true,boot:'#2a2a3a'},4.5)},
+  /* Tamagami (Dragon Ball Daima): the guardians of the Super Dragon Balls. A stone statue until you come close; Number N guards the N-star ball; at half health it enters its Fury form. */
+  tama1:{n:T('Tamagami N°1','Tamagami No. 1'),hp:14000,spd:66,r:32,u:3.5,dmg:24,pats:['wall','cross','nova'],cd:1.9,c:'#7ad9a8',tama:1,p2:'tama1f',p2at:.5,
+    sp:H({skin:'#7d8f88',outfit:'#3b5a4f',legs:'#2d4a40',armor:'#9fd9bb',shoulder:'#b8e8cf',hair:'#d8f0e0',hs:'horns',eye:'#ffe14a',wide:true,boot:'#2d4a40',staff:true},3.5)},
+  tama1f:{n:T('Tamagami N°1 (Furia)','Tamagami No. 1 (Fury)'),hp:0,spd:84,r:34,u:3.7,dmg:32,pats:['crossbeam','nova','wall'],cd:1.4,c:'#a8ffd0',
+    sp:H({skin:'#9ab8ae',outfit:'#3b5a4f',legs:'#2d4a40',armor:'#c8ffe4',shoulder:'#e0fff0',hair:'#f0fff8',hs:'horns',eye:'#ff6a2a',wide:true,boot:'#2d4a40',staff:true},3.7)},
+  tama2:{n:T('Tamagami N°2','Tamagami No. 2'),hp:11000,spd:112,r:24,u:2.7,dmg:22,pats:['swordwave','bulletstorm','rush'],cd:1.5,c:'#b48aff',tama:2,p2:'tama2f',p2at:.5,
+    sp:H({skin:'#e8c8b0',outfit:'#5a3a9a',legs:'#3a2a6a',armor:'#7a5ac0',shoulder:'#9a7ae0',hair:'#3a2a6a',hs:'bob',eye:'#2a1a4a',boot:'#2a1a4a',sword:true},2.7)},
+  tama2f:{n:T('Tamagami N°2 (Furia)','Tamagami No. 2 (Fury)'),hp:0,spd:138,r:25,u:2.8,dmg:30,pats:['swordwave','bulletstorm','crossbeam'],cd:1.1,c:'#6a8aff',
+    sp:H({skin:'#a07ad0',outfit:'#5a3a9a',legs:'#3a2a6a',armor:'#7a5ac0',shoulder:'#9a7ae0',hair:'#3a2a6a',hs:'bob',eye:'#ffe14a',boot:'#2a1a4a',sword:true},2.8)},
+  tama3:{n:T('Tamagami N°3','Tamagami No. 3'),hp:9500,spd:56,r:28,u:2.9,dmg:30,pats:['hammer','palm','slam'],cd:2.0,c:'#e6cf9a',tama:3,p2:'tama3f',p2at:.5,
+    sp:H({skin:'#8a8a94',outfit:'#d9ca9e',legs:'#6c6c78',armor:'#d9ca9e',shoulder:'#efe2b6',hair:'#efe2b6',hs:'horns',eye:'#ff3b3b',wide:true,boot:'#5c5c68'},2.9)},
+  tama3f:{n:T('Tamagami N°3 (Furia)','Tamagami No. 3 (Fury)'),hp:0,spd:74,r:29,u:3.0,dmg:38,pats:['hammer','palm','nova'],cd:1.5,c:'#ff9a3a',
+    sp:H({skin:'#8a8a94',outfit:'#ff9a3a',legs:'#6c6c78',armor:'#ffb04a',shoulder:'#ffd27a',hair:'#efe2b6',hs:'horns',eye:'#ffe14a',wide:true,boot:'#5c5c68'},3.0)}
 };
 
 /* ---------- Stages ---------- */
@@ -494,6 +506,7 @@ const STAGE_ORDER=[5,10,0,6,1,2,7,9,3,8,4];
 const STAGE_DIF=[.2,.6,.5,1,1.5,2,2.5,3,3.7,4.4,5.6];
 /* the last stages of the campaign hold Super Dragon Balls instead of the normal ones */
 const SUPER_STAGES=3;
+const SB_TOTAL=3;   /* Super Dragon Balls to collect (v53: 7 -> 3, one Tamagami guards each) */
 STAGE_ORDER.slice(-SUPER_STAGES).forEach(si=>{STAGES[si].sup=true;});
 STAGE_ORDER.forEach((si,p)=>{const st=STAGES[si];st.pos=p;st.no=p+1;st.dif=STAGE_DIF[p];if(p>0)st.req=STAGE_ORDER[p-1];else delete st.req;});
 
@@ -577,13 +590,13 @@ const PETS=[
 /* Totem: appears once per run. Three random powers are offered, pick one. Mild on purpose. */
 const TOTEMS=[
  {id:'luck',k:'運',c:'#8be07a',n:T('Totem della Fortuna','Totem of Luck'),d:T('+1% fortuna a ogni livello, per tutta la partita.','+1% luck on every level-up for the rest of the run.')},
- {id:'risk',k:'怒',c:'#ff7a3a',n:T('Totem del Rischio','Totem of Risk'),d:T('Esperienza x2, ma subisci il 50% di danni in più per 150 secondi.','XP x2, but you take 50% more damage for 150 seconds.')},
+ {id:'risk',k:'怒',c:'#ff7a3a',n:T('Totem del Rischio','Totem of Risk'),d:T('Esperienza x2, ma subisci il 50% di danni in più per 3 minuti.','XP x2, but you take 50% more damage for 3 minutes.')},
  {id:'vigor',k:'命',c:'#ff6b8a',n:T('Totem della Vitalità','Totem of Vitality'),d:T('+15% salute massima, +0,4 salute/s e cura immediata del 30%.','+15% max HP, +0.4 HP/s and an instant 30% heal.')},
  {id:'fury',k:'力',c:'#ff9d1c',n:T('Totem della Furia','Totem of Fury'),d:T('+12% danno, ma ricarica +8% più lenta.','+12% damage, but cooldowns are 8% slower.')},
  {id:'wealth',k:'金',c:'#ffd23f',n:T('Totem della Ricchezza','Totem of Wealth'),d:T('+35% zenny e +25% raccolta.','+35% zenny and +25% pickup range.')},
  {id:'guard',k:'守',c:'#8ad8ff',n:T('Totem Guardiano','Guardian Totem'),d:T('Una barriera blocca un colpo, poi si ricarica ogni 25s.','A barrier blocks one hit, then recharges every 25s.')},
- {id:'storm',k:'雷',c:'#cfe8ff',n:T('Totem della Tempesta','Storm Totem'),d:T('Ogni 22s un fulmine colpisce fino a 4 nemici vicini.','Every 22s lightning strikes up to 4 nearby enemies.')},
- {id:'spirit',k:'癒',c:'#9affc8',n:T('Totem dello Spirito','Spirit Totem'),d:T('Ogni 35s un impulso cura il 6% e stordisce i nemici vicini.','Every 35s a pulse heals 6% and stuns nearby enemies.')},
+ {id:'storm',k:'雷',c:'#cfe8ff',n:T('Totem della Tempesta','Storm Totem'),d:T('Ogni 20s un fulmine colpisce fino a 4 nemici vicini. Ogni trasformazione: ricarica −20%.','Every 20s lightning strikes up to 4 nearby enemies. Every transformation: cooldown −20%.')},
+ {id:'spirit',k:'癒',c:'#9affc8',n:T('Totem dello Spirito','Spirit Totem'),d:T('Ogni 20s un impulso cura il 6% (fino al 12% con le trasformazioni) e stordisce i nemici vicini. Ogni trasformazione: ricarica −20%.','Every 20s a pulse heals 6% (up to 12% with transformations) and stuns nearby enemies. Every transformation: cooldown −20%.')},
 ];
 /* ---------- Character abilities: one per character, key R (or the on-screen button next to the pet) ---------- */
 const ABIL_DESC={
@@ -626,7 +639,8 @@ const ABIL_TIER={
 const MECH_K={kaioken:'界',berserk:'狂',beam:'閃',nova:'爆',regen:'癒',blind:'光',dash:'疾',clones:'分',crit:'眼',barrier:'盾',absorb:'吸',timestop:'時',erase:'破',rewind:'戻',jackpot:'福',buff:'力'};
 const AB=(m,c,it,en,cd,v)=>({m,c,n:T(it,en),cd,v:v===undefined?1:v,k:MECH_K[m],d:ABIL_DESC[m](v===undefined?1:v)});
 /* shown cooldown at level 1 (in game it drops by 0.2 s per level, up to -10 s: see Game.cdFor) */
-const abBase=cd=>Math.round(cd*7)/10;
+const ABIL_CD_K=.455;   /* ability cooldown factor: base x0.7 (v50) x0.65 (v53, -35%) */
+const abBase=cd=>Math.round(cd*ABIL_CD_K*10)/10;
 const ABIL={
   goku:AB('kaioken','#ff3b2f','Kaioken','Kaioken',0),
   vegeta:AB('beam','#6a8aff','Final Flash','Final Flash',40,1),
@@ -1041,6 +1055,9 @@ Object.assign(ENEMY_DESC,{
 });
 
 const BOSS_DESC={
+ tama1:T('Guardiano della Super Sfera a 1 stella: una statua che si risveglia quando ti avvicini. Muri di ki e raggi a croce; sotto metà salute entra in Furia.','Guardian of the 1-star Super Dragon Ball: a statue that awakens when you come close. Ki walls and cross beams; below half health it enters its Fury form.'),
+ tama2:T('Guardiano della Super Sfera a 2 stelle: piccolo e velocissimo, brandisce un tridente. Onde di spada e raffiche di colpi; in Furia diventa viola con occhi gialli.','Guardian of the 2-star Super Dragon Ball: small and very fast, wielding a trident. Sword waves and bullet storms; in Fury he turns purple with yellow eyes.'),
+ tama3:T('Guardiano della Super Sfera a 3 stelle: basso e massiccio, con un martello gigante. Colpi di martello a terra e onde rosse dai palmi; in Furia brilla di arancione.','Guardian of the 3-star Super Dragon Ball: short and bulky, with a giant hammer. Ground slams and crimson palm blasts; in Fury he glows orange.'),
  hfz1:T('Freezer torna dall\'Inferno: si evolve ogni settimo della sua vita, fino alla forma dorata e a quella nera.','Frieza returns from Hell: he evolves every seventh of his life, up to his golden and black forms.'),
  hcell1:T('Cell torna dall\'Inferno: si evolve ogni sesto della sua vita (assorbe C-17 e C-18, resiste all\'autodistruzione di Goku) fino alla forma dorata e a quella nera.','Cell returns from Hell: he evolves every sixth of his life (absorbing C-17 and C-18, surviving Goku\'s self-destruct) up to his golden and black forms.'),
  janembaf:T('Il demone nato dal male: enorme e lento, a metà scontro si trasforma nel vero Janemba con spada e raggio.','The demon born of evil: huge and slow, he transforms mid-fight into the true Janemba with sword and beam.'),

@@ -14,10 +14,10 @@ class SaveData{
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},endAuto:false,endPrio:[]},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},endAuto:false,endPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
-        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],debug:['F2','Backquote']},
-        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],debug:[8]}
+        kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],target:['Tab'],debug:['F2','Backquote']},
+        pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],target:[10],debug:[8]}
       }
     };
   }
@@ -38,11 +38,13 @@ class SaveData{
     for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
     d.banned=(Array.isArray(d.banned)?d.banned:[]).filter((id,i,a)=>WEAPONS[id]&&a.indexOf(id)===i).slice(0,d.shop.ban||0);   /* weapon blacklist: one slot per "Weapon Blacklist" purchase */
     for(const k of['clears','x2','xc'])while(d[k].length<STAGES.length)d[k].push(0);
-    /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..7 without repeats */
+    /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..3 (v53: it used to be 1..7) without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
     {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok)seen.add(b.id+'@'+b.r);return ok;});
       if(d.equip&&!seen.has(d.equip.id+'@'+d.equip.r))d.equip=null;
-      d.sball=[...new Set((Array.isArray(d.sball)?d.sball:[]).filter(n=>n>=1&&n<=7))];}
+      {const raw=[...new Set((Array.isArray(d.sball)?d.sball:[]).filter(n=>n>=1&&n<=7))],N=3,keep=raw.filter(n=>n<=N);   /* v53: only 3 Super Dragon Balls exist; whoever owned 3+ of the old 7 keeps a complete set */
+        for(let n=1;keep.length<Math.min(N,raw.length)&&n<=N;n++)if(!keep.includes(n))keep.push(n);
+        d.sball=keep.sort((a,b)=>a-b);}}
     return d;
   }
   write(){

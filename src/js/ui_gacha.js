@@ -212,7 +212,7 @@ Object.assign(UI.prototype,{
   /* ---------- Super Shenron: the 7 Super Dragon Balls spent on a reward (opened from the stage menu) ---------- */
   screen_superWish(){
     const d=this.save,have=new Set(d.sball),all=d.unlocked.length>=CHARS.length;
-    const balls=h('div',{class:'sballs'},[1,2,3,4,5,6,7].map(n=>gball(n,64,have.has(n)?'':'off')));
+    const balls=h('div',{class:'sballs'},Array.from({length:SB_TOTAL},(_,i)=>gball(i+1,64,have.has(i+1)?'':'off')));
     return h('div',{class:'center'},this.header('sbTitle'),balls,h('p',{class:'sub'},this.t('sbWishDesc')),
       h('div',{class:'supbox'},
         h('button',{class:'card opt','data-fid':'sbchar',disabled:all,onclick:()=>{this.sfx('uiStart');this.pop();this.sel.claim=true;this.push('chars');}},

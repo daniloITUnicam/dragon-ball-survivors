@@ -62,6 +62,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='gameplay'){
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
         toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
       const pc=v=>Math.round(v*100)+'%';
@@ -209,8 +210,12 @@ Object.assign(UI.prototype,{
       const tools=[tb('rr','🎲',T('Reroll','Reroll'),ru.rr,()=>g.rerollLevel()),
         tb('sk','⏭',T('Salta','Skip'),ru.sk,()=>{if(!g.skipLevel())return false;this.sfx('uiTab');this.app.resolveModal(-1);return null;}),
         tb('bn','🚫',T('Ban','Ban'),ru.bn,()=>{m.banMode=!m.banMode;return true;},m.banMode)].filter(Boolean);
+      /* everything maxed: three bags of zenny; "Auto-choose" takes the biggest one now and on every level-up until a weapon or upgrade choice shows up again */
+      if(m.maxed)tools.unshift(h('button',{class:'btn small primary','data-fid':'lvauto',title:this.tr(T('Sceglie da solo il sacco più grande finché non torna una scelta di arma o potenziamento (si può tenere sempre attiva dalle impostazioni di gioco).','Takes the biggest bag by itself until a weapon or upgrade choice shows up again (it can be kept always on in the gameplay settings).')),
+        onclick:()=>{this.sfx('uiTab');g.autoZ=true;const bi=m.options.reduce((b,o,i)=>(o.v||0)>(m.options[b].v||0)?i:b,0);this.app.resolveModal(bi);}},'⚡ '+this.tr(T('Scelta automatica','Auto-choose'))));
       el=h('div',{class:'screen modal'+(m.banMode?' banmode':'')},h('h2',null,m.banMode?this.tr(T('Scegli cosa bandire','Choose what to ban')):this.t('levelUpTitle',{n:g.lvl})),
         m.banMode?h('p',{class:'sub'},this.tr(T('Clicca un\'arma o un potenziamento: non uscirà più per il resto della partita.','Click a weapon or upgrade: it will not show up again for the rest of the run.'))):null,
+        m.maxed?h('p',{class:'sub'},this.tr(T('Tutto al massimo: scegli un sacco di zenny.','Everything is maxed: pick a bag of zenny.'))):null,
         h('div',{class:'cards'},m.options.map((o,i)=>{
           const c=this.card(this.describe(o),i,()=>{
             if(m.banMode){if(g.banLevel(i)){this.sfx('uiBack');redo();}else this.sfx('uiErr');return;}
@@ -298,10 +303,11 @@ Object.assign(UI.prototype,{
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/5'),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
     if(z.k==='trinket'){const t=TRINKETS.find(x=>x.id===z.id);if(!t)return null;const rr=g.trR(z.id);return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)),h('p',null,this.tr(trinDesc(t,rr)))]);}
     if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
-      ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
+      ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
     if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}
+    if(z.k==='target')return box([hd('#ff8a5a','的',T('Bersaglio delle armi','Weapon target'),'['+(this.app.renderer.keyHints.target||'Tab')+']'),h('p',null,T2('Premi il tasto per cambiare chi puntano le armi: il più vicino, il nemico con più Salute, quello con meno Salute o il boss.','Press the key to change what your weapons aim at: the closest enemy, the one with the most HP, the one with the least HP, or the boss.'))]);
     if(z.k==='dash')return box([hd('#7fd4ff','走',T('Scatto','Dash'),T2('Ricarica ','Cooldown ')+Math.round(g.dashCdMax)+'s'),h('p',null,T2('Breve scatto invulnerabile nella direzione in cui ti muovi: danneggia i nemici che attraversi.','A short invulnerable dash in your movement direction: it damages the enemies you pass through.'))]);
-    if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX),h('p',null,T2('Mangia un fagiolo: recuperi il 40% della salute. Se la borsa è piena, i nuovi ne curano comunque una parte.','Eat a bean: restores 40% of your health. Pick-ups beyond a full bag still heal you.'))]);
+    if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX),h('p',null,T2('Mangia un fagiolo: recuperi il 50% della salute e un parametro casuale sale per il resto della partita. Se la borsa è piena, i nuovi si mangiano subito.','Eat a bean: restores 50% of your health and a random stat rises for the rest of the run. Pick-ups beyond a full bag are eaten at once.'))]);
     return null;
   },
   /* the window fades out (0.22 s) instead of vanishing; instant=true when another one is about to replace it */

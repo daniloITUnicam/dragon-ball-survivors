@@ -1,7 +1,7 @@
 'use strict';
 /* ====== Weapon classes. Tables have 6 entries: levels 1-5 + evolved ====== */
 const WS={
-  ki:{cd:[.8,.72,.64,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[10,12,14,16,19,23],pi:[0,0,0,0,0,0]},
+  ki:{cd:[.8,.72,.64,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[8.5,10,12,13.5,16,19.5],pi:[0,0,0,0,0,0]},   /* v53: -15% damage (Ki Barrage was removed) */
   kame:{cd:[3.8,3.4,3,2.8,2.5,2.2],dmg:[7,8.5,10.5,13,16.5,22],wid:[30,36,40,46,52,64],len:[380,418,456,494,532,680]},
   disc:{n:[2,2,3,3,4,6],r:[80,85,95,100,110,125],dmg:[11,12.5,14,16,19,25],spd:[2.6,2.8,3,3.2,4,4.4]},
   spirit:{cd:[11,10,8.5,8,7,6.5],dmg:[62,78,95,120,155,210],rad:[110,125,135,160,185,230]},
@@ -9,8 +9,7 @@ const WS={
   flare:{cd:[15,14,13,11,9,8],stun:[1.2,1.5,1.8,2.1,2.5,3.5],dmg:[3,4.5,6,8,10,22]},
   slash:{cd:[1.5,1.35,1.2,1.05,.9,.75],dmg:[16,20,24,28,34,44],rad:[110,118,130,140,155,190],arc:[.9,1.2,1.2,1.3,1.4,3.14]},
   homing:{cd:[1.6,1.45,1.3,1.15,1,.85],n:[2,3,3,4,4,6],dmg:[7.5,8.5,10,12,14,18]},
-  dbeam:{cd:[4.6,4.2,3.8,3.4,3,2.6],dmg:[26,34,44,56,72,100],wid:[9,11,13,15,18,22],len:[720,720,720,720,720,900]},
-  barrage:{cd:[1.2,1.1,1,.9,.75,.6],n:[5,6,7,8,10,16],dmg:[3.5,4.3,5,6,7,8.5],pi:[0,0,0,1,1,2],sp:.55}
+  dbeam:{cd:[4.6,4.2,3.8,3.4,3,2.6],dmg:[26,34,44,56,72,100],wid:[9,11,13,15,18,22],len:[720,720,720,720,720,900]}
 };
 
 
@@ -130,7 +129,7 @@ class Weapon{
   evolve(){this.lv=1;this.evo=(this.evo||0)+1;}
   update(dt){}
   draw(ctx){}
-  static create(g,id){const C={ki:KiWeapon,kame:KameWeapon,disc:DiscWeapon,spirit:SpiritWeapon,aura:AuraWeapon,flare:FlareWeapon,slash:SlashWeapon,homing:HomingWeapon,dbeam:DeathBeamWeapon,barrage:BarrageWeapon}[id]||NEWW[id];return new C(g,id);}
+  static create(g,id){const C={ki:KiWeapon,kame:KameWeapon,disc:DiscWeapon,spirit:SpiritWeapon,aura:AuraWeapon,flare:FlareWeapon,slash:SlashWeapon,homing:HomingWeapon,dbeam:DeathBeamWeapon}[id]||NEWW[id];return new C(g,id);}
 }
 
 const KI_EVO_DMG=.5;   /* both evolutions of the Ki Blast hit for half (it was far too strong) */
@@ -499,17 +498,3 @@ class DeathBeamWeapon extends Weapon{
   }
 }
 
-class BarrageWeapon extends Weapon{
-  update(dt){
-    const g=this.g,p=g.p,s=this.st,L=this.L;
-    this.cd-=dt;if(this.cd>0)return;
-    const t=g.nearest(p.x,p.y,380);
-    if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),n=s.n[L]+g.S.proj*2+this.e2n*2;
-    for(let i=0;i<n;i++){
-      const a=base+rnd(-s.sp,s.sp),sp2=rnd(380,460);
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*sp2,vy:Math.sin(a)*sp2,r:5*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi:s.pi[L],life:.85,hit:[],c:this.color});
-    }
-    g.audio.sfx('shot');this.cd=s.cd[L]*g.S.cd*this.e2c;
-  }
-}

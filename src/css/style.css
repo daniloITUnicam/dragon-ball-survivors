@@ -550,3 +550,15 @@ select.chsort:focus{border-color:#ffd23f}
 .toast .zv{display:inline-flex;align-items:center;gap:3px;vertical-align:middle}
 /* the pause menu rows span the screen: only their buttons catch the mouse, so the HUD tooltips underneath keep working */
 .pausescr>.row{pointer-events:none}.pausescr>.row>*{pointer-events:auto}
+
+/* ===== v53: number of weapons (dots with a Dragon Ball), stage enemy stats, auto-choose ===== */
+.wcnt{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:150px}
+.wcnt small{font-size:11px;opacity:.65;line-height:1.2;text-align:center}
+.wdots{display:flex;gap:5px;align-items:center}
+.wdot{width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(8,14,28,.65);color:#9aa6b8;font:700 11px/1 "Rajdhani",sans-serif;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,border-color .12s}
+.wdot:hover,.wdot:focus-visible{border-color:#ffd23f;transform:scale(1.12);outline:none}
+.wdot i{font-style:normal}
+.wdot.on{border-color:#ffb13b;background:rgba(255,177,59,.15);width:30px;height:30px;box-shadow:0 0 10px rgba(255,177,59,.45)}
+.wdot.on .gball{pointer-events:none}
+.ststats{display:flex;flex-wrap:wrap;gap:3px 9px;font-size:12px;opacity:.9}
+.ststats .sst b{font-weight:700;color:#ffe9a0}

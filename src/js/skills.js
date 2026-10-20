@@ -216,9 +216,9 @@ Object.assign(Game.prototype,{
   /* the enemy turns into a stronger kind (keeps the damage it already took, as a ratio) */
   skMorph(e,nd){
     if(!nd)return;
-    const ratio=Math.max(.15,e.hp/e.max),esc=this.escSteps(),F=this.escF,spdMul=Math.max(1,e.spd/Math.max(1,e.def.spd*ENEMY_SPD_MUL));
+    const ratio=Math.max(.15,e.hp/e.max),esc=this.escSteps(),F=this.escF,spdMul=Math.max(1,e.spd/Math.max(1,e.def.spd*this.spdK));
     e.def=nd;e.r=nd.r;e.max=nd.hp*this.hpMul()*(1+F.hp*esc);e.hp=e.max*Math.min(1,ratio+.18);
-    e.spd=nd.spd*ENEMY_SPD_MUL*spdMul;e.dmg=nd.dmg*this.dmgMul()*(1+F.dmg*esc);
+    e.spd=nd.spd*this.spdK*spdMul;e.dmg=nd.dmg*this.dmgMul()*(1+F.dmg*esc);
     e.ai=nd.ai;e.esid=undefined;e.st=0;e.stT=rnd(1,2);e.sh=rnd(1,2);
     if(nd.sk)this.skillInit(e);
   },

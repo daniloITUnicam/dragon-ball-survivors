@@ -705,8 +705,22 @@ this.W=1;this.H=1;this.Z=1;
     ctx.globalAlpha=1;
   }
   /* Super Dragon Ball: a giant ball floating over the ground with a golden aura, a tall column of light, turning rays and slow rings - impossible to miss */
+  /* a Tamagami statue: the boss sprite painted in cold grey stone (cached) */
+  stoneSprite(id){
+    this.stoneC=this.stoneC||{};if(this.stoneC[id]!==undefined)return this.stoneC[id];
+    const bd=BOSSES[id],sp=bd&&Sprites.forSp(bd.sp,1,false);if(!sp||!sp.c)return null;
+    const c=document.createElement('canvas');c.width=sp.c.width;c.height=sp.c.height;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+    g.drawImage(sp.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(122,128,144,.86)';g.fillRect(0,0,c.width,c.height);
+    const gr=g.createLinearGradient(0,0,0,c.height);gr.addColorStop(0,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=gr;g.fillRect(0,0,c.width,c.height);
+    return this.stoneC[id]={c,ox:sp.ox,oy:sp.oy,s:sp.s};
+  }
   drawSuperBall(l){
     const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,cy=gy-S*.62-10-fl,pulse=.5+.5*Math.sin(t*3.2);
+    if(l.tama){   /* a stone pedestal and, until it wakes up, the guardian's statue (the ball sits in its chest) */
+      ctx.save();ctx.fillStyle='rgba(70,74,88,.9)';ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,210,90,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.stroke();ctx.restore();
+      if(!l.woke){const id='tama'+Math.max(1,Math.min(3,star)),st=this.stoneSprite(id),bd=BOSSES[id];
+        if(st&&bd){const k=(bd.sp.u||bd.u||3)/(st.s||Sprites.S);ctx.save();ctx.translate(gx,gy);ctx.scale(k,k);ctx.imageSmoothingEnabled=false;ctx.drawImage(st.c,-st.ox,-st.oy);ctx.restore();}}
+    }
     ctx.save();ctx.translate(gx,gy);ctx.scale(1,.4);GLOW.at(ctx,0,0,86+8*pulse,'#ffd23f',.5);ctx.restore();
     ctx.fillStyle='rgba(0,0,0,.34)';ctx.beginPath();ctx.ellipse(gx,gy,26-fl*.5,8-fl*.15,0,0,TAU);ctx.fill();
     ctx.save();ctx.globalCompositeOperation='lighter';
@@ -1003,6 +1017,17 @@ this.W=1;this.H=1;this.Z=1;
   }
 
   /* ---------- HUD (screen space) ---------- */
+  /* provisional icons of the weapon target (to be replaced by the sprite sheet): crosshair, heart + up arrow, heart + down arrow, skull */
+  tgtIcon(ctx,mode,x,y,r,c,t){
+    ctx.save();ctx.translate(x,y);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=Math.max(1.5,r*.18);ctx.lineCap='round';ctx.lineJoin='round';
+    if(mode===0){const k=1+.06*Math.sin(t*6);ctx.beginPath();ctx.arc(0,0,r*.72*k,0,TAU);ctx.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.5,Math.sin(a)*r*.5);ctx.lineTo(Math.cos(a)*r*1.15,Math.sin(a)*r*1.15);ctx.stroke();}ctx.beginPath();ctx.arc(0,0,r*.16,0,TAU);ctx.fill();}
+    else if(mode===3){drawSkull(ctx,0,0,r*1.05,c,1);}
+    else{
+      ctx.beginPath();ctx.moveTo(0,r*.75);ctx.bezierCurveTo(-r*1.25,-r*.1,-r*.6,-r*.95,0,-r*.3);ctx.bezierCurveTo(r*.6,-r*.95,r*1.25,-r*.1,0,r*.75);ctx.closePath();ctx.globalAlpha=.9;ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle='#0a0f1c';ctx.beginPath();if(mode===1){ctx.moveTo(0,-r*.1);ctx.lineTo(-r*.38,r*.32);ctx.lineTo(r*.38,r*.32);}else{ctx.moveTo(0,r*.38);ctx.lineTo(-r*.38,-r*.04);ctx.lineTo(r*.38,-r*.04);}ctx.closePath();ctx.fill();
+    }
+    ctx.restore();
+  }
   hud(g,dt,cx,cy){
     const ctx=this.ctx,U=this.U,W=this.W,H=this.H,p=g.p,tt=this.tt,tr=this.tr;
     ctx.setTransform(1,0,0,1,0,0);ctx.textBaseline='alphabetic';ctx.lineJoin='round';
@@ -1069,6 +1094,14 @@ this.W=1;this.H=1;this.Z=1;
     const fe=g.formEntry,nxt=g.formsUnlocked<g.formMax?FORM_TIERS[g.formsUnlocked].lvl:null;
     const fy=ty+ts+16*U;
     txt((fe?tr(fe.n):tt('baseForm'))+(nxt?'  ·  '+tt('nextForm')+' '+nxt:''),m,fy,fe?fe.aura:'#fff','left',F(12));
+    /* weapon target (TAB): closest / most HP / least HP / boss; only the active one is shown */
+    if(!g.ended){
+      const mode=g.tgt|0,c=['#ffd23f','#ff6b8a','#8ad8ff','#ff5a3d'][mode],bh=26*U,bw=134*U,by2=fy+8*U,nm=[['Più vicino','Closest'],['Più Salute','Most HP'],['Meno Salute','Least HP'],['Boss','Boss']][mode];
+      this.zones.push({x:m,y:by2,w:bw,h:bh,k:'target'});
+      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(m,by2,bw,bh);ctx.strokeStyle=hexA(c,.8);ctx.lineWidth=1.6*U;ctx.strokeRect(m,by2,bw,bh);
+      this.tgtIcon(ctx,mode,m+bh/2,by2+bh/2,bh*.34,c,g.rt);
+      txt('['+(this.keyHints.target||'Tab')+'] '+tr2(nm[0],nm[1]),m+bh+2*U,by2+bh*.68,'#fff','left',F(12));
+    }
     /* pet ability button (bottom-left) */
     this.petBtn=null;
     if(g.pet&&!g.ended){
@@ -1123,6 +1156,19 @@ this.W=1;this.H=1;this.Z=1;
       txt(a.k,bx,by+8*U,usable||act?col:'#9aa6b8','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       txt(label,bx,by+rr+13*U,usable?'#fff':'#9aa6b8','center',F(11));
       txt(this.tr(a.n),bx,by-rr-7*U,usable||act?col:'#9aa6b8','center',F(10));
+    }
+    /* Super Dragon Balls owned (3): shown bottom right once the first one is collected */
+    if(!g.sandbox&&!g.trial&&g.save.sball&&g.save.sball.length>0){
+      const have=new Set(g.save.sball),r=11*U,gap=5*U,y1=H-m-r-4*U;
+      txt(tt('sbTitle'),W-m,y1-r-6*U,'#ffd23f','right',F(10));
+      for(let i=0;i<SB_TOTAL;i++){
+        const x1=W-m-r-(SB_TOTAL-1-i)*(2*r+gap),on=have.has(i+1);
+        ctx.save();ctx.globalAlpha=on?1:.35;
+        const gr=ctx.createRadialGradient(x1-r*.3,y1-r*.35,1,x1,y1,r);gr.addColorStop(0,on?'#fff0b8':'#6a7688');gr.addColorStop(.55,on?'#ffae1c':'#3a4658');gr.addColorStop(1,on?'#a85a00':'#202a3a');
+        ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x1,y1,r,0,TAU);ctx.fill();ctx.strokeStyle=on?'#ffe9a0':'rgba(255,255,255,.4)';ctx.lineWidth=1.5*U;ctx.stroke();
+        ctx.fillStyle=on?'#d22':'rgba(255,255,255,.5)';const n=i+1;for(let k=0;k<n;k++){const a=k/n*TAU-Math.PI/2,rr=n>1?r*.42:0;ctx.beginPath();ctx.arc(x1+Math.cos(a)*rr,y1+Math.sin(a)*rr,r*.15,0,TAU);ctx.fill();}
+        ctx.restore();
+      }
     }
     /* timer + progress */
     const stg=g.stage;

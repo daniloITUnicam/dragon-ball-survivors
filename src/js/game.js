@@ -15,13 +15,17 @@ const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
 const GEM_CAP=90,GEM_KEEP=55;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35;
-const TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
+/* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
+const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
+const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
+const TOP_K=1.5;
+const TOTEM_CD=20,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
-    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;MAP.roll();World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
+    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
     this.diffId=o.diff;this.D=DIFF[o.diff];this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):0,hp:1,maxHp:1,face:1,inv:0,mv:false};
@@ -29,7 +33,7 @@ class Game{
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
-    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
+    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
@@ -42,14 +46,14 @@ class Game{
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
     this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.ballEvery=clamp(this.dur*.28,100,270);this.ballAt=this.ballEvery*.75;
-    /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 7 are owned), later and farther away, and it is guarded */
-    this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<7)&&Math.random()<SUP_CHANCE?{at:this.dur*rnd(.28,.55),done:false}:null;
+    /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 3 are owned), later and farther away, and a Tamagami statue guards it */
+    this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<SUP_CHANCE?{at:this.dur*rnd(.28,.55),done:false}:null;
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
     this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
-    for(const id of this.C.start)this.addWeapon(id);
+    for(const id of this.C.start.slice(0,this.maxW))this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
@@ -57,6 +61,8 @@ class Game{
       if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.tSrc={[eq.id]:'bag'};this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
     this.recalc();this.p.hp=this.p.maxHp;
   }
+  /* how many different weapons this run may hold (setting under the character screen, 1-5) */
+  get maxW(){return this.sandbox?MAX_WEAPONS:clamp(Math.round(this.save.settings.weapons)||MAX_WEAPONS,1,MAX_WEAPONS);}
   get viewR(){return Math.hypot(this.vw,this.vh)/2+50;}
   get formMax(){return Math.min(FORM_TIERS.length,LINES[this.C.line||'saiyan'].length);}
   get form(){return this.formIdx>=0?Object.assign({idx:this.formIdx},FORM_TIERS[this.formIdx]):null;}
@@ -74,14 +80,15 @@ class Game{
   recalc(){
     const C=this.C,P=this.pass,sl=id=>this.save.shop[id]||0,tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
+    for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
     const S={};
-    S.might=BASE_POWER*C.might*(1+.15*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
-    S.spd=C.spd*(1+.08*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
-    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.08*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
+    S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
+    S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
+    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
     S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+1.25*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
-    S.xp=C.xpm*(1+.12*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
+    S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
     S.gold=1+.18*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
@@ -131,12 +138,13 @@ class Game{
   }
   levelOptions(){
     const pool=this.upgradePool();
-    if(this.weapons.size<MAX_WEAPONS)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id)&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
+    if(this.weapons.size<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id)&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
     const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
     const need=this.neededPass().filter(id=>pool.some(o=>o.type==='p'&&o.id===id));
     if(need.length&&Math.random()<.55){const nid=pick(need),i=pool.findIndex(o=>o.type==='p'&&o.id===nid);if(i>2){const t=pool[i];pool.splice(i,1);pool.unshift(t);}}
+    if(!pool.length){const c=this.coinValue();return[3,4.5,6].map(k=>({type:'z',v:Math.round(c*k),max:true}));}   /* nothing left to upgrade: pick a bag of zenny */
     const out=pool.slice(0,3);
     while(out.length<3)out.push({type:'h'});
     if(sz&&!out.some(o=>o.type==='h'))out[2]={type:'h'};   /* a Senzu bean sometimes shows up among the level-up cards */
@@ -165,23 +173,28 @@ class Game{
   applyOption(o){
     if(o.type==='w'){const w=this.addWeapon(o.id);if(o.lv>0)w.upgrade();}
     else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<5&&(cur>0||this.passCount()<MAX_PASSIVES))this.pass[o.id]=cur+1;else this.heal(this.p.maxHp*.2);}
-    else if(o.type==='h'){if(this.senzu<SENZU_MAX){this.senzu++;this.floatText(this.p.x,this.p.y-48,this.env.tr(T('Senzu in borsa ','Senzu bagged '))+this.senzu+'/'+SENZU_MAX,2);}else this.heal(this.p.maxHp*.4);}
+    else if(o.type==='h'){if(this.senzu<SENZU_MAX){this.senzu++;this.floatText(this.p.x,this.p.y-48,this.env.tr(T('Senzu in borsa ','Senzu bagged '))+this.senzu+'/'+SENZU_MAX,2);}else this.eatSenzu();}
     else if(o.type==='z')this.addZenny(o.v);
     this.recalc();
   }
   /* eat a Senzu bean from the bag (key H / on-screen button) */
-  /* inside the Room of Spirit and Time and Zeno's Shop the abilities (character ability, Kaioken, Berserk, pet, Senzu) are switched off */
+  /* inside Zeno's Shop the abilities (character ability, Kaioken, Berserk, pet, Senzu) are switched off; the Room of Spirit and Time (training) lets you use them */
   abBlocked(){
-    if(!this.trial)return false;
+    if(!this.trial||!this.trial.zeno)return false;
     if(!(this.abMsgT>this.rt))this.abMsgT=this.rt+1.2,this.floatText(this.p.x,this.p.y-50,this.env.tr(T('Abilità disattivate qui','Abilities are off here')),3);
     return true;
   }
   useSenzu(){
     if(this.abBlocked())return false;
     if(this.ended||this.modal||this.senzu<=0||this.senzuCd>0||this.p.hp>=this.p.maxHp-.5)return false;
-    this.senzu--;this.senzuCd=.8;this.heal(this.p.maxHp*.4);
-    const p=this.p;this.floatText(p.x,p.y-56,this.env.tr(T('Senzu!','Senzu!')),2);this.pillar(p.x,p.y,'#8be07a',.9);this.ring(p.x,p.y,70,'#8be07a',.5);this.burst(p.x,p.y-20,16,'#bfffb0');
+    this.senzu--;this.senzuCd=.8;const sr=this.eatSenzu();
+    const p=this.p;this.floatText(p.x,p.y-56,this.env.tr(T('Senzu! ','Senzu! '))+this.env.tr(sr[2]),2);this.pillar(p.x,p.y,'#8be07a',.9);this.ring(p.x,p.y,70,'#8be07a',.5);this.burst(p.x,p.y-20,16,'#bfffb0');
     this.audio.sfx('abHeal');this.emote('happy',1);return true;
+  }
+  /* a Senzu bean: restores 50% of the health and raises one random stat for the rest of the run */
+  eatSenzu(){
+    const pool=[['might',.03,T('Danno +3%','Damage +3%')],['spd',.02,T('Velocità +2%','Speed +2%')],['cd',.012,T('Ricarica −1,2%','Cooldown −1.2%')],['hp',8,T('Salute max +8','Max HP +8')],['regen',.12,T('Rigenerazione +0,12/s','Regen +0.12/s')],['magnet',.06,T('Raccolta +6%','Pickup +6%')]];
+    const r=pick(pool);this.szStat[r[0]]+=r[1];this.szN++;this.recalc();this.heal(this.p.maxHp*.5);return r;
   }
   upgradeWeapon(w){w.upgrade();this.recalc();}
   heal(v){if(this.trial&&this.trial.zeno)return;this.p.hp=Math.min(this.p.maxHp,this.p.hp+v);}
@@ -459,7 +472,7 @@ class Game{
     const p=this.p,tf=this.totemFx,tr=o=>this.env.tr(o),def=TOTEMS.find(t=>t.id===id)||TOTEMS[0];
     this.totemTag=def.n;
     if(id==='luck')this.totemLuck++;
-    else if(id==='risk')this.riskT=150;
+    else if(id==='risk')this.riskT=TOTEM_RISK_T;
     else if(id==='vigor'){tf.hp=.15;tf.regen=.4;this.recalc();this.heal(p.maxHp*.3);}
     else if(id==='fury'){tf.might=.12;tf.cd=.08;}
     else if(id==='wealth'){tf.gold=.35;tf.magnet=.25;}
@@ -470,12 +483,15 @@ class Game{
     this.ring(p.x,p.y,170,def.c,.7);this.ring(p.x,p.y,90,'#ffffff',.5);this.pillar(p.x,p.y,def.c,1.1);this.burst(p.x,p.y-16,26,def.c);
     this.audio.sfx('shrine');this.recalc();
   }
+  /* Storm and Spirit totems: 20 s, and every transformation shortens it by 20%; the Spirit pulse heals 6%, +1.5% per transformation up to 12% */
+  totemCd(){return TOTEM_CD*Math.pow(.8,Math.max(0,this.formIdx+1));}
+  totemHeal(){return Math.min(.12,.06+.015*Math.max(0,this.formIdx+1));}
   updateTotemFx(dt){
     const tf=this.totemFx,p=this.p;
     if(tf.storm){
       this.stormT-=dt;
       if(this.stormT<=0){
-        this.stormT=22;
+        this.stormT=this.totemCd();
         const live=this.en.filter(e=>!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<480);
         for(let k=0;k<Math.min(4,live.length);k++){
           const e=live.splice(Math.floor(Math.random()*live.length),1)[0];
@@ -487,7 +503,7 @@ class Game{
     if(tf.spirit){
       this.pulseT-=dt;
       if(this.pulseT<=0){
-        this.pulseT=35;this.heal(p.maxHp*.06);
+        this.pulseT=this.totemCd();this.heal(p.maxHp*this.totemHeal());
         this.ring(p.x,p.y,260,'#9affc8',.7);this.ring(p.x,p.y,140,'#ffffff',.4);this.burst(p.x,p.y-12,22,'#9affc8');
         for(const e of this.en){if(e.dead)continue;if(Math.hypot(e.x-p.x,e.y-p.y)<260+e.r)e.stun=Math.max(e.stun,e.boss?.6:1.3);}
         this.audio.sfx('shrine');
@@ -505,6 +521,9 @@ class Game{
     this.recalc();
     if(this.endless)this.checkMilestone();
     const lm={type:'level',options:this.levelOptions()};{const rc=this.recommend(lm.options);if(rc){lm.rec=rc.i;lm.recWhy=rc.why;}}
+    const allZ=lm.options.every(o=>o.type==='z');
+    if(!allZ)this.autoZ=false;   /* a real choice came back: the automatic bag pick stops */
+    if(allZ){lm.maxed=true;if(this.autoZ||this.save.settings.zAuto){this.autoLevel(lm);return;}}
     if(this.endless&&this.save.settings.endAuto){this.autoLevel(lm);return;}   /* Endless "auto-select": the card is chosen by the priority list, no menu */
     if(this.xform)this.afterX=lm;else this.modal=lm;
   }
@@ -541,7 +560,7 @@ class Game{
       if(k&&pr.includes(k))s=pr.indexOf(k);
       else if(o.type==='p'&&need.includes(o.id))s=15;
       else if(o.type==='w'||o.type==='p')s=o.lv>0?20:25;
-      else if(o.type==='h')s=hpLow?-1:60;else s=70;
+      else if(o.type==='h')s=hpLow?-1:60;else if(o.type==='z')s=50-(o.v||0)/1000;else s=70;
       if(s<bs){bs=s;best=i;}
     });
     return best;
@@ -549,6 +568,7 @@ class Game{
   optName(o){
     if(o.type==='w'){const w=this.weapons.get(o.id),lv=w?w.lvShow+1:1;return this.env.tr(WEAPONS[o.id].n)+' Lv '+lv;}
     if(o.type==='p')return this.env.tr(PASS[o.id].n)+' Lv '+((this.pass[o.id]||0)+1);
+    if(o.type==='z')return '+'+o.v+' zenny';
     return this.env.tr(T('Senzu','Senzu'));
   }
   autoLevel(lm){
@@ -618,7 +638,25 @@ class Game{
   ring(x,y,r,c,l){this.fx.push({ring:true,x,y,r,l:l||.45,m:l||.45,c});}
 
   /* ---------- combat ---------- */
-  nearest(x,y,md){let b=null,bd=md*md;for(const e of this.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-y,d=dx*dx+dy*dy;if(d<bd){bd=d;b=e;}}return b;}
+  /* weapon target (TAB): 0 closest, 1 most HP, 2 least HP, 3 boss first. It only applies to what is aimed from the player; projectiles keep picking the closest */
+  pickTarget(md,m){
+    const p=this.p,r2=md*md;let b=null,bs=0,near=null,nd=r2;
+    for(const e of this.en){
+      if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=dx*dx+dy*dy;if(d>=r2)continue;
+      if(d<nd){nd=d;near=e;}
+      if(m===3){if(e.boss&&(!b||d<bs)){b=e;bs=d;}}
+      else{const s=m===1?e.hp:-e.hp;if(!b||s>bs){b=e;bs=s;}}
+    }
+    return b||near;
+  }
+  cycleTarget(){
+    if(this.modal||this.ended||this.dying)return;
+    this.tgt=(this.tgt+1)%4;this.save.settings.tgt=this.tgt;this.env.save.write();
+    this.floatText(this.p.x,this.p.y-64,this.env.tr(TGT_NAMES[this.tgt]),2);this.audio.sfx('uiMove');
+  }
+  nearest(x,y,md){
+    if(this.tgt&&x===this.p.x&&y===this.p.y)return this.pickTarget(md,this.tgt);
+    let b=null,bd=md*md;for(const e of this.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-y,d=dx*dx+dy*dy;if(d<bd){bd=d;b=e;}}return b;}
   hit(e,base,kx,ky){
     const S=this.S;let d=base*S.might*DMG_NERF;
     if(this.has('rage')&&this.p.hp<this.p.maxHp*.35)d*=1.2;
@@ -647,6 +685,7 @@ class Game{
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
     if(e.boss){
       this.run.bossKills++;this.bossAlive--;
+      if(e.tama){e.tama.lock=false;e.tama.beaten=true;this.ring(e.tama.x,e.tama.y-30,140,'#ffd23f',.8);this.say(this.env.tr(T('Il Tamagami cede la Super Sfera: prendila!','The Tamagami yields the Super Dragon Ball: take it!')),'#ffd23f',3.2);}
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
@@ -714,7 +753,7 @@ class Game{
   lootWeights(){
     const hr=this.p.hp/this.p.maxHp,gems=this.gm.length,busy=this.bossAlive>0||this.en.length>70,cd=this.lootCd;
     const w={heal:30*(hr<.35?5:hr<.6?2.5:hr>.92?.25:1),xp:20*(gems<10?1.3:.7),haste:11*(busy?1.8:1),dmg:11*(busy?1.8:1),
-      magnet:7*(gems>45?4:gems>25?2:.3),luck:this.nt>=170?5:0,capsule:this.nt>120?3*(1+this.S.luck):0};
+      magnet:7*(gems>45?4:gems>25?2:.3),luck:this.nt>=170?5:0};
     for(const k in w)if(cd[k]>0&&!(k==='heal'&&hr<.3&&cd[k]<8))w[k]=0;        /* a kind that appeared recently stays away for a while */
     return w;
   }
@@ -725,7 +764,14 @@ class Game{
   bagValue(t){return clamp(Math.round(ZMUL*1000*(t===undefined?this.t:t)/1800/5)*5,20,1040);}
   spawnLoot(k,x,y){
     const v=k==='coin'?this.coinValue():k==='bag'?this.bagValue():k==='xp'?Math.round(this.need*.3):0;
-    this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
+    this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0,tama:k==='sball'?1:0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
+  }
+  /* the Tamagami statue cracks open: a boss of that star number appears on the spot, with health scaled to the minute of the run; the ball stays locked until it falls */
+  wakeTamagami(l){
+    const id='tama'+clamp(l.star||1,1,3),k=clamp(.7+1.2*this.prog(),.7,1.6);
+    l.lock=true;l.woke=true;
+    this.ring(l.x,l.y-30,160,'#ffd23f',.8);this.ring(l.x,l.y-30,80,'#ffffff',.5);this.burst(l.x,l.y-30,40,'#b8bcc8');this.pillar(l.x,l.y,'#ffd23f',1);this.flash=Math.max(this.flash||0,.3);this.flashC='#ffe9a8';
+    this.spawnBoss(id,false,{x:l.x,y:l.y+4,k,tama:l});
   }
   /* Dragon Balls carry a number of stars (1-7): the ones owned this run (ballSet, or the lowest numbers when the counter was set by hand in the sandbox) */
   ballOwned(){if(this.stage.sup)return new Set(this.save.sball);const s=new Set(this.ballSet);for(let n=1;s.size<Math.min(7,this.balls)&&n<=7;n++)s.add(n);return s;}
@@ -736,7 +782,7 @@ class Game{
     return pick(pool.length?pool:all);
   }
   /* the Super Dragon Ball that lands on the map carries a star number you do not own yet */
-  nextSuperStar(){const have=new Set(this.save.sball),pool=[1,2,3,4,5,6,7].filter(n=>!have.has(n));return pick(pool.length?pool:[1,2,3,4,5,6,7]);}
+  nextSuperStar(){const all=Array.from({length:SB_TOTAL},(_,i)=>i+1),have=new Set(this.save.sball),pool=all.filter(n=>!have.has(n));return pick(pool.length?pool:all);}
   collectLoot(l){
     const p=this.p,pc=({sball:'#ffd23f',coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'})[l.k]||'#fff';
     this.burst(l.x,l.y-8,l.k==='coin'?4:l.k==='bag'?22:9,pc);if(l.k!=='coin')this.ring(l.x,l.y-6,l.k==='sball'?90:l.k==='ball'?46:26,pc,.35);   /* pick-up sparkle */
@@ -755,8 +801,8 @@ class Game{
         this.audio.sfx('sphere');this.audio.sfx('ticket');
         this.ring(p.x,p.y,90,'#ffd23f',.6);this.ring(p.x,p.y,200,'#fff3b0',.9);this.ring(p.x,p.y,340,'#ffd23f',1.1);this.pillar(p.x,p.y,'#ffd23f',1.6);
         this.burst(l.x,l.y-30,40,'#ffe066');this.burst(l.x,l.y-30,20,'#ffffff');this.flash=Math.max(this.flash||0,.45);this.flashC='#ffe9a8';this.shake=Math.max(this.shake,.4);
-        this.say(this.env.tr(T('SUPER SFERA DEL DRAGO ','SUPER DRAGON BALL '))+l.star+'★  ('+n+'/7)','#ffd23f',3.2);
-        if(n>=7)this.say(this.env.tr(T('HAI TUTTE E 7! Esprimi il desiderio nel menu degli scenari','ALL 7! Make your wish in the stage menu')),'#ffe066',4);
+        this.say(this.env.tr(T('SUPER SFERA DEL DRAGO ','SUPER DRAGON BALL '))+l.star+'★  ('+n+'/'+SB_TOTAL+')','#ffd23f',3.2);
+        if(n>=SB_TOTAL)this.say(this.env.tr(T('HAI TUTTE E '+SB_TOTAL+'! Esprimi il desiderio nel menu degli scenari','ALL '+SB_TOTAL+'! Make your wish in the stage menu')),'#ffe066',4);
         break;}
       case'ball':this.balls++;this.run.balls++;if(l.star&&!this.ballSet.includes(l.star))this.ballSet.push(l.star);
         this.audio.sfx('sphere');                                                 /* assets/sphere_sound.mp3 */
@@ -765,6 +811,30 @@ class Game{
         this.say(this.env.tr(T('Sfera del Drago ','Dragon Ball '))+(l.star?l.star+'★  ':'')+'('+this.balls+'/7)','#ffb13b',2);
         if(this.balls>=7)this.modal={type:'wish',options:['revive','power','fortune','tickets']};break;
     }
+  }
+  /* ---- water and lava (Sea): lakes and the sea are not walkable (you slide along the shore); lava can be crossed but burns 10% of the maximum HP per second ---- */
+  waterAt(x,y){const th=this.stage.theme;return Sea.has(th)&&Sea.wet(th,x,y)>.012;}
+  lavaMap(){const th=this.stage.theme;return Sea.has(th)&&!!Sea.PAL[th].lava;}
+  blockWater(p,ox,oy){
+    if(this.lavaMap()||!this.waterAt(p.x,p.y)||this.waterAt(ox,oy))return;   /* lava is not a wall; when already in the water (teleport, revive) nothing blocks */
+    if(!this.waterAt(p.x,oy))p.y=oy;else if(!this.waterAt(ox,p.y))p.x=ox;else{p.x=ox;p.y=oy;}
+  }
+  updateLava(dt){
+    if(this.dying||this.ended||!this.lavaMap()||this.sb.god){return;}
+    const p=this.p;
+    if(!this.waterAt(p.x,p.y)){this.lavaT=0;return;}
+    if(p.inv>0)return;
+    this.lavaT+=dt;this.lavaF-=dt;
+    p.hp-=p.maxHp*.10*dt;
+    if(this.lavaF<=0){this.lavaF=.5;this.floatText(p.x,p.y-40,Math.max(1,Math.round(p.maxHp*.05)),4);this.burst(p.x,p.y-6,6,'#ff7a2a');this.audio.sfx('hurt');}
+    if(p.hp<=0)this.lethal();
+  }
+  /* the player's HP reached zero: Halo revive, a Dragon Ball wish revive or death */
+  lethal(){
+    const p=this.p;
+    if(this.has('revive')&&!this.haloUsed){this.haloUsed=true;this.revive();}
+    else if(this.revives>0){this.revives--;this.revive();}
+    else{p.hp=0;this.startDeath();}
   }
   hurt(d,src){
     const p=this.p;
@@ -777,11 +847,7 @@ class Game{
     this.emote(p.hp-d<p.maxHp*.3?'pain':'hurt',.8);
     p.hp-=d;p.inv=.5;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);
     if(this.bossAlive>0)this.bossHit=true;
-    if(p.hp<=0){
-      if(this.has('revive')&&!this.haloUsed){this.haloUsed=true;this.revive();}
-      else if(this.revives>0){this.revives--;this.revive();}
-      else{p.hp=0;this.startDeath();}
-    }
+    if(p.hp<=0)this.lethal();
   }
   revive(){
     const p=this.p;p.hp=p.maxHp*.5;p.inv=2.5;this.flash=.8;this.flashC='#ffffff';this.ring(p.x,p.y,320,'#ffffff',.8);
@@ -851,7 +917,7 @@ class Game{
   mkEnemy0(def,x,y){
     const fb=this.finalOn,esc=this.escSteps(),F=this.escF,hp=def.hp*this.hpMul()*(fb?1.35:1)*(1+F.hp*esc);   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*ENEMY_SPD_MUL,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*(fb?.85:1)*(1+F.dmg*esc),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*(fb?.85:1)*(1+F.dmg*esc),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0};
   }
   rosterPick(){
@@ -883,7 +949,8 @@ class Game{
   spawnSpot(a,d,i){
     const p=this.p;
     if(this.stage.theme==='snake')return Snake.spot(p.x,d+((i||0)%9)*34,Math.cos(a)>=0?1:-1);
-    return[p.x+Math.cos(a)*d,p.y+Math.sin(a)*d];
+    const dy=Math.sin(a)*d;
+    return[p.x+Math.cos(a)*d,p.y+(dy<0?dy*TOP_K:dy)];   /* above the player: 50% farther away */
   }
   snakeTier(){return this.stage.capT?Math.min(this.stage.capT.length-1,(this.nt/150)|0):0;}
   spawnOne(){
@@ -957,7 +1024,7 @@ class Game{
     const sp=this.supPlan;if(!sp||sp.done||this.t<sp.at||this.bossAlive>0||this.finalSpawned)return;
     sp.done=true;const [x,y]=this.spawnSpot(rnd(0,TAU),rnd(520,700),0);
     this.spawnLoot('sball',x,y);
-    this.say(this.env.tr(T('UNA SUPER SFERA DEL DRAGO È APPARSA! SEGUI LA FRECCIA DORATA','A SUPER DRAGON BALL HAS APPEARED! FOLLOW THE GOLDEN ARROW')),'#ffd23f',3.4);this.audio.sfx('shrine');
+    this.say(this.env.tr(T('UNA SUPER SFERA DEL DRAGO È APPARSA! UN TAMAGAMI LA CUSTODISCE: SEGUI LA FRECCIA DORATA','A SUPER DRAGON BALL HAS APPEARED! A TAMAGAMI GUARDS IT: FOLLOW THE GOLDEN ARROW')),'#ffd23f',3.4);this.audio.sfx('shrine');
   }
   updateBallPlan(){
     if(this.stage.sup)return;
@@ -976,13 +1043,14 @@ class Game{
   }
   spawnPack(){this.spawnRing(Math.round(5+this.sd+Math.min(1,this.prog())*(8+this.sd*2)),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
-  spawnBoss(id,final){
-    const bd=BOSSES[id],p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=this.spawnSpot(a,d,0);
+  spawnBoss(id,final,at){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k */
+    const bd=BOSSES[id],p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
-    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1);
+    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1);
     Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0});
+    if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;
-    this.say(this.env.tr(bd.n)+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
+    this.say(this.env.tr(bd.n)+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
   }
   bossAttack(e){
@@ -1048,6 +1116,13 @@ class Game{
       case'cregen':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Rigenerazione!','Regeneration!')),1);e.hp=Math.min(e.max,e.hp+e.max*.025);this.ring(e.x,e.y,120,'#8be07a',.6);this.burst(e.x,e.y-e.r,16,'#8be07a');{const n=12,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,140,7);}break;}
       case'solar':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Taiyoken!','Solar Flare!')),1);this.flash=.55;this.flashC='#ffffff';
         for(let i=0;i<5;i++){const a=rnd(0,TAU),r=i?rnd(60,200):0;this.bz.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r,r:70,t:0,dur:1.1+i*.1,dmg:zd,c:bd.c});}this.audio.sfx('warn');break;}
+      /* Tamagami: hammer slam (No. 3), crimson palm blasts (No. 3), sword wave (No. 2), bullet storm (No. 2) */
+      case'hammer':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Martello!','Hammer!')),1);
+        this.bz.push({x:p.x,y:p.y,r:125,t:0,dur:1.4,dmg:zd*1.3,c:bd.c});this.bz.push({x:p.x+Math.cos(aim)*-110,y:p.y+Math.sin(aim)*-110,r:90,t:0,dur:1.7,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
+      case'palm':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Onde cremisi!','Crimson blasts!')),1);for(let k=-1;k<=1;k+=2)for(let i=0;i<3;i++)sh(aim+k*.14+(i-1)*.06,250+i*30,7,'#ff4a4a');break;}
+      case'swordwave':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Onda di spada!','Sword wave!')),1);const px=-Math.sin(aim),py=Math.cos(aim);
+        for(let o=-5;o<=5;o++)this.eb.push({x:e.x+px*o*34,y:e.y-e.r+py*o*34,vx:Math.cos(aim)*(215-Math.abs(o)*6),vy:Math.sin(aim)*(215-Math.abs(o)*6),r:8,dmg:d,life:6,c:'#d8c8ff',bs:1});this.slashFx(e,aim);this.audio.sfx('leap');break;}
+      case'bulletstorm':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raffica di energia!','Energy barrage!')),1);for(let i=0;i<9;i++)sh(aim+rnd(-.5,.5),rnd(250,340),6,'#c8a8ff');break;}
       case'storm':{e.spin+=.4;for(let i=0;i<5;i++)sh(e.spin+i*TAU/5,175,6);sh(aim,300,8);break;}
     }
   }
@@ -1179,8 +1254,8 @@ class Game{
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 
     let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
-    p.mv=il>.05;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
-    if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!inTrial)World.resolve(this.stage.theme,p,9);
+    const ox0=p.x,oy0=p.y;p.mv=il>.05;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
+    if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!inTrial){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
     if(!(this.trial&&this.trial.zeno))p.hp=Math.min(p.maxHp,p.hp+S.regen*dt);   /* no passive regeneration inside Zeno's Shop */
     if(!inTrial)this.updateZones(dt);
@@ -1281,27 +1356,30 @@ class Game{
 
   /* ---------- Kaioken x10 / x20: stats x2 / x4, drains 4 / 8 HP per second, cycle with one key ---------- */
   get abil(){return ABIL[this.C.id]||ABIL.goku;}
-  /* ability cooldown: base x0.7, then -0.2 s per level up to -10 s in total (never below half of the base) */
-  cdFor(base){const b=base*.7,r=Math.min(10,Math.max(0,this.lvl-1)*.2);return Math.round(Math.max(b*.5,b-r)*10)/10;}
+  /* ability cooldown: base x0.455 (-35% in v53), then -0.2 s per level up to -10 s in total (never below half of the base) */
+  cdFor(base){const b=base*ABIL_CD_K,r=Math.min(10,Math.max(0,this.lvl-1)*.2);return Math.round(Math.max(b*.5,b-r)*10)/10;}
   get abCdMax(){const a=this.abil;return a&&a.cd?this.cdFor(a.cd):0;}
   /* the ability grows with the transformation line: 0 = base, 1 = middle form (new passive), 2 = final form (empowered ability) */
   get abTier(){const n=(LINES[this.C.line||'saiyan']||[]).length,i=this.formIdx;if(i<0||!n)return 0;return i>=n-1?2:i>=Math.floor((n-1)/2)?1:0;}
+  /* the middle-form passive of the character ability: x1.5 at the start, +5% of the base per level, up to Lv 100 (x6.45) */
+  passK(){return 1.5+.05*(Math.min(100,this.lvl)-1);}
   abPassive(S){
     if(this.abTier<1)return;
+    const k=this.passK();
     switch(this.abil.m){
-      case'beam':S.area*=1.12;break;
-      case'regen':S.regen+=.6;break;
-      case'blind':S.dodge=Math.min(.75,S.dodge+.1);break;
-      case'dash':S.spd*=1.08;break;
-      case'clones':S.might*=1.08;S.spd*=1.06;break;
-      case'crit':S.crit+=.06;break;
-      case'barrier':S.taken*=.85;break;
-      case'timestop':S.cd=Math.max(this.cdMin(.3),S.cd*.92);break;
-      case'erase':S.might*=1.1;break;
-      case'rewind':S.dodge=Math.min(.75,S.dodge+.08);S.regen+=.4;break;
-      case'jackpot':S.gold+=.15;S.luck=Math.min(.9,S.luck+.04);break;
-      case'buff':S.might*=1.08;break;
-      case'berserk':S.might*=1.12;break;
+      case'beam':S.area*=1+.12*k;break;
+      case'regen':S.regen+=.6*k;break;
+      case'blind':S.dodge=Math.min(.75,S.dodge+.1*k);break;
+      case'dash':S.spd*=1+.08*k;break;
+      case'clones':S.might*=1+.08*k;S.spd*=1+.06*k;break;
+      case'crit':S.crit+=.06*k;break;
+      case'barrier':S.taken*=Math.max(.4,1-.15*k);break;
+      case'timestop':S.cd=Math.max(this.cdMin(.3),S.cd*Math.max(.5,1-.08*k));break;
+      case'erase':S.might*=1+.1*k;break;
+      case'rewind':S.dodge=Math.min(.75,S.dodge+.08*k);S.regen+=.4*k;break;
+      case'jackpot':S.gold+=.15*k;S.luck=Math.min(.9,S.luck+.04*k);break;
+      case'buff':S.might*=1+.08*k;break;
+      case'berserk':S.might*=1+.12*k;break;
     }
   }
   get kaiAvail(){return this.abil.m==='kaioken'&&this.formsUnlocked>=1;}
@@ -1469,7 +1547,7 @@ class Game{
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,dist=Math.hypot(dx,dy)||1;
-      if(!e.boss&&dist>vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
+      if(!e.boss&&Math.hypot(dx,dy>0?dy/TOP_K:dy)>vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
         const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
       const ux=dx/dist,uy=dy/dist;
       let mx=0,my=0,sp=e.spd*(e.slow>0?.6:1)*(tslow?(e.boss?.75:.55):1);
@@ -1628,14 +1706,16 @@ class Game{
       l.t+=dt;
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
-      if((l.k==='coin'||l.k==='bag'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
+      if((l.k==='coin'||l.k==='bag'||l.k==='heal'||l.k==='dmg')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
       if(l.att&&(l.k==='bag'||l.k==='coin')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags and coins too */
       if(l.ttl&&l.t>l.ttl){l.dead=true;continue;}
-      if(l.k==='sball'&&!l.guard&&d<340){   /* the guardians: a ring of tougher enemies closes in when you get near */
-        l.guard=true;this.spawnRing(16+Math.round(this.sd*3),null,e=>{e.hp*=1.3;e.max=e.hp;});
-        this.say(this.env.tr(T('I GUARDIANI DELLA SUPER SFERA!','THE SUPER BALL GUARDIANS!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=Math.max(this.shake,.4);
+      if(l.k==='sball'&&!l.guard&&d<340){   /* the guardian: the Tamagami statue wakes up when you get near (without a statue: a ring of tougher enemies) */
+        l.guard=true;
+        if(l.tama&&BOSSES['tama'+clamp(l.star||1,1,3)])this.wakeTamagami(l);
+        else{this.spawnRing(16+Math.round(this.sd*3),null,e=>{e.hp*=1.3;e.max=e.hp;});
+          this.say(this.env.tr(T('I GUARDIANI DELLA SUPER SFERA!','THE SUPER BALL GUARDIANS!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=Math.max(this.shake,.4);}
       }
-      if(d<(l.k==='sball'?SUP_PICK_R:l.k==='ball'?BALL_PICK_R:20)){l.dead=true;this.collectLoot(l);}
+      if(d<(l.k==='sball'?SUP_PICK_R:l.k==='ball'?BALL_PICK_R:20)&&!l.lock){l.dead=true;this.collectLoot(l);}
     }
     for(const c of this.chests){
       c.t+=dt;

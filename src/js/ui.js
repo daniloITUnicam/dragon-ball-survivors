@@ -163,12 +163,13 @@ class UI{
         h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
         h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+s.bosses.length),
         h('div',{class:'cd'},this.t('rewardMult')+' x'+s.zenny),
+        this.stageStats(i),
         locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:STAGES[STAGE_ORDER[s.pos-1]].no})):
           h('div',{class:'cl'},(d.clears[i]?'★ '+this.t('clears')+': '+d.clears[i]:this.t('notCleared'))+(b?' · '+this.t('best')+': '+b.kills+' '+this.t('kills'):'')));
     });
     /* the special scenario that exists only while you hold all 7 Super Dragon Balls */
-    if(d.sball.length>=7)cards.unshift(h('button',{class:'card stage superc','data-fid':'superc',onclick:()=>{this.sfx('uiStart');this.push('superWish');}},
-      h('div',{class:'sballs'},[1,2,3,4,5,6,7].map(n=>gball(n,34))),h('div',{class:'cn'},this.t('sbStage')),h('div',{class:'cd'},this.t('sbStageD'))));
+    if(d.sball.length>=SB_TOTAL)cards.unshift(h('button',{class:'card stage superc','data-fid':'superc',onclick:()=>{this.sfx('uiStart');this.push('superWish');}},
+      h('div',{class:'sballs'},Array.from({length:SB_TOTAL},(_,i)=>gball(i+1,34))),h('div',{class:'cn'},this.t('sbStage')),h('div',{class:'cd'},this.t('sbStageD'))));
     const diffs=Object.keys(DIFF).map(k=>h('button',{class:'btn small'+(sel.diff===k?'':' alt'),'data-fid':'df'+k,onclick:()=>{this.sfx();sel.diff=k;d.diff=k;this.app.save.write();this.rebuild(true);}},this.tr(DIFF[k].n)));
     return h('div',null,this.header('chooseStage',null,this.gearBtn()),
       h('div',{class:'row topact'},this.btn('next',()=>this.push('chars'),'primary')),
@@ -211,7 +212,7 @@ class UI{
       const pv=document.createElement('canvas');pv.width=166;pv.height=152;portrait=pv;
       this.anim.push({cv:pv,c:C,emo:true,forms:this.anim[this.anim.length-1].forms,key:'',w:166,h:152});
     }
-    const claim=!!sel.claim&&d.sball.length>=7;if(sel.claim&&!claim)sel.claim=false;
+    const claim=!!sel.claim&&d.sball.length>=SB_TOTAL;if(sel.claim&&!claim)sel.claim=false;
     const lock=peekId?h('div',{class:'lockbox'},h('div',null,h('b',null,this.t('reqLabel')+': '),this.tr(C.lock)),
       claim?h('button',{class:'btn small','data-fid':'sbclaim',onclick:()=>{
         if(this.app.progress.useSuperBalls('char',C.id)){this.sfx('uiStart');sel.char=C.id;sel.peek=null;sel.claim=false;this.toast({type:'info',msg:this.t('sbClaimed',{c:this.tr(C.n)})});this.rebuild();}
@@ -221,7 +222,7 @@ class UI{
       }},(()=>{const pt=this.t('buyChar',{n:'\u0001'}).split('\u0001');return[pt[0],zAmt(C.price),pt[1]||''];})()):null):null;
     const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx('uiStart');d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet});}},this.t('start'));
     const detail=h('div',{class:'detail'},
-      h('div',{class:'preview'},portrait?h('div',{class:'emoframe'},portrait):null,big,this.trinketSlot()),
+      h('div',{class:'preview'},portrait?h('div',{class:'emoframe'},portrait):null,big,this.trinketSlot(),this.weaponCount()),
       h('h3',null,this.tr(C.n)),h('p',null,this.tr(C.d)),lock,
       h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},

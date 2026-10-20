@@ -8,8 +8,8 @@ const SnakeArt={
   names:{kingkai:T('Pianeta di Re Kaioh','King Kai\'s Planet'),kami:T('Santuario di Dio','Kami\'s Lookout'),kame:T('Kame House','Kame House'),korin:T('Torre di Karin','Korin Tower'),
     capsule:T('Capsule Corp','Capsule Corp'),grandkai:T('Pianeta del Grande Kaioh','Grand Kai\'s Planet'),shrine:T('Altare di Shenron','Shenron\'s Altar'),nimbus:T('Nuvola Speciale','Nimbus Cloud'),temple:T('Mondo Sacro dei Kaioh','Sacred World of the Kai')},
   /* what lies on each island: three power-ups (see MapDirector.islands) */
-  loot:{kingkai:['dmg','haste','xp'],kami:['heal','magnet','xp'],kame:['luck','haste','bag'],korin:['heal','heal','dmg'],capsule:['capsule','magnet','xp'],
-    grandkai:['dmg','xp','haste'],shrine:['luck','capsule','xp'],nimbus:['haste','magnet','xp'],temple:['dmg','luck','heal']},
+  loot:{kingkai:['dmg','haste','xp'],kami:['heal','magnet','xp'],kame:['luck','haste','bag'],korin:['heal','heal','dmg'],capsule:['heal','magnet','xp'],
+    grandkai:['dmg','xp','haste'],shrine:['luck','heal','xp'],nimbus:['haste','magnet','xp'],temple:['dmg','luck','heal']},
   cir(c,x,y,r){c.beginPath();c.arc(x,y,r,0,TAU);c.fill();},
   ell(c,x,y,rx,ry){c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);c.fill();},
   tree(c,x,y,s,col){c.fillStyle='#6a4a2a';c.fillRect(x-1.6*s,y-9*s,3.2*s,10*s);c.fillStyle=col||'#3f9e4a';this.cir(c,x,y-13*s,8.5*s);c.fillStyle='rgba(255,255,255,.26)';this.cir(c,x-2.6*s,y-15.5*s,3.6*s);},

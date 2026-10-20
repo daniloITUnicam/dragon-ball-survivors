@@ -47,6 +47,19 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update, part 2 (weapon slots, TAB, Tamagami, a harsher world)
+
+The full before/after numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20b`, `src/js/patches.js`).
+
+- **1–5 weapons per run** (`settings.weapons`, `Game.maxW`): 5 Dragon Balls under the character screen (`UI.weaponCount`); level-ups offer no new weapon while the slots are full.
+- **TAB = target** (`Game.cycleTarget`/`pickTarget`, `target` action): closest → most HP → least HP → boss; `nearest()` follows the mode. A box in the left HUD (provisional icons, see `docs/TODO.md`).
+- **Super Dragon Balls: 3** (`SB_TOTAL`), each with a **Tamagami** (`wakeTamagami`, bosses `tama1/2/3` + Fury form): the statue wakes up at 340 px and the ball stays locked until it falls; indicator at the bottom right (`drawSuperBall`, `Renderer`).
+- **World**: no walking on water (`blockWater`), lava −10% max HP/s (`updateLava`), enemies 50% farther above the screen (`TOP_K`), enemy speed by difficulty (`stageSpd`), enemy stats on the stage card (`UI.stageStats`).
+- **Maxed level-ups**: 3 bags of zenny + «⚡ Auto-choose» (`Game.autoZ`, `settings.zAuto`); **Senzu** heals 50% and raises a random stat (`eatSenzu`); the red arrow is attracted; ground Hoi-Poi capsules removed.
+- **Abilities**: usable in the Room of Spirit and Time; character passives ×1.5 → ×6.45 (Lv 100, `passK`); cooldowns −35% (`ABIL_CD_K`).
+- **Balance**: Easy Health ×0.72; Zenkai +10%, Swift Flight +6%, Gravity Chamber −5%, Meditation +8%; Storm / Spirit totems 20 s (−20% per transformation; heal up to 12%), Risk 3 minutes; **Ki Barrage removed** (Ki Blast −15% and starts in its place).
+- **🧪 Added test:** `v53` (balance numbers, TAB targets, weapons per run, zenny bags and auto-choose, Senzu, totems, Tamagami and Super Balls, water and lava).
+
 ### 🆕 October 20, 2026 update (revamped menus, stronger shop, Achievements, daily quests)
 
 The full list with before/after numbers is in the game's own **patch notes** (📜 on the menu: release `2026-10-20`, `src/js/patches.js`).
@@ -143,8 +156,8 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 - **Trinkets found in a run = sold**: when you replace them, decline them or at the end of the run you receive Zeno-sama's market value (+30% per stage difficulty level, `trinketSale`) plus a rarity bonus (+20 / +50 / +150 / +400 / **+1000** for a Mythic). It does not happen in Zeno-sama's shop or with the Bag's trinket.
 - **8 new stat-only trinkets** (Master Roshi's Shell, Heavy Training Gi, Training Weights, Capsule Corp. Card, Tournament Medal, Jackie Chun's Mask, Turtle Scroll, Champion's Belt): they exist at every rarity (tiny stats on Commons, maximum on Mythics, with the `TCAP` caps). The pool holds 29 trinkets, 22-25 per rarity.
 - **Ticket sources**: every **Elite** → 1× Ticket; every **boss** → 20% for a 10× Ticket; the fourth Dragon Ball wish, **"10 Tickets"** → a 10× Ticket. Tickets are saved when the run ends (also on a defeat, only once even with "Continue") and listed on the end screen; a counter shows in the in-run interface.
-- **Super Dragon Balls** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): in the **last 3 stages** (Buu's Dimension, Realm of the Gods, Tournament of Power) the normal Dragon Balls no longer appear. In **55%** of the runs, between 28% and 55% of the run time, a **giant ball with a golden glow** drops 520-700 px away (golden arrow at the screen edge), **guarded** by a ring of 16 enemies (+3 per difficulty level, +30% HP) when you get within 340 px. There are 7 (1-7 stars), saved in `save.sball`, and they **stay between runs**.
-- **Super Shenron**: with all 7 Super Balls the special scenario shows up as the first card of the stage menu, where the 7 are used up for a **10× Lucky Ticket** (takes you to the Gacha) or to **unlock a character of your choice for free** (takes you to the character screen, where "Get it free" replaces the purchase).
+- **Super Dragon Balls** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): in the **last 3 stages** (Buu's Dimension, Realm of the Gods, Tournament of Power) the normal Dragon Balls no longer appear. In **55%** of the runs, between 28% and 55% of the run time, a **giant ball with a golden glow** drops 520-700 px away (golden arrow at the screen edge), **guarded** by a ring of 16 enemies (+3 per difficulty level, +30% HP) when you get within 340 px. Since v53 there are **3** (1-3 stars, one per **Tamagami**), saved in `save.sball`, and they **stay between runs**.
+- **Super Shenron**: with all 3 Super Balls the special scenario shows up as the first card of the stage menu, where the 3 are used up for a **10× Lucky Ticket** (takes you to the Gacha) or to **unlock a character of your choice for free** (takes you to the character screen, where "Get it free" replaces the purchase).
 - **Test mode**: free, unlimited pulls; the trinkets you get disappear when you turn it off. **Save**: `deepMerge` fixed (a `null` default, like the Trinket slot, can no longer make loading fail).
 - **🧪 Added tests:** `gacha` (odds over 300,000 pulls, tickets, duplicates, bag, slot, in-run sale, ticket sources, Super Balls, Super Shenron and all the screens).
 
@@ -264,7 +277,7 @@ The Tournament of Power is now the **last stage**: 20 minutes, 12 bosses with mu
 When too many experience gems crowd the map (over 90), the **farthest ones merge into a single red gem** that stores their XP and cuts lag. The gem **always stays just off-screen** (if you walk away it follows along the same side) (there is no indicator: finding it is up to you). Walk into it (or use the Magnet) to collect everything at once.
 
 ### 🫘 Senzu bag
-- A **Senzu Bean** card can show up in the level-up menu (only there, **rarely**, about 1 level-up in 10): the bean goes into the **bag** (up to **3**). With a full bag the card heals 40% right away.
+- A **Senzu Bean** card can show up in the level-up menu (only there, **rarely**, about 1 level-up in 10): the bean goes into the **bag** (up to **3**). With a full bag the card heals 50% right away and raises a random stat.
 - Eat one in-game with **H** (or the **on-screen button** next to the pet and ability buttons) to recover **40%** HP; it is never wasted at full health.
 
 ![Senzu card](docs/screens/senzu-card.jpg)
@@ -316,7 +329,7 @@ Broly has an exclusive ability on the same key (`R`): he **loses control for 10 
 | **Videl** | Dynamite Kick + Ki | Flying Kick (dash) | Level 18 in a run |
 | **Bulma** | Ki Blast | Genius Invention (more coins than Lucky Strike) | Evolve a weapon in a run |
 | **Yajirobe** | Sword | Senzu Stash (heal) · **starts with 1 Senzu in the bag** | 5,000 enemies in total |
-| **Great Saiyaman** | Ki Barrage | Heroic Pose (crits) | Clear Stage 3 |
+| **Great Saiyaman** | Ki Blast | Heroic Pose (crits) | Clear Stage 3 |
 | **Chiaotzu** | Piercing Beam | Psychic Paralysis (stun) | Stage 6 on Hard |
 | **Recoome** | Break Cannon | Recoome Kick (dash) · giant | Clear Stage 2 |
 | **Guldo** | Time Skip | Time Freeze | 15 bosses in total |
@@ -373,13 +386,13 @@ Pet abilities were **cut by at least three quarters**: they help, but no longer 
 | Totem | Effect |
 |---|---|
 | Luck | +1% luck on every level-up for the rest of the run |
-| Risk | XP ×2 but +50% damage taken for 150 s |
+| Risk | XP ×2 but +50% damage taken for 180 s |
 | Vitality | +15% max HP, +0.4 HP/s and an instant 30% heal |
 | Fury | +12% damage but cooldowns 8% slower |
 | Wealth | +35% zenny and +25% pickup range |
 | Guardian | a barrier blocks one hit, recharges every 25 s |
-| Storm | every 22 s lightning hits up to 4 nearby enemies |
-| Spirit | every 35 s a pulse heals 6% and stuns nearby enemies |
+| Storm | every 20 s (−20% per transformation) lightning hits up to 4 nearby enemies |
+| Spirit | every 20 s (−20% per transformation) a pulse heals 6% up to 12% and stuns nearby enemies |
 
 - **Trinket rarities** (Common, Rare, Epic, Legendary): luck shifts odds toward higher rarities.
 - **Every boss drops a chest with 4 trinkets, pick 1**; with luck the choices grow **up to 10**.
@@ -456,10 +469,10 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 ### Combat and weapons
 - **Auto-attack**: each weapon has its own behaviour (projectiles, beams, orbits, fire zones, chain lightning, meteors…).
 - Carry **up to 5 weapons** and **5 different passives**, each **up to level 5** (weapons then evolve and get another 5 levels per evolution).
-- **23 weapons**: Ki Blast, Kamehameha, Destructo Disc, Spirit Bomb, Kaioken (aura), Solar Flare, Sword, Homing Orbs, Piercing Beam, Rebel Javelin, Double Sunday, Break Cannon, Elegant Dance, Ginyu Boomerang, Hellzone Grenade, Time Skip, Power Impact, Sphere of Destruction, Angelic Bolt, Fusion Meteor, Big Bang Kamehameha, Dynamite Kick, Ki Barrage.
+- **22 weapons**: Ki Blast, Kamehameha, Destructo Disc, Spirit Bomb, Kaioken (aura), Solar Flare, Sword, Homing Orbs, Piercing Beam, Rebel Javelin, Double Sunday, Break Cannon, Elegant Dance, Ginyu Boomerang, Hellzone Grenade, Time Skip, Power Impact, Sphere of Destruction, Angelic Bolt, Fusion Meteor, Big Bang Kamehameha, Dynamite Kick.
 - **Evolutions**: a maxed weapon can evolve (via chest). Each evolution needs **a maxed weapon + a specific upgrade** (see the Grimoire). A **second evolution** per weapon unlocks by **clearing every stage (Normal+) with that weapon in your build**.
 - Weapons **unlock** into the level-up pool simply by **winning a stage** with a character that starts with that weapon (a second character with the same weapon unlocks nothing new). With the shop upgrade «Weapon Blacklist» (up to 10) you can **ban** weapons: they no longer show up as new weapons among the upgrades.
-- **Passives**: Zenkai (+15% damage), Vigor (+20 HP), Swift Flight (+8% speed), Scouter (pickup), Gravity Chamber (−8% cooldown), Battle Armor, Senzu Beans (regen), Meditation (+12% XP).
+- **Passives**: Zenkai (+10% damage), Vigor (+20 HP), Swift Flight (+6% speed), Scouter (pickup), Gravity Chamber (−5% cooldown), Battle Armor, Senzu Beans (regen), Meditation (+8% XP).
 
 ### Experience, levels and transformations
 - Each level offers cards (weapon, upgrade, etc.).
@@ -469,7 +482,7 @@ New **electric Kamehameha** (crackling charge, distorted release), tougher "anim
 
 ### Items, run structure and map
 - **Chests** (one per boss, plus a supply chest every 5 minutes) with rewards and trinkets.
-- **Ground pickups**: coins (4-32 zenny depending on the moment), zenny bag, heart, magnet, temporary damage/speed buffs, XP, luck, capsules.
+- **Ground pickups**: coins (4-32 zenny depending on the moment), zenny bag, heart, magnet, temporary damage/speed buffs, XP, luck.
 - **Dragon Balls**: collect 7 to make a wish (second life, power, fortune).
 - **Map events**: Altar of Power (temporary buff), Healing Spring, Sacrifice Altar (weapon +1 for half your HP), Experience Font, Coin Cache, Totem, Room of Spirit and Time.
 - **20 trinkets** across 4 rarities: Broken Scouter, Senzu Pouch, Training Headband, Gravity Boots, Dragon Radar, Potara Earring, Namekian Cape, Power Pole, Speedy Cloud, Hoi-Poi Capsule, Kaioh's Heart, Angel Halo, Spirit Room Clock, Four-Star Ball, Divine Crystal, Royal Saiyan Armor, Ring of Time, Kaioh Mirror, Dragon Heart, Saiyan Fury.
@@ -566,6 +579,7 @@ node tests/events.js          # map events: the 11 stages, announcements, transf
 node tests/pose.js            # weapon animations: armless frames, IK, Kamehameha / Ki Blast, poses, sprite frames 10-15 (puppeteer)
 node tests/hpbar.js           # Health bar with the live portrait (puppeteer); screenshots: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
+node tests/v53.js             # v53 gameplay: balance, TAB, weapons per run, zenny bags, Senzu, totems, Tamagami, water and lava (puppeteer)
 node tests/eco52.js           # v52 economy: Reroll/Skip/Ban, Zeno, tickets, coin streak, Achievements, Objectives, quests (puppeteer)
 node tests/ui52.js            # v52 interface: gear, character search/sort, Quick Start, notifications (puppeteer)
 node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Super Balls (puppeteer)

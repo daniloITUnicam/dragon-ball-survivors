@@ -13,10 +13,10 @@ ok(t.join()==='0,0,0,1,1,2','tier by form index on an 8-form line: '+t.join());
 await mk('kale');
 const t3=await pg.evaluate(()=>{const g=G,o=[];for(const i of[-1,0,1,2]){g.formIdx=i;o.push(g.abTier);}return o;});
 ok(t3.join()==='0,0,1,2','tier on a 3-form line: '+t3.join());
-/* cooldown curve: x0.7, -0.2 s per level, max -10 s */
+/* cooldown curve: x0.455 (v53: -35% on the old x0.7), -0.2 s per level, max -10 s */
 await mk('c18');
 const cd=await pg.evaluate(()=>{const g=G,o={};for(const l of[1,11,26,51,120]){g.lvl=l;o[l]=g.abCdMax;}return o;});
-ok(cd[1]===35&&cd[11]===33&&cd[26]===30&&cd[51]===25&&cd[120]===25,'barrier cooldown 50 -> '+JSON.stringify(cd)+' (never more than -10 s)');
+ok(cd[1]===22.8&&cd[11]===20.8&&cd[26]===17.8&&cd[51]===12.8&&cd[120]===12.8,'barrier cooldown 50 -> '+JSON.stringify(cd)+' (never more than -10 s)');
 const u0=await use(-1);ok(u0.cd===u0.max&&u0.shield===1.5,'base barrier: 1.5 s, cooldown set to the level-based value ('+u0.cd+')');
 const u2=await use(7);ok(u2.tier===2&&u2.shield===3.5&&u2.inv>=3.4,'final form barrier lasts 3.5 s');
 /* beam */
@@ -40,8 +40,8 @@ await mk('krillin');const kp="const e=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+
 const kb0=await use(-1,kp),kb2=await use(7,kp);ok(kb0.stun[0]===0&&kb2.stun[0]>2.5,'Krillin: the final flash reaches far enemies ('+kb0.stun[0]+' vs '+kb2.stun[0]+')');
 /* passives from the middle form */
 await mk('piccolo');
-const rg=await pg.evaluate(()=>{const g=G;g.formIdx=-1;g.recalc();const a=g.S.regen;g.formIdx=3;g.recalc();return[a,g.S.regen];});
-const fr=await pg.evaluate(()=>FORM_TIERS[3].regen);ok(Math.abs(rg[1]-rg[0]-(fr+.6))<1e-6,'middle form passive: +0.6 regen on top of the form\'s own '+fr+' (Piccolo '+rg[0].toFixed(2)+' -> '+rg[1].toFixed(2)+')');
+const rg=await pg.evaluate(()=>{const g=G;g.formIdx=-1;g.recalc();const a=g.S.regen;g.formIdx=3;g.recalc();return[a,g.S.regen,g.passK()];});
+const fr=await pg.evaluate(()=>FORM_TIERS[3].regen);ok(Math.abs(rg[1]-rg[0]-(fr+.6*rg[2]))<1e-6,'middle form passive: +0.6 x'+rg[2]+' regen (v53 scaling) on top of the form\'s own '+fr+' (Piccolo '+rg[0].toFixed(2)+' -> '+rg[1].toFixed(2)+')');
 /* kaioken */
 await mk('goku');
 const ka=await pg.evaluate(()=>{const g=G,o=[];g.kai=1;for(const i of[-1,3,7]){g.formIdx=i;g.recalc();o.push(g.kaiDrain);}g.kai=0;return o;});

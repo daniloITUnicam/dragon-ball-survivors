@@ -16,6 +16,60 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-20b',date:'2026-10-20',
+    name:T("Armi a scelta, bersaglio con TAB, Tamagami e un mondo più severo","Weapon slots, TAB targeting, Tamagami and a harsher world"),
+    sum:T("Da 1 a 5 armi per partita, il tasto TAB per scegliere chi colpire, le 3 Super Sfere del Drago custodite dai Tamagami, niente più camminate sull'acqua e lava che brucia, passivi dei personaggi molto più forti con il livello, ricariche delle abilità ridotte del 35%, Ki Blast al posto di Ki Barrage e un giro di nerf a Zenkai, Volo veloce, Camera Gravitazionale e Meditazione.","From 1 to 5 weapons per run, the TAB key to choose what you hit, the 3 Super Dragon Balls guarded by the Tamagami, no more walking on water and burning lava, much stronger character passives with level, ability cooldowns cut by 35%, Ki Blast instead of Ki Barrage and a round of nerfs to Zenkai, Swift Flight, Gravity Chamber and Meditation."),
+    new:[
+      {g:T("Armi e bersaglio","Weapons and targeting"),l:[
+        T("Armi per partita: nuova impostazione da 1 a 5 (prima fisse a 5). Si cambia sotto la Selezione personaggio, vicino al cimelio, con 5 sfere del Drago: clicca la sfera del numero che vuoi (la scelta resta salvata). Il personaggio parte con le sue armi di partenza fino a quel limite, e al level-up non vengono proposte armi nuove quando gli slot sono pieni. Nella modalità libera (Sandbox) gli slot restano 5.","Weapons per run: a new setting from 1 to 5 (it used to be fixed at 5). Change it under the character screen, next to the trinket, with 5 Dragon Balls: click the ball with the number you want (the choice is saved). The character starts with its starting weapons up to that limit, and no new weapon is offered at level-up while the slots are full. In free mode (Sandbox) the slots stay at 5."),
+        T("TAB cambia il bersaglio di armi e abilità: Più vicino (come prima) → Più Salute → Meno Salute → Boss (se non c'è un boss colpisce il più vicino). Il testo compare sopra il personaggio e una casella a sinistra nell'HUD, sotto l'etichetta della trasformazione, mostra la modalità attiva. TAB funziona solo durante la partita (nei menu mantiene il comportamento normale); su controller è il tasto 10. Il tasto si può cambiare in Impostazioni > Controlli («Bersaglio armi»).","TAB changes the target of weapons and abilities: Closest (as before) → Most HP → Least HP → Boss (with no boss it hits the closest). The name shows above the character and a box on the left of the HUD, under the form label, shows the active mode. TAB only works during a run (menus keep their normal behaviour); on a controller it is button 10. You can rebind it in Settings > Controls («Weapon target»)."),
+      ]},
+      {g:T("Super Sfere del Drago e Tamagami","Super Dragon Balls and Tamagami"),l:[
+        T("Le Super Sfere del Drago passano da 7 a 3 (stelle 1, 2 e 3); i salvataggi con più di 3 sfere vengono riportati a 3 automaticamente. In basso a destra compare l'indicatore delle 3 sfere, visibile dopo aver trovato la prima.","Super Dragon Balls go from 7 to 3 (stars 1, 2 and 3); saves holding more than 3 balls are brought back to 3 automatically. An indicator of the 3 balls appears at the bottom right once you have found the first one."),
+        T("Ogni Super Sfera è sorvegliata da un Tamagami: una statua di pietra che si risveglia quando ti avvicini a meno di 340 pixel e diventa un boss (N°1 con muri di ki e raggi a croce, N°2 veloce con onde di spada e raffiche, N°3 massiccio con martello e onde dai palmi). La sfera resta bloccata finché non lo sconfiggi; sotto metà salute il Tamagami entra in Furia (forma più veloce e più forte). La Salute del Tamagami cresce con i minuti della partita (da ×0,7 a ×1,6 della base: 14000 / 11000 / 9500).","Every Super Dragon Ball is guarded by a Tamagami: a stone statue that wakes up when you come within 340 pixels and becomes a boss (No. 1 with ki walls and cross beams, No. 2 fast with sword waves and bullet storms, No. 3 bulky with a hammer and palm waves). The ball stays locked until you defeat it; below half health the Tamagami enters its Fury form (faster and stronger). The Tamagami's HP grows with the minutes of the run (from ×0.7 to ×1.6 of its base: 14000 / 11000 / 9500)."),
+      ]},
+      {g:T("Mondo","World"),l:[
+        T("L'acqua non si attraversa più: nelle mappe con mare e laghi il personaggio scivola lungo la riva invece di camminare sull'acqua.","Water can no longer be crossed: on maps with sea and lakes the character slides along the shore instead of walking on water."),
+        T("Lava (stage Inferno): brucia il 10% della Salute massima al secondo mentre ci stai sopra.","Lava (Hell stage): burns 10% of your maximum HP per second while you stand on it."),
+        T("Selezione stage: ogni scheda riporta le statistiche dei nemici dello stage: Salute (×), danno (×), velocità (% rispetto al massimo) e numero di nemici (×).","Stage select: every card lists the stage's enemy stats: Health (×), damage (×), speed (% of the maximum) and number of enemies (×)."),
+      ]},
+      {g:T("Level-up e Senzu","Level-ups and Senzu"),l:[
+        T("Quando armi e potenziamenti sono tutti al massimo, il level-up offre 3 sacchi di Zenny (×3, ×4,5 e ×6 del valore di una moneta) invece di una Senzu. Il pulsante «⚡ Scelta automatica» sceglie da solo il sacco più grande e resta attivo finché non torna una scelta di arma o potenziamento. Si può tenere sempre attiva da Impostazioni > Partita («Scelta automatica a potenziamenti al massimo»).","When weapons and upgrades are all maxed, a level-up offers 3 bags of Zenny (×3, ×4.5 and ×6 the value of a coin) instead of a Senzu. The «⚡ Auto-choose» button picks the biggest bag by itself and stays on until a weapon or upgrade choice comes back. You can keep it always on from Settings > Gameplay («Auto-choose when everything is maxed»)."),
+        T("Senzu: ora cura il 50% della Salute (prima 40%) e alza di una piccola quantità una statistica a caso (Danno +3%, Velocità +2%, Ricarica −1,2%, Salute +8, rigenerazione +0,12/s o raccolta +6%) fino a fine partita.","Senzu: now heals 50% of your HP (it was 40%) and raises one random stat by a small amount (Damage +3%, Speed +2%, Cooldown −1.2%, HP +8, regeneration +0.12/s or pickup range +6%) for the rest of the run."),
+        T("La freccia rossa (+15% danno) viene attirata come monete e cuori.","The red arrow (+15% damage) is now attracted like coins and hearts."),
+        T("Le capsule Hoi-Poi a terra, che davano un cimelio, sono state rimosse dai ritrovamenti (anche dalle isole del Serpente: al loro posto c'è un cuore).","The Hoi-Poi capsules on the ground, which gave a trinket, were removed from the pickups (also from the Snake Way isles, where a heart takes their place)."),
+      ]},
+      {g:T("Abilità","Abilities"),l:[
+        T("Le abilità dei personaggi si possono usare anche nella Stanza dello Spirito e del Tempo (prima bloccate); restano bloccate solo nel negozio di Zeno.","Character abilities can now be used in the Room of Spirit and Time too (they were blocked); they stay blocked only in Zeno's shop."),
+      ]},
+    ],
+    bal:[
+      {g:T("Difficoltà e nemici","Difficulty and enemies"),l:[
+        T("Facile: Salute di nemici e boss ×0,72 (prima ×0,9, cioè −20%).","Easy: enemy and boss Health ×0.72 (it was ×0.9, i.e. −20%)."),
+        T("I nemici compaiono più lontano dal bordo superiore dello schermo: +50% di distanza verso l'alto (500 → 750 pixel), invariata negli altri lati.","Enemies now appear farther from the top edge of the screen: +50% distance upward (500 → 750 pixels), unchanged on the other sides."),
+        T("Velocità dei nemici in base alla difficoltà dello stage: ×0,8 nel primo stage fino a ×1,1 al massimo (+0,07 per ogni punto di difficoltà); prima tutti ×1,1.","Enemy speed by stage difficulty: ×0.8 on the first stage up to ×1.1 at most (+0.07 per difficulty point); it used to be ×1.1 everywhere."),
+      ]},
+      {g:T("Personaggi e abilità","Characters and abilities"),l:[
+        T("Passivo del personaggio (forma intermedia in poi): il bonus è moltiplicato per 1,5 al Lv 1 e cresce di +0,05 a ogni livello fino a ×6,45 al Lv 100 (prima ×1 fisso). Il tooltip dell'abilità mostra il moltiplicatore attuale.","Character passive (middle form onward): the bonus is multiplied by 1.5 at Lv 1 and grows by +0.05 every level up to ×6.45 at Lv 100 (it was a fixed ×1). The ability tooltip shows the current multiplier."),
+        T("Ricarica delle abilità dei personaggi −35% (per esempio 60 s base: da 42 s a 27,3 s).","Character ability cooldowns −35% (for example 60 s base: from 42 s to 27.3 s)."),
+      ]},
+      {g:T("Potenziamenti passivi","Passive upgrades"),l:[
+        T("Zenkai: +10% danno per livello (prima +15%).","Zenkai: +10% damage per level (it was +15%)."),
+        T("Volo veloce: +6% velocità per livello (prima +8%).","Swift Flight: +6% speed per level (it was +8%)."),
+        T("Camera Gravitazionale: −5% ricarica per livello (prima −8%).","Gravity Chamber: −5% cooldown per level (it was −8%)."),
+        T("Meditazione: +8% esperienza per livello (prima +12%).","Meditation: +8% experience per level (it was +12%)."),
+      ]},
+      {g:T("Totem","Totems"),l:[
+        T("Totem della Tempesta: un fulmine ogni 20 s (prima 22 s), −20% di attesa per ogni trasformazione (8,2 s con quattro trasformazioni).","Storm Totem: lightning every 20 s (it was 22 s), −20% wait for every transformation (8.2 s with four transformations)."),
+        T("Totem dello Spirito: un impulso ogni 20 s (prima 35 s), −20% per trasformazione; cura il 6% + 1,5% per trasformazione fino a un massimo del 12% (prima 6% fisso).","Spirit Totem: a pulse every 20 s (it was 35 s), −20% per transformation; it heals 6% + 1.5% per transformation up to a maximum of 12% (it was a flat 6%)."),
+        T("Totem del Rischio: dura 3 minuti (prima 150 secondi).","Totem of Risk: lasts 3 minutes (it was 150 seconds)."),
+      ]},
+      {g:T("Armi","Weapons"),l:[
+        T("Ki Barrage rimosso. Tutti i personaggi che lo avevano di partenza (Cell, Gotenks, Caulifla, C-21, Saiyaman) ora partono con Ki Blast.","Ki Barrage removed. Every character that started with it (Cell, Gotenks, Caulifla, C-21, Saiyaman) now starts with Ki Blast."),
+        T("Ki Blast: danno −15% a ogni livello (Lv 1–6: 8,5 / 10 / 12 / 13,5 / 16 / 19,5; prima 10 / 12 / 14 / 16 / 19 / 23).","Ki Blast: damage −15% at every level (Lv 1–6: 8.5 / 10 / 12 / 13.5 / 16 / 19.5; it was 10 / 12 / 14 / 16 / 19 / 23)."),
+      ]},
+    ],
+  },
   {id:'2026-10-20',date:'2026-10-20',
     name:T("Menu rinnovati, negozio potenziato, Achievement e missioni giornaliere","Revamped menus, stronger shop, Achievements and daily quests"),
     sum:T("Ricerca e ordinamento dei personaggi, Avvio rapido, statistiche numeriche delle armi in pausa, Reroll / Salta / Ban al level-up, un negozio più forte (e più caro), la nuova schermata Achievement per sapere cosa fare per sbloccare personaggi e armi, Obiettivi con 36 nuovi traguardi e le missioni giornaliere.","Character search and sorting, Quick Start, numeric weapon stats in the pause menu, Reroll / Skip / Ban on level-up, a stronger (and pricier) shop, the new Achievement screen that tells you how to unlock characters and weapons, Objectives with 36 new goals and daily quests."),

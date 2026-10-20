@@ -2,6 +2,22 @@
 /* ====== v52 UI: Objectives (gold goals + daily quests) and the Achievement screen (what to do to unlock things) ====== */
 const fmtClock=ms=>{const s=Math.max(0,Math.floor(ms/1000)),p=n=>String(n).padStart(2,'0');return p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60);};
 Object.assign(UI.prototype,{
+  /* ---- v53: number of weapons per run (1-5), shown as five dots; the chosen one is a Dragon Ball with that many stars ---- */
+  weaponCount(){
+    const s=this.save.settings,n=Math.max(1,Math.min(MAX_WEAPONS,Math.round(s.weapons)||MAX_WEAPONS));
+    const dots=[1,2,3,4,5].map(i=>h('button',{class:'wdot'+(i===n?' on':''),'data-fid':'wn'+i,title:this.tr(T(i+(i===1?' arma':' armi'),i+(i===1?' weapon':' weapons'))),
+      onclick:()=>{this.sfx();s.weapons=i;this.app.save.write();this.rebuild(true);}},i===n?gball(i,24):h('i',null,String(i))));
+    return h('div',{class:'wcnt'},h('span',{class:'lbl'},this.tr(T('Armi in partita','Weapons per run'))),h('div',{class:'wdots'},dots),
+      h('small',null,this.tr(T('Quante armi diverse puoi tenere (1–5). Con meno armi parti solo con le prime.','How many different weapons you can hold (1–5). With fewer you only start with the first ones.'))));
+  },
+  /* ---- v53: what a stage does to the enemies (before the difficulty): Health, damage, speed and how many ---- */
+  stageStats(i){
+    const s=STAGES[i],sd=s.dif!==undefined?s.dif:i,it=this.save.settings.lang==='it',f=x=>{const v=Math.round(x*100)/100;return(it?String(v).replace('.',','):String(v));},
+      sp=Math.round(stageSpd(sd)/ENEMY_SPD_MUL*100);
+    const chip=(ic,lab,v)=>h('span',{class:'sst',title:this.tr(lab)},ic+' ',h('b',null,v));
+    return h('div',{class:'cd ststats',title:this.tr(T('Moltiplicatori dei nemici di questo stage (si sommano alla difficoltà scelta).','Enemy multipliers of this stage (on top of the chosen difficulty).'))},
+      chip('❤',T('Salute dei nemici','Enemy health'),'×'+f(s.hp)),chip('⚔',T('Danno dei nemici','Enemy damage'),'×'+f(1+.15*sd)),chip('💨',T('Velocità dei nemici','Enemy speed'),sp+'%'),chip('👥',T('Quantità di nemici','Enemy count'),'×'+f(s.spawn)));
+  },
   /* rows of the goals of one screen: progress comes from the achievement's own prog(), clamped to 0..1 */
   achRows(cat,sv){
     const d=this.save,fmt=(v,u)=>u==='t'?fmtT(v):Math.floor(v).toLocaleString();

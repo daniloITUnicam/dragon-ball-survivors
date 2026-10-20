@@ -55,6 +55,19 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026, parte 2 (armi a scelta, TAB, Tamagami, mondo più severo)
+
+Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20b`, `src/js/patches.js`).
+
+- **Armi per partita 1–5** (`settings.weapons`, `Game.maxW`): 5 sfere del Drago sotto la Selezione personaggio (`UI.weaponCount`); il livello-up non propone armi nuove a slot pieni.
+- **TAB = bersaglio** (`Game.cycleTarget`/`pickTarget`, azione `target`): più vicino → più Salute → meno Salute → boss; `nearest()` rispetta la modalità. Casella nell'HUD a sinistra (icone provvisorie, vedi `docs/TODO.md`).
+- **Super Sfere del Drago: 3** (`SB_TOTAL`) con un **Tamagami** ciascuna (`wakeTamagami`, boss `tama1/2/3` + forma Furia): la statua si risveglia a 340 px, la sfera resta bloccata finché non cade; indicatore in basso a destra (`drawSuperBall`, `Renderer`).
+- **Mondo**: niente camminata sull'acqua (`blockWater`), lava −10% Salute massima/s (`updateLava`), nemici +50% più lontani sopra lo schermo (`TOP_K`), velocità nemici per difficoltà (`stageSpd`), statistiche nemici nella scheda stage (`UI.stageStats`).
+- **Level-up al massimo**: 3 sacchi di zenny + «⚡ Scelta automatica» (`Game.autoZ`, `settings.zAuto`); **Senzu** cura il 50% e alza una statistica a caso (`eatSenzu`); freccia rossa attirata; capsule Hoi-Poi a terra rimosse.
+- **Abilità**: usabili nella Stanza dello Spirito e del Tempo; passivi dei personaggi ×1,5 → ×6,45 (Lv 100, `passK`); ricariche −35% (`ABIL_CD_K`).
+- **Bilanciamento**: Facile Salute ×0,72; Zenkai +10%, Volo veloce +6%, Camera Gravitazionale −5%, Meditazione +8%; Totem Tempesta / Spirito 20 s (−20% a trasformazione; cura fino al 12%), Rischio 3 minuti; **Ki Barrage rimossa** (Ki Blast −15% e parte al suo posto).
+- **🧪 Test aggiunto:** `v53` (numeri di bilanciamento, bersagli TAB, armi per partita, sacchi di zenny e scelta automatica, Senzu, totem, Tamagami e Super Sfere, acqua e lava).
+
 ### 🆕 Aggiornamento del 20 ottobre 2026 (menu rinnovati, negozio potenziato, Achievement, missioni giornaliere)
 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20`, `src/js/patches.js`).
@@ -151,8 +164,8 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - **Trinket trovati in partita = venduti**: quando li sostituisci, li rifiuti o a fine partita ricevi il valore di mercato di Zeno-sama (+30% per livello di difficoltà dello stage, `trinketSale`) più un bonus per rarità (+20 / +50 / +150 / +400 / **+1000** per il Mitico). Non succede nel negozio di Zeno-sama né con il trinket della Borsa.
 - **8 nuovi trinket a sole statistiche** (Guscio di Muten Roshi, Gi da Allenamento Pesante, Pesi da Allenamento, Tessera Capsule Corp., Medaglia del Torneo, Maschera di Jackie Chun, Pergamena della Tartaruga, Cintura del Campione): esistono a tutte le rarità (statistiche minime nei Comuni, al massimo nei Mitici, con i tetti `TCAP`). Il pool conta 29 trinket, 22-25 per rarità.
 - **Fonti di ticket**: ogni **Élite** → Ticket 1×; ogni **boss** → 20% di un Ticket 10×; la quarta scelta del desiderio delle Sfere del Drago, **«10 Ticket»** → un Ticket 10×. I ticket si salvano a fine partita (anche in caso di sconfitta, una sola volta anche con «Continua») e sono elencati nella schermata finale; un contatore è nell'interfaccia in partita.
-- **Super Sfere del Drago** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): negli **ultimi 3 stage** (Dimensione di Bu, Regno degli Dei, Torneo del Potere) le Sfere normali non compaiono più. Nel **55%** delle partite, tra il 28% e il 55% della durata, ne cade una **gigante dal bagliore dorato** a 520-700 px (freccia dorata ai bordi), **sorvegliata** da un anello di 16 nemici (+3 per livello di difficoltà, +30% vita) quando ti avvicini a meno di 340 px. Sono 7 (1-7 stelle), si salvano in `save.sball` e **restano tra una partita e l'altra**.
-- **Super Shenron**: con tutte e 7 le Super Sfere compare, come prima carta del menu degli stage, lo scenario speciale dove le 7 si consumano per un **Ticket 10× Fortunato** (porta al Gacha) oppure per **sbloccare gratis un personaggio a scelta** (porta alla selezione del personaggio, dove «Ottieni gratis» sostituisce l'acquisto).
+- **Super Sfere del Drago** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): negli **ultimi 3 stage** (Dimensione di Bu, Regno degli Dei, Torneo del Potere) le Sfere normali non compaiono più. Nel **55%** delle partite, tra il 28% e il 55% della durata, ne cade una **gigante dal bagliore dorato** a 520-700 px (freccia dorata ai bordi), **sorvegliata** da un anello di 16 nemici (+3 per livello di difficoltà, +30% vita) quando ti avvicini a meno di 340 px. Dalla v53 sono **3** (1-3 stelle, una per **Tamagami**), si salvano in `save.sball` e **restano tra una partita e l'altra**.
+- **Super Shenron**: con tutte e 3 le Super Sfere compare, come prima carta del menu degli stage, lo scenario speciale dove le 3 si consumano per un **Ticket 10× Fortunato** (porta al Gacha) oppure per **sbloccare gratis un personaggio a scelta** (porta alla selezione del personaggio, dove «Ottieni gratis» sostituisce l'acquisto).
 - **Modalità Test**: estrazioni gratis e illimitate; i trinket ottenuti spariscono quando la disattivi. **Salvataggio**: corretto `deepMerge` (un valore predefinito `null`, come lo slot Trinket, non può più far fallire il caricamento).
 - **🧪 Test aggiunti:** `gacha` (probabilità su 300.000 estrazioni, ticket, doppioni, borsa, slot, vendita in partita, fonti di ticket, Super Sfere, Super Shenron e tutte le schermate).
 
@@ -272,7 +285,7 @@ Il Torneo del Potere è ora l'**ultimo stage**: 20 minuti, 12 boss con statistic
 Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più lontane si fondono in un'unica gemma rossa** che accumula l'XP e riduce il lag. La gemma resta **sempre appena fuori dallo schermo** (se ti allontani, ti segue lungo lo stesso lato) (nessun indicatore: sta a te scoprire da che parte). Raccoglila camminandoci contro (o con il Magnete) per ricevere tutto l'XP in una volta.
 
 ### 🫘 Borsa Senzu
-- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 40%.
+- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 50% e alza una statistica a caso.
 - Si mangia in partita con **H** (o dal **pulsante a schermo** accanto a quelli del pet e dell'abilità) e cura il **40%** della vita; non si spreca a vita piena.
 
 ![Carta Senzu](docs/screens/senzu-card.jpg)
@@ -322,7 +335,7 @@ Broly ha un'abilità esclusiva sullo stesso tasto del Kaioken (`R`): **perde il 
 | **Videl** | Calcio Dinamite + Ki | Calcio Volante (scatto) | Livello 18 in una partita |
 | **Bulma** | Colpo di Ki | Invenzione Geniale (più monete del Colpo di Fortuna) | Evolvi un'arma in una partita |
 | **Yajirobe** | Spada | Scorta di Senzu (cura) · **parte con 1 Senzu in borsa** | 5.000 nemici in totale |
-| **Great Saiyaman** | Raffica di Ki | Posa Eroica (critici) | Completa lo Stage 3 |
+| **Great Saiyaman** | Colpo di Ki | Posa Eroica (critici) | Completa lo Stage 3 |
 | **Chiaotzu** | Raggio Perforante | Paralisi Psichica (stordisce) | Stage 6 in Difficile |
 | **Recoome** | Cannone d'Impatto | Calcio Recoome (scatto) · gigante | Completa lo Stage 2 |
 | **Guldo** | Salto Temporale | Fermatempo | 15 boss in totale |
@@ -382,13 +395,13 @@ Le abilità dei pet sono state **ridimensionate di almeno tre quarti**: aiutano,
 | Totem | Effetto |
 |---|---|
 | Fortuna | +1% fortuna a ogni level up, per tutta la partita |
-| Rischio | XP ×2 ma +50% danni subiti per 150 s |
+| Rischio | XP ×2 ma +50% danni subiti per 180 s |
 | Vitalità | +15% salute massima, +0,4 HP/s e cura immediata del 30% |
 | Furia | +12% danno ma ricarica +8% più lenta |
 | Ricchezza | +35% zenny e +25% raccolta |
 | Guardiano | una barriera blocca un colpo, si ricarica ogni 25 s |
-| Tempesta | ogni 22 s un fulmine colpisce fino a 4 nemici vicini |
-| Spirito | ogni 35 s un impulso cura il 6% e stordisce i vicini |
+| Tempesta | ogni 20 s (−20% a ogni trasformazione) un fulmine colpisce fino a 4 nemici vicini |
+| Spirito | ogni 20 s (−20% a ogni trasformazione) un impulso cura dal 6% fino al 12% e stordisce i vicini |
 
 - **Trinket con rarità** (Comune, Raro, Epico, Leggendario): la fortuna sposta le probabilità verso le rarità alte.
 - **Ogni boss lascia un forziere con 4 trinket tra cui scegliere 1**; con la fortuna le opzioni salgono **fino a 10**.
@@ -465,10 +478,10 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 ### Combattimento e armi
 - **Attacco automatico**: ogni arma ha il suo comportamento (proiettili, raggi, orbite, zone di fuoco, fulmini a catena, meteore…).
 - Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5** (le armi poi si evolvono e hanno altri 5 livelli per evoluzione).
-- **23 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite, Raffica di Ki.
+- **22 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite.
 - **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Ogni evoluzione richiede **arma al massimo + potenziamento specifico** (vedi Grimorio). Una **seconda evoluzione** per arma si sblocca **completando tutti gli stage (Normale+) con quell'arma nell'equipaggiamento**.
 - Le armi si **sbloccano** nella pool dei level up semplicemente **vincendo uno stage** con un personaggio che parte con quell'arma (un secondo personaggio con la stessa arma non sblocca nulla di nuovo). Con il potenziamento del Negozio «Lista Nera Armi» (fino a 10) si possono **bandire** armi: non compaiono più come nuove armi tra i potenziamenti.
-- **Passivi**: Zenkai (+15% danno), Vigore (+20 HP), Volo veloce (+8% velocità), Scouter (raccolta), Camera Gravitazionale (−8% ricarica), Armatura, Fagioli Senzu (rigenerazione), Meditazione (+12% XP).
+- **Passivi**: Zenkai (+10% danno), Vigore (+20 HP), Volo veloce (+6% velocità), Scouter (raccolta), Camera Gravitazionale (−5% ricarica), Armatura, Fagioli Senzu (rigenerazione), Meditazione (+8% XP).
 
 ### Esperienza, livelli e trasformazioni
 - Ogni livello propone carte (arma, potenziamento, ecc.).
@@ -478,7 +491,7 @@ Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più 
 
 ### Oggetti, struttura della run e mappa
 - **Forzieri** (uno per boss e uno di rifornimento ogni 5 minuti) con ricompense e trinket.
-- **Oggetti a terra**: monete (4-32 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna, capsule.
+- **Oggetti a terra**: monete (4-32 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna.
 - **Sfere del Drago**: raccogline 7 per esprimere un desiderio (seconda vita, potere, fortuna).
 - **Eventi sulla mappa**: Altare del Potere (bonus temporaneo), Sorgente curativa, Altare del Sacrificio (arma +1 in cambio di metà vita), Fonte dell'esperienza, Deposito di monete, Totem, Stanza dello Spirito e del Tempo.
 - **Trinket (20)** in 4 rarità: Scouter rotto, Marsupio Senzu, Fascia da allenamento, Stivali gravitazionali, Radar del Drago, Orecchino Potara, Mantello Namecciano, Nyoibo, Nuvola Speedy, Capsula Hoi-Poi, Cuore di Kaioh, Aureola angelica, Orologio della Stanza del Tempo, Sfera del Drago a 4 stelle, Cristallo divino, Armatura reale Saiyan, Anello del Tempo, Specchio di Kaioh, Cuore del Drago, Furia Saiyan.
@@ -599,6 +612,7 @@ node tests/events.js          # eventi di mappa: i 11 stage, annunci, trasformaz
 node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, Kamehameha / Colpo di Ki, pose, frame 10-15 degli sprite (puppeteer)
 node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
+node tests/v53.js             # v53 gameplay: bilanciamento, TAB, armi per partita, sacchi di zenny, Senzu, totem, Tamagami, acqua e lava (puppeteer)
 node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)
 node tests/ui52.js            # v52 interfaccia: ingranaggio, ricerca/ordine personaggi, Avvio rapido, notifiche (puppeteer)
 node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)

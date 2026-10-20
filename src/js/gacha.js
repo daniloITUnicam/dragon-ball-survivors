@@ -69,13 +69,13 @@ Object.assign(Progress.prototype,{
   }
   /* Super Dragon Balls: collected in the last stages, kept between runs. Returns the star number or 0 when it was not stored. */
   ,addSuperBall(star){
-    if(this.d.settings.sandbox||!(star>=1&&star<=7)||this.d.sball.includes(star))return 0;
+    if(this.d.settings.sandbox||!(star>=1&&star<=SB_TOTAL)||this.d.sball.includes(star))return 0;
     this.d.sball.push(star);this.save.write();return star;
   }
   ,superBalls(){return this.d.sball.length;}
-  /* the seven are spent on a reward in the stage menu: 'lucky' = a 10x Lucky ticket, 'char' = an unlocked character of your choice (id) */
+  /* the three are spent on a reward in the stage menu: 'lucky' = a 10x Lucky ticket, 'char' = an unlocked character of your choice (id) */
   ,useSuperBalls(reward,charId){
-    const d=this.d;if(d.sball.length<7)return false;
+    const d=this.d;if(d.sball.length<SB_TOTAL)return false;
     if(reward==='lucky')d.tickets.l10++;
     else if(reward==='char'){const c=CHARS.find(x=>x.id===charId);if(!c||d.unlocked.includes(charId))return false;d.unlocked.push(charId);}
     else return false;
