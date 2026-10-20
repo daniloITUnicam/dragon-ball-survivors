@@ -16,6 +16,26 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-20f',date:'2026-10-20',
+    name:T("Cooler su Namek, cimeli extra e password","Cooler on Namek, extra trinkets and password"),
+    sum:T("Cooler arriva su Pianeta Namek con le sue trasformazioni, gli slot extra dei cimeli si vedono davvero, il Maestro della Stanza dello Spirito e del Tempo imita le tue armi, la password si reimposta con un codice e c'è il login con Google.","Cooler arrives on Planet Namek with his transformations, the extra trinket slots are finally visible, the Master of the Room of Spirit and Time copies your weapons, the password is reset with a code and Google login is here."),
+    new:[
+      {g:T("Boss","Bosses"),l:[
+        T("Cooler è un boss del tardo Pianeta Namek (minuto 500, dopo Zarbon e prima di Freezer): ha tre forme (Cooler, Cooler Metal e Cooler Finale) e usa la Supernova.","Cooler is a late Planet Namek boss (minute 500, after Zarbon and before Freezer): he has three forms (Cooler, Metal Cooler and Final Cooler) and uses the Supernova."),
+        T("Il Maestro della Stanza dello Spirito e del Tempo imita le armi che hai equipaggiate: le sue sfere, i raggi, le lance, le zone (Bomba Spirituale, Meteora, Granata Infernale, Hakai) hanno lo stesso aspetto dei tuoi, ma fanno il 60% del danno.","The Master of the Room of Spirit and Time copies the weapons you carry: his orbs, beams, spears and zones (Spirit Bomb, Meteor, Hellzone, Hakai) look like yours but deal 60% of the damage.")
+      ]},
+      {g:T("Cimeli e negozio","Trinkets and shop"),l:[
+        T("Gli slot extra dei cimeli comprati nel negozio compaiono nella schermata del personaggio e nella Borsa (fino a 3): tocca uno slot per scegliere dove mettere il cimelio; lo stesso cimelio non può stare in due slot.","The extra trinket slots bought in the shop now show on the character screen and in the Bag (up to 3): pick a slot to choose where the trinket goes; the same trinket cannot sit in two slots.")
+      ]},
+      {g:T("Account","Account"),l:[
+        T("Password dimenticata: scrivi l'email, ricevi un codice a 6 cifre, inseriscilo nel gioco e scegli la nuova password (il link nell'email funziona ancora, ma può scadere se il programma di posta lo apre prima di te).","Forgotten password: enter your email, get a 6-digit code, type it in the game and choose a new password (the link in the email still works, but may expire if your mail program opens it before you).")
+        ,T("Accedi con Google: il pulsante compare da solo quando il provider è attivo su Supabase; l'immagine di sfondo della schermata di accesso è stata tolta.","Sign in with Google: the button shows up by itself when the provider is enabled on Supabase; the background picture of the login screen is gone.")
+      ]}
+    ],
+    fix:[
+      T("Tamagami: se i fogli grafici non erano ancora caricati quando il boss compariva, restava con lo sprite base per tutta la partita; ora passa allo sprite giusto appena sono pronti. La statua di riserva (senza i fogli) ora si vede sopra la luce della Super Sfera, e il Glossario mostra la grafica vera di boss e nemici.","Tamagami: if the art sheets had not finished loading when the boss appeared, it kept the basic sprite for the whole run; it now switches to the right sprite as soon as they are ready. The fallback statue (without the sheets) is now drawn above the Super Dragon Ball light, and the Glossary shows the real art of bosses and enemies.")
+    ]
+  },
   {id:'2026-10-20e',date:'2026-10-20',
     name:T("Ragni, ombre e numeri di danno","Spiders, shadows and damage numbers"),
     sum:T("I ragni sui barili si muovono in modo naturale, i gabbiani lasciano il posto alle loro ombre sul terreno, i numeri di danno diventano arcade (rossi per i colpi critici) e restano 0,3 secondi in più, e Dyspo ha finalmente il suo aspetto.","The spiders on the barrels move naturally, the gulls give way to their shadows on the ground, damage numbers turn arcade-style (red for critical hits) and stay 0.3 seconds longer, and Dyspo finally looks like himself."),

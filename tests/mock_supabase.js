@@ -2,7 +2,7 @@
 const http=require('http'),crypto=require('crypto');
 function start(port,opt){
   opt=opt||{};
-  const users=new Map(),byTok=new Map(),refresh=new Map(),saves=new Map(),log=[];
+  const users=new Map(),byTok=new Map(),refresh=new Map(),saves=new Map(),log=[],codes=new Map(),sentAt=new Map();
   const mk=u=>{const a='at_'+crypto.randomBytes(6).toString('hex'),r='rt_'+crypto.randomBytes(6).toString('hex');byTok.set(a,u.id);refresh.set(r,u.id);return{access_token:a,refresh_token:r,expires_in:opt.expires||30,expires_at:Math.floor(Date.now()/1000)+(opt.expires||30),user:{id:u.id,email:u.email}};};
   const srv=http.createServer((req,res)=>{
     const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Content-Type':'application/json'};
@@ -26,7 +26,19 @@ function start(port,opt){
       }
       if(p==='/auth/v1/user'){if(!uid)return send(401,{msg:'bad jwt'});const u=users.get(uid);if(req.method==='PUT'){u.pw=j.password;log.push('PASSWORD-SET');}return send(200,{id:u.id,email:u.email});}
       if(p==='/auth/v1/logout'){byTok.delete(bearer);return send(204);}
-      if(p==='/auth/v1/recover'){log.push('RECOVER '+j.email);return send(200,{});}
+      if(p==='/auth/v1/settings')return send(200,{external:{email:true,google:opt.google!==false},mailer_autoconfirm:false,disable_signup:false});
+      if(p==='/auth/v1/recover'){
+        log.push('RECOVER '+j.email+(url.search?' '+url.search:''));
+        if(opt.rate&&sentAt.has(j.email)&&Date.now()-sentAt.get(j.email)<opt.rate*1000)return send(429,{error_code:'over_email_send_rate_limit',msg:'For security purposes, you can only request this after 60 seconds.'});
+        sentAt.set(j.email,Date.now());
+        if([...users.values()].some(u=>u.email===j.email))codes.set(j.email,String(100000+Math.floor(Math.random()*899999)));
+        return send(200,{});
+      }
+      if(p==='/auth/v1/verify'){
+        const u=[...users.values()].find(x=>x.email===j.email);
+        if(!u||j.type!=='recovery'||codes.get(j.email)!==j.token)return send(403,{error_code:'otp_expired',msg:'Token has expired or is invalid'});
+        codes.delete(j.email);log.push('VERIFY '+j.email);return send(200,mk(u));
+      }
       if(p==='/rest/v1/saves'){
         if(!uid)return send(401,{message:'JWT required'});
         if(req.method==='GET'){const f=url.searchParams.get('user_id');const id=f&&f.replace('eq.','');const r=(id===uid&&saves.has(uid))?[saves.get(uid)]:[];return send(200,r);}
@@ -35,6 +47,6 @@ function start(port,opt){
       send(404,{message:'nope '+p});
     });
   });
-  return new Promise(r=>srv.listen(port,()=>r({srv,users,saves,log,byTok,close:()=>srv.close()})));
+  return new Promise(r=>srv.listen(port,()=>r({srv,users,saves,log,byTok,codes,close:()=>srv.close()})));
 }
 module.exports={start};

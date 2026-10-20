@@ -55,6 +55,10 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026, parte 6 (Cooler, cimeli extra, Maestro, password e Google)
+
+Dettaglio nelle **note di patch del gioco** (voce `2026-10-20f`): Cooler boss del tardo Pianeta Namek con tre forme, slot extra dei cimeli visibili (fino a 3), il Maestro della Stanza dello Spirito e del Tempo imita le tue armi, password dimenticata con codice a 6 cifre, pulsante «Continua con Google» e correzione dello sprite dei Tamagami. Configurazione di Supabase: [`docs/SUPABASE.md`](docs/SUPABASE.md). Prompt per Gemini degli sprite mancanti: [`docs/PROMPT_GEMINI_SPRITES.md`](docs/PROMPT_GEMINI_SPRITES.md).
+
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 5 (ragni, ombre, numeri di danno, Dyspo)
 
 Dettaglio con numeri nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20e`, `src/js/patches.js`).

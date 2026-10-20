@@ -81,10 +81,60 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   await click('alogout');await wait(900);
   await click('atabregister');await type('aem','mario@x.io');await type('apw','secret1');await type('apw2','secret1');await click('asubmit');await wait(600);
   ok((await text()).match(/esiste già|already exists/),'duplicate account message');
-  await click('atablogin');await type('aem','mario@x.io');await click('aforgot');await wait(500);
-  ok(mock.log.some(l=>l.startsWith('RECOVER')),'recover request sent');
+  /* the Google button appears because the project has the provider enabled (read from /auth/v1/settings), without any build flag */
+  ok(!!(await pg.$('[data-fid="agoogle"]')),'Google button shown (provider enabled in Supabase)');
+  ok(await app(()=>window.__app.cloud.googleUrl()).then(u=>/\/auth\/v1\/authorize\?provider=google$/.test(u)),'Google URL has no redirect_to on an opaque origin (file:)');
+  /* login screen is opaque: the animated menu background no longer shows through */
+  ok(await pg.$eval('.screen.acctscr',e=>{const c=getComputedStyle(e);return c.backgroundImage==='none'&&/^rgb\(/.test(c.backgroundColor);}),'login screen background is opaque (no image behind)');
+  await pg.screenshot({path:OUT+'/cl_login_v57.png'});
+  /* ---------- password reset with the code from the e-mail ---------- */
+  await click('atablogin');await type('aem','mario@x.io');await click('aforgot');await wait(300);
+  ok((await text()).match(/Reimposta la password|Reset your password/)&&!(await pg.$('[data-fid="acode"]')),'"forgot password" opens the reset form (e-mail step)');
+  await click('asubmit');await wait(600);
+  ok(mock.log.some(l=>l.startsWith('RECOVER mario@x.io'))&&!mock.log.some(l=>/redirect_to/.test(l)&&l.startsWith('RECOVER')),'recover request sent (no redirect_to from an opaque origin)');
+  ok(!!(await pg.$('[data-fid="acode"]'))&&!!(await pg.$('[data-fid="apw2"]')),'code + new password fields appear');
+  await pg.screenshot({path:OUT+'/cl_reset_v57.png'});
+  await click('aresend');await wait(300);
+  ok((await text()).match(/tra \d+ secondi|in \d+ seconds/),'resend within a minute is held back with a countdown');
+  await type('acode','000000');await type('apw','newpass1');await type('apw2','newpass1');await click('asubmit');await wait(600);
+  ok((await text()).match(/Codice errato|Wrong or expired/),'a wrong code is refused with a clear message');
+  const code=mock.codes.get('mario@x.io');
+  await type('acode',code);await type('apw','123');await type('apw2','123');await click('asubmit');await wait(300);
+  ok((await text()).match(/corta|too short/),'weak new password refused');
+  await type('apw','newpass1');await type('apw2','nope1234');await click('asubmit');await wait(300);
+  ok((await text()).match(/coincidono|not match/),'mismatching passwords refused');
+  await type('apw2','newpass1');await click('asubmit');await wait(1500);
+  ok(mock.log.includes('VERIFY mario@x.io')&&mock.log.includes('PASSWORD-SET'),'code accepted and the new password saved');
+  ok(await app(()=>window.__app.cloud.signedIn),'signed in right after the reset');
+  ok([...mock.users.values()].find(u=>u.email==='mario@x.io').pw==='newpass1','the account has the new password');
+  ok(!mock.codes.has('mario@x.io'),'the code is single-use');
+  /* old password no longer works, the new one does */
+  await click('alogout');await wait(900);
+  await type('aem','mario@x.io');await type('apw','secret1');await click('asubmit');await wait(600);
+  ok((await text()).match(/errat|Wrong/),'the old password is refused after the reset');
+  /* the e-mail link was already used (mail scanners): the app sends the person to the reset form with an explanation */
+  await app(()=>{history.replaceState(null,'','#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');window.__app.cloud.start();});await wait(500);
+  ok(await app(()=>window.__app.ui.top.name)==='account'&&(await text()).match(/scaduto|expired/)&&(await text()).match(/Reimposta la password|Reset your password/),'an expired / used e-mail link opens the reset form with a message');
+  ok(await app(()=>location.hash)==='','the error is cleaned from the address bar');
+  await pg.screenshot({path:OUT+'/cl_reset_expired_v57.png'});
+  /* the e-mail link itself (access_token in the address, type=recovery) still works: new-password form */
+  await click('aback');await wait(200);
+  await type('aem','mario@x.io');await type('apw','newpass1');await click('asubmit');await wait(1500);
+  const tok=await app(()=>window.__app.cloud.sess.access_token),sessJson=await app(()=>JSON.stringify(window.__app.cloud.sess));
+  await app(()=>{const c=window.__app.cloud;c.sess=null;c.saveSess();c.ready=false;c.setStatus('idle');c.notify({type:'auth'});});
+  await pg.evaluate(t=>{history.replaceState(null,'','#access_token='+t+'&refresh_token=zz&expires_in=3600&type=recovery');window.__app.cloud.start();},tok);await wait(800);
+  ok(await app(()=>window.__app.cloud.recovery)&&!!(await pg.$('[data-fid="apw2"]'))&&!(await pg.$('[data-fid="acode"]')),'the recovery link opens the "set a new password" form');
+  await type('apw','linkpass1');await type('apw2','linkpass1');await click('asubmit');await wait(800);
+  ok([...mock.users.values()].find(u=>u.email==='mario@x.io').pw==='linkpass1','new password saved from the link flow');
+  /* the Google popup (or another tab) hands its session over through localStorage */
+  await app(()=>{const c=window.__app.cloud;c.sess=null;c.saveSess();c.ready=false;c.setStatus('idle');c.notify({type:'auth'});});
+  ok(!(await app(()=>window.__app.cloud.signedIn)),'signed out locally');
+  await pg.evaluate(s=>{localStorage.setItem('dbs-cloud-session',s);dispatchEvent(new StorageEvent('storage',{key:'dbs-cloud-session',newValue:s}));},sessJson);await wait(1200);
+  ok(await app(()=>window.__app.cloud.signedIn),'a session written by another tab / the Google popup signs this page in');
+  await click('alogout');await wait(900);
+  await click('atablogin');
   /* session survives a reload and syncs again */
-  await click('atablogin');await type('aem','mario@x.io');await type('apw','secret1');await click('asubmit');await wait(1500);
+  await type('aem','mario@x.io');await type('apw','linkpass1');await click('asubmit');await wait(1500);
   await pg.reload();await wait(1500);
   ok(await app(()=>window.__app.cloud.signedIn)&&await app(()=>window.__app.cloud.status)==='ok','session restored after reload, status ok');
   /* server unreachable: status offline, local play unaffected */

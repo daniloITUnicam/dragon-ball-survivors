@@ -9,16 +9,32 @@ class Cloud{
     this.sd=sd;this.notify=notify||(()=>{});this.cfg=CLOUD;this.enabled=!!CLOUD.on;
     this.sess=this.loadSess();this.status='idle';this.err='';this.dirty=false;this.timer=0;this.busy=false;
     this.lastSync=0;this.pending=null;this.recovery=false;this.ready=false;this.applying=false;
+    this.prov=null;this.recoverEmail='';this.recoverAt=0;this.hashCode='';
     if(this.enabled){
       sd.onWrite=()=>this.touch();
       if(typeof document!=='undefined'){
         document.addEventListener('visibilitychange',()=>{if(document.hidden)this.flush(true);else if(this.sess&&Date.now()-this.lastSync>60000)this.sync();});
         addEventListener('pagehide',()=>this.flush(true));
         addEventListener('online',()=>{if(this.sess)this.sync();});
+        /* another tab / the Google popup signed in, refreshed the token or signed out: follow it (v57) */
+        addEventListener('storage',e=>{if(e.key===SESS_KEY)this.followTab(e.newValue);});
       }
     }
   }
   get signedIn(){return !!(this.enabled&&this.sess);}
+  /* Google button: shown when the provider is enabled in the Supabase project (read from /auth/v1/settings); SUPABASE_GOOGLE=1 only decides while that is unknown */
+  get googleOn(){return !!this.enabled&&(this.prov?!!this.prov.google:!!this.cfg.google);}
+  async loadSettings(){
+    try{const j=await this.req('/auth/v1/settings'),ex=(j&&j.external)||{};this.prov={google:!!ex.google,autoconfirm:!!(j&&j.mailer_autoconfirm),signup:!(j&&j.disable_signup)};this.notify({type:'prov'});}
+    catch(e){}
+  }
+  followTab(raw){
+    let o=null;try{o=raw?JSON.parse(raw):null;}catch(e){}
+    if(!o){if(this.sess){this.sess=null;this.pending=null;this.ready=false;this.dirty=false;this.setStatus('idle');this.notify({type:'auth'});}return;}
+    const had=!!this.sess&&this.sess.user&&o.user&&this.sess.user.id===o.user.id;
+    this.sess=o;
+    if(had)return;   /* same account: just a fresher token */
+    this.ready=false;this.afterAuth();}
   get email(){return this.sess&&this.sess.user?this.sess.user.email||'':'';}
   get uid(){return this.sess&&this.sess.user?this.sess.user.id:'';}
   setStatus(s,err){this.status=s;this.err=err||'';this.notify({type:'status'});}
@@ -42,10 +58,12 @@ class Cloud{
     if(!r.ok){const m=(j&&(j.msg||j.error_description||j.message||j.error))||('HTTP '+r.status);const x=new Error(m);x.status=r.status;x.code=j&&(j.error_code||j.code);throw x;}
     return j;
   }
-  redirect(){return location.origin+location.pathname;}
+  /* where Supabase sends the person after an e-mail link / Google: this page. Opaque origins (file:, sandboxed frames) cannot be a redirect target: then Supabase uses the Site URL of the project */
+  redirect(){try{return /^https?:$/.test(location.protocol)&&location.origin&&location.origin!=='null'?location.origin+location.pathname:'';}catch(e){return '';}}
+  rq(){const r=this.redirect();return r?'?redirect_to='+encodeURIComponent(r):'';}
   /* ---------- auth ---------- */
   async signUp(email,pw){
-    const j=await this.req('/auth/v1/signup?redirect_to='+encodeURIComponent(this.redirect()),{method:'POST',body:{email,password:pw}});
+    const j=await this.req('/auth/v1/signup'+this.rq(),{method:'POST',body:{email,password:pw}});
     if(j&&j.access_token){this.setSession(j);this.afterAuth();return{session:true};}
     return{confirm:true};
   }
@@ -53,9 +71,29 @@ class Cloud{
     const j=await this.req('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:pw}});
     this.setSession(j);this.afterAuth();return{session:true};
   }
-  async recover(email){await this.req('/auth/v1/recover?redirect_to='+encodeURIComponent(this.redirect()),{method:'POST',body:{email}});}
+  /* password reset, step 1: Supabase e-mails a link AND (when the "Reset Password" template contains {{ .Token }}, see docs/SUPABASE.md) a one-time code */
+  async recover(email){await this.req('/auth/v1/recover'+this.rq(),{method:'POST',body:{email}});this.recoverEmail=email;this.recoverAt=Date.now();}
   async updatePassword(pw){const t=await this.token();await this.req('/auth/v1/user',{method:'PUT',token:t,body:{password:pw}});}
-  google(){location.href=this.cfg.url+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(this.redirect());}
+  /* step 2 with the code from the e-mail (no redirect involved, so it cannot land on a wrong address and a mail scanner opening the link cannot use it up) */
+  async resetWithCode(email,code,pw){
+    const j=await this.req('/auth/v1/verify',{method:'POST',body:{type:'recovery',email,token:String(code||'').replace(/\s+/g,'')}});
+    this.setSession(j);this.recovery=true;
+    await this.req('/auth/v1/user',{method:'PUT',token:j.access_token,body:{password:pw}});   /* if this fails the "choose a new password" form stays open */
+    this.recovery=false;this.afterAuth();
+  }
+  /* Google: in a normal page the whole tab goes to Google and comes back with the session in the address (see start()); inside a frame (embedded / preview) Google refuses to open, so a popup is used
+     and the page of the popup hands the session over through localStorage (followTab) */
+  googleUrl(){return this.cfg.url+'/auth/v1/authorize?provider=google'+(this.redirect()?'&redirect_to='+encodeURIComponent(this.redirect()):'');}
+  google(){
+    const u=this.googleUrl();
+    let framed=false;try{framed=window.top!==window.self;}catch(e){framed=true;}
+    if(framed){
+      try{localStorage.setItem('dbs-oauth-wait',String(Date.now()));}catch(e){}
+      let w=null;try{w=window.open(u,'dbs-google','width=520,height=680');}catch(e){}
+      if(w)return true;
+    }
+    location.href=u;return true;
+  }
   async signOut(){
     try{if(this.dirty&&this.ready&&!this.pending)await this.flush();}catch(e){}   /* upload pending changes first */
     clearTimeout(this.timer);
@@ -80,21 +118,30 @@ class Cloud{
   /* called once at start: handles the redirect from Google / e-mail links, then syncs */
   async start(){
     if(!this.enabled)return;
+    this.loadSettings();
     const hs=typeof location!=='undefined'?location.hash:'';
     if(hs&&hs.length>1){
       const q=new URLSearchParams(hs.slice(1));
-      if(q.get('error_description')||q.get('error')){this.hashErr=(q.get('error_description')||q.get('error')).replace(/\+/g,' ');this.cleanHash();this.notify({type:'hashError'});}
+      if(q.get('error_description')||q.get('error')){this.hashErr=(q.get('error_description')||q.get('error')).replace(/\+/g,' ');this.hashCode=q.get('error_code')||q.get('error')||'';this.cleanHash();this.notify({type:'hashError'});}
       else if(q.get('access_token')){
         const tok=q.get('access_token'),type=q.get('type');
         try{
           const u=await this.req('/auth/v1/user',{token:tok});
           this.setSession({access_token:tok,refresh_token:q.get('refresh_token'),expires_in:+q.get('expires_in')||3600,expires_at:+q.get('expires_at')||0},u);
           if(type==='recovery'){this.recovery=true;this.notify({type:'recovery'});}
-        }catch(e){this.hashErr=e.message;this.notify({type:'hashError'});}
+          else if(this.popupHandover())return;   /* this was the Google popup: the page that opened it takes over */
+        }catch(e){this.hashErr=e.message;this.hashCode='';this.notify({type:'hashError'});}
         this.cleanHash();
       }
     }
     if(this.sess){this.notify({type:'auth'});await this.sync();}
+  }
+  popupHandover(){
+    try{
+      const w=+localStorage.getItem('dbs-oauth-wait')||0;
+      if(window.opener&&w&&Date.now()-w<15*60000){localStorage.removeItem('dbs-oauth-wait');this.cleanHash();window.close();return true;}
+    }catch(e){}
+    return false;
   }
   cleanHash(){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
   /* ---------- sync ---------- */

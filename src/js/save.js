@@ -11,7 +11,7 @@ class SaveData{
     return{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
-      tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
+      tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},endAuto:false,endPrio:[],weapons:5,tgt:0,zAuto:false},
@@ -41,7 +41,10 @@ class SaveData{
     /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..3 (v53: it used to be 1..7) without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
     {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok){seen.add(b.id+'@'+b.r);b.p=Number.isFinite(+b.p)?Math.max(0,Math.min(100,Math.round(+b.p))):PF_NOM;}return ok;});   /* v54: every bag trinket has a perfection (older ones: the nominal 50%) */
-      if(d.equip&&!seen.has(d.equip.id+'@'+d.equip.r))d.equip=null;
+      /* v57: up to 3 trinkets can be equipped before a run (one slot + one per "Extra Trinket" purchase); d.equip mirrors slot 1 for older saves / devices */
+      {const n=Math.min(3,1+(d.shop.tslot||0)),src=Array.isArray(d.equips)&&d.equips.some(Boolean)?d.equips:[d.equip||null],ids=new Set();
+        d.equips=[0,1,2].map(i=>{const e=src[i];if(!e||i>=n||!seen.has(e.id+'@'+e.r)||ids.has(e.id))return null;ids.add(e.id);return{id:e.id,r:e.r};});
+        d.equip=d.equips[0];}
       {const raw=[...new Set((Array.isArray(d.sball)?d.sball:[]).filter(n=>n>=1&&n<=7))],N=3,keep=raw.filter(n=>n<=N);   /* v53: only 3 Super Dragon Balls exist; whoever owned 3+ of the old 7 keeps a complete set */
         for(let n=1;keep.length<Math.min(N,raw.length)&&n<=N;n++)if(!keep.includes(n))keep.push(n);
         d.sball=keep.sort((a,b)=>a-b);}}
@@ -195,7 +198,7 @@ class Progress{
     this.d.testBuys={};this.d.banned=this.d.banned.slice(0,this.d.shop.ban||0);
     /* trinkets pulled for free in Test mode go back too (and the slot empties if it held one) */
     const nb=this.d.bag.length;this.d.bag=this.d.bag.filter(b=>!b.t);n+=nb-this.d.bag.length;
-    if(this.d.equip&&!this.d.bag.some(b=>b.id===this.d.equip.id&&b.r===this.d.equip.r))this.d.equip=null;
+    {const n=Math.min(3,1+(this.d.shop.tslot||0));this.d.equips=(this.d.equips||[null,null,null]).map((e,i)=>e&&i<n&&this.d.bag.some(b=>b.id===e.id&&b.r===e.r)?e:null);this.d.equip=this.d.equips[0];}
     this.save.write();return n;
   }
   refundAll(){

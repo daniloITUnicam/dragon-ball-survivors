@@ -65,10 +65,17 @@ Object.assign(Progress.prototype,{
     }
     this.save.write();return out;
   }
-  ,equipTrinket(id,r){
-    if(!id){this.d.equip=null;this.save.write();return true;}
+  /* trinket slots before a run: 1 + one per "Extra Trinket" purchase (max 3). equipTrinket(id,r,slot): equips into that slot (default: the first empty one, else slot 1);
+     equipTrinket(null,0,slot) empties a slot, equipTrinket(null) empties all of them */
+  ,trinketSlots(){return Math.min(3,1+(this.d.shop.tslot||0));}
+  ,equipTrinket(id,r,slot){
+    const d=this.d,n=this.trinketSlots();if(!Array.isArray(d.equips))d.equips=[d.equip||null,null,null];
+    if(!id){if(slot==null)d.equips=[null,null,null];else d.equips[slot]=null;d.equip=d.equips[0];this.save.write();return true;}
     if(!this.bagHas(id,r))return false;
-    this.d.equip={id,r};this.save.write();return true;
+    if(slot==null){slot=d.equips.findIndex((e,i)=>i<n&&!e);if(slot<0)slot=0;}
+    if(!(slot>=0&&slot<n))return false;
+    d.equips=d.equips.map((e,i)=>i!==slot&&e&&e.id===id?null:e);   /* the same trinket cannot be carried twice (another rarity of it leaves its old slot) */
+    d.equips[slot]={id,r};d.equip=d.equips[0];this.save.write();return true;
   }
   /* Super Dragon Balls: collected in the last stages, kept between runs. Returns the star number or 0 when it was not stored. */
   ,addSuperBall(star){

@@ -24,7 +24,9 @@ const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
 const TOP_K=1.5;
 const DMG_T=1.1;   /* seconds a damage number stays on screen (every other floating text: .8 s) */
-const SPAR_COPY_MUL=.6,SPAR_COPY_P=.5;   /* Room of Spirit and Time: the Master copies your abilities and weapons 1 attack in 2, with 40% less damage */
+const SPAR_COPY_MUL=.6,SPAR_COPY_P=.7;   /* Room of Spirit and Time: the Master copies your abilities and weapons 7 attacks in 10, with 40% less damage */
+/* how the Master reproduces each weapon (v57): his copies look like yours (orbs, spears, the Kamehameha sprite beam, tinted zones); anything not listed here uses GHOST_KIND, else a blast on you */
+const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin:'spear',breaker:'beam',hellzone:'grenade',chrono:'rewind',shock:'shock',hakai:'erase',meteor:'meteor',dyn:'kick'};
 const TOTEM_CD=20,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
@@ -63,8 +65,10 @@ class Game{
     this.revives=(this.save.shop.revive||0);
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
-    {const eq=this.save.equip,td=eq&&TRINKETS.find(x=>x.id===eq.id);
-      if(td&&this.save.bag.some(b=>b.id===eq.id&&b.r===eq.r)){const be=this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);this.trinkets=[eq.id];this.tRar={[eq.id]:eq.r};this.tPf={[eq.id]:be&&be.p!=null?be.p:PF_NOM};this.tSrc={[eq.id]:'bag'};this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}}
+    {const T0=[],R0={},P0={},S0={};   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
+      for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&TRINKETS.find(x=>x.id===eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
+        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
+      if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
     this.recalc();this.p.hp=this.p.maxHp;
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
@@ -1340,21 +1344,27 @@ class Game{
   sparCopy(e,zd,aim){
     const p=this.p,dm=zd*SPAR_COPY_MUL,ab=ABIL[this.C.id],ws=[...this.weapons.values()];
     if(!ab&&!ws.length)return false;
-    const useAb=ab&&(!ws.length||Math.random()<.4),w=useAb?null:ws[Math.floor(Math.random()*ws.length)];
+    const useAb=ab&&(!ws.length||Math.random()<.3);
+    let w=null;
+    if(!useAb){   /* every weapon you own takes its turn (a shuffled queue), so you see all of them copied */
+      if(!e.cpq||!e.cpq.length||e.cpq.some(x=>!this.weapons.has(x.id))){e.cpq=ws.slice();for(let i=e.cpq.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[e.cpq[i],e.cpq[j]]=[e.cpq[j],e.cpq[i]];}}
+      w=e.cpq.shift();
+    }
     const col=useAb?ab.c:(w.color||'#ffffff'),nm=useAb?ab.n:((WEAPONS[w.id]&&WEAPONS[w.id].n)||T(w.id,w.id));
-    this.floatText(e.x,e.y-e.r*2.4,this.env.tr(nm)+'!',1);
-    const sh=(a,s,r,ox,oy)=>this.eb.push({x:e.x+(ox||0),y:e.y-e.r+(oy||0),vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:dm,life:6,c:col,bs:1});
-    const zone=(x,y,r,dur,m)=>this.bz.push({x,y,r,t:0,dur,dmg:dm*(m||1),c:col});
-    const beam=(ch,fi,wd,len)=>{this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:ch,fire:fi,w:wd,len,col,dmg:dm*1.2,e,hcd:0});e.stun=ch+fi+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,60+wd,col,.5);};
+    this.floatText(e.x,e.y-e.r*2.4,this.env.tr(nm)+'!',1);this.ring(e.x,e.y-e.r,e.r*2.4,col,.45);
+    const sh=(a,s,r,ox,oy)=>{const b={x:e.x+(ox||0),y:e.y-e.r+(oy||0),vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:dm,life:6,c:col,bs:1,cp:1};this.eb.push(b);return b;};   /* cp: drawn like your own shots */
+    const zone=(x,y,r,dur,m)=>this.bz.push({x,y,r,t:0,dur,dmg:dm*(m||1),c:col,cp:1});
+    const beam=(ch,fi,wd,len)=>{this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:ch,fire:fi,w:wd,len,col,dmg:dm*1.2,e,hcd:0,cp:1});e.stun=ch+fi+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,60+wd,col,.5);};
     const ring=(n,sp)=>{const o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,sp||170,7);};
+    const around=(n,rmin,rmax,r,d0,dd,m)=>{for(let i=0;i<n;i++){const a=rnd(0,TAU),rr=i?rnd(rmin,rmax):0;zone(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr,r,d0+i*dd,m);}};
     if(useAb){
       switch(ab.m){
         case'beam':case'sbc':beam(1.0,.5,34,1100);break;
         case'nova':ring(20,175);zone(e.x,e.y,200,.9,1.1);break;
         case'sphere':zone(p.x,p.y,170,1.8,1.3);break;
         case'erase':zone(p.x,p.y,150,1.6,1.4);break;
-        case'blind':for(let i=0;i<4;i++){const a=rnd(0,TAU),r=i?rnd(60,190):0;zone(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,70,1.1+i*.1);}this.flash=.35;this.flashC='#ffffff';break;
-        case'timestop':for(let i=0;i<5;i++){const a=rnd(0,TAU),r=i?rnd(50,220):0;zone(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,76,1.0+i*.18);}break;
+        case'blind':around(4,60,190,70,1.1,.1);this.flash=.35;this.flashC='#ffffff';break;
+        case'timestop':around(5,50,220,76,1.0,.18);break;
         case'barrier':if((e.barCd||0)>0){sh(aim,260,8);break;}e.bar=2.2;e.barCd=10;this.ring(e.x,e.y-e.r,e.r*2.2,col,.5);this.audio.sfx('abBarrier');break;
         case'regen':case'absorb':e.hp=Math.min(e.max,e.hp+e.max*.03);this.ring(e.x,e.y,120,col,.6);this.burst(e.x,e.y-e.r,14,col);break;
         case'clones':case'ghosts':for(const o of[-90,90])for(let i=-1;i<=1;i++)sh(aim+i*.14,260,6,o,0);this.ring(e.x-90,e.y,30,col,.3);this.ring(e.x+90,e.y,30,col,.3);break;
@@ -1364,11 +1374,24 @@ class Game{
         default:{e.dashT=.8;for(let i=-2;i<=2;i++)sh(aim+i*.16,270,8);}   /* kaioken, berserk, buff: he powers up and rushes in */
       }
     }else{
-      const kind=GHOST_KIND[w.id]||'blast';
-      if(kind==='shot'){const n=Math.min(5,Math.max(2,Math.round(((w.st&&w.st.n&&w.st.n[w.L])||2))));for(let i=0;i<n;i++)sh(aim+(i-(n-1)/2)*.16,280,7);}
-      else if(kind==='beam')beam(.8,.4,30,950);
-      else if(kind==='chain'){const c=Math.cos(aim),s2=Math.sin(aim);for(let k=0;k<5;k++)zone(p.x+c*-40*k+rnd(-18,18),p.y+s2*-40*k+rnd(-18,18),52,.55+k*.14);}
-      else zone(p.x,p.y,100,1.1,1.1);
+      const kind=SPAR_KIND[w.id]||GHOST_KIND[w.id]||'blast';
+      switch(kind){
+        case'shot':{const n=Math.min(5,Math.max(2,Math.round(((w.st&&w.st.n&&w.st.n[w.L])||2))));for(let i=0;i<n;i++)sh(aim+(i-(n-1)/2)*.16,280,7);break;}
+        case'spear':for(let i=-1;i<=1;i++){const a=aim+i*.14,b=sh(a,430,7);b.spear=a;}break;
+        case'beam':beam(.8,.4,30,950);break;
+        case'chain':{const c=Math.cos(aim),s2=Math.sin(aim);for(let k=0;k<5;k++)zone(p.x+c*-40*k+rnd(-18,18),p.y+s2*-40*k+rnd(-18,18),52,.55+k*.14);break;}
+        case'sphere':zone(p.x,p.y,170,1.9,1.3);break;
+        case'ring':ring(14,150);zone(e.x,e.y,130,.8,1.1);break;
+        case'flare':around(3,50,150,74,.9,.12);this.flash=.25;this.flashC=col;break;
+        case'slash':for(let i=-2;i<=2;i++)sh(aim+i*.18,430,6);this.slashFx(e,aim);break;
+        case'grenade':around(3,40,150,62,.9,.25);break;
+        case'rewind':{const a=rnd(0,TAU);e.x=p.x+Math.cos(a)*190;e.y=p.y+Math.sin(a)*190;this.ring(e.x,e.y,60,col,.4);const a2=Math.atan2(p.y-18-e.y,p.x-e.x);for(let i=-2;i<=2;i++)sh(a2+i*.2,250,7);break;}
+        case'shock':zone(e.x,e.y,175,.9,1.1);ring(16,160);break;
+        case'erase':zone(p.x,p.y,140,1.5,1.4);break;
+        case'meteor':around(4,50,170,80,1.1,.22);break;
+        case'kick':e.dashT=.9;for(let i=-1;i<=1;i++)sh(aim+i*.16,300,8);break;
+        default:zone(p.x,p.y,100,1.1,1.1);
+      }
     }
     return true;
   }

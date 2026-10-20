@@ -304,6 +304,12 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .cloudbtn.on{border-color:#4aa8ff}
 .card.opt.conflict{min-height:0;cursor:default;gap:10px}
 .acct .btn{max-width:100%}
+/* v57: the login / account screens are opaque (the animated menu background no longer shows through) and use the whole width, the content stays in a 460px column */
+.screen.acct.acctscr{max-width:none;margin:0;background:#070d19}
+.screen.acct.acctscr>*{width:100%;max-width:460px;box-sizing:border-box}
+.aor{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.aor::before,.aor::after{content:'';flex:1;height:1px;background:var(--line)}
+.gmark{font-family:Arial,Helvetica,sans-serif;font-weight:900;font-size:1.15em;color:#4285f4;margin-right:2px}
 /* W.I.P. badge: sits at the bottom right of the title, swaying a little (wipx) while hopping with squash and stretch (wipy) and a pulsing glow (wipg) */
 .wip{position:absolute;right:-2%;bottom:-8%;width:min(27%,260px);z-index:2;pointer-events:none;animation:wipx 3.4s ease-in-out infinite}
 .wipin{animation:wipy 1.15s cubic-bezier(.3,0,.7,1) infinite;transform-origin:50% 100%}

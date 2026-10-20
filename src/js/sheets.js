@@ -70,6 +70,7 @@ Sprites.loadPack=function(onLoad){
     const d=SPRITE_PACK[id],img=new Image();
     img.onload=()=>{
       const cols=Math.max(1,d.cols||7),fw=d.fw||Math.floor(img.width/cols),fh=d.fh||img.height;
+      Sprites.nSheets=(Sprites.nSheets||0)+1;
       Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null};
       if(id==='rocks'&&typeof World!=='undefined'){World.rockOn=true;World.cache.clear();}
       if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
@@ -112,7 +113,7 @@ Sprites.drawBeam=function(ctx,len,wid,color,k,t){
 
 /* Bosses and regular enemies that have pack art: boss id (key of BOSSES) / enemy id (key of ENEMIES) -> sheet id.
    Transformed bosses (cooler2, kale2, ...) use the sheet of the matching form; a boss without an entry keeps the procedural art. */
-Sprites.BOSS_SHEET={raditz:'raditz',bardock:'bardock',turles:'turles',cooler:'cooler',cooler2:'cooler',beerus:'beerus',beerus2:'beerus',
+Sprites.BOSS_SHEET={raditz:'raditz',bardock:'bardock',turles:'turles',cooler:'cooler',coolerm:'cooler',cooler2:'cooler',beerus:'beerus',beerus2:'beerus',
   hit:'hit',hit2:'hit',toppo:'toppo',toppo2:'toppo',toppo3:'toppo',jiren:'jiren',jiren2:'jiren',jiren3:'jiren',jiren4:'jiren',
   kale:'kale',kale2:'kale_0',kale3:'kale_0',caulifla:'caulifla',caulifla2:'caulifla',caulifla3:'caulifla',cabba:'cabba',cabba2:'cabba_1',
   frost:'frost',frost2:'frost_2',freezer:'freezer',cell:'cell',cellmax:'cell_1',c16:'c16',c17:'c17',
@@ -120,12 +121,23 @@ Sprites.BOSS_SHEET={raditz:'raditz',bardock:'bardock',turles:'turles',cooler:'co
 /* sheets of the later forms of a boss that transforms (the boss keeps its id, e.pf counts the transformations: index 1 = first transformation); a missing sheet falls back to the previous art.
    Tamagami: sheets of 9 frames: 0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit */
 Sprites.BOSS_FORMS={tama1:[null,'tama1f'],tama2:[null,'tama2f'],tama3:[null,'tama3f'],
-  freezer:[null,'freezer_0','freezer_1','freezer_2','freezer_3'],cell:[null,'cell_0','cell_1']};
+  freezer:[null,'freezer_0','freezer_1','freezer_2','freezer_3'],cell:[null,'cell_0','cell_1'],cooler:[null,'cooler_0','cooler_1']};
 Sprites.ENEMY_SHEET={sai:'saibaman'};
 Sprites.enemySheet=function(e){
   const fl=e.boss&&e.bid&&e.pf&&Sprites.BOSS_FORMS[e.bid],fid=fl&&fl[Math.min(e.pf,fl.length-1)];
   const id=e.boss?(e.bid&&((fid&&Sprites.sheets[fid])?fid:Sprites.BOSS_SHEET[e.bid])):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
   return id&&Sprites.sheets[id]?id:null;
+};
+/* pack art id of an enemy, cached on it; a 'none' answer is recomputed whenever another sheet finishes loading (the pack decodes asynchronously, a boss spawned meanwhile must not stay procedural for good) */
+Sprites.enemySid=function(e){
+  const n=Sprites.nSheets||0;
+  if(e.esid===undefined||(e.esid===null&&e.esn!==n)){e.esn=n;e.esid=n?Sprites.enemySheet(e):null;}
+  return e.esid;
+};
+/* idle frame of the pack art of a boss / enemy id (glossary portraits), or null */
+Sprites.packPortrait=function(id,isBoss){
+  const sid=isBoss?Sprites.BOSS_SHEET[id]:Sprites.ENEMY_SHEET[id];
+  return sid&&Sprites.sheets[sid]?Sprites.sheetEnemy(sid,0,false):null;
 };
 Sprites.sheetEnemy=function(sid,frame,flash){
   const m=Sprites.ecache||(Sprites.ecache=new Map()),k=sid+'|'+frame+(flash?'f':'');let s=m.get(k);

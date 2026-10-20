@@ -301,7 +301,14 @@ this.W=1;this.H=1;this.Z=1;
       if(elv)ELEC.pt(ctx,b.x,b.y,b.r*1.5+3,b.c,t,elv,b.x*.13+b.y*.07);
     }
     this.fxEnd();
-    for(const b of g.eb){GLOW.at(ctx,b.x,b.y,b.r*3,b.c,.9);ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*.45,0,TAU);ctx.fill();}
+    for(const b of g.eb){if(b.cp)continue;GLOW.at(ctx,b.x,b.y,b.r*3,b.c,.9);ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*.45,0,TAU);ctx.fill();}
+    if(g.eb.some(b=>b.cp)){   /* the Master's copies of your weapons: the same orbs and spears as your own shots */
+      this.fxBegin();
+      for(const b of g.eb){if(!b.cp)continue;
+        if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
+        else VFX.orb(ctx,b.x,b.y,b.r*1.15,b.c,t);}
+      this.fxEnd();
+    }
     /* fx */
     this.fxBegin();
     for(const f of (FXL.a>0?g.fx:[])){
@@ -602,6 +609,13 @@ this.W=1;this.H=1;this.Z=1;
     for(const b of g.jbeams||[]){
       const fire=b.t>=b.charge,k=fire?(b.t-b.charge)/b.fire:b.t/b.charge;
       ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);
+      if(b.cp){   /* the Master copies your beam: the same Kamehameha art in the colour of your weapon */
+        const c=b.col||'#ffffff';
+        if(!fire){ctx.strokeStyle=hexA(c,.35+.35*Math.sin(t*26)*.5+.2);ctx.lineWidth=2+k*4;ctx.setLineDash([16,10]);ctx.lineDashOffset=-t*120;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(b.len,0);ctx.stroke();ctx.setLineDash([]);
+          const r=8+26*k;GLOW.at(ctx,26,0,r*2,c,.5+.4*k);ctx.fillStyle=hexA('#ffffff',.5+.4*k);ctx.beginPath();ctx.arc(26,0,r*.5,0,TAU);ctx.fill();}
+        else VFX.beam(ctx,b.len,b.w*2,c,Math.min(1,(1-k)*3.2,k*14+.15),t,b.a*3,false,true);
+        ctx.restore();continue;
+      }
       if(!fire){
         ctx.strokeStyle='rgba(255,60,90,'+(.35+.4*Math.sin(t*26)*.5+.2)+')';ctx.lineWidth=3+k*5;ctx.setLineDash([16,10]);ctx.lineDashOffset=-t*120;
         ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(b.len,0);ctx.stroke();ctx.setLineDash([]);
@@ -621,9 +635,9 @@ this.W=1;this.H=1;this.Z=1;
     for(const z of g.bz){
       const k=Math.min(1,z.t/z.dur),pul=.5+.5*Math.sin(t*18);
       ctx.save();ctx.translate(z.x,z.y);ctx.scale(1,.8);
-      ctx.fillStyle='rgba(255,50,40,'+(.08+.12*k)+')';ctx.beginPath();ctx.arc(0,0,z.r,0,TAU);ctx.fill();
-      ctx.fillStyle='rgba(255,90,50,'+(.16+.22*k)+')';ctx.beginPath();ctx.arc(0,0,z.r*k,0,TAU);ctx.fill();
-      ctx.strokeStyle='rgba(255,'+(120+pul*100|0)+',80,.95)';ctx.lineWidth=2.5;ctx.setLineDash([8,6]);ctx.lineDashOffset=-t*50;ctx.beginPath();ctx.arc(0,0,z.r,0,TAU);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=z.cp?hexA(z.c,.08+.12*k):'rgba(255,50,40,'+(.08+.12*k)+')';ctx.beginPath();ctx.arc(0,0,z.r,0,TAU);ctx.fill();
+      ctx.fillStyle=z.cp?hexA(z.c,.18+.24*k):'rgba(255,90,50,'+(.16+.22*k)+')';ctx.beginPath();ctx.arc(0,0,z.r*k,0,TAU);ctx.fill();
+      ctx.strokeStyle=z.cp?hexA(z.c,.7+.25*pul):'rgba(255,'+(120+pul*100|0)+',80,.95)';ctx.lineWidth=2.5;ctx.setLineDash([8,6]);ctx.lineDashOffset=-t*50;ctx.beginPath();ctx.arc(0,0,z.r,0,TAU);ctx.stroke();ctx.setLineDash([]);
       ctx.restore();
     }
   }
@@ -632,7 +646,7 @@ this.W=1;this.H=1;this.Z=1;
     let frame=e.atk>0?(e.atk>.18?5:6):(e.fuse>0?5:(e.st===2&&e.ai==='charge')?6:1+((t*8+e.ph)|0)%4);
     const fuseFlash=e.fuse>0&&((e.fuse*12)|0)%2===0,warn=(e.st===1&&e.ai==='charge')||(e.xf&&!e.xf.released&&((t*14)|0)%2===0)||(e.st===1&&(e.ai==='slam'||e.ai==='leap')&&((t*16)|0)%2===0);
     const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0)||(e.vis&&e.vis.flash&&((t*(10+(e.bm?e.bm.t:0)*5))|0)%2===0);
-    const esid=e.esid!==undefined?e.esid:(Object.keys(Sprites.sheets).length?(e.esid=Sprites.enemySheet(e)):null);   /* pack art for this boss / enemy, if any */
+    const esid=Sprites.enemySid(e);   /* pack art for this boss / enemy, if any */
     if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
     const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
@@ -904,10 +918,10 @@ this.W=1;this.H=1;this.Z=1;
     const tid=Math.max(1,Math.min(3,star)),art=l.tama&&!l.woke&&Sprites.sheets['tamas'+tid]?this.statueArt(tid):null;
     const hy=art?art.oy+S*.5+12:S*.62+10;l.hy=l.hy===undefined?hy:l.hy+(hy-l.hy)*Math.min(1,(this.fdt||.016)*5);     /* the ball glides down when the statue wakes */
     const cy=gy-l.hy-fl;
+    let stone=null;
     if(l.tama&&!art){
       ctx.save();ctx.fillStyle='rgba(70,74,88,.9)';ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,210,90,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.stroke();ctx.restore();
-      if(!l.woke){const st=this.stoneSprite('tama'+tid),bd=BOSSES['tama'+tid];
-        if(st&&bd){const k=(bd.sp.u||bd.u||3)/(st.s||Sprites.S);ctx.save();ctx.translate(gx,gy);ctx.scale(k,k);ctx.imageSmoothingEnabled=false;ctx.drawImage(st.c,-st.ox,-st.oy);ctx.restore();}}
+      if(!l.woke){const st=this.stoneSprite('tama'+tid),bd=BOSSES['tama'+tid];if(st&&bd)stone={st,k:(bd.sp.u||bd.u||3)/(st.s||Sprites.S)};}   /* no pack art: grey procedural statue, drawn on top of the light below */
     }
     if(art){ctx.save();ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(gx,gy+1,art.c.width*.46,10,0,0,TAU);ctx.fill();ctx.translate(gx,gy);ctx.imageSmoothingEnabled=false;ctx.drawImage(art.c,-art.ox,-art.oy);ctx.restore();}
     ctx.save();ctx.translate(gx,gy);ctx.scale(1,.4);GLOW.at(ctx,0,0,86+8*pulse,'#ffd23f',.5);ctx.restore();
@@ -921,6 +935,7 @@ this.W=1;this.H=1;this.Z=1;
     if(!FXL.on)for(let i=0;i<12;i++){ctx.rotate(TAU/12);ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-(120+14*Math.sin(t*2.4+i)));ctx.lineTo(6,-(120+14*Math.sin(t*2.4+i)));ctx.closePath();ctx.fill();}
     ctx.restore();
     if(art){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(art.c,gx-art.ox,gy+6-art.oy);ctx.restore();}
+    if(stone){ctx.save();ctx.translate(gx,gy);ctx.scale(stone.k,stone.k);ctx.imageSmoothingEnabled=false;ctx.drawImage(stone.st.c,-stone.st.ox,-stone.st.oy);ctx.restore();}
     const pop=Math.min(1,.4+t*3);
     if(im){ctx.save();ctx.translate(gx,cy);ctx.scale(pop,pop);ctx.imageSmoothingEnabled=true;ctx.drawImage(im,(star-1)*64,0,64,64,-S/2,-S/2,S,S);
       ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.16+.16*pulse;ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.arc(0,0,S*.47,0,TAU);ctx.fill();ctx.restore();}

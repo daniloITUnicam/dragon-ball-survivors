@@ -25,14 +25,20 @@ Object.assign(UI.prototype,{
   },
   /* ---------- trinket slot in the character screen ---------- */
   trinketSlot(){
-    const d=this.save,eq=d.equip,t=eq&&this.tdef(eq.id);
-    if(eq&&!t)d.equip=null;
-    const be=t&&d.bag.find(b=>b.id===eq.id&&b.r===eq.r),i=t?this.tinfo(eq.id,eq.r,be&&be.p):null;
-    const slot=h('button',{class:'tslot'+(t?' on r'+eq.r+(i.perf!=null&&i.perf>=100?' perfect':''):''),style:t?'--c:'+i.c:'','data-fid':'tslot',title:t?i.name+' · '+i.rar+'\n'+i.desc:this.t('slotEmpty'),
-      onclick:()=>{this.sfx();this.push('bag',{pick:true});}},
-      t?[glyph(t.k,i.c),h('span',{class:'tsn'},i.name),this.perfBar(i.perf,true)]:h('span',{class:'tplus'},'+'));
-    return h('div',{class:'tslotwrap'},h('span',{class:'lbl'},this.t('trinketSlot')),slot,
-      t?h('button',{class:'btn tiny alt unq','data-fid':'tunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null);this.rebuild(true);}},'✕ '+this.t('bagUnequip')):null);
+    const d=this.save,n=this.app.progress.trinketSlots(),eqs=(d.equips||[d.equip]).slice(0,3);
+    const one=i=>{
+      const eq=eqs[i],t=eq&&this.tdef(eq.id);
+      if(eq&&!t){d.equips[i]=null;d.equip=d.equips[0];}
+      const be=t&&d.bag.find(b=>b.id===eq.id&&b.r===eq.r),inf=t?this.tinfo(eq.id,eq.r,be&&be.p):null;
+      const sfx=n>1?String(i+1):'';
+      const slot=h('button',{class:'tslot'+(t?' on r'+eq.r+(inf.perf!=null&&inf.perf>=100?' perfect':''):''),style:t?'--c:'+inf.c:'','data-fid':'tslot'+sfx,title:t?inf.name+' · '+inf.rar+'\n'+inf.desc:this.t('slotEmpty'),
+        onclick:()=>{this.sfx();this.push('bag',{pick:true,slot:i});}},
+        t?[glyph(t.k,inf.c),h('span',{class:'tsn'},inf.name),this.perfBar(inf.perf,true)]:h('span',{class:'tplus'},'+'));
+      return h('div',{class:'tsone'},slot,
+        t?h('button',{class:'btn tiny alt unq','data-fid':'tunq'+sfx,onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,i);this.rebuild(true);}},'✕ '+this.t('bagUnequip')):null);
+    };
+    return h('div',{class:'tslotwrap'+(n>1?' multi':'')},h('span',{class:'lbl'},this.t(n>1?'trinketSlots':'trinketSlot')),
+      h('div',{class:'tsrow'},Array.from({length:n},(_,i)=>one(i))));
   },
   /* ---------- Gacha shop ---------- */
   screen_gacha(){
@@ -179,19 +185,19 @@ Object.assign(UI.prototype,{
   screen_bag(a){
     a=a||{};const d=this.save,pick=!!a.pick,st=this.bagF||(this.bagF={q:'',rar:[1,1,1,1,1],sort:'new'});
     const all=d.bag.map(b=>({b,i:this.tinfo(b.id,b.r,b.p)}));
-    const eqk=d.equip?trinketKey(d.equip.id,d.equip.r):'';
+    const eqks=(d.equips||[d.equip]).filter(Boolean).map(e=>trinketKey(e.id,e.r)),slotSel=a.slot!=null?a.slot:null,here=slotSel!=null&&d.equips&&d.equips[slotSel],eqk=here?trinketKey(here.id,here.r):(eqks[0]||'');
     if(!this.bagSel||!d.bag.some(b=>trinketKey(b.id,b.r)===this.bagSel))this.bagSel=eqk&&d.bag.some(b=>trinketKey(b.id,b.r)===eqk)?eqk:(d.bag[0]?trinketKey(d.bag[0].id,d.bag[0].r):'');
     const grid=h('div',{class:'baggrid'}),det=h('div',{class:'bagdet'}),shown=h('span',{class:'achshown'});
     const sorts={new:(x,y)=>y.b.at-x.b.at,old:(x,y)=>x.b.at-y.b.at,rar:(x,y)=>y.b.r-x.b.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.b.r-x.b.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.b.r-x.b.r};
     const fill=()=>{
       const q=RAR_NORM(st.q.trim());
       const list=all.filter(o=>st.rar[o.b.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
-      grid.replaceChildren(...(list.length?list.map(o=>{const k=trinketKey(o.b.id,o.b.r);return this.tcard(o.b.id,o.b.r,{p:o.b.p,btn:true,sel:k===this.bagSel,eq:k===eqk,fid:'t'+k,onclick:()=>{this.sfx();this.bagSel=k;this.rebuild(true);}});}):[h('p',{class:'sub'},this.t(all.length?'bagNone':'bagEmpty'))]));
+      grid.replaceChildren(...(list.length?list.map(o=>{const k=trinketKey(o.b.id,o.b.r);return this.tcard(o.b.id,o.b.r,{p:o.b.p,btn:true,sel:k===this.bagSel,eq:eqks.includes(k),fid:'t'+k,onclick:()=>{this.sfx();this.bagSel=k;this.rebuild(true);}});}):[h('p',{class:'sub'},this.t(all.length?'bagNone':'bagEmpty'))]));
       shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
     };
     const sel=d.bag.find(b=>trinketKey(b.id,b.r)===this.bagSel);
     if(sel){
-      const i=this.tinfo(sel.id,sel.r,sel.p),isEq=this.bagSel===eqk;
+      const i=this.tinfo(sel.id,sel.r,sel.p),isEq=eqks.includes(this.bagSel),eqSlot=isEq?(d.equips||[]).findIndex(e=>e&&trinketKey(e.id,e.r)===this.bagSel):-1;
       det.style.setProperty('--c',i.c);
       det.append(...[glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),
         h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
@@ -199,8 +205,8 @@ Object.assign(UI.prototype,{
         h('p',{class:'cd'},this.t('bagGot',{d:this.fmtDate(sel.at)})),
         h('p',{class:'cd'},this.t('bagMarket')+': ',zAmt(ZENO_PRICE[sel.r],true)),
         sel.t?h('p',{class:'cd'},'🧪 Test'):null,
-        isEq?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null);this.rebuild(true);}},this.t('bagUnequip')):
-          h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip'))].filter(Boolean));
+        isEq&&(slotSel==null||eqSlot===slotSel)?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,eqSlot);this.rebuild(true);}},this.t('bagUnequip')):
+          h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r,slotSel);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip'))].filter(Boolean));
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
     const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;this.rebuild(true);}},this.tr(RARITY[r].n))));
     const search=h('input',{type:'text',class:'achsearch','data-fid':'bagq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});

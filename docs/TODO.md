@@ -16,7 +16,8 @@ Aggiornato il 20 ottobre 2026 (v56). Voci con 🎨 = **serve uno sprite / un ass
 ## 🗓 Rilasci pianificati
 - **v55 – Boss e personaggi (FATTO, note `2026-10-20d`)**: vedi sotto in «Fatto». Da decidere: **Cooler** e **Janemba** non compaiono più in nessuno stage (erano nel Regno degli Dei, ora Kaioshin/Champa/Beerus): dove metterli?
 - **v56 – Grafica (FATTO, note `2026-10-20e`)**: ragni dei barili naturali, ombre al posto dei gabbiani, critici rossi + numeri in stile arcade (+0,3 s), Dyspo rifatto. **Resta**: suono del level-up (da cercare).
-- **v57 – Nucleo di gioco (da discutere)**: partita unica da 30 minuti con interruttori Modalità Iperbolica / Maledizione della Distruzione, reset password e login Google (vedi sotto).
+- **v57 (FATTO, note `2026-10-20f`)**: Cooler su Namek, slot cimeli extra, Maestro che imita le armi, reset password con codice, login Google, fix Tamagami. Prompt Gemini per gli sprite mancanti: [`PROMPT_GEMINI_SPRITES.md`](PROMPT_GEMINI_SPRITES.md).
+- **v58 – Nucleo di gioco (da discutere)**: partita unica da 30 minuti con interruttori Modalità Iperbolica / Maledizione della Distruzione (vedi sotto).
 - **Refactor #95**: estrarre `TrinketSystem`, `ZenoShop`, `Director/Spawner`, `Loot`, `Forms` da `Game`; HUD/mondo/overlay da `Renderer` (nessun cambio di comportamento, suite completa dopo ogni estrazione).
 
 ## 🗺 Mappa ESC (idea, non fatta)

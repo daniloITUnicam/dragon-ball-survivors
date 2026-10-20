@@ -47,6 +47,10 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update, part 6 (Cooler, extra trinkets, Master, password and Google)
+
+Details in the game's **patch notes** (entry `2026-10-20f`): Cooler as a late Planet Namek boss with three forms, extra trinket slots visible (up to 3), the Master of the Room of Spirit and Time copies your weapons, forgotten password with a 6-digit code, a "Continue with Google" button and a fix for the Tamagami sprite. Supabase setup: [`docs/SUPABASE.md`](docs/SUPABASE.md). Gemini prompts for the missing sprites: [`docs/PROMPT_GEMINI_SPRITES.md`](docs/PROMPT_GEMINI_SPRITES.md).
+
 ### 🆕 October 20, 2026 update, part 5 (spiders, shadows, damage numbers, Dyspo)
 
 Details with numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20e`, `src/js/patches.js`).

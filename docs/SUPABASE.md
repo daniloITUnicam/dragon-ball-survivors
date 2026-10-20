@@ -4,7 +4,8 @@ Il gioco resta **un solo file HTML statico** (ospitato su GitHub Pages). Per il 
 
 ## Come funziona
 - **Ospite**: si gioca subito, i progressi stanno nel `localStorage` del browser.
-- **Con account**: email + password (e Google, opzionale). Ogni modifica ai progressi viene caricata nel cloud dopo ~4 secondi (e quando chiudi/nascondi la scheda). Al login i progressi si scaricano su qualsiasi dispositivo.
+- **Con account**: email + password, oppure **Google**. Ogni modifica ai progressi viene caricata nel cloud dopo ~4 secondi (e quando chiudi/nascondi la scheda). Al login i progressi si scaricano su qualsiasi dispositivo.
+- **Password dimenticata** (v57): il gioco chiede l'email, Supabase manda un **codice a 6 cifre** (e un link); si scrive il codice nel gioco e si sceglie la nuova password. Vedi «Reset password» sotto.
 - **Cosa viene salvato nel cloud**: zenny, personaggi sbloccati, negozio, imprese, statistiche, record, ecc. **Non** le impostazioni di questo dispositivo (volume, risoluzione, tasti, lingua).
 - **Primo accesso con progressi già presenti** su dispositivo e nel cloud: il gioco chiede quale salvataggio usare (l'altro viene sovrascritto).
 - **Esci**: dopo aver caricato le ultime modifiche, svuota i progressi locali di quel dispositivo (restano nel cloud), così su un PC condiviso la persona dopo parte da zero. Se sei offline e ci sono modifiche non caricate, i dati locali NON vengono cancellati.
@@ -23,15 +24,34 @@ Il gioco resta **un solo file HTML statico** (ospitato su GitHub Pages). Per il 
 
 **Non** usare mai la chiave `service_role` / `secret`: è privata e non va nel gioco.
 
-### 3. Dai gli URL del sito a Supabase
+### 3. Dai gli URL del sito a Supabase  ← **la causa del link che finisce su `localhost:3000`**
 **Authentication → URL Configuration**:
-- **Site URL**: l'indirizzo del gioco, es. `https://TUO-UTENTE.github.io/dragon-ball-survivors/`
-- **Redirect URLs**: aggiungi lo stesso indirizzo (e `http://localhost:8000/` se provi in locale).
+- **Site URL**: l'indirizzo del gioco, es. `https://TUO-UTENTE.github.io/dragon-ball-survivors/` (**non** lasciare `http://localhost:3000`, che è il valore di partenza).
+- **Redirect URLs**: aggiungi lo stesso indirizzo, e `http://localhost:8000/` se provi in locale (puoi usare un carattere jolly: `https://TUO-UTENTE.github.io/**`).
 
-Senza questo, i link nelle email (conferma, reset password) e il login Google rimandano all'indirizzo sbagliato.
+Senza questo i link nelle email (conferma, reset password) e il login Google rimandano all'indirizzo sbagliato (`localhost:3000`).
 
-### 4. Email di conferma
+### 4. Email: conferma e reset password
 In **Authentication → Providers → Email** puoi tenere **Confirm email** attivo (consigliato: l'utente riceve un link) oppure disattivarlo (si entra subito dopo la registrazione). Con le email integrate di Supabase il limite è basso (poche email l'ora): per un gioco con tanti utenti conviene configurare un SMTP tuo (**Authentication → SMTP Settings**, es. Resend/Brevo, hanno piani gratuiti) oppure disattivare la conferma.
+
+#### Reset password: il codice nell'email (consigliato)
+Il link «reimposta la password» è **monouso**: se il programma di posta (Gmail, Outlook, antivirus) lo apre per controllarlo, quando clicchi tu trovi `error_code=otp_expired` («Email link is invalid or has expired»). Per questo il gioco accetta anche il **codice** scritto nell'email, che nessuno scanner può consumare e che non dipende da nessun indirizzo di reindirizzamento.
+
+1. **Authentication → Emails → Templates → Reset Password** (in alcune versioni: *Email Templates*).
+2. Sostituisci il corpo con questo (oggetto a piacere, es. `Reimposta la password di Dragon Ball: Survivors`):
+
+```html
+<h2>Reimposta la password</h2>
+<p>Il tuo codice di verifica è:</p>
+<p style="font-size:26px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+<p>Nel gioco apri <b>Account → Password dimenticata?</b>, scrivi l'email, inserisci il codice e scegli la nuova password. Il codice vale poco tempo e si usa una volta sola.</p>
+<p>Se preferisci puoi aprire il link: <a href="{{ .ConfirmationURL }}">reimposta la password</a></p>
+```
+
+3. (Facoltativo) **Authentication → Providers → Email**: *Email OTP Length* (6 va bene) e *Email OTP Expiration* (es. 3600 s).
+
+Se non modifichi il template, l'email contiene solo il link: il gioco funziona lo stesso (il link porta alla schermata «nuova password»), ma può dare l'errore di cui sopra; in quel caso mostra un messaggio e apre direttamente il modulo per chiedere un nuovo codice.
+Limite di Supabase: una email di reset al minuto per indirizzo (il gioco lo spiega con un conto alla rovescia).
 
 ### 5. Collega il gioco
 Hai due modi, scegline uno:
@@ -42,7 +62,7 @@ Hai due modi, scegline uno:
 |---|---|
 | `SUPABASE_URL` | Project URL |
 | `SUPABASE_ANON_KEY` | chiave anon/publishable |
-| `SUPABASE_GOOGLE` | `1` solo se hai attivato Google (vedi sotto), altrimenti non crearla |
+| `SUPABASE_GOOGLE` | facoltativa (dalla v57 il pulsante Google compare da solo quando il provider è attivo su Supabase) |
 
 Poi rilancia il deploy (**Actions → Deploy → Run workflow**, o un push).
 
@@ -50,10 +70,16 @@ Poi rilancia il deploy (**Actions → Deploy → Run workflow**, o un push).
 
 In locale: `SUPABASE_URL=... SUPABASE_ANON_KEY=... python3 build.py` oppure il file `cloud.config.json`; poi apri `dist/dragon-ball-survivors.html` da un piccolo server (`python3 -m http.server -d dist`), perché il login Google richiede un indirizzo http(s).
 
-### 6. (Opzionale) Login con Google
-1. In Google Cloud Console crea un **OAuth Client ID** di tipo *Web application*; come *Authorized redirect URI* metti quello mostrato in Supabase (**Authentication → Providers → Google**, `https://xxxx.supabase.co/auth/v1/callback`).
-2. Incolla Client ID e Secret in Supabase, attiva il provider Google.
-3. Imposta `SUPABASE_GOOGLE=1` (o `"google": true` nel file) e ricompila.
+### 6. Login con Google (account Gmail)
+Dalla v57 **non serve più impostare `SUPABASE_GOOGLE`**: il gioco legge da Supabase se il provider è attivo e mostra da solo il pulsante «Continua con Google» (con «oppure» sopra) nelle schermate di accesso e registrazione.
+
+1. **Google Cloud Console** (<https://console.cloud.google.com>) → crea un progetto → **APIs & Services → OAuth consent screen** (tipo *External*, nome app, email di contatto; aggiungi il tuo account come *Test user* finché l'app non è pubblicata) → **Credentials → Create credentials → OAuth client ID** di tipo *Web application*.
+2. **Authorized redirect URIs**: quello mostrato in Supabase (**Authentication → Providers → Google**), `https://xxxx.supabase.co/auth/v1/callback`. Gli *Authorized JavaScript origins* sono facoltativi (puoi mettere l'indirizzo del gioco).
+3. Copia **Client ID** e **Client secret** in Supabase (**Authentication → Providers → Google**), attiva il provider e salva.
+4. Controlla che **Site URL** e **Redirect URLs** (punto 3) contengano l'indirizzo del gioco: dopo l'accesso Google si torna lì.
+
+Come funziona nel gioco: si apre Google, si sceglie l'account e si torna al gioco già connessi. Se la pagina è dentro un frame (anteprima incorporata, dove Google rifiuta di aprirsi) il gioco usa una **finestra popup** e la scheda principale si connette da sola quando la finestra si chiude. Un account creato con Google e uno creato con email e password con **lo stesso indirizzo** vengono uniti da Supabase (stesso utente) se l'email è verificata.
+Limite: nell'anteprima dei messaggi/artifact l'indirizzo della pagina non è un indirizzo `https` usabile come ritorno: lì usa email e password, oppure apri il gioco dal tuo sito.
 
 ## Limiti da conoscere
 - **Piano Free**: il progetto va in pausa dopo ~1 settimana senza attività (si riattiva dal pannello) e ha limiti su utenti e spazio; verifica i valori attuali su <https://supabase.com/pricing>. Un salvataggio pesa pochi KB.
@@ -62,7 +88,7 @@ In locale: `SUPABASE_URL=... SUPABASE_ANON_KEY=... python3 build.py` oppure il f
 - **Eliminazione account**: per ora si cancella dal pannello Supabase (**Authentication → Users**); i dati nella tabella `saves` spariscono con l'utente (`on delete cascade`).
 
 ## Test
-`tests/mock_supabase.js` simula Supabase in memoria; `tests/cloud_e2e.js` prova registrazione, login, refresh del token, sincronizzazione, conflitto, logout e modalità offline:
+`tests/mock_supabase.js` simula Supabase in memoria (anche `/auth/v1/settings`, codici di recupero e `/auth/v1/verify`); `tests/cloud_e2e.js` prova registrazione, login, refresh del token, sincronizzazione, conflitto, **reset password con codice e con link, link scaduto, pulsante Google e passaggio di sessione dal popup**, logout e modalità offline:
 
 ```bash
 SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY=testkey DBS_OUT=/tmp/o/cloud.html python3 build.py

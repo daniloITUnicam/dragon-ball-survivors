@@ -308,17 +308,17 @@ class UI{
     const defs=tab==='enemies'?ENEMIES:BOSSES,ids=Object.keys(defs).filter(k=>tab==='enemies'||defs[k].hp>0),descs=tab==='enemies'?ENEMY_DESC:BOSS_DESC;
     const got=ids.filter(k=>seen[k]).length;
     const cur=ids.includes(gs[tab])?gs[tab]:ids[0],def=defs[cur],isSeen=!!seen[cur];
-    const draw=(cv,sp,vis)=>{
+    const draw=(cv,sp,vis,id)=>{
       const g=cv.getContext('2d');g.imageSmoothingEnabled=true;
-      const spr=Sprites.forSp(sp,0,false),k=Math.min((cv.width/2-4)/Math.max(spr.ox,spr.c.width-spr.ox),(cv.height-10)/spr.oy);
+      const spr=(Sprites.packPortrait&&Sprites.packPortrait(id,tab!=='enemies'))||Sprites.forSp(sp,0,false),k=Math.min((cv.width/2-4)/Math.max(spr.ox,spr.c.width-spr.ox),(cv.height-10)/spr.oy);
       g.save();g.translate(cv.width/2,cv.height-6);g.scale(k,k);g.drawImage(spr.c,-spr.ox,-spr.oy);g.restore();
       if(!vis){g.globalCompositeOperation='source-atop';g.fillStyle='#0b1a2b';g.fillRect(0,0,cv.width,cv.height);}
     };
     const cards=ids.map(id=>{
-      const cv=document.createElement('canvas');cv.width=76;cv.height=76;draw(cv,defs[id].sp,!!seen[id]);
+      const cv=document.createElement('canvas');cv.width=76;cv.height=76;draw(cv,defs[id].sp,!!seen[id],id);
       return h('button',{class:'char g'+(id===cur?' sel':'')+(seen[id]?'':' locked'),'data-fid':'g'+id,onclick:()=>{this.sfx();gs[tab]=id;this.rebuild(true);}},cv,h('b',null,seen[id]?this.tr(defs[id].n):'???'));
     });
-    const big=document.createElement('canvas');big.width=160;big.height=160;draw(big,def.sp,isSeen);
+    const big=document.createElement('canvas');big.width=160;big.height=160;draw(big,def.sp,isSeen,cur);
     const stages=STAGES.filter(s=>tab==='enemies'?s.roster.some(r=>r[0]===cur):stageHasBoss(s,cur)).map(s=>'S'+s.no).join(', ')||'—';
     const info=isSeen?[
       h('p',null,this.tr(descs[cur])),

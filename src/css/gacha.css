@@ -129,6 +129,10 @@
 .tslot .glyph{font-size:34px;width:auto}
 .tslot .tsn{font-size:10px;line-height:1.05;text-align:center;max-width:70px;overflow:hidden;color:var(--ink)}
 .tslotwrap .unq{font-size:11px;padding:2px 8px}
+.tsrow{display:flex;gap:8px;justify-content:center;align-items:flex-start}
+.tsone{display:flex;flex-direction:column;align-items:center;gap:4px}
+.tslotwrap.multi .tslot{width:70px;height:70px}
+.tslotwrap.multi .tsn{max-width:62px}
 
 /* ---- Super Shenron ---- */
 .card.stage.superc{background:linear-gradient(160deg,#4a2c00,#1a1000 80%);border-color:var(--gold);box-shadow:0 0 22px rgba(255,210,63,.55);animation:gpulse 2s ease-in-out infinite}
