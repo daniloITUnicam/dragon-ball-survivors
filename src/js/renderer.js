@@ -66,6 +66,7 @@ class Renderer{
       if(d&&d.get&&d.set)Object.defineProperty(c,'globalAlpha',{configurable:true,enumerable:true,get(){const v=d.get.call(c);return FXL.m>0&&FXL.m<1?Math.min(1,v/FXL.m):v;},set(v){d.set.call(c,FXL.m<1?v*FXL.m:v);}});}
 this.W=1;this.H=1;this.Z=1;
     this.tiles={};this.decor={};this.vign=null;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
+    try{if(document.fonts)document.fonts.load('12px "Anton"','0123456789');}catch(e){}   /* the damage-number lettering */
     this.hint=null;this.joy=null;this.keyHints={};this.tr=(x)=>typeof x==='string'?x:x.it;this.tt=(k)=>k;
   }
   resize(){
@@ -241,6 +242,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else this.terrain(cx,cy,g.vw,g.vh,t,theme);
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
+    if(theme==='snake'&&Ambient.on&&Ambient.lod>=.5)Ambient.flockShadows(ctx,cx,cy,g.vw,g.vh,t,3,1,0);   /* shadows of the bird flocks gliding over the cloud sea */
     ELEC.n=0;this.fxBegin();
     for(const e of g.en)if(e.bm&&!e.dead)this.drawBmGround(e,t);
     if(g.rain.length)this.drawRainGround(g,t);
@@ -342,15 +344,24 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
-    /* damage numbers */
-    ctx.textAlign='center';ctx.font='700 13px "Rajdhani",sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
+    /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn in the arcade lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
+    ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
+    const smo=ctx.imageSmoothingEnabled;
     for(const d of g.tx){
-      const a=1-d.t/.8;ctx.globalAlpha=a;const y=d.y-d.t*34;
+      const L=d.l||.8,u=d.t/L,a=u<.62?1:clamp(1-(u-.62)/.38,0,1),y=d.y-d.t*(L>.8?30:34);
+      if(d.c===0||d.c===6){
+        const cr=d.c===6,sp=this.dmgSpr(String(d.s),cr),pop=d.t<.12?1+(.12-d.t)/.12*(cr?.7:.3):1,k=2*pop,sh=cr&&d.t<.2?Math.sin(d.t*90)*(1-d.t/.2)*2.2:0;
+        ctx.globalAlpha=a;ctx.imageSmoothingEnabled=false;
+        ctx.drawImage(sp.cv,d.x-sp.w*k/2+sh,y-sp.h*k*.72,sp.w*k,sp.h*k);
+        continue;
+      }
+      ctx.globalAlpha=a;
       ctx.fillStyle=d.c===1?'#ffd23f':d.c===4?'#ff6b6b':d.c===2?'#ffb0b0':d.c===3?'#9fe8ff':'#fff';
       const txt=String(d.s);
       ctx.font=(d.c===1?'900 17px':(typeof d.s==='string'?'700 14px':'700 13px'))+' "Rajdhani",sans-serif';
       ctx.strokeText(txt,d.x,y);ctx.fillText(txt,d.x,y);
     }
+    ctx.imageSmoothingEnabled=smo;
     ctx.globalAlpha=1;
     ctx.setTransform(1,0,0,1,0,0);
     this.vignette(g.dying?Math.min(.9,.5+.5*g.dying.t/.6):.5);if(g.dying){const dk=Math.min(.45,g.dying.t*.6);ctx.fillStyle='rgba(40,0,0,'+dk+')';ctx.fillRect(0,0,this.W,this.H);}
@@ -360,6 +371,27 @@ this.W=1;this.H=1;this.Z=1;
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     this.hud(g,dt,cx,cy);
+  }
+  /* the arcade lettering of the damage numbers: heavy, slanted, Dragon Ball-logo style (gradient + dark outline + a 3-D edge), drawn small and blown up
+     with no smoothing so the edges stay crisp pixels. One sprite per (text, critical?), cached. White-yellow for a hit, red for a critical hit */
+  dmgSpr(txt,crit){
+    const m=this._dm||(this._dm=new Map()),key=(crit?'c':'n')+txt;let sp=m.get(key);if(sp)return sp;
+    const fs=crit?10:8,ff='400 '+fs+'px "Anton","Bangers","Impact","Arial Black",sans-serif',mc=this._dmc||(this._dmc=document.createElement('canvas').getContext('2d'));
+    mc.font=ff;const ext=1,pad=3,w=Math.ceil(mc.measureText(txt).width)+pad*2+ext+3,h=fs+pad*2+ext+2,cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const c=cv.getContext('2d'),base=h-pad-ext-1;c.font=ff;c.textBaseline='alphabetic';c.textAlign='left';c.lineJoin='round';
+    c.transform(1,0,-.2,1,.2*base,0);   /* slant */
+    const X=pad+1;
+    c.fillStyle=crit?'#3a0000':'#b35a00';c.fillText(txt,X+ext,base+ext);                            /* the 3-D edge */
+    c.lineWidth=3;c.strokeStyle='#000';c.strokeText(txt,X,base);c.strokeText(txt,X+ext,base+ext);   /* outline */
+    const g=c.createLinearGradient(0,base-fs*.8,0,base);
+    if(crit){g.addColorStop(0,'#ffb8a0');g.addColorStop(.4,'#ff3a28');g.addColorStop(1,'#e01018');}
+    else{g.addColorStop(0,'#ffffff');g.addColorStop(.55,'#fff4b8');g.addColorStop(1,'#ffc83a');}
+    c.fillStyle=g;c.fillText(txt,X,base);c.strokeStyle=g;c.lineWidth=.9;c.strokeText(txt,X,base);   /* the stroke makes any fallback font heavy */
+    const id=c.getImageData(0,0,w,h),d=id.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>110?255:0;c.putImageData(id,0,0);   /* hard pixel edges */
+    sp={cv,w,h};
+    let ok=true;try{ok=!document.fonts||document.fonts.check('12px "Anton"');}catch(e){}
+    if(ok){if(m.size>500)m.clear();m.set(key,sp);}
+    return sp;
   }
   drawPlayer(g,t){
     const ctx=this.ctx,p=g.p,u=(g.C.u||1.95);

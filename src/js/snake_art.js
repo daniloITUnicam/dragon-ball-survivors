@@ -118,10 +118,9 @@ const SnakeArt={
       c.restore();
     }
   },
-  /* the sky above the entities: bird flocks, drifting mist, the Flying Nimbus now and then */
+  /* the sky above the entities: drifting mist, the Flying Nimbus now and then (the bird flocks are just shadows now, see Ambient.flockShadows) */
   air(c,cx,cy,vw,vh,t){
     c.save();c.lineCap='round';c.lineJoin='round';
-    Ambient.flocks(c,cx,cy,vw,vh,t,3,1,0);   /* the gull flocks (shared with the open-sky maps, see Ambient.flocks) */
     for(let i=0;i<4;i++){   /* mist banks slipping past faster than the ground */
       const per=vw+900,x=cx+((i*per*.37+t*(16+i*6)-cx*.45)%per+per)%per-450,y=cy+vh*(.1+.27*i)+Math.sin(t*.3+i*2)*10,w=300+i*60;
       const gr=c.createRadialGradient(x,y,10,x,y,w);gr.addColorStop(0,'rgba(255,248,224,.2)');gr.addColorStop(1,'rgba(255,248,224,0)');c.fillStyle=gr;c.fillRect(x-w,y-w*.4,w*2,w*.8);

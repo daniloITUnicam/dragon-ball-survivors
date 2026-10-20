@@ -23,6 +23,7 @@ const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],W
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
 const TOP_K=1.5;
+const DMG_T=1.1;   /* seconds a damage number stays on screen (every other floating text: .8 s) */
 const SPAR_COPY_MUL=.6,SPAR_COPY_P=.5;   /* Room of Spirit and Time: the Master copies your abilities and weapons 1 attack in 2, with 40% less damage */
 const TOTEM_CD=20,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
@@ -74,7 +75,7 @@ class Game{
   get formEntry(){return this.formIdx>=0?LINES[this.C.line||'saiyan'][this.formIdx]:null;}
   has(sp){return this.trinkets.some(id=>{const t=TRINKETS.find(x=>x.id===id);return t&&t.sp===sp;});}
   say(txt,col,dur,sub){this.banner={txt,col:col||'#ffd23f',t:0,dur:dur||2.6,sub:sub||null};}   /* sub: an optional smaller second line */
-  floatText(x,y,s,c){if(this.tx.length<50)this.tx.push({x,y,t:0,s,c:c||0});}
+  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
 
   /* ---------- stats ---------- */
   tMods(){
@@ -816,7 +817,7 @@ class Game{
     {const dd=Math.min(d,Math.max(0,e.hp)),k=this.curW||'other';this.dmgBy[k]=(this.dmgBy[k]||0)+dd;}
     e.hp-=d;e.fl=.07;
     if(!e.boss&&kx!==undefined){const k=e.elite?.2:e.ai==='tank'?.3:1;e.kx+=kx*k;e.ky+=ky*k;}
-    if(this.showNums)this.floatText(e.x+rnd(-6,6),e.y-e.r*1.7,Math.round(d),crit?1:0);
+    if(this.showNums)this.floatText(e.x+rnd(-6,6),e.y-e.r*1.7,Math.round(d),crit?6:0);
     if(crit&&this.has('critboom')&&!this._boom){
       this._boom=true;
       for(const o of this.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y;if(dx*dx+dy*dy<75*75)this.damageEnemy(o,d*.4,dx*.5,dy*.5,false);}
@@ -1049,7 +1050,7 @@ class Game{
       }
     }
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}this.fx=this.fx.filter(f=>f.l>0);
-    for(const t of this.tx)t.t+=dt;this.tx=this.tx.filter(t=>t.t<.8);
+    for(const t of this.tx)t.t+=dt;this.tx=this.tx.filter(t=>t.t<t.l);
     if(this.banner){this.banner.t+=dt;if(this.banner.t>this.banner.dur)this.banner=null;}
     if(v.t>=v.dur){this.vic=null;this.sb.nospawn=false;if(this.audio.slowMusic)this.audio.slowMusic(1);this.finish(true);}
   }
@@ -1667,7 +1668,7 @@ class Game{
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}
     this.fx=this.fx.filter(f=>f.l>0);
     for(const t of this.tx)t.t+=dt;
-    this.tx=this.tx.filter(t=>t.t<.8);
+    this.tx=this.tx.filter(t=>t.t<t.l);
     this.en=this.en.filter(e=>!e.dead);this.pr=this.pr.filter(b=>!b.dead);this.eb=this.eb.filter(b=>!b.dead);
     this.gm=this.gm.filter(g=>!g.dead);this.loot=this.loot.filter(l=>!l.dead);this.chests=this.chests.filter(c=>!c.dead);
 

@@ -1,21 +1,22 @@
 # TODO — Dragon Ball: Survivors
 
-Aggiornato il 20 ottobre 2026 (v55). Voci con 🎨 = **serve uno sprite / un asset dall'utente** (ricordarlo ogni volta che si parla di sprite).
+Aggiornato il 20 ottobre 2026 (v56). Voci con 🎨 = **serve uno sprite / un asset dall'utente** (ricordarlo ogni volta che si parla di sprite).
 
 ## 🎨 Asset da fornire
 - [ ] 🎨 Piccolo — **Cannone Speciale Makankosappo** (sprite e animazione dell'abilità unica).
 - [ ] 🎨 Toppo — **Sfera della Giustizia**: sfera oscura lanciata dal personaggio.
 - [ ] 🎨 Icona **globale del cimelio** colorata per rarità (slot, borsa, notifiche).
-- [ ] 🎨 Sprite di **Dyspo** sbagliato (viola, stessa razza di Beerus): cercare riferimenti e rifarlo.
+- [x] ~~Sprite di **Dyspo** sbagliato~~ → rifatto in v56 (viola come Beerus, orecchie da coniglio, tuta rosso/grigia, guanti e stivali bianchi). Se vuoi uno sprite vero: `assets/sprites/dyspo.png` lo sostituisce.
 - [ ] 🎨 Sprite dei boss canonici di Rovine degli Androidi, ora **procedurali provvisori**: Androide 13, Super C-13, 14, 15, 18, 19, 21 e Forma Majin (C-16 e C-17 hanno già il loro foglio).
 - [ ] 🎨 Sprite del **Kaioshin (Shin)**, del **Dai Kaioshin** e di **Champa** (provvisori); **Zeno-sama** giocabile usa l'immagine del negozio: un vero foglio `zeno.png` (idle, camminata, attacchi) lo sostituirebbe (`assets/sprites/`).
 - [ ] 🎨 Sprite dell'**arma Granata Infernale** (sfere di ki intorno al nemico) e dell'**arma Aura** (ex Kaioken).
 - [ ] 🎨 Suono del **level-up** mancante (cercare e proporre alternative).
-- [ ] 🎨 Suggerire sprite per le altre abilità.
+- [ ] 🎨 Sprite per le altre armi e abilità: **elenco con priorità, formati e dimensioni in [`docs/SPRITES_ABILITA.md`](SPRITES_ABILITA.md)** (consiglio: `fx_ball`, `fx_beam`, `fx_nova`, `fx_dash` per prime; poi `fx_genki`, `fx_hakai`, `fx_disc`, `fx_aura`).
 
 ## 🗓 Rilasci pianificati
 - **v55 – Boss e personaggi (FATTO, note `2026-10-20d`)**: vedi sotto in «Fatto». Da decidere: **Cooler** e **Janemba** non compaiono più in nessuno stage (erano nel Regno degli Dei, ora Kaioshin/Champa/Beerus): dove metterli?
-- **v56 – Audio / grafica**: ragni dei barili, ombre dei gabbiani, critici rossi + font arcade, suono level-up, Dyspo.
+- **v56 – Grafica (FATTO, note `2026-10-20e`)**: ragni dei barili naturali, ombre al posto dei gabbiani, critici rossi + numeri in stile arcade (+0,3 s), Dyspo rifatto. **Resta**: suono del level-up (da cercare).
+- **v57 – Nucleo di gioco (da discutere)**: partita unica da 30 minuti con interruttori Modalità Iperbolica / Maledizione della Distruzione, reset password e login Google (vedi sotto).
 - **Refactor #95**: estrarre `TrinketSystem`, `ZenoShop`, `Director/Spawner`, `Loot`, `Forms` da `Game`; HUD/mondo/overlay da `Renderer` (nessun cambio di comportamento, suite completa dopo ogni estrazione).
 
 ## 🗺 Mappa ESC (idea, non fatta)

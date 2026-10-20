@@ -55,6 +55,17 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026, parte 5 (ragni, ombre, numeri di danno, Dyspo)
+
+Dettaglio con numeri nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20e`, `src/js/patches.js`).
+
+- **Ragni dei barili naturali** (`ObjLife.crawl`, `ObjLife.dangle`, `ObjLife.spider`): comportamento come funzione pura del tempo (nessuno stato). Ciclo di 6,5 s: gira, cammina verso un punto a caso (le zampe seguono la distanza percorsa, partenza e frenata morbide), poi si ferma e fa 2 cose a caso tra alzare testa e zampe anteriori, pulirsi, guardarsi intorno, scuotere una zampa. Il ragno appeso (14 s) si cala, dondola, risale a scatti e riposa. Nuovo disegno: addome, testa, otto zampe snodate con andatura alternata.
+- **Ombre al posto dei gabbiani** (`Ambient.birdShadow`, `Ambient.flockShadows`, `Ambient.ground`): niente più stormi nel cielo né uccelli singoli disegnati; resta l'ombra sul terreno (alpha 0,10, ~20-30 px), in formazione a V, ancorata al mondo, che scorre a 36-50 px/s. Anche i gabbiani posati su casse, barili e lapidi (Isola di Muten, Pianura Saiyan, Arena dei Cell Game) sono stati tolti.
+- **Numeri di danno arcade** (`Renderer.dmgSpr`, `DMG_T = 1,1`, `Game.floatText` classi 0 = danno, 6 = critico): carattere Anton (Google Fonts, in coda a Impact/Arial Black), inclinato, sfumatura bianco-giallo, contorno scuro, bordo 3D e bordi a pixel; **critici rossi**, più grandi e con tremolio; restano 1,1 s (prima 0,8 s). Al massimo 46 numeri di danno insieme.
+- **Dyspo rifatto** (viola come Beerus, orecchie da coniglio `ears:'rabbit'`, tuta rossa/grigia, guanti e stivali bianchi) per personaggio e boss; **Beerus** più viola.
+- **Guida sprite per armi e abilità:** [`docs/SPRITES_ABILITA.md`](docs/SPRITES_ABILITA.md) (cosa fare per prima, formati e dimensioni).
+- **🧪 Test aggiunto:** `v56` (continuità e varietà del comportamento dei ragni, niente gabbiani posati, ombre in vista ~40% del tempo e leggere, durata e classe dei numeri di danno, critici rossi, sprite dei numeri in cache e a bordi netti); `shot_v56.js` e `shot_dyspo.js` per gli screenshot.
+
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 4 (boss, nemici e personaggi)
 
 Il dettaglio con tutti i numeri è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20d`, `src/js/patches.js`).
@@ -640,6 +651,7 @@ node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, 
 node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: bilanciamento, TAB, armi per partita, sacchi di zenny, Senzu, totem, Tamagami, acqua e lava (puppeteer)
+node tests/v56.js             # v56 ragni, ombre degli uccelli, numeri di danno arcade e critici rossi (puppeteer)
 node tests/v54.js             # v54 cimeli e compagni: Perfezione, forziere a 4, salta-inferiori, compagno (XP + onda d'urto), gacha, scambio, aura (puppeteer)
 node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)
 node tests/ui52.js            # v52 interfaccia: ingranaggio, ricerca/ordine personaggi, Avvio rapido, notifiche (puppeteer)

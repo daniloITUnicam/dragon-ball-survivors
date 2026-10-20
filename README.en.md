@@ -47,6 +47,17 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update, part 5 (spiders, shadows, damage numbers, Dyspo)
+
+Details with numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20e`, `src/js/patches.js`).
+
+- **Natural barrel spiders** (`ObjLife.crawl`, `ObjLife.dangle`, `ObjLife.spider`): behaviour is a pure function of time (no state). A 6.5 s cycle: it turns, walks to a random spot (legs follow the distance covered, soft start and stop), then stops and does 2 random things among rearing up its head and front legs, grooming, looking around, twitching a leg. The hanging spider (14 s) lets itself down, sways, climbs back in jerks and rests. New drawing: abdomen, head, eight jointed legs with an alternating gait.
+- **Shadows instead of gulls** (`Ambient.birdShadow`, `Ambient.flockShadows`, `Ambient.ground`): no more flocks in the sky or single birds drawn; what is left is the shadow on the ground (alpha 0.10, ~20-30 px), in a V formation, anchored to the world, sliding at 36-50 px/s. The gulls perched on crates, barrels and gravestones (Roshi's Island, Saiyan Plains, Cell Games Arena) are gone too.
+- **Arcade damage numbers** (`Renderer.dmgSpr`, `DMG_T = 1.1`, `Game.floatText` classes 0 = damage, 6 = critical): Anton lettering (Google Fonts, falling back to Impact/Arial Black), slanted, white-to-yellow gradient, dark outline, 3-D edge and pixel edges; **red critical hits**, bigger and with a shake; they stay 1.1 s (before 0.8 s). At most 46 damage numbers at once.
+- **Dyspo redone** (purple like Beerus, rabbit ears `ears:'rabbit'`, red/grey suit, white gloves and boots) as a character and as a boss; **Beerus** more purple.
+- **Sprite guide for weapons and abilities:** [`docs/SPRITES_ABILITA.md`](docs/SPRITES_ABILITA.md) (what to do first, formats and sizes).
+- **🧪 Test added:** `v56` (continuity and variety of the spider behaviour, no perched gulls, shadows in view ~40% of the time and faint, duration and class of damage numbers, red criticals, number sprites cached with crisp edges); `shot_v56.js` and `shot_dyspo.js` for screenshots.
+
 ### 🆕 October 20, 2026 update, part 4 (bosses, enemies and characters)
 
 The full numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20d`, `src/js/patches.js`).
@@ -607,6 +618,7 @@ node tests/pose.js            # weapon animations: armless frames, IK, Kamehameh
 node tests/hpbar.js           # Health bar with the live portrait (puppeteer); screenshots: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: balance, TAB, weapons per run, zenny bags, Senzu, totems, Tamagami, water and lava (puppeteer)
+node tests/v56.js             # v56 spiders, bird shadows, arcade damage numbers and red criticals (puppeteer)
 node tests/v54.js             # v54 trinkets and companions: Perfection, 4-trinket chest, skip-lower, companion (XP + shockwave), gacha, swap window, aura (puppeteer)
 node tests/eco52.js           # v52 economy: Reroll/Skip/Ban, Zeno, tickets, coin streak, Achievements, Objectives, quests (puppeteer)
 node tests/ui52.js            # v52 interface: gear, character search/sort, Quick Start, notifications (puppeteer)

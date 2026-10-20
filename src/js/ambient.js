@@ -401,25 +401,36 @@ const Ambient={
         ctx.globalAlpha=.16+.22*this.nt;ctx.drawImage(GLOW.spr(i===1?'#ffd9a0':i===2?'#a0d8ff':'#fff2c0'),x-r,y-r,r*2,r*2);}
       ctx.restore();
     }
+    if(c.flock&&this.lod>=.5&&this.evK!=='storm')this.flockShadows(ctx,cx,cy,vw,vh,t,c.flock,1-this.nt*.92,(this.theme.length*.173)%1);
     for(const q of this.cr)this.drawCrit(ctx,q,t);
     for(const q of this.ps){
       if(q.k==='splash'){const a=1-q.l/q.m;ctx.strokeStyle='rgba(225,236,255,'+(.55*a)+')';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(q.x,q.y,q.s,q.s*.45,0,0,TAU);ctx.stroke();}
       else if(q.k==='ring'){const a=1-q.l/q.m;ctx.strokeStyle='rgba(255,255,255,'+(.5*a)+')';ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(q.x,q.y,q.s,q.s*.45,0,0,TAU);ctx.stroke();}
-      else if(q.k==='bird'){const al=q.s>1.2?46:34;ctx.fillStyle='rgba(0,0,0,.16)';ctx.beginPath();ctx.ellipse(q.x+al*.5,q.y+al*.7,5*q.s,2*q.s,0,0,TAU);ctx.fill();}
+      else if(q.k==='bird'){this.birdShadow(ctx,q.x,q.y,Math.atan2(q.vy,q.vx),t,q.ph,q.s*1.35,.12*clamp(Math.min(q.l/1.5,(q.m-q.l)/1.5),0,1));}   /* the bird itself is out of sight: only its shadow glides over the ground */
       else if(q.k==='butterfly'){ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(q.x-2,q.y+9,4,1.5);}
     }
   },
-  /* ---------- sky show (visual only): flocks of gulls in a V crossing the screen, and the golden Flying Nimbus every ~80 s. Born on the Snake Way, now shared by the open-sky maps ---------- */
-  flocks(c,cx,cy,vw,vh,t,n,al,seed){
-    c.save();c.lineCap='round';c.lineJoin='round';
+  /* ---------- sky show (visual only): the shadow of a bird seen from above (the birds themselves are never drawn), flocks of them gliding over the ground, and the golden Flying Nimbus every ~80 s ---------- */
+  birdShadow(c,x,y,ang,t,ph,s,a){   /* ang = heading, radians */
+    const gl=Math.max(0,Math.sin(t*.45+ph*2.3)*1.7-.15),fl=Math.sin(t*7+ph)*Math.min(1,gl),sp=7.4+fl*3.4;   /* it glides, now and then flaps */
+    c.save();c.translate(x,y);c.rotate(ang);c.scale(s,s);c.fillStyle='rgba(0,0,0,'+a.toFixed(3)+')';
+    c.beginPath();c.moveTo(3.4,0);c.lineTo(1.1,-1.3);c.lineTo(-.6,-sp);c.lineTo(-2.7,-sp*.6);c.lineTo(-2.3,-1.1);c.lineTo(-5.4,-1.5);c.lineTo(-5,0);
+    c.lineTo(-5.4,1.5);c.lineTo(-2.3,1.1);c.lineTo(-2.7,sp*.6);c.lineTo(-.6,sp);c.lineTo(1.1,1.3);c.closePath();c.fill();
+    c.restore();
+  },
+  /* V-shaped flocks, anchored to the world (they drift over the ground at their own pace and come back round every few thousand px): a soft, small shadow each */
+  flockShadows(c,cx,cy,vw,vh,t,n,al,seed){
+    if(al<=.02)return;
+    const mx=cx+vw/2,my=cy+vh/2,wr=(a,L)=>((a%L)+L)%L;
     for(let f=0;f<n;f++){
-      const dur=70+f*23,u=((t/dur+f*.37+(seed||0))%1),dir=f&1?-1:1,sx=cx+vw*(dir>0?-.1+1.2*u:1.1-1.2*u)-cx*.08,sy=cy+vh*(.14+.22*f)+Math.sin(t*.4+f)*14;
-      for(let i=0;i<6+f;i++){
-        const bx=sx-dir*(Math.abs(i-2.5)*20+((i&1)?6:0)),by=sy+(i-2.5)*9*(i&1?1:-1)*.7+Math.abs(i-2.5)*6,fl=Math.sin(t*9+i*1.3+f)*4;
-        c.strokeStyle='rgba(255,255,255,'+(.85*al).toFixed(3)+')';c.lineWidth=2;c.beginPath();c.moveTo(bx-7,by-fl);c.quadraticCurveTo(bx-3,by-4-fl*.4,bx,by);c.quadraticCurveTo(bx+3,by-4-fl*.4,bx+7,by-fl);c.stroke();
+      const Lx=2700+f*470,Ly=3300+f*610,vx=(36+f*7)*(f&1?-1:1),vy=(f%3===1?-1:1)*(10+f*3),ang=Math.atan2(vy,vx),ox=(f*911+(seed||0)*5000)%Lx,oy=(f*1733+(seed||0)*3000+400)%Ly;
+      const fx=mx+wr(ox+vx*t-mx+Lx/2,Lx)-Lx/2,fy=my+wr(oy+vy*t-my+Ly/2,Ly)-Ly/2,ca=Math.cos(ang),sa=Math.sin(ang);
+      if(fx<cx-240||fx>cx+vw+240||fy<cy-240||fy>cy+vh+240)continue;
+      for(let i=0;i<6+(f&1);i++){
+        const lx=-(Math.abs(i-2.5)*24+((i&1)?6:0)),ly=(i-2.5)*14*(i&1?1:-1)*.7+Math.abs(i-2.5)*0,bx=fx+lx*ca-ly*sa,by=fy+lx*sa+ly*ca;   /* a V behind its leader */
+        this.birdShadow(c,bx,by,ang,t,i*1.3+f*2.1,1.35,.1*al);
       }
     }
-    c.restore();
   },
   nimbus(c,cx,cy,vw,vh,t,al,seed){
     const per=80,u=((t+20+(seed||0)*per)%per)/per;if(u>=.3)return;
@@ -448,11 +459,6 @@ const Ambient={
       case'confetti':{const w=3*Math.abs(Math.cos(q.l*8+q.ph))+.8;ctx.globalAlpha=env;ctx.fillStyle=q.c;ctx.fillRect(x,y,w,q.s);ctx.globalAlpha=1;break;}
       case'smoke':{const a=(1-q.l/q.m)*.4;ctx.globalAlpha=a;ctx.fillStyle=q.c;ctx.beginPath();ctx.arc(x,y,q.s,0,TAU);ctx.fill();ctx.globalAlpha=1;break;}
       case'puff':ctx.globalAlpha=.35*(1-q.l/q.m);ctx.fillStyle=q.c;ctx.beginPath();ctx.arc(x,y,q.s,0,TAU);ctx.fill();ctx.globalAlpha=1;break;
-      case'bird':{
-        const f=Math.sin(t*(q.s>1.2?7:13)+q.ph),s=q.s,fl=q.vx<0?-1:1;
-        ctx.fillStyle=q.c;ctx.fillRect(x-1*s,y-1.5*s,2*s,4*s);
-        ctx.fillRect(x-6*s,y-f*2.4*s-1,5*s,1.5*s);ctx.fillRect(x+1*s,y-f*2.4*s-1,5*s,1.5*s);
-        ctx.fillRect(x-1.5*s*fl,y+2*s,1.5*s,2*s);break;}
     }
   },
   drawAdd(ctx,q,t){
@@ -483,7 +489,6 @@ const Ambient={
     /* parallax layers moving faster than the ground (cloud decks / mist) */
     if(this.lod<.5)return;
     const cx=this.cx,cy=this.cy,vw=this.vw,vh=this.vh;
-    if(c.flock&&this.evK!=='storm')this.flocks(ctx,cx,cy,vw,vh,t,c.flock,1-this.nt*.92,(this.theme.length*.173)%1);   /* gulls crossing the sky */
     if(c.nimbus)this.nimbus(ctx,cx,cy,vw,vh,t,1-this.nt*.55,(this.theme.charCodeAt(0)%7)/9);
     const lay=(f,cell,dens,wdx,col,al,rmin,rmax)=>{
       const ox=cx*f,oy=cy*f,sx=cx-ox,sy=cy-oy,sp=GLOW.spr(col);ctx.globalAlpha=al;

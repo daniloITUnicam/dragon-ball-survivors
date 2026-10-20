@@ -253,7 +253,12 @@ class Sprites{
       else if(c.hs==='horns'){H(4,-35,.5,4,hd);H(-5.2,-35.4,.5,4,hl);}
       else if(c.hs==='antenna'){H(3.4,-35,.5,5,hd);H(-4.4,-35,.4,4,hl);}
     }
-    if(c.ears){H(-7.4,-38.4,3.8,7,c.skin);H(3.6,-38.4,3.8,7,c.skin);H(-6.6,-37.4,2,5,sh(c.skin,-.35));H(4.4,-37.4,2,5,sh(c.skin,-.35));H(-7.4,-38.4,3.8,.9,sh(c.skin,.2));}
+    if(c.ears==='rabbit'){   /* long upright rabbit ears (Dyspo): two segments, the upper one leaning outwards, darker inside */
+      const e=c.skin,ei=sh(c.skin,-.32),ed=sh(c.skin,-.18);
+      for(const sd of[-1,1]){const x0=sd<0?-7.6:4.2,xu=x0+sd*.9;
+        H(x0,-38.6,3.4,9.4,sd<0?e:ed);H(x0+.7,-37.6,2,8,ei);
+        H(xu,-46,3.4,8,sd<0?e:ed);H(xu+.7,-45,2,6.6,ei);H(xu,-46,3.4,.9,sh(e,.25));}
+    }else if(c.ears){H(-7.4,-38.4,3.8,7,c.skin);H(3.6,-38.4,3.8,7,c.skin);H(-6.6,-37.4,2,5,sh(c.skin,-.35));H(4.4,-37.4,2,5,sh(c.skin,-.35));H(-7.4,-38.4,3.8,.9,sh(c.skin,.2));}
     if(c.band){H(-7.6,-29.2,15.2,2.2,c.band);H(-7.6,-29.2,15.2,.6,sh(c.band,.3));}
     if(c.halo){H(-4.8,-46.5,9.6,1.3,'#ffe86a');H(-4.8,-43.6,9.6,1.3,'#ffe86a');H(-5.9,-45.2,1.4,2,'#ffe86a');H(4.5,-45.2,1.4,2,'#ffe86a');}
     if(c.staff){R(12,-40,1.6,36,'#e8e0f4');R(10.6,-43,4.4,4.4,'#7ad0ff');R(11.4,-42.2,2.8,2.8,'#fff');}
