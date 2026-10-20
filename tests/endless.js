@@ -84,13 +84,13 @@ ok(py.bank===1000&&py.p1===py.exp1,'the win pays the coins of the run ('+py.p1+'
 ok(py.p2===py.exp2&&py.p2>=0,'after "Continue" only the coins earned afterwards are paid, with the 25% penalty of a defeat ('+py.p2+' = '+py.exp2+')');
 ok(py.p3===0,'a second end without new coins pays nothing (no double payout)');
 
-/* 9. outside Endless: escalation per difficulty (every 60 s), Extreme spawn steps */
-const df=await pg.evaluate(()=>{const out={};for(const d of['easy','normal','hard','extreme']){const g=__app.startGame({stage:0,char:'goku',diff:d,x2:false,sandbox:true,pet:'none'});const G2=__app.game;G2.t=600;out[d]={hp:G2.escF.hp,dm:G2.escF.dmg,ar:G2.escF.arm,steps:G2.escSteps(),x:G2.xSteps()};
+/* 9. outside Endless: escalation per difficulty (every 10 minutes, Easy every 60 s), Extreme spawn steps */
+const df=await pg.evaluate(()=>{const out={};for(const d of['easy','normal','hard','extreme']){const g=__app.startGame({stage:0,char:'goku',diff:d,x2:false,sandbox:true,pet:'none'});const G2=__app.game;G2.t=600;out[d]={hp:G2.escF.hp,dm:G2.escF.dmg,ar:G2.escF.arm,steps:G2.escSteps(),x:G2.xSteps()};G2.t=1800;out[d].s30=G2.escSteps();
   if(d==='extreme'){G2.t=0;out.x0=G2.xSteps();G2.t=300;out.x300=G2.xSteps();G2.t=3600;out.x3600=G2.xSteps();}}return out;});
 ok(df.easy.hp===.01&&df.easy.dm===.01&&df.easy.ar===0,'Easy: +1% health, +1% damage per step');
 ok(df.normal.hp===.10&&df.normal.dm===.02&&df.hard.hp===.10&&df.hard.dm===.02,'Normal / Hard: +10% health, +2% damage');
 ok(df.extreme.hp===.15&&df.extreme.dm===.05&&df.extreme.ar===.15,'Extreme: +15% health, +5% damage, +15% armor');
-ok(df.normal.steps===10&&df.extreme.steps===10,'one step per minute (600 s = 10 steps)');
+ok(df.easy.steps===10&&df.normal.steps===1&&df.hard.steps===1&&df.extreme.steps===1&&df.normal.s30===3&&df.extreme.s30===3,'Normal / Hard / Extreme: one step every 10 minutes (600 s = 1 step, 30 min = 3); Easy keeps one per minute');
 ok(df.extreme.x===20&&df.x0===0&&df.x300===10&&df.x3600===60&&df.easy.x===0&&df.normal.x===0,'Extreme: +2% enemies every 30 s, 60 steps at most ('+df.x300+' at 5 min, '+df.x3600+' at 1 h)');
 
 /* 10. Broly's berserk: 6 s (8 s in the final form), the weapons aim badly */

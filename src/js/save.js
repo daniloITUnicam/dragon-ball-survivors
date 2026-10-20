@@ -63,7 +63,8 @@ class Progress{
   runCtx(g,win){
     const s=this.d.stats;
     return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,pos:STAGES[g.stageIdx].pos,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
-      totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills)};
+      totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills),
+      allX:STAGES.every((_,i)=>this.d.xc[i]),allW:Object.keys(WEAPONS).every(id=>id==='ki'||this.d.wu[id])};   /* Zeno-sama: every stage cleared on Extreme + every weapon unlocked */
   }
   statsView(g){
     const s=this.d.stats,b=g?g.bank:null,r=g?g.run:null,bk=k=>(b&&b[k])||0,rk=k=>(r&&r[k])||0;

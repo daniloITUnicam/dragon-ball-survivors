@@ -55,6 +55,21 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 20 ottobre 2026, parte 4 (boss, nemici e personaggi)
+
+Il dettaglio con tutti i numeri è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20d`, `src/js/patches.js`).
+
+- **Trasformazioni dei boss** (`Game.bossTransform`, `TRANS_K = 1,2`, `TRANS_HEAL = 0,5`): +50% della Salute massima (nuova) e +20% di Salute massima, danno, velocità (`spdK`) e armatura a ogni forma. **Freezer** (Namek) e **Cell** (Arena dei Cell Game) attraversano tutte le forme (`p2`, `p2at = 0,6`, `morph`), con +2,5% di velocità a forma.
+- **Morte del boss finale** (`Game.startVictory/updateVictory`, `VIC_T = 4,2`): 4,2 s al rallentatore con esplosioni crescenti, onda bianca e «VITTORIA!» prima del menu di fine stage.
+- **Mosse speciali dei boss** (`BOSSES[id].sig`, `startBossMove/updateBossMove/updateHeld/updateRain`): Dodoria **lancio di corpo** (3 s di avviso, traiettoria larga quanto il corpo), Dr. Gero e C-19 **presa** che risucchia 5/15/25/35% di Salute in 3 s, Super Buu **pioggia di ki** (50/55/60/70 palline, 2% di Salute ciascuna).
+- **Rovine degli Androidi** (`STAGES[2].abs`, `bossPlan`, `ANDROID_SEQ`, `ANDROID_K`): un androide canonico ogni 5 minuti in tempo reale (13, 14, 15, 16, 17, 18; Infinito: 19 e 21 e poi il giro riparte +35% di Salute); il primo androide a fine partita è il boss finale. Nuovi boss `c13/c13s/c14/c15/c18/c19/c21/c21m` (sprite provvisori procedurali) e mosse canoniche in `bossAttack` (`bd.lb` rinomina una mossa, `bd.ext` elenca le mosse speciali, `e.bar` = barriera −88% danni). Nota rossa dell'Infinito: `STAGES[2].endNote`. **Cell** non è più nelle Rovine.
+- **Regno degli Dei**: boss `shin`, `daikai`, `champa` al posto di Zarbon, Cooler e Janemba; Beerus resta il boss finale.
+- **Stanza dello Spirito e del Tempo** (`Game.sparCopy`, `SPAR_COPY_P`, `SPAR_COPY_MUL`): il Maestro copia un attacco su due l'abilità unica o un'arma del giocatore con −40% di danno.
+- **Piccolo / Toppo / Gotenks**: Cannone Speciale (`sbc`), Sfera della Giustizia oscura (`sphere`), Fantasmi Kamikaze che copiano le armi (`ghosts`, `GHOST_KIND`); arma **Granata Infernale** (`HellzoneWeapon`, 2 evoluzioni); Kaioken → **Aura** (a Jiren); Gotenks SSJ → SSJ Blue.
+- **Zeno-sama giocabile** (`CHARS.zeno`, `LINES.zeno`, `ABIL.zeno`): numeri da Regina Sigma di Vampire Survivors un po' più alti, non in vendita, si sblocca con tutti gli stage completati in Estremo e tutte le armi sbloccate (`runCtx.allX/allW`); sprite = immagine del suo negozio registrata come foglio (`Sprites.zenoSheet`).
+- **Difficoltà**: il rinforzo a scatti dei nemici (Normale/Difficile/Estremo) ora ogni 10 minuti invece di 1:30 (`ESC_EVERY`; Facile resta 60 s). **Barre della vita dei nemici sopra la testa.**
+- **🧪 Test aggiunto:** `v55` (trasformazioni, Freezer/Cell, morte del boss finale, Piccolo/Toppo/Gotenks, Dodoria/Gero/Buu, calendario degli androidi, mosse dei nuovi boss, Regno degli Dei, Zeno-sama, Stanza dello Spirito); `shot_v55b/c/d.js` e `shot_zeno.js` fanno gli screenshot.
+
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 3 (Perfezione dei cimeli, compagni, forzieri a 4 cimeli)
 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20c`, `src/js/patches.js`).
@@ -632,7 +647,7 @@ node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendit
 node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
 node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)
 node tests/totem.js           # totem unico + 8 poteri
-node tests/abil.js            # tutte le abilità dei 57 personaggi
+node tests/abil.js            # tutte le abilità dei 58 personaggi
 node tests/newchars.js        # i 16 nuovi personaggi: dati, sblocchi, Senzu di Yajirobe, run complete
 node tests/ui_sfx.js          # suoni arcade dei pulsanti (hover, clic, indietro) - richiede puppeteer
 node tests/sheet_hd.js en out.png   # anteprima di tutti gli sprite nemici (anche: boss, o chiavi separate da virgola)

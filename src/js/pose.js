@@ -11,7 +11,7 @@ const POSE_L1=4.4,POSE_L2=3.8,POSE_HAND=1.7,POSE_SY=-14.2,POSE_SX=6.5,POSE_CY=-1
 /* weapons without an own wind-up: when one fires (its cooldown jumps back up) the character plays this pose toward the nearest enemy */
 const ARM_FIRE={
   homing:{st:'shoot',h:.16,r:.16},dbeam:{st:'shoot',h:.2,r:.16},javelin:{st:'shoot',h:.22,r:.18},spiral:{st:'shoot',h:.14,r:.14},
-  barrage:{st:'shoot',h:.12,r:.12,alt:1},boomer:{st:'shoot',h:.2,r:.18},hellzone:{st:'shoot',h:.2,r:.18},hakai:{st:'shoot',h:.22,r:.2},
+  barrage:{st:'shoot',h:.12,r:.12,alt:1},boomer:{st:'shoot',h:.2,r:.18},hellzone:{st:'sky',w:.1,h:.7,r:.25},hakai:{st:'shoot',h:.22,r:.2},
   dsunday:{st:'both',h:.2,r:.16},breaker:{st:'both',h:.24,r:.2},
   chain:{st:'sky',w:.1,h:.3,r:.2},meteor:{st:'sky',w:.1,h:.34,r:.22},shock:{st:'slam',w:.08,h:.2,r:.2},
   spirit:{st:'raise2',w:.42,h:.26,r:.26,ball:1},flare:{st:'face',w:.05,h:.3,r:.2}

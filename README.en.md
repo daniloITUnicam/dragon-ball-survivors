@@ -47,6 +47,21 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 20, 2026 update, part 4 (bosses, enemies and characters)
+
+The full numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20d`, `src/js/patches.js`).
+
+- **Boss transformations** (`Game.bossTransform`, `TRANS_K = 1.2`, `TRANS_HEAL = 0.5`): +50% of the (new) maximum health and +20% maximum health, damage, speed (`spdK`) and armor on every form. **Frieza** (Namek) and **Cell** (Cell Games Arena) go through all their forms (`p2`, `p2at = 0.6`, `morph`), with +2.5% speed per form.
+- **Final boss death** (`Game.startVictory/updateVictory`, `VIC_T = 4.2`): 4.2 s of slow motion with growing explosions, a white blast and «VICTORY!» before the stage-complete menu.
+- **Boss signature moves** (`BOSSES[id].sig`, `startBossMove/updateBossMove/updateHeld/updateRain`): Dodoria **body hurl** (3 s warning, path as wide as his body), Dr. Gero and Android 19 **hold** draining 5/15/25/35% health over 3 s, Super Buu **rain of ki** (50/55/60/70 balls, 2% health each).
+- **Android Ruins** (`STAGES[2].abs`, `bossPlan`, `ANDROID_SEQ`, `ANDROID_K`): a canonical android every 5 minutes in real time (13, 14, 15, 16, 17, 18; Endless: 19 and 21, then the list starts over +35% health); the first android at the end of the run is the final boss. New bosses `c13/c13s/c14/c15/c18/c19/c21/c21m` (temporary procedural sprites) and canonical moves in `bossAttack` (`bd.lb` renames a move, `bd.ext` lists the special moves, `e.bar` = barrier −88% damage). Red Endless note: `STAGES[2].endNote`. **Cell** is no longer in the Ruins.
+- **Realm of the Gods**: bosses `shin`, `daikai`, `champa` in place of Zarbon, Cooler and Janemba; Beerus stays the final boss.
+- **Room of Spirit and Time** (`Game.sparCopy`, `SPAR_COPY_P`, `SPAR_COPY_MUL`): the Master copies the player's unique ability or a weapon on one attack in two, with 40% less damage.
+- **Piccolo / Toppo / Gotenks**: Special Beam Cannon (`sbc`), dark Sphere of Justice (`sphere`), Kamikaze Ghosts that copy the weapons (`ghosts`, `GHOST_KIND`); **Hellzone Grenade** weapon (`HellzoneWeapon`, 2 evolutions); Kaioken → **Aura** (to Jiren); Gotenks SSJ → SSJ Blue.
+- **Playable Zeno-sama** (`CHARS.zeno`, `LINES.zeno`, `ABIL.zeno`): Vampire Survivors' Queen Sigma numbers, a bit higher, not for sale, unlocked by clearing every stage on Extreme and unlocking every weapon (`runCtx.allX/allW`); his sprite is the picture of his shop registered as a sheet (`Sprites.zenoSheet`).
+- **Difficulty**: the stepped enemy reinforcement (Normal/Hard/Extreme) now happens every 10 minutes instead of 1:30 (`ESC_EVERY`; Easy stays 60 s). **Enemy health bars sit above the head.**
+- **🧪 Test added:** `v55` (transformations, Frieza/Cell, final boss death, Piccolo/Toppo/Gotenks, Dodoria/Gero/Buu, android schedule, new boss moves, Realm of the Gods, Zeno-sama, Room of Spirit and Time); `shot_v55b/c/d.js` and `shot_zeno.js` take the screenshots.
+
 ### 🆕 October 20, 2026 update, part 3 (trinket Perfection, companions, 4-trinket chests)
 
 The full before/after numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20c`, `src/js/patches.js`).
@@ -599,7 +614,7 @@ node tests/gacha.js           # Gacha: odds, tickets, Bag, slot, in-run sale, Su
 node tests/kai.js             # Kaioken x10/x20
 node tests/bers.js            # Broly's Berserk
 node tests/totem.js           # one-time totem + 8 powers
-node tests/abil.js            # every ability of the 57 characters
+node tests/abil.js            # every ability of the 58 characters
 node tests/newchars.js        # the 16 new characters: data, unlocks, Yajirobe's Senzu, full runs
 node tests/ui_sfx.js          # arcade button sounds (hover, click, back) - needs puppeteer
 node tests/sheet_hd.js en out.png   # preview every enemy sprite (also: boss, or comma-separated keys)

@@ -49,7 +49,7 @@ class MenuBg{
   burst(x,y,n,col){for(let i=0;i<n;i++){const an=rnd(0,TAU),v=rnd(30,120);this.fx.push({t:'spark',x,y,vx:Math.cos(an)*v,vy:Math.sin(an)*v-20,life:rnd(.4,.9),d:.9,col,sz:rnd(1.5,3)});}}
   /* mechanic -> visual style of the special ability */
   abStyle(m){
-    return{beam:'beam',nova:'nova',dash:'dash',clones:'clones',barrier:'barrier',regen:'heal',absorb:'nova',blind:'nova',erase:'nova',timestop:'ring',
+    return{beam:'beam',nova:'nova',dash:'dash',clones:'clones',ghosts:'clones',sbc:'beam',sphere:'nova',barrier:'barrier',regen:'heal',absorb:'nova',blind:'nova',erase:'nova',timestop:'ring',
       rewind:'ring',jackpot:'sparkle',crit:'aura',buff:'aura',kaioken:'aura',berserk:'aura'}[m]||'aura';
   }
   /* ---- update ---- */

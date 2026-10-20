@@ -109,7 +109,8 @@ class App{
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
     this.joy.on=false;
     const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
-    for(const b of st.bosses)if(BOSSES[b[0]])defs.push(BOSSES[b[0]].sp);
+    {const ids=new Set(bossPlan(st,(DIFF[o.diff]||DIFF.normal).dur,o.diff).map(b=>b[0]));for(const b of st.bosses)ids.add(b[0]);
+      for(const id of ids)for(let q=BOSSES[id],n=0;q&&n<4;q=BOSSES[q.p2],n++)defs.push(q.sp);}
     if(st.sup)for(const id of['tama1','tama1f','tama2','tama2f','tama3','tama3f'])defs.push(BOSSES[id].sp);
     Sprites._wq=[];Sprites.warm(defs);
   }
@@ -129,7 +130,7 @@ class App{
     const g=this.game;this.lastRes=null;
     if(!g||g.ended||!['play','modal','pause'].includes(this.state))return null;
     const tp=document.getElementById('tip');if(tp)tp.style.display='none';
-    this.ui.clear();this.ui.closeModal();g.modal=null;g.dying=null;g.timeScale=1;
+    this.ui.clear();this.ui.closeModal();g.modal=null;g.dying=null;g.vic=null;g.timeScale=1;
     g.finish(false,{keep:true});
     return this.lastRes;
   }

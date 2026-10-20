@@ -161,7 +161,7 @@ class UI{
         onclick:()=>{this.sfx();sel.stage=i;this.push('chars');}},
         h('canvas',{class:'stprev',width:240,height:96,'data-theme':s.theme,'data-seed':String(i)}),
         h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
-        h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+s.bosses.length),
+        h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+bossPlan(s,DIFF[sel.diff].dur,sel.diff).length),
         h('div',{class:'cd'},this.t('rewardMult')+' x'+s.zenny),
         this.stageStats(i),
         locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:STAGES[STAGE_ORDER[s.pos-1]].no})):
@@ -319,7 +319,7 @@ class UI{
       return h('button',{class:'char g'+(id===cur?' sel':'')+(seen[id]?'':' locked'),'data-fid':'g'+id,onclick:()=>{this.sfx();gs[tab]=id;this.rebuild(true);}},cv,h('b',null,seen[id]?this.tr(defs[id].n):'???'));
     });
     const big=document.createElement('canvas');big.width=160;big.height=160;draw(big,def.sp,isSeen);
-    const stages=STAGES.filter(s=>tab==='enemies'?s.roster.some(r=>r[0]===cur):s.bosses.some(b=>b[0]===cur)).map(s=>'S'+s.no).join(', ')||'—';
+    const stages=STAGES.filter(s=>tab==='enemies'?s.roster.some(r=>r[0]===cur):stageHasBoss(s,cur)).map(s=>'S'+s.no).join(', ')||'—';
     const info=isSeen?[
       h('p',null,this.tr(descs[cur])),
       h('div',{class:'krow'},h('span',null,this.t('glossBehavior')),h('b',null,this.tr(AI_TEXT[def.ai]||AI_TEXT.chase))),

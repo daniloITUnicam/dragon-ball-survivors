@@ -18,7 +18,8 @@ const r=await pg.evaluate(async()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad)
  ok(!kk.length,'no other line has a Kaioken form'+(kk.length?' ('+kk.join()+')':''));
  ok(names('kai').join()==='King Kai Training,Gravity x10,Gravity x100,Heavenly Master','King Kai: '+names('kai').join(' > '));
  const sa=CHARS.filter(c=>c.line==='saiyan').map(c=>c.id);ok(sa.join()==='goku','only Goku has the Kaioken/Ultra Instinct line ('+sa.join()+')');
- ok(CHARS.find(c=>c.id==='vegeta').line==='vegeta'&&['trunks','gohan','goten','gotenks','vegito','raditz','nappa','bardock','kefla','gogeta','saiyaman'].every(id=>CHARS.find(c=>c.id===id).line==='saiyan2'),'Vegeta has his own line, the other Saiyans share saiyan2');
+ ok(CHARS.find(c=>c.id==='vegeta').line==='vegeta'&&['trunks','gohan','goten','vegito','raditz','nappa','bardock','kefla','gogeta','saiyaman'].every(id=>CHARS.find(c=>c.id===id).line==='saiyan2'),'Vegeta has his own line, the other Saiyans share saiyan2');
+ ok(CHARS.find(c=>c.id==='gotenks').line==='gotenks'&&names('gotenks').join()==='Super Saiyan,Super Saiyan 2,Super Saiyan 3,Super Saiyan God,Super Saiyan Blue','Gotenks has his own line: SSJ > SSJ2 > SSJ3 > God > Blue, no Saiyan Fury ('+names('gotenks').join(' > ')+')');
  /* achievements: the Instinct ones need Goku */
  const f7=ACHIEVEMENTS.find(a=>a.id==='f7'),f8=ACHIEVEMENTS.find(a=>a.id==='f8'),f1=ACHIEVEMENTS.find(a=>a.id==='f1');
  ok(f7.test({run:{ui:7,form:7},rec:{}})&&!f7.test({run:{ui:0,form:7},rec:{ui:0}})&&f8.test({run:{ui:8},rec:{}})&&!f8.test({run:{ui:0,form:8},rec:{}}),'Sign of Instinct / Perfected need Goku');

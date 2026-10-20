@@ -165,7 +165,7 @@ Object.assign(UI.prototype,{
         this.trinketSlot())));
     const stageCard=h('div',{class:'qscard'},h('span',{class:'lbl'},this.tr(T('Stage scelto','Chosen stage'))),
       h('div',{class:'qsstage'},pv,h('div',{class:'stnum'},'STAGE '+S.no),h('div',{class:'cn'},this.tr(S.n)),
-        h('div',{class:'cd'},this.t('difficulty')+': '+dName+' · '+this.t('duration')+': '+fmtT(DIFF[diff].dur)+' · '+this.t('bosses')+': '+S.bosses.length)));
+        h('div',{class:'cd'},this.t('difficulty')+': '+dName+' · '+this.t('duration')+': '+fmtT(DIFF[diff].dur)+' · '+this.t('bosses')+': '+bossPlan(S,DIFF[diff].dur,diff).length)));
     let goal;
     if(tg){
       const pct=Math.round(tg.ratio*100),isTotal=tg.max>1;

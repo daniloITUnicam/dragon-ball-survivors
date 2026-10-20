@@ -6,7 +6,7 @@ Object.assign(WS,{
   breaker:{cd:[2.8,2.6,2.4,2.2,2,1.8],n:[1,1,1,1,2,2],dmg:[18,22,26,30,35,42],rad:[60,66,72,80,90,110]},
   spiral:{iv:[.34,.3,.27,.24,.22,.2],arms:[1,2,2,3,3,4],dmg:[6,6.5,7,8,9,10],pi:[0,0,0,0,1,1]},
   boomer:{cd:[2.4,2.2,2,1.8,1.6,1.4],n:[1,1,2,2,3,4],dmg:[11,13,15,17,20,24],dist:[230,250,270,290,320,380]},
-  hellzone:{cd:[5,4.6,4.2,3.8,3.4,3],n:[1,1,2,2,3,4],dmg:[6,7,8,9.5,11,13],rad:[62,68,74,82,92,108],life:[3,3,3.2,3.4,3.6,4]},
+  hellzone:{cd:[7,6.5,6,5.5,5,4.4],n:[16,20,24,28,32,40],dmg:[3,3.4,3.8,4.3,4.9,5.8],rad:[90,98,106,116,126,140]},
   chrono:{cd:[8,7.5,7,6.5,6,5],rad:[150,165,180,200,220,260],dmg:[10,12,14,16,19,22],hits:[3,3,3,4,4,6],stun:[1,1.1,1.2,1.3,1.4,1.6]},
   shock:{cd:[3.4,3.1,2.8,2.5,2.2,1.9],rad:[170,190,210,235,260,310],dmg:[14,17,20,24,28,34]},
   hakai:{cd:[9,8.5,8,7.5,7,6],n:[1,1,1,1,2,2],dmg:[4.5,5.5,6.5,7.5,9,10.5],rad:[56,62,68,76,86,100],life:[4,4.2,4.4,4.6,4.8,5]},
@@ -117,39 +117,97 @@ class BoomerWeapon extends NW{
     }
   }
 }
+/* Hellzone Grenade (Piccolo, C-16, Dabura): dozens of ki spheres float around ONE enemy and, on command, all strike at once. Very slow attack, huge burst.
+   Evolution 1 surrounds 2 enemies at once, evolution 2 surrounds 3 (and adds 8 spheres). The shell follows the enemy while it forms. */
+const HZ_FORM=1.5,HZ_HOLD=.45,HZ_CONV=.3,HZ_END=HZ_FORM+HZ_HOLD+HZ_CONV;
 class HellzoneWeapon extends NW{
-  constructor(g,id){super(g,id);this.zs=[];}
+  constructor(g,id){super(g,id);this.gs=[];}
+  get e2n(){return this.evo>=2?8:0;}
+  get targets(){return 1+Math.min(2,this.evo|0);}
+  spheres(){return this.st.n[this.L]+this.e2n+Math.max(0,Math.round(this.g.S.proj||0));}
+  /* the densest knots of enemies on screen (a boss always counts as one), kept apart from each other */
+  pickTargets(R){
+    const g=this.g,live=g.en.filter(e=>this.inView(e,430));
+    if(!live.length)return[];
+    const pool=live.length>70?live.filter((_,i)=>i%Math.ceil(live.length/70)===0):live,out=[];
+    for(let k=0;k<this.targets;k++){
+      let best=null,bs=-1;
+      for(const e of pool){
+        if(out.some(o=>Math.hypot(o.x-e.x,o.y-e.y)<R*1.5))continue;
+        let sc=e.boss?40:0;
+        for(const q of pool)if(Math.hypot(q.x-e.x,q.y-e.y)<R)sc++;
+        sc-=Math.hypot(e.x-g.p.x,e.y-g.p.y)*.002;
+        if(sc>bs){bs=sc;best=e;}
+      }
+      if(best)out.push(best);
+    }
+    return out;
+  }
   update(dt){
-    const g=this.g,p=g.p,s=this.st,L=this.L;
+    const g=this.g,s=this.st,L=this.L,R=s.rad[L]*this.area();
     this.cd-=dt;
     if(this.cd<=0){
-      const live=g.en.filter(e=>this.inView(e,420));
-      if(live.length){
-        const n=s.n[L]+this.e2n;
-        for(let i=0;i<n;i++){const t=pick(live);this.zs.push({x:t.x+rnd(-20,20),y:t.y+rnd(-20,20),t:-.45,life:s.life[L],rad:s.rad[L]*this.area(),tk:0});}
-        g.audio.sfx('shot');this.cd=this.cdv();
-      }else this.cd=.2;
+      const ts=this.pickTargets(R);
+      if(ts.length){
+        const n=this.spheres();
+        for(const t of ts)this.gs.push({t,x:t.x,y:t.y-8,age:0,n,R,shell:clamp(Math.max(t.r*1.15+26,24+n*1.4),46,132),ph:rnd(0,TAU),done:false,hum:0});
+        g.audio.sfx('spirit');this.cd=this.cdv();
+      }else this.cd=.25;
     }
-    for(const z of this.zs){
-      z.t+=dt;
-      if(z.t<0)continue;
-      if(g.eb.length)g.cutC(z.x,z.y,z.rad);
-      if(!z.on){z.on=true;g.ring(z.x,z.y,z.rad*1.2,this.color,.35);g.burst(z.x,z.y,16,'#ff9a2a');g.shake=Math.max(g.shake,.1);}
-      z.tk-=dt;if(z.tk<=0){z.tk=.45;for(const e of g.en){if(e.dead)continue;const dx=e.x-z.x,dy=e.y-z.y,rr=z.rad+e.r;if(dx*dx+dy*dy<rr*rr)g.hit(e,s.dmg[L]*this.dm,0,0);}}
-      if(Math.random()<.5&&g.fx.length<420){const a=rnd(0,TAU),d=rnd(0,z.rad);g.fx.push({x:z.x+Math.cos(a)*d,y:z.y+Math.sin(a)*d*.8,vx:rnd(-10,10),vy:rnd(-90,-40),l:rnd(.3,.6),m:.6,c:Math.random()<.5?'#ffb13b':'#ff5a1a',s:rnd(2,4)});}
+    for(const z of this.gs){
+      z.age+=dt;
+      if(z.t&&!z.t.dead){z.x=z.t.x;z.y=z.t.y-8;}   /* the shell follows its enemy (if it dies the spheres still strike the spot) */
+      if(z.age>=HZ_FORM&&!z.cmd){z.cmd=true;g.audio.sfx('flare');}   /* the "now!" */
+      if(z.age>=HZ_END)this.boom(z);
     }
-    this.zs=this.zs.filter(z=>z.t<z.life);
+    this.gs=this.gs.filter(z=>!z.done);
+  }
+  boom(z){
+    z.done=true;
+    const g=this.g,s=this.st,L=this.L,c=this.color,dmg=s.dmg[L]*this.dm*z.n;   /* every sphere hits: n x damage per sphere */
+    g.cutC(z.x,z.y,z.R);
+    g.ring(z.x,z.y,z.R,c,.55);g.ring(z.x,z.y,z.R*.62,'#ffffff',.4);g.ring(z.x,z.y,z.R*1.25,c,.7);
+    g.burst(z.x,z.y,36,c);g.burst(z.x,z.y,18,'#ffffff');g.bolt(z.x,z.y,z.R*.9,c,8);
+    g.shake=Math.max(g.shake,.38);g.audio.sfx('boom');
+    for(const e of g.en){
+      if(e.dead)continue;
+      const dx=e.x-z.x,dy=e.y-8-z.y,d=Math.hypot(dx,dy),rr=z.R+e.r;
+      if(d<rr){const f=1-.3*Math.min(1,d/rr);g.hit(e,dmg*f,dx/(d||1)*70,dy/(d||1)*70);}
+    }
+  }
+  /* position of sphere i of a shell: a rotating Fibonacci sphere, flattened a little (screen y) */
+  pos(z,i,Rr,rot){
+    const y3=1-2*(i+.5)/z.n,r3=Math.sqrt(Math.max(0,1-y3*y3)),th=i*2.399963+z.ph+rot;
+    return{x:z.x+Math.cos(th)*r3*Rr,y:z.y+y3*Rr*.82,d:(Math.sin(th)*r3+1)/2};
   }
   drawGround(ctx){
     const g=this.g,t=g.rt;
-    for(const z of this.zs){
-      if(z.t<0){const k=(z.t+.45)/.45,gy=z.y-(1-k)*420;GLOW.at(ctx,z.x,gy,26,'#ff7a2a',1);ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.arc(z.x,gy,6,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,120,40,.7)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.ellipse(z.x,z.y,z.rad,z.rad*.8,0,0,TAU);ctx.stroke();ctx.setLineDash([]);continue;}
-      const fade=Math.min(1,(z.life-z.t)/.6),pul=1+Math.sin(t*8+z.x)*.04;
-      ctx.save();ctx.translate(z.x,z.y);ctx.scale(1,.8);ctx.globalAlpha=fade;
-      const gr=ctx.createRadialGradient(0,0,z.rad*.1,0,0,z.rad*pul);gr.addColorStop(0,'rgba(255,230,120,.75)');gr.addColorStop(.55,'rgba(255,110,30,.5)');gr.addColorStop(1,'rgba(160,30,10,.0)');
-      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,z.rad*pul,0,TAU);ctx.fill();
-      ctx.strokeStyle='#ff9a2a';ctx.lineWidth=2.5;ctx.globalCompositeOperation='lighter';ctx.beginPath();ctx.arc(0,0,z.rad*pul,0,TAU);ctx.stroke();
-      ctx.rotate(t*1.5);ctx.strokeStyle='#ffd23f';ctx.lineWidth=1.5;ctx.setLineDash([8,10]);ctx.beginPath();ctx.arc(0,0,z.rad*.62,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    for(const z of this.gs){
+      const k=Math.min(1,z.age/HZ_END),pul=z.age>=HZ_FORM?1+Math.sin(t*40)*.03:1;
+      ctx.save();ctx.translate(z.x,z.y+10);ctx.scale(1,.55);
+      const gr=ctx.createRadialGradient(0,0,z.R*.1,0,0,z.R*pul);gr.addColorStop(0,'rgba(220,255,90,'+(.05+.2*k)+')');gr.addColorStop(1,'rgba(200,255,60,0)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,z.R*pul,0,TAU);ctx.fill();
+      ctx.globalCompositeOperation='lighter';ctx.strokeStyle=hexA(this.color,.25+.5*k);ctx.lineWidth=2.4;ctx.setLineDash([9,8]);ctx.lineDashOffset=-t*40;
+      ctx.beginPath();ctx.arc(0,0,z.R*pul,0,TAU);ctx.stroke();ctx.setLineDash([]);
+      ctx.rotate(t*1.4);ctx.strokeStyle=hexA('#ffffff',.18+.35*k);ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,z.R*.55,0,TAU);ctx.stroke();
+      ctx.restore();
+    }
+  }
+  draw(ctx){
+    const g=this.g,c=this.color,t=g.rt;
+    for(const z of this.gs){
+      const fk=Math.min(1,z.age/HZ_FORM),hold=z.age>=HZ_FORM,cv=Math.max(0,(z.age-HZ_FORM-HZ_HOLD)/HZ_CONV);
+      const conv=cv*cv,Rr=z.shell*(1-.92*conv)+(hold&&!cv?Math.sin(t*50)*1.8:0),rot=z.age*(1.3+z.age*.9);
+      ctx.save();ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<z.n;i++){
+        const appear=clamp((z.age-i/z.n*HZ_FORM*.8)/.22,0,1);if(appear<=0)continue;
+        const q=this.pos(z,i,Rr*(.35+.65*appear),rot),sz=(3.6+2.6*q.d)*(1+(hold?.25:0)),al=(.45+.55*q.d)*appear;
+        ctx.globalAlpha=al;GLOW.at(ctx,q.x,q.y,sz*2.3,c,hold?.75:.5);
+        ctx.fillStyle=cv>0?'#ffffff':'#f6ffc8';ctx.beginPath();ctx.arc(q.x,q.y,sz*.62,0,TAU);ctx.fill();
+      }
+      ctx.globalAlpha=1;
+      /* the charge in the middle while the spheres wait for the order */
+      if(hold)GLOW.at(ctx,z.x,z.y,Rr*(.9+.6*cv)+14,c,.25+.55*cv);
       ctx.restore();
     }
   }

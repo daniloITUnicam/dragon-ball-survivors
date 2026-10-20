@@ -242,6 +242,8 @@ this.W=1;this.H=1;this.Z=1;
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
     ELEC.n=0;this.fxBegin();
+    for(const e of g.en)if(e.bm&&!e.dead)this.drawBmGround(e,t);
+    if(g.rain.length)this.drawRainGround(g,t);
     if(FXL.a>0){for(const w of g.weapons.values())if(w.drawGround)w.drawGround(ctx);
     const au=g.weapons.get('aura');if(au){au.draw(ctx);au.elecOverlay(ctx);}}
     this.fxEnd();
@@ -278,6 +280,12 @@ this.W=1;this.H=1;this.Z=1;
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,t);
     }
+    if(g.vic)this.drawVictory(g.vic,t);
+    if(g.sbc)this.drawSbc(g,t);
+    if(g.held)this.drawHeld(g,t);
+    if(g.rain.length)this.drawRainAir(g,t);
+    if(g.spheres.length)this.drawSpheres(g,t);
+    if(g.ghosts)this.drawGhosts(g,t);
     this.fxBegin();if(FXL.a>0)for(const w of g.weapons.values())if(w.draw&&w.id!=='aura'){w.draw(ctx);w.elecOverlay(ctx);}this.fxEnd();
     if(Ambient.on)Ambient.air(ctx,t);
     if(theme==='snake'&&Ambient.on)SnakeArt.air(ctx,cx,cy,g.vw,g.vh,t);   /* birds, mist, the Flying Nimbus */
@@ -301,6 +309,7 @@ this.W=1;this.H=1;this.Z=1;
         let gr=ctx.createLinearGradient(0,-w,0,w);gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.35,hexA(f.c,.75));gr.addColorStop(.5,'rgba(255,255,255,.95)');gr.addColorStop(.65,hexA(f.c,.75));gr.addColorStop(1,hexA(f.c,0));
         ctx.globalAlpha=Math.min(1,a*1.3);ctx.fillStyle=gr;ctx.fillRect(0,-w,f.len,w*2);
         GLOW.at(ctx,0,0,w*1.8,f.c,.9);GLOW.at(ctx,f.len,0,w*1.1,f.c,.6);
+        if(f.sbc){ctx.lineCap='round';for(const [col,ph,lw] of [[f.c,0,4],['#b46bff',Math.PI,4],['#ffffff',Math.PI/2,2]]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();for(let x=0;x<=f.len;x+=7){const yy=Math.sin(x*.05-k*46+ph)*w*.7;if(x)ctx.lineTo(x,yy);else ctx.moveTo(x,yy);}ctx.stroke();}}   /* Special Beam Cannon: the twisting spiral around the core */
         ctx.strokeStyle='#ffffff';ctx.lineWidth=2;for(let q=0;q<6;q++){const x0=Math.random()*f.len,sp=w*.9;ctx.beginPath();ctx.moveTo(x0,(Math.random()-.5)*sp*2);for(let i=1;i<=4;i++)ctx.lineTo(x0+i*22,(Math.random()-.5)*sp*2);ctx.stroke();}
         ctx.restore();continue;
       }
@@ -590,7 +599,7 @@ this.W=1;this.H=1;this.Z=1;
     const ctx=this.ctx,def=e.boss?e.bd:e.def,sd=def.sp,u=sd.u||def.u||1.6;
     let frame=e.atk>0?(e.atk>.18?5:6):(e.fuse>0?5:(e.st===2&&e.ai==='charge')?6:1+((t*8+e.ph)|0)%4);
     const fuseFlash=e.fuse>0&&((e.fuse*12)|0)%2===0,warn=(e.st===1&&e.ai==='charge')||(e.xf&&!e.xf.released&&((t*14)|0)%2===0)||(e.st===1&&(e.ai==='slam'||e.ai==='leap')&&((t*16)|0)%2===0);
-    const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0);
+    const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0)||(e.vis&&e.vis.flash&&((t*(10+(e.bm?e.bm.t:0)*5))|0)%2===0);
     const esid=e.esid!==undefined?e.esid:(Object.keys(Sprites.sheets).length?(e.esid=Sprites.enemySheet(e)):null);   /* pack art for this boss / enemy, if any */
     if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
     const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1);
@@ -646,14 +655,18 @@ this.W=1;this.H=1;this.Z=1;
       if(e.tel){ctx.fillStyle=e.tel;ctx.globalAlpha=.8+.2*Math.sin(t*30);ctx.font='bold '+(12+(e.telK||0)*6|0)+'px sans-serif';ctx.textAlign='center';ctx.fillText('!',e.x,e.y-e.r*2.5-Math.abs(Math.sin(t*14))*3);ctx.globalAlpha=1;}
       if(e.sk){for(const en of e.sk.l)if(en.s.id==='orbs'){const n=en.s.n||3;for(let q=0;q<n;q++){const a=(e.oa||0)+q/n*TAU,ox2=e.x+Math.cos(a)*(e.r+24),oy2=e.y-e.r*.8+Math.sin(a)*(e.r+16)*.8;GLOW.at(ctx,ox2,oy2,12,en.s.c||'#fff',.9);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ox2,oy2,3,0,TAU);ctx.fill();}}}
     }else{
-    ctx.save();ctx.translate(e.x,e.y+bob-zo);ctx.scale(e.face*k*bsz*sqx,k*bsz*sqy);
+    const vs=e.vis;   /* signature move pose (shake / spin / stretch) set by Game.updateBossMove */
+    ctx.save();ctx.translate(e.x+(vs?vs.ox:0),e.y+bob-zo+(vs?vs.oy:0));if(vs&&vs.rot){ctx.translate(0,-e.r);ctx.rotate(vs.rot);ctx.translate(0,e.r);}ctx.scale(e.face*k*bsz*sqx*(vs?vs.sx:1),k*bsz*sqy*(vs?vs.sy:1));
     if(e.def&&e.def.alpha)ctx.globalAlpha=e.def.alpha;
     ctx.imageSmoothingEnabled=true;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
     }
     if(e.stun>0){ctx.fillStyle='#fff7b0';for(let i=0;i<3;i++){const a=t*6+i*TAU/3;ctx.fillRect(e.x+Math.cos(a)*10-1.5,e.y-e.r*2.4+Math.sin(a)*3,3,3);}}
-    if(e.elite){const bw=e.r*2.6,bx=e.x-bw/2,by=e.y-e.r*2.75;ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(bx-1,by-1,bw+2,6);ctx.fillStyle='#ffd23f';ctx.fillRect(bx,by,bw*clamp(e.hp/e.max,0,1),4);
+    if(e.bm&&e.bm.k==='rain')this.drawBuuHand(e,t);
+    if(e.boss&&e.bar>0){ctx.save();ctx.strokeStyle='rgba(160,230,255,.95)';ctx.lineWidth=3;ctx.globalAlpha=Math.min(1,e.bar*2)*(.6+.3*Math.sin(t*14));ctx.fillStyle='rgba(140,220,255,.16)';ctx.beginPath();ctx.ellipse(e.x,e.y-e.r*.9,e.r*1.6,e.r*1.75,0,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}   /* barrier of the androids / Kaioshin */
+    const topY=e.y+bob-zo-sp.oy*k;   /* the top of the sprite: the health bars sit above the head, not on the body */
+    if(e.elite){const bw=e.r*2.6,bx=e.x-bw/2,by=topY-14;ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(bx-1,by-1,bw+2,6);ctx.fillStyle='#ffd23f';ctx.fillRect(bx,by,bw*clamp(e.hp/e.max,0,1),4);
       ctx.fillStyle='#ffd23f';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('★',e.x,by-4);}
-    else if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,e.y-e.r*2.6,e.r*2*clamp(e.hp/e.max,0,1),3);}
+    else if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,topY-8,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,topY-8,e.r*2*clamp(e.hp/e.max,0,1),3);}
   }
   /* the sprite sheet of the Dragon Balls, or null until the image has loaded (then the old vector drawing is used) */
   ballSheet(){
@@ -714,6 +727,136 @@ this.W=1;this.H=1;this.Z=1;
   }
   /* Super Dragon Ball: a giant ball floating over the ground with a golden aura, a tall column of light, turning rays and slow rings - impossible to miss */
   /* a Tamagami statue: the boss sprite painted in cold grey stone (cached) */
+  /* the final boss falling: it shakes and flashes while cracks of light spread, then the blast whites it out (Game.startVictory / updateVictory) */
+  /* ---- boss signature moves (Game.updateBossMove): the path of Dodoria's body hurl / Dr. Gero's lunge on the ground, drawn as wide as the body ---- */
+  drawBmGround(e,t){
+    const m=e.bm;if(m.k!=='dtoss'&&m.k!=='grab')return;
+    const ctx=this.ctx,tel=m.k==='dtoss',w=tel?e.r*2:e.r*1.7,L=m.L,k=m.st===0?clamp(m.t/m.warn,0,1):1,locked=m.st>0||m.t>=m.lock,fade=m.st===0?1:clamp(1-m.t/(L/(tel?1250:1100)),0,1);
+    const col=tel?'255,60,60':'120,255,110',cb=tel?(locked?'#ff3b3b':'#ffb13b'):(locked?'#9cff7a':'#e6ff9a');
+    ctx.save();ctx.translate(m.ox,m.oy-e.r*.3);ctx.rotate(m.a);ctx.globalAlpha=fade;
+    const pul=.5+.5*Math.sin(t*(locked?26:12));
+    const gr=ctx.createLinearGradient(0,0,L,0);gr.addColorStop(0,'rgba('+col+','+(.08+.14*k)+')');gr.addColorStop(1,'rgba('+col+','+(.2+.25*k+(locked?.12*pul:0))+')');
+    ctx.fillStyle=gr;ctx.fillRect(0,-w/2,L,w);
+    ctx.globalCompositeOperation='lighter';ctx.strokeStyle=cb;ctx.lineWidth=locked?3:2;ctx.globalAlpha=fade*(.5+.5*(locked?1:k));
+    ctx.beginPath();ctx.moveTo(0,-w/2);ctx.lineTo(L,-w/2);ctx.moveTo(0,w/2);ctx.lineTo(L,w/2);ctx.stroke();
+    /* chevrons running along the path */
+    ctx.lineWidth=2.4;ctx.globalAlpha=fade*(.25+.45*k);const sp=(t*(locked?420:160))%64;
+    for(let x=sp;x<L-10;x+=64){ctx.beginPath();ctx.moveTo(x-9,-w*.28);ctx.lineTo(x+3,0);ctx.lineTo(x-9,w*.28);ctx.stroke();}
+    /* where it ends: the landing circle of the body slam (Dodoria) or the reach of the hand (Gero) */
+    ctx.globalAlpha=fade*(.4+.5*k);ctx.setLineDash([9,7]);ctx.lineDashOffset=-t*40;ctx.beginPath();ctx.ellipse(L,0,tel?e.r*2.6+30:w*.7,tel?(e.r*2.6+30)*.8:w*.6,0,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    ctx.restore();
+    /* the countdown above the boss */
+    if(m.st===0){const left=Math.max(0,m.warn-m.t);ctx.save();ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.7)';ctx.fillStyle=locked?'#ff5a4a':'#ffd23f';const txt=left.toFixed(1),y=e.y-e.r*3.1;ctx.strokeText(txt,e.x,y);ctx.fillText(txt,e.x,y);ctx.restore();}
+  }
+  /* Super Buu's raised hand: an arm in his skin colour going up with a ball of pink ki growing on it */
+  drawBuuHand(e,t){
+    const m=e.bm,ctx=this.ctx,up=m.st===0?clamp(m.t/.5,0,1):(m.st===1?1:clamp(1-m.t/.5,0,1)),hx=e.x+e.face*e.r*1.5,sy=e.y-e.r*1.1,hy=sy-e.r*1.7*up;
+    ctx.save();ctx.lineCap='round';ctx.strokeStyle='#ff8fb8';ctx.lineWidth=e.r*.42;ctx.beginPath();ctx.moveTo(hx,sy);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.fillStyle='#ffb0d0';ctx.beginPath();ctx.arc(hx,hy,e.r*.26,0,TAU);ctx.fill();
+    const ch=m.st===0?clamp(m.t/.9,0,1):1,br=(10+22*ch)*(1+.08*Math.sin(t*30));
+    ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy-e.r*.5,br*2.6,'#ff4fb0',.5+.4*ch);ctx.fillStyle='#ffd0ec';ctx.beginPath();ctx.arc(hx,hy-e.r*.5,br*.42,0,TAU);ctx.fill();
+    ctx.restore();
+  }
+  /* the balls of the rain: a streak going up from the hand, then (1 s before it lands) the marked spot on the ground */
+  drawRainGround(g,t){
+    const ctx=this.ctx;
+    for(const r of g.rain){
+      if(!r.mk)continue;
+      const k=clamp((r.t-2)/1,0,1),R=38;
+      ctx.save();ctx.translate(r.lx,r.ly);ctx.scale(1,.85);
+      ctx.fillStyle='rgba(255,40,150,'+(.1+.26*k)+')';ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();
+      ctx.strokeStyle='rgba(255,40,150,'+(.5+.5*k)+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.stroke();
+      ctx.beginPath();ctx.arc(0,0,R*(1-k*.85),0,TAU);ctx.strokeStyle='rgba(255,255,255,'+(.3+.6*k)+')';ctx.lineWidth=2;ctx.stroke();
+      ctx.restore();
+    }
+  }
+  drawRainAir(g,t){
+    const ctx=this.ctx;ctx.save();ctx.globalCompositeOperation='lighter';
+    for(const r of g.rain){
+      if(r.t<.7){const q=r.t/.7;ctx.globalAlpha=1-q*.5;ctx.strokeStyle='#ff7ac0';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(r.hx,r.hy-q*420);ctx.lineTo(r.hx,r.hy-q*420+46);ctx.stroke();GLOW.at(ctx,r.hx,r.hy-q*420,16,'#ff4fb0',.8);}
+      else if(r.mk&&r.t>2.62){const q=clamp((r.t-2.62)/.38,0,1),y=r.ly-(1-q)*(1-q)*440;ctx.globalAlpha=1;GLOW.at(ctx,r.lx,y,24,'#ff4fb0',.9);ctx.fillStyle='#ffe0f2';ctx.beginPath();ctx.arc(r.lx,y,6,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,122,192,.7)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(r.lx,y-34*(1-q*.5));ctx.lineTo(r.lx,y);ctx.stroke();}
+    }
+    ctx.restore();
+  }
+  /* Dr. Gero's hold: the green energy streaming from you into him */
+  drawHeld(g,t){
+    const h=g.held,e=h.e,p=g.p,ctx=this.ctx,x0=p.x,y0=p.y-16,x1=e.x,y1=e.y-e.r;
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    GLOW.at(ctx,p.x,p.y-16,46+6*Math.sin(t*20),'#9cff7a',.55);
+    for(let j=0;j<3;j++){ctx.strokeStyle=j?'rgba(255,255,255,.55)':'rgba(120,255,110,.8)';ctx.lineWidth=j?1.5:4;ctx.beginPath();ctx.moveTo(x0,y0);for(let i=1;i<=8;i++){const q=i/8,wob=Math.sin(t*26+i*1.7+j*2)*(8*(1-Math.abs(q-.5)*2)+2);ctx.lineTo(x0+(x1-x0)*q,y0+(y1-y0)*q+wob);}ctx.stroke();}
+    ctx.restore();
+    const left=Math.max(0,3-h.t).toFixed(1);ctx.save();ctx.font='bold 18px sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.7)';ctx.fillStyle='#9cff7a';ctx.strokeText(left,p.x,p.y-58);ctx.fillText(left,p.x,p.y-58);ctx.restore();
+  }
+  /* Special Beam Cannon: the charge at the fingertips (two fingers on the forehead), a growing glow, a twisting spiral and the aiming line */
+  drawSbc(g,t){
+    const s=g.sbc,p=g.p;if(s.t>=s.dur)return;
+    const ctx=this.ctx,c=g.abil.c,k=Math.min(1,s.t/s.dur),u=g.C.u||1.95,fx=Math.cos(s.ang)>=0?1:-1,hx=p.x+fx*5,hy=p.y-27*u;
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    /* aiming line */
+    const ox=p.x,oy=p.y-24;ctx.setLineDash([14,10]);ctx.lineDashOffset=-t*60;ctx.lineWidth=1.6;ctx.strokeStyle=hexA(c,.1+.3*k);
+    ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+Math.cos(s.ang)*900,oy+Math.sin(s.ang)*900);ctx.stroke();ctx.setLineDash([]);
+    /* glow + spirals around the fingertips */
+    GLOW.at(ctx,hx,hy,12+34*k,c,.5+.5*k);GLOW.at(ctx,hx,hy,6+14*k,'#ffffff',.7);
+    for(let j=0;j<3;j++){
+      ctx.strokeStyle=hexA(j===1?'#b46bff':c,.4+.5*k);ctx.lineWidth=1.8;ctx.beginPath();
+      for(let i=0;i<=16;i++){const a=t*(9+j)+i*.42+j*2.1,r=(4+i*(1.1+1.4*k))*(.4+.6*k);const x=hx+Math.cos(a)*r,y=hy+Math.sin(a)*r*.8;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);}
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /* Sphere of Justice (Toppo): a dark sphere with a purple-magenta rim, swirling strands and the dashed area it will blow up */
+  drawSpheres(g,t){
+    const ctx=this.ctx,c=g.abil.c;
+    for(const s of g.spheres){
+      const k=s.ph?Math.min(1,s.t/s.hold):0,r=s.ph===0?15+Math.sin(t*30):s.rr;
+      ctx.save();ctx.translate(s.x,s.y);
+      if(s.ph===1){ctx.save();ctx.scale(1,.8);ctx.strokeStyle=hexA('#ff4fd8',.15+.35*k);ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*34;ctx.beginPath();ctx.arc(0,0,s.R,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+      GLOW.at(ctx,0,0,r*3.4,c,.55);GLOW.at(ctx,0,0,r*2,'#ff4fd8',.25+.3*k);
+      ctx.globalCompositeOperation='lighter';ctx.lineWidth=2;ctx.strokeStyle=hexA('#d8a0ff',.8);
+      for(let i=0;i<6;i++){ctx.beginPath();const a0=t*(s.ph?3:6)+i*1.05;ctx.moveTo(Math.cos(a0)*r,Math.sin(a0)*r);for(let q=1;q<=4;q++){const a=a0+q*.2,rr=r*(1+q*.13)+Math.sin(t*22+i+q)*2.4;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}ctx.stroke();}
+      ctx.globalCompositeOperation='source-over';
+      ctx.fillStyle='#10041c';ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+      ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
+      ctx.strokeStyle=hexA('#ff4fd8',.55+.4*Math.sin(t*14));ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,0,r*.72,0,TAU);ctx.stroke();
+      ctx.fillStyle='#5a1a9a';ctx.beginPath();ctx.arc(-r*.28,-r*.28,r*.3,0,TAU);ctx.fill();
+      ctx.restore();
+    }
+  }
+  /* Super Ghost Kamikaze (Gotenks): the little grinning ghosts. They flash red and shake when their time is up and they are about to explode */
+  drawGhosts(g,t){
+    const ctx=this.ctx,c=g.abil.c,dy=g.ghostT<=0;
+    for(const k of g.ghosts){
+      const a=k.atk>0?k.atk/.4:0,sc=1.25*(1+a*.25);
+      ctx.save();ctx.translate(k.x+(dy?Math.sin(t*90+k.a)*1.6:0),k.y+Math.sin(k.ph)*3);ctx.scale(k.fl*sc,sc);
+      ctx.fillStyle='rgba(0,0,0,.18)';ctx.beginPath();ctx.ellipse(0,30/sc,9,3,0,0,TAU);ctx.fill();
+      GLOW.at(ctx,0,0,30,dy?'#ff5a5a':c,.4+.25*a);
+      ctx.globalAlpha=.9;ctx.fillStyle=dy&&Math.sin(t*40)>0?'#ffd0d0':'#f6f0ff';ctx.strokeStyle=hexA(dy?'#ff5a5a':c,.95);ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(-11,4);ctx.bezierCurveTo(-14,-17,14,-17,11,4);ctx.quadraticCurveTo(9,12,6,8);ctx.quadraticCurveTo(3,16,0,9);ctx.quadraticCurveTo(-4,16,-7,8);ctx.quadraticCurveTo(-10,12,-11,4);ctx.closePath();ctx.fill();ctx.stroke();
+      /* little arms */
+      ctx.beginPath();ctx.moveTo(-10,0);ctx.quadraticCurveTo(-17,-3-a*6,-15,-8-a*6);ctx.moveTo(10,0);ctx.quadraticCurveTo(17,-3-a*6,15,-8-a*6);ctx.stroke();
+      /* eyes, glints and the grin (wide open when it attacks) */
+      ctx.fillStyle=dy?'#ff2a2a':'#2a1a4a';ctx.beginPath();ctx.ellipse(-4.2,-5,2.3,3.4,0,0,TAU);ctx.ellipse(4.2,-5,2.3,3.4,0,0,TAU);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-3.4,-6.2,.9,0,TAU);ctx.arc(5,-6.2,.9,0,TAU);ctx.fill();
+      ctx.strokeStyle='#2a1a4a';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-2,5.4,.12*Math.PI,.88*Math.PI);ctx.stroke();
+      if(a>0.2){ctx.fillStyle='#2a1a4a';ctx.beginPath();ctx.arc(0,-2,5.2,.1*Math.PI,.9*Math.PI);ctx.closePath();ctx.fill();}
+      ctx.restore();
+    }
+  }
+  drawVictory(v,t){
+    const ctx=this.ctx,e=v.e,k=Math.min(1,v.t/2.6);
+    if(!v.boom){
+      e.fl=((v.t*16)|0)%3===0?1:0;
+      ctx.save();ctx.translate(rnd(-1,1)*(1.5+4.5*k),rnd(-1,1)*(1+2*k));this.drawEnemy(e,t);ctx.restore();
+      GLOW.at(ctx,v.x,v.y-v.r,v.r*(1.2+1.8*k),'#ffffff',.12+.4*k);
+      ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle='rgba(255,255,255,'+(.25+.6*k)+')';ctx.lineWidth=1.5;
+      for(let i=0;i<(FXL.on?3:7);i++){const a=i/7*TAU+v.t*.6,L=v.r*(.6+1.7*k);ctx.beginPath();ctx.moveTo(v.x,v.y-v.r);ctx.lineTo(v.x+Math.cos(a)*L,v.y-v.r+Math.sin(a)*L);ctx.stroke();}
+      ctx.restore();
+    }else{
+      const q=v.t-v.bt;
+      if(q<.4){e.fl=1;ctx.save();ctx.globalAlpha=1-q/.4;this.drawEnemy(e,t);ctx.restore();}
+      GLOW.at(ctx,v.x,v.y-v.r,v.r*(3+4*Math.min(1,q/.5)),'#ffffff',Math.max(0,.9-q*.45));
+    }
+  }
   stoneSprite(id){
     this.stoneC=this.stoneC||{};if(this.stoneC[id]!==undefined)return this.stoneC[id];
     const bd=BOSSES[id],sp=bd&&Sprites.forSp(bd.sp,1,false);if(!sp||!sp.c)return null;

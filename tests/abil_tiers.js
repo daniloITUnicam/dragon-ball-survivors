@@ -35,13 +35,13 @@ await mk('tien');const c2=await use(7);ok(c2.clones===6&&c2.cloneT===14,'Tien fi
 await mk('gohan');const g2=await use(7);ok(g2.critT===12&&g2.critDmg===2.5,'Gohan final form: 12 s of crits, x2.5 crit damage');
 await mk('hit');const h2=await use(7);ok(h2.ts===3.6,'Hit final form: time stops for 3.6 s');
 await mk('yamcha');const y2=await use(7);ok(y2.dashWave,'Yamcha final form: dash ends with a shockwave');
-await mk('piccolo');const p0=await use(-1),p2=await use(7);ok(p2.rate>p0.rate*1.6&&p2.inv>=1.9,'Piccolo final form: stronger regeneration + invulnerability ('+p0.rate.toFixed(2)+' -> '+p2.rate.toFixed(2)+')');
+await mk('bu');const lastF=await pg.evaluate(()=>LINES[G.C.line].length-1);const p0=await use(-1),p2=await use(lastF);ok(p2.rate>p0.rate*1.6&&p2.inv>=1.9,'Majin Buu final form: stronger regeneration + invulnerability ('+p0.rate.toFixed(2)+' -> '+p2.rate.toFixed(2)+')');
 await mk('krillin');const kp="const e=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+520,g.p.y);e.hp=e.max=9999;g.en.push(e);";
 const kb0=await use(-1,kp),kb2=await use(7,kp);ok(kb0.stun[0]===0&&kb2.stun[0]>2.5,'Krillin: the final flash reaches far enemies ('+kb0.stun[0]+' vs '+kb2.stun[0]+')');
 /* passives from the middle form */
-await mk('piccolo');
-const rg=await pg.evaluate(()=>{const g=G;g.formIdx=-1;g.recalc();const a=g.S.regen;g.formIdx=3;g.recalc();return[a,g.S.regen,g.passK()];});
-const fr=await pg.evaluate(()=>FORM_TIERS[3].regen);ok(Math.abs(rg[1]-rg[0]-(fr+.6*rg[2]))<1e-6,'middle form passive: +0.6 x'+rg[2]+' regen (v53 scaling) on top of the form\'s own '+fr+' (Piccolo '+rg[0].toFixed(2)+' -> '+rg[1].toFixed(2)+')');
+await mk('bu');
+const rg=await pg.evaluate(()=>{const g=G,i=Math.floor((LINES[g.C.line].length-1)/2);g.formIdx=-1;g.recalc();const a=g.S.regen;g.formIdx=i;g.recalc();return[a,g.S.regen,g.passK(),i];});
+const fr=await pg.evaluate(i=>FORM_TIERS[i].regen,rg[3]);ok(Math.abs(rg[1]-rg[0]-(fr+.6*rg[2]))<1e-6,'middle form passive: +0.6 x'+rg[2]+' regen (v53 scaling) on top of the form\'s own '+fr+' (Majin Buu '+rg[0].toFixed(2)+' -> '+rg[1].toFixed(2)+')');
 /* kaioken */
 await mk('goku');
 const ka=await pg.evaluate(()=>{const g=G,o=[];g.kai=1;for(const i of[-1,3,7]){g.formIdx=i;g.recalc();o.push(g.kaiDrain);}g.kai=0;return o;});
@@ -52,10 +52,10 @@ const bs=await pg.evaluate(()=>{const g=G;g.xform=null;g.modal=null;g.formIdx=-1
 ok(bs.m1>bs.m0*1.7&&bs.a1-bs.a0>=5&&bs.tk1<bs.tk0,'Broly berserk: damage x'+(bs.m1/bs.m0).toFixed(2)+', armor +'+(bs.a1-bs.a0)+', damage taken x'+(bs.tk1/bs.tk0).toFixed(2));
 ok(bs.mx===6&&bs.mx2===8&&bs.a2-bs.a0>=8,'final form berserk lasts '+bs.mx2+' s with +'+(bs.a2-bs.a0)+' armor (cooldown '+bs.cd+' s)');
 /* enemy escalation every 90 s */
-const esc=async(diff)=>{await mk('goku',diff);return pg.evaluate(()=>{const g=G,r={};g.t=0;const e0=g.mkEnemy(Object.values(ENEMIES)[1],0,0);g.t=60*4;const e4=g.mkEnemy(Object.values(ENEMIES)[1],0,0);r.F=g.escF;r.steps=g.escSteps();r.xpm=e4.xpm;r.xpm0=e0.xpm;r.arm0=e0.armor;r.arm4=e4.armor;r.dmgRatio=e4.dmg/e0.dmg;r.hpRatio=e4.max/e0.max;return r;});};
+const esc=async(diff)=>{await mk('goku',diff);return pg.evaluate(()=>{const g=G,r={};g.t=0;const e0=g.mkEnemy(Object.values(ENEMIES)[1],0,0);g.t=g.escEvery*4;const e4=g.mkEnemy(Object.values(ENEMIES)[1],0,0);r.F=g.escF;r.steps=g.escSteps();r.xpm=e4.xpm;r.xpm0=e0.xpm;r.arm0=e0.armor;r.arm4=e4.armor;r.dmgRatio=e4.dmg/e0.dmg;r.hpRatio=e4.max/e0.max;return r;});};
 const en=await esc('normal'),ex=await esc('extreme');
-ok(en.F.hp===.10&&en.F.dmg===.02&&en.F.xp===.05&&en.steps===4&&Math.abs(en.xpm-1.2)<1e-9,'normal: +10% HP, +2% damage, +5% XP per 60 s (xpm after 4 steps '+en.xpm+')');
-ok(ex.F.hp===.15&&ex.F.dmg===.05&&ex.F.arm===.15&&Math.abs(ex.xpm-1.32)<1e-9&&ex.arm4>ex.arm0&&en.arm4===0,'extreme: +15% HP, +5% damage, +15% armor, +8% XP per 60 s (xpm '+ex.xpm+', armor '+ex.arm0.toFixed(2)+' -> '+ex.arm4.toFixed(2)+')');
+ok(en.F.hp===.10&&en.F.dmg===.02&&en.F.xp===.05&&en.steps===4&&Math.abs(en.xpm-1.2)<1e-9,'normal: +10% HP, +2% damage, +5% XP per 10 minutes (xpm after 4 steps '+en.xpm+')');
+ok(ex.F.hp===.15&&ex.F.dmg===.05&&ex.F.arm===.15&&Math.abs(ex.xpm-1.32)<1e-9&&ex.arm4>ex.arm0&&en.arm4===0,'extreme: +15% HP, +5% damage, +15% armor, +8% XP per 10 minutes (xpm '+ex.xpm+', armor '+ex.arm0.toFixed(2)+' -> '+ex.arm4.toFixed(2)+')');
 /* milestones on the progress bar */
 await mk('goku');
 const ms=await pg.evaluate(()=>{const g=G;return{hordes:g.hordePlan.length,bosses:g.bossQ.length,finals:g.bossQ.filter(b=>b.final).length,dur:g.dur};});

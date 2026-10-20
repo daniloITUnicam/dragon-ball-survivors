@@ -11,7 +11,18 @@
 const SPRITE_PACK=__SPRITE_PACK__;
 Sprites.sheets={};
 /* player cache key ('goku:2', 'menu:goku:-1', 'bg:goku:0') -> best available sheet id */
+/* Zeno-sama (playable): the picture of his shop, scaled once to the height of a character and registered as a one-frame sheet (null until the picture has loaded) */
+Sprites.zenoSheet=function(){
+  if(Sprites.sheets.zeno)return Sprites.sheets.zeno;
+  const im=typeof ZENO_SPR!=='undefined'?ZENO_SPR:null;if(!(im&&im.complete&&im.naturalWidth))return null;
+  const h=72,w=Math.round(h*im.naturalWidth/im.naturalHeight),c=document.createElement('canvas');c.width=w;c.height=h;
+  const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(im,0,0,w,h);
+  Sprites.sheets.zeno={img:c,cols:1,fw:w,fh:h,ax:w/2,ay:h-2,ppu:1.85,has:[],walk:null,pw:null,dh:null,rects:null,hand:null};
+  if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
+  return Sprites.sheets.zeno;
+};
 Sprites.sheetFor=function(key){
+  if(/(?:^|:)zeno:-?\d+$/.test(key)&&Sprites.zenoSheet())return'zeno';
   if(!Object.keys(Sprites.sheets).length)return null;
   const m=/(?:^|:)([a-z0-9_]+):(-?\d+)$/i.exec(key);if(!m)return null;
   const id=m[1];let f=+m[2];
@@ -104,13 +115,16 @@ Sprites.drawBeam=function(ctx,len,wid,color,k,t){
 Sprites.BOSS_SHEET={raditz:'raditz',bardock:'bardock',turles:'turles',cooler:'cooler',cooler2:'cooler',beerus:'beerus',beerus2:'beerus',
   hit:'hit',hit2:'hit',toppo:'toppo',toppo2:'toppo',toppo3:'toppo',jiren:'jiren',jiren2:'jiren',jiren3:'jiren',jiren4:'jiren',
   kale:'kale',kale2:'kale_0',kale3:'kale_0',caulifla:'caulifla',caulifla2:'caulifla',caulifla3:'caulifla',cabba:'cabba',cabba2:'cabba_1',
-  frost:'frost',frost2:'frost_2',freezer:'freezer_3',cell:'cell',cellsemi:'cell_0',cellperf:'cell_1',cellmax:'cell_1',c16:'c16',c17:'c17',
+  frost:'frost',frost2:'frost_2',freezer:'freezer',cell:'cell',cellmax:'cell_1',c16:'c16',c17:'c17',
   vegeta:'vegeta',bu:'bu',superbu:'bu_2',kidbu:'bu_5',janemba:'janemba',janemba2:'janemba',broly:'broly_0',broly2:'broly_0',tama1:'tama1',tama2:'tama2',tama3:'tama3'};
-/* the Tamagami change sheet when they enter Fury (the boss keeps its id, e.pf counts the transformations); sheets of 9 frames: 0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit */
-Sprites.BOSS_SHEET_F={tama1:'tama1f',tama2:'tama2f',tama3:'tama3f'};
+/* sheets of the later forms of a boss that transforms (the boss keeps its id, e.pf counts the transformations: index 1 = first transformation); a missing sheet falls back to the previous art.
+   Tamagami: sheets of 9 frames: 0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit */
+Sprites.BOSS_FORMS={tama1:[null,'tama1f'],tama2:[null,'tama2f'],tama3:[null,'tama3f'],
+  freezer:[null,'freezer_0','freezer_1','freezer_2','freezer_3'],cell:[null,'cell_0','cell_1']};
 Sprites.ENEMY_SHEET={sai:'saibaman'};
 Sprites.enemySheet=function(e){
-  const id=e.boss?(e.bid&&((e.pf&&Sprites.BOSS_SHEET_F[e.bid]&&Sprites.sheets[Sprites.BOSS_SHEET_F[e.bid]])?Sprites.BOSS_SHEET_F[e.bid]:Sprites.BOSS_SHEET[e.bid])):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
+  const fl=e.boss&&e.bid&&e.pf&&Sprites.BOSS_FORMS[e.bid],fid=fl&&fl[Math.min(e.pf,fl.length-1)];
+  const id=e.boss?(e.bid&&((fid&&Sprites.sheets[fid])?fid:Sprites.BOSS_SHEET[e.bid])):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
   return id&&Sprites.sheets[id]?id:null;
 };
 Sprites.sheetEnemy=function(sid,frame,flash){

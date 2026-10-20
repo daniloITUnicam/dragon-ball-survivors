@@ -1,9 +1,11 @@
-/* every ESC_EVERY seconds (60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
+/* every ESC_EVERY seconds (600: Normal, Hard and Extreme; Easy keeps ESC_EVERY_EASY = 60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.02;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1% every 0.5 s (2% per second) */
 const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
-const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,ESC_EVERY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
+const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
+const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
+const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
 const SPAWN_K=.85,CAP_K=.78;
 /* enemy fire: a volley is smaller (x0.67), the shooters wait longer between volleys, and all of them share a "shot budget" that refills at a fixed rate,
@@ -21,6 +23,7 @@ const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],W
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
 const TOP_K=1.5;
+const SPAR_COPY_MUL=.6,SPAR_COPY_P=.5;   /* Room of Spirit and Time: the Master copies your abilities and weapons 1 attack in 2, with 40% less damage */
 const TOTEM_CD=20,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
@@ -39,11 +42,11 @@ class Game{
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
-    this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
-    this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=this.stage.bosses,mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back */
-      this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false}));}
+    this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
+      this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false,k:(this.stage.abs&&ANDROID_K[b[0]])||1}));}
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
@@ -353,6 +356,7 @@ class Game{
   get dashCdMax(){return Math.max(1.2,4*(this.has('windboots')?.65:1)*(this.abTier>=1&&this.abil.m==='dash'?.8:1));}
   startDash(dx,dy,dmg,inv,col){
     const p=this.p;
+    if(this.held){const e=this.held.e;this.held=null;if(e.bm)this.endBossMove(e);e.stun=Math.max(e.stun||0,.5);this.floatText(p.x,p.y-60,this.env.tr(T('Liberato!','Freed!')),3);}   /* a dash breaks Dr. Gero's hold */
     this.bv={x:dx*1050,y:dy*1050,t:.2};this.dashT=.26;this.dashHit=new Set();p.inv=Math.max(p.inv,inv);this.dashV=dmg;this.dashC=col;
     this.ring(p.x,p.y,70,col,.4);this.burst(p.x,p.y-12,14,col);
   }
@@ -403,6 +407,18 @@ class Game{
       case'clones':{
         const n=f2?6:3;
         this.clones=Array.from({length:n},(_,i)=>({a:i*TAU/n,sh:.3*(i%3)}));this.cloneT=f2?14:10;this.ring(p.x,p.y,f2?170:110,c,.5);this.burst(p.x,p.y-12,f2?36:20,c);this.audio.sfx('abClone');break;}
+      case'sbc':{   /* Special Beam Cannon (Piccolo): ~1 s of charge with two fingers on the forehead, then a thin spiral beam that pierces the whole line */
+        const ang=near?Math.atan2(near.y-8-(p.y-24),near.x-p.x):(p.face>0?0:Math.PI);
+        this.sbc={t:0,dur:f2?.95:1.15,ang,left:f2?2:1,shots:0,nx:f2?.95:1.15,f2,v};
+        this.armAct('face',ang,{w:.05,h:this.sbc.dur+.25,r:.25,col:c});this.ring(p.x,p.y-30,70,c,.6);this.audio.sfx('abPower');break;}
+      case'sphere':{   /* Sphere of Justice (Toppo): a dark sphere thrown at the nearest enemy; it grows, pulls everything in and explodes */
+        const tx=near?near.x:p.x+(p.face>0?1:-1)*260,ty=near?near.y-8:p.y-14;
+        this.spheres.push({x:p.x+(p.face>0?10:-10),y:p.y-26,tx,ty,ph:0,t:0,tk:0,rr:12,f2,R:170*v*(f2?1.6:1)*Math.min(2,this.S.area||1),dmg:(46+L*3.4)*v*(f2?1.7:1),hold:f2?1.8:1.5});
+        this.armAct('shoot',Math.atan2(ty-(p.y-18),tx-p.x),{h:.3,r:.22,col:c});this.ring(p.x,p.y-24,60,c,.5);this.audio.sfx('spirit');break;}
+      case'ghosts':{   /* Super Ghost Kamikaze (Gotenks): ghosts that fly at the nearest enemy and copy the active weapons (updateGhosts) */
+        const n=f2?5:3;
+        this.ghosts=Array.from({length:n},(_,i)=>({x:p.x+Math.cos(i*TAU/n)*40,y:p.y-30+Math.sin(i*TAU/n)*20,a:i*TAU/n,t:.7+i*.45,atk:0,fl:1,ph:rnd(0,TAU),boom:0,dead:false}));
+        this.ghostT=f2?40:26;this.ring(p.x,p.y,f2?170:110,c,.5);this.burst(p.x,p.y-12,f2?36:20,c);this.audio.sfx('abClone');break;}
       case'crit':this.critT=f2?12:8;this.recalc();this.pillar(p.x,p.y,c,.8);this.ring(p.x,p.y,100,c,.6);this.audio.sfx('abPower');break;
       case'barrier':{
         const bt=f2?3.5:1.5;p.inv=Math.max(p.inv,bt);this.shieldT=bt;this.ring(p.x,p.y,70,c,.5);
@@ -470,6 +486,127 @@ class Game{
       for(const k of this.clones){
         k.a+=dt*2;k.x=p.x+Math.cos(k.a)*46;k.y=p.y+Math.sin(k.a)*22;k.sh-=dt;
         if(k.sh<=0){const t=this.nearest(k.x,k.y,520);if(t){k.sh=this.abTier>=2?.4:.8;const an=Math.atan2(t.y-8-(k.y-18),t.x-k.x);this.pr.push({x:k.x,y:k.y-18,vx:Math.cos(an)*400,vy:Math.sin(an)*400,r:6,dmg:6+this.lvl*.6,pi:0,life:1.4,hit:[],c});}else k.sh=.2;}
+      }
+    }
+    if(this.sbc)this.updateSbc(dt);
+    if(this.spheres.length)this.updateSpheres(dt);
+    if(this.ghosts)this.updateGhosts(dt);
+  }
+  /* ---------- Special Beam Cannon (Piccolo): charge, then one (two in the final form) piercing spiral beam ---------- */
+  updateSbc(dt){
+    const p=this.p,c=this.abil.c,s=this.sbc,aim=()=>{const tg=this.nearest(p.x,p.y,780);if(tg)s.ang=Math.atan2(tg.y-8-(p.y-24),tg.x-p.x);};
+    s.t+=dt;
+    if(s.t<s.dur){
+      if(s.t<s.dur-.2&&s.shots===0)aim();   /* the aim follows the nearest enemy and locks 0.2 s before the shot */
+      if(this.fx.length<400&&Math.random()<dt*70){const a=rnd(0,TAU),R=rnd(26,52),hx=p.x+(p.face>0?5:-5),hy=p.y-34,l=rnd(.25,.4);this.fx.push({x:hx+Math.cos(a)*R,y:hy+Math.sin(a)*R*.8,vx:-Math.cos(a)*R/l,vy:-Math.sin(a)*R*.8/l,l,m:l,c:Math.random()<.5?c:'#b46bff',s:rnd(2,3.4)});}
+    }else if(s.left>0&&s.t>=s.nx){
+      if(s.shots>0)aim();
+      this.fireSbc(s.ang);s.left--;s.shots++;s.nx=s.t+.34;
+      this.armAct('shoot',s.ang,{h:.3,r:.25,col:c});
+    }else if(s.left<=0&&s.t>=s.nx)this.sbc=null;
+  }
+  fireSbc(ang){
+    const p=this.p,c=this.abil.c,s=this.sbc,f2=s.f2,cs=Math.cos(ang),sn=Math.sin(ang),len=f2?1180:880,w=f2?46:32,dm=(60+this.lvl*5)*s.v*(f2?1.4:1),ox=p.x+cs*8,oy=p.y-24;
+    for(const e of this.en){
+      if(e.dead)continue;
+      const rx=e.x-ox,ry=e.y-8-oy,t=rx*cs+ry*sn;if(t<-10||t>len)continue;
+      if(Math.abs(-rx*sn+ry*cs)<w/2+e.r){this.hit(e,dm,cs*240,sn*240);e.stun=Math.max(e.stun,e.boss?.15:.5);this.burst(e.x,e.y-8,8,c);}
+    }
+    this.eb=this.eb.filter(b=>{const rx=b.x-ox,ry=b.y-oy,t=rx*cs+ry*sn;return !(t>-10&&t<len&&Math.abs(-rx*sn+ry*cs)<w/2+b.r);});   /* the beam also erases the bullets it crosses */
+    this.fx.push({beam:true,sbc:true,x:ox,y:oy,a:ang,len,w:f2?26:18,l:.75,m:.75,c});   /* (thinner to look at than it is to hit) */
+    this.ring(ox,oy,50,c,.3);this.burst(ox,oy,14,'#ffffff');this.shake=Math.max(this.shake,.5);this.flash=.2;this.flashC=c;this.audio.sfx('abBeam');
+  }
+  /* ---------- Sphere of Justice (Toppo): thrown, grows while it pulls the enemies in, then explodes ---------- */
+  updateSpheres(dt){
+    const c=this.abil.c;
+    for(const s of this.spheres){
+      s.t+=dt;
+      if(s.ph===0){
+        const dx=s.tx-s.x,dy=s.ty-s.y,d=Math.hypot(dx,dy),st=500*dt;
+        if(d<=st+4){s.x=s.tx;s.y=s.ty;s.ph=1;s.t=0;this.ring(s.x,s.y,60,c,.45);this.audio.sfx('flare');}
+        else{s.x+=dx/d*st;s.y+=dy/d*st;}
+        if(this.fx.length<400&&Math.random()<dt*60)this.fx.push({x:s.x+rnd(-6,6),y:s.y+rnd(-6,6),vx:rnd(-20,20),vy:rnd(-20,20),l:.35,m:.35,c:Math.random()<.5?c:'#ff4fd8',s:rnd(2,4)});
+      }else{
+        const k=Math.min(1,s.t/s.hold);s.rr=12+(s.R*.38-12)*k;
+        const pull=(s.f2?230:160)*dt;
+        for(const e of this.en){
+          if(e.dead)continue;
+          const dx=s.x-e.x,dy=s.y-(e.y-8),d=Math.hypot(dx,dy);
+          if(d<s.R*1.3+e.r&&!e.boss&&d>16){e.x+=dx/d*pull;e.y+=dy/d*pull;}
+        }
+        s.tk-=dt;
+        if(s.tk<=0){s.tk=.3;for(const e of this.en){if(e.dead)continue;if(Math.hypot(e.x-s.x,e.y-8-s.y)<s.rr+e.r)this.hit(e,s.dmg*.07,0,0);}}
+        if(this.eb.length)this.cutC(s.x,s.y,s.rr);
+        if(this.fx.length<400&&Math.random()<dt*50){const a=rnd(0,TAU),R=s.R*rnd(.7,1.2);this.fx.push({x:s.x+Math.cos(a)*R,y:s.y+Math.sin(a)*R*.85,vx:-Math.cos(a)*R*2.4,vy:-Math.sin(a)*R*2.0,l:.42,m:.42,c:Math.random()<.5?c:'#ff4fd8',s:rnd(2,3.6)});}
+        if(s.t>=s.hold)this.boomSphere(s);
+      }
+    }
+    this.spheres=this.spheres.filter(s=>!s.done);
+  }
+  boomSphere(s){
+    s.done=true;const c=this.abil.c,R=s.R;
+    this.ring(s.x,s.y,R,c,.8);this.ring(s.x,s.y,R*.62,'#ffffff',.55);this.ring(s.x,s.y,R*1.25,'#ff4fd8',.9);this.burst(s.x,s.y,44,c);this.burst(s.x,s.y,22,'#ffffff');this.bolt(s.x,s.y,R*.95,c,s.f2?18:12);
+    this.shake=Math.max(this.shake,s.f2?1:.7);this.flash=.3;this.flashC=c;this.audio.sfx('abNova');this.cutC(s.x,s.y,R);
+    for(const e of this.en){
+      if(e.dead)continue;
+      const dx=e.x-s.x,dy=e.y-8-s.y,d=Math.hypot(dx,dy)||1,rr=R+e.r;
+      if(d<rr){this.hit(e,s.dmg*(1-.35*d/rr),dx/d*240,dy/d*240);e.stun=Math.max(e.stun,e.boss?.3:.9);if(!e.boss){e.kx+=dx/d*260;e.ky+=dy/d*260;}}
+    }
+  }
+  /* ---------- Super Ghost Kamikaze (Gotenks): ghosts that fly at the nearest enemy, copy the active weapons, attack every 10 s (down to 4 s with the level) and explode at the end ---------- */
+  get ghostIv(){return Math.max(4,10-.2*(this.lvl-1));}
+  updateGhosts(dt){
+    const p=this.p,c=this.abil.c,f2=this.abTier>=2,iv=this.ghostIv,dying=this.ghostT<=0;
+    this.ghostT-=dt;
+    for(const k of this.ghosts){
+      if(k.dead)continue;
+      k.ph+=dt*3;k.atk=Math.max(0,k.atk-dt);
+      const tg=this.nearest(k.x,k.y,780);
+      let gx,gy,sp=300;
+      if(tg){const a=k.a+k.ph*.3;gx=tg.x+Math.cos(a)*(tg.r*.6+34);gy=tg.y-24+Math.sin(a)*(tg.r*.4+18);if(dying)sp=520;k.fl=tg.x>=k.x?1:-1;}
+      else{gx=p.x+Math.cos(k.a+this.t)*70;gy=p.y-30+Math.sin(k.a+this.t)*30;sp=240;}
+      const dx=gx-k.x,dy=gy-k.y,d=Math.hypot(dx,dy)||1,v=Math.min(sp,d*4.5);
+      k.x+=dx/d*v*dt;k.y+=dy/d*v*dt;
+      if(dying){   /* kamikaze: it throws itself at the closest enemy and explodes */
+        k.boom+=dt;
+        if((tg&&Math.hypot(tg.x-k.x,tg.y-8-k.y)<tg.r+26)||k.boom>1.6||(!tg&&k.boom>.4)){k.dead=true;const R=(80+this.lvl*.6)*(f2?1.35:1);this.explodeAt(k.x,k.y,R,(34+this.lvl*3)*(f2?1.5:1),c);this.burst(k.x,k.y,16,'#ffffff');this.audio.sfx('boom');}
+        continue;
+      }
+      k.t-=dt;
+      if(k.t<=0){
+        if(tg&&Math.hypot(tg.x-k.x,tg.y-k.y)<190){k.t=iv;this.ghostStrike(k,tg,f2);}
+        else k.t=.3;
+      }
+    }
+    this.ghosts=this.ghosts.filter(k=>!k.dead);
+    if(!this.ghosts.length)this.ghosts=null;
+  }
+  /* what a ghost does with each weapon you own: the same attack, in that weapon's colour and with its damage (shots / piercing beam / lightning / blast on the target) */
+  ghostStrike(k,tg,f2){
+    const K=GHOST_K*(f2?1.5:1);
+    k.atk=.4;this.ring(k.x,k.y-8,34,'#ffffff',.25);this.audio.sfx('shot');
+    const ang=Math.atan2(tg.y-8-k.y,tg.x-k.x),cs=Math.cos(ang),sn=Math.sin(ang);
+    for(const w of this.weapons.values()){
+      const st=w.st||{},L=w.L,base=((st.dmg&&st.dmg[L])||10)*w.dm*K,col=w.color,kind=GHOST_KIND[w.id]||'blast';
+      if(kind==='shot'){
+        const n=Math.min(4,Math.max(1,(st.n&&st.n[L])||1));
+        for(let i=0;i<n;i++){const a=ang+(i-(n-1)/2)*.16;this.pr.push({x:k.x,y:k.y,vx:Math.cos(a)*480,vy:Math.sin(a)*480,r:7,dmg:base,pi:1,life:1.3,hit:[],c:col,home:w.id==='homing'});}
+      }else if(kind==='beam'){
+        const len=520,wd=36;
+        for(const e of this.en){if(e.dead)continue;const rx=e.x-k.x,ry=e.y-8-k.y,t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<wd/2+e.r)this.hit(e,base*1.1,cs*160,sn*160);}
+        if(this.fx.length<420)this.fx.push({beam:true,x:k.x,y:k.y,a:ang,len,w:wd,l:.45,m:.45,c:col});
+      }else if(kind==='chain'){
+        const seen=new Set([tg]);let cur=tg;this.hit(tg,base,0,0);
+        for(let j=0;j<4;j++){
+          let nx=null,bd=220*220;for(const e of this.en){if(e.dead||seen.has(e))continue;const d=(e.x-cur.x)**2+(e.y-cur.y)**2;if(d<bd){bd=d;nx=e;}}
+          if(!nx)break;seen.add(nx);
+          if(this.fx.length<420)this.fx.push({bolt:true,pts:[[cur.x,cur.y-8],[(cur.x+nx.x)/2+rnd(-8,8),(cur.y+nx.y)/2-12],[nx.x,nx.y-8]],l:.3,m:.3,c:col});
+          this.hit(nx,base,0,0);cur=nx;
+        }
+      }else{
+        const R=Math.max(60,Math.min(190,((st.rad&&st.rad[L])||80)*Math.min(1.8,this.S.area||1)*.9));
+        this.explodeAt(tg.x,tg.y,R,base*1.15,col);
+        if(w.id==='flare'||w.id==='chrono')for(const e of this.en){if(!e.dead&&Math.hypot(e.x-tg.x,e.y-tg.y)<R+e.r)e.stun=Math.max(e.stun,e.boss?.3:.9);}
       }
     }
   }
@@ -675,6 +812,7 @@ class Game{
     if(e.xf){if(this.showNums&&Math.random()<.2)this.floatText(e.x,e.y-e.r*1.7,'0',0);return;}
     if(e.under)return;
     if(e.armor)d=Math.max(d*.3,d-e.armor);
+    if(e.bar>0){d*=.12;if(Math.random()<.35)this.ring(e.x,e.y-e.r,e.r*1.6,'#8ad8ff',.2);}   /* boss barrier */
     {const dd=Math.min(d,Math.max(0,e.hp)),k=this.curW||'other';this.dmgBy[k]=(this.dmgBy[k]||0)+dd;}
     e.hp-=d;e.fl=.07;
     if(!e.boss&&kx!==undefined){const k=e.elite?.2:e.ai==='tank'?.3:1;e.kx+=kx*k;e.ky+=ky*k;}
@@ -689,6 +827,7 @@ class Game{
   killEnemy(e){
     if(e.sparring){e.dead=true;this.burst(e.x,e.y-8,30,'#aab4ff');this.audio.sfx('boom');if(this.trial)this.trial.killed=true;return;}
     e.dead=true;this.kills++;this.bumpStreak();
+    if(e.bd&&e.bd.sig==='rain')this.rain=[];
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
     if(e.boss){
       this.run.bossKills++;this.bossAlive--;
@@ -698,8 +837,8 @@ class Game{
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
       this.chests.push({x:e.x,y:e.y,final:e.final,t:0,boss:true});
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
-      this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
-      if(e.final){this.cleared=true;this.finish(true);}
+      this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
+      if(e.final){this.startVictory(e);}
       return;
     }
     if(e.elite)this.eliteDown(e);
@@ -849,7 +988,7 @@ class Game{
     if(this.trial){const dd=Math.max(1,Math.round((d-this.S.armor)*this.S.taken));p.hp=Math.max(1,p.hp-dd);p.inv=.5;this.floatText(p.x,p.y-40,dd,4);this.audio.sfx('hurt');return;}
     if(this.barrierReady){this.barrierReady=false;this.barrierT=this.has('barrier')?15:25;this.floatText(p.x,p.y-50,this.env.tr(T('Bloccato!','Blocked!')),2);this.ring(p.x,p.y,50,'#8ad8ff',.4);p.inv=.4;return;}
     if(Math.random()<this.S.dodge){this.floatText(p.x,p.y-50,this.env.tr(T('Schivata!','Dodge!')),3);p.inv=.25;return;}
-    d=Math.max(1,Math.round((d-this.S.armor)*this.S.taken));
+    d=Math.max(1,Math.round((src&&src.pct?d:d-this.S.armor)*this.S.taken));   /* a percentage hit (Super Buu's rain) ignores armor */
     d=Math.min(d,Math.ceil(p.maxHp*(src&&src.trap?.16:src&&(src.boss||src.bs)?.4:.26)));
     this.emote(p.hp-d<p.maxHp*.3?'pain':'hurt',.8);
     p.hp-=d;p.inv=.5;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);
@@ -871,7 +1010,7 @@ class Game{
   startDeath(){
     if(this.dying||this.ended)return;
     const p=this.p;this.dying={t:0,dur:DEATH_T,ts:this.timeScale||1};p.inv=999;p.hp=0;
-    this.eb=[];this.bz=[];this.jbeams=[];this.vortex=null;this.xform=null;this.kai=0;
+    this.eb=[];this.bz=[];this.jbeams=[];this.rain=[];this.held=null;this.vortex=null;this.xform=null;this.kai=0;
     this.flash=.5;this.flashC='#ffffff';this.shake=.6;this.audio.sfx('death');if(this.audio.slowMusic)this.audio.slowMusic(.45);
     this.ring(p.x,p.y,120,'#ffffff',.9);this.burst(p.x,p.y-20,30,'#ffffff');this.burst(p.x,p.y-20,20,'#ff5a3d');
     this.say(this.env.tr(T('SCONFITTA...','DEFEATED...')),'#ff5a3d',DEATH_T);
@@ -883,6 +1022,37 @@ class Game{
     if(d.t>=d.dur){this.timeScale=d.ts;this.dying=null;if(this.audio.slowMusic)this.audio.slowMusic(1);this.finish(false);return true;}
     return false;
   }
+  /* the final boss falls (v55): before the stage-complete menu a short cinematic plays - the board is cleared, time slows, the boss flashes and cracks with light,
+     then a big blast takes it away; the menu opens after VIC_T seconds */
+  startVictory(e){
+    if(this.vic||this.ended)return;
+    const p=this.p;this.cleared=true;p.inv=999;
+    this.vic={t:0,dur:VIC_T,x:e.x,y:e.y,r:e.r,boom:false,bt:0,nx:0,e:Object.assign({},e,{dead:false,fl:0,atk:0,stun:0,xf:null,tel:null,telK:0,fuse:0,bm:null,vis:null,sq:0})};
+    this.eb=[];this.bz=[];this.jbeams=[];this.rain=[];this.held=null;this.vortex=null;this.xform=null;this.kai=0;this.sb.nospawn=true;
+    for(const o of this.en)if(o!==e&&!o.dead){o.dead=true;this.burst(o.x,o.y-6,6,'#ffffff');}
+    this.ring(e.x,e.y,160,e.bd.c,.8);this.audio.sfx('boom');if(this.audio.slowMusic)this.audio.slowMusic(.55);
+  }
+  updateVictory(rdt){
+    const v=this.vic,dt=rdt*.4;v.t+=rdt;this.rt+=dt;this.t+=dt*this.CR;
+    if(this.shake>0)this.shake-=rdt;if(this.flash>0)this.flash-=rdt;
+    const k=Math.min(1,v.t/2.6),e=v.e;
+    if(!v.boom){
+      this.shake=Math.max(this.shake,.18+.5*k);
+      v.nx-=rdt;if(v.nx<=0){v.nx=Math.max(.07,.3-.22*k);const x=v.x+rnd(-v.r,v.r)*1.1,y=v.y-rnd(0,v.r*2.2),c=[e.bd.c,'#ffffff','#ffd23f'][(Math.random()*3)|0];
+        this.burst(x,y,6+(k*10|0),c);this.ring(x,y,22+rnd(0,26)+30*k,c,.35);if(Math.random()<.5)this.bolt(v.x,v.y-v.r,60+120*k,'#ffffff',2);this.audio.sfx(Math.random()<.4?'boom':'pop');}
+      if(v.t>=2.6){   /* the blast */
+        v.boom=true;v.bt=v.t;this.flash=1;this.flashC='#ffffff';this.shake=.95;
+        this.ring(v.x,v.y-v.r,380,'#ffffff',1.1);this.ring(v.x,v.y-v.r,240,e.bd.c,.9);this.ring(v.x,v.y-v.r,520,'#ffd23f',1.4);
+        this.burst(v.x,v.y-v.r,70,'#ffffff');this.burst(v.x,v.y-v.r,50,e.bd.c);this.bolt(v.x,v.y-v.r,420,'#ffffff',18);this.pillar(v.x,v.y,'#ffffff',1.6);
+        this.audio.sfx('boom');this.audio.sfx('transform');
+        this.say(this.env.tr(T('VITTORIA!','VICTORY!')),'#ffd23f',VIC_T-2.6);
+      }
+    }
+    for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}this.fx=this.fx.filter(f=>f.l>0);
+    for(const t of this.tx)t.t+=dt;this.tx=this.tx.filter(t=>t.t<.8);
+    if(this.banner){this.banner.t+=dt;if(this.banner.t>this.banner.dur)this.banner=null;}
+    if(v.t>=v.dur){this.vic=null;this.sb.nospawn=false;if(this.audio.slowMusic)this.audio.slowMusic(1);this.finish(true);}
+  }
   /* tickets for the Gacha shop: kept in the run and added to the save when the run ends (like the zenny) */
   addTicket(kind,n,at){
     n=n||1;this.run.tk[kind]+=n;const p=at||this.p,c=kind==='l10'?'#ff9ad0':kind==='t10'?'#ffd23f':'#9ad8ff';
@@ -892,10 +1062,14 @@ class Game{
   /* Endless: from here on the enemies grow every ENDLESS_MILE levels (not every minute), coins dry up, weapons can reach Lv 100, Zeno's Shop opens every 5 minutes */
   continueAfterWin(){
     this.ended=false;this.endless=true;
-    this.en0={t:this.t,lvl:this.lvl,steps:Math.floor(this.t/ESC_EVERY),mile:Math.floor(this.lvl/ENDLESS_MILE),rate:Math.max(this.xpRate,xpNeed(this.lvl)/45)};
+    this.en0={t:this.t,lvl:this.lvl,steps:Math.floor(this.t/this.escEvery),mile:Math.floor(this.lvl/ENDLESS_MILE),rate:Math.max(this.xpRate,xpNeed(this.lvl)/45)};
     this.enMile=this.en0.mile;
     this.need=this.needFor(this.lvl);
     this.map.zenoNext=this.t+ENDLESS_ZENO;
+    if(this.stage.abs){   /* Android Ruins: one android every 5 minutes, then 19 and 21, then the list starts over a little stronger */
+      const m0=Math.floor(this.t/ANDROID_STEP)+1;
+      for(let m=m0;m<m0+36;m++){const id=ANDROID_SEQ[(m-1)%ANDROID_SEQ.length],lap=Math.floor((m-1)/ANDROID_SEQ.length);this.bossQ.push({id,t:m*ANDROID_STEP,final:false,done:false,k:(ANDROID_K[id]||1)*(1+.35*lap)});}
+    }
     this.recalc();
     this.say(this.env.tr('endIntroT'),'#ffd23f',5,this.env.tr('endIntroS',{n:ENDLESS_MILE}));this.audio.sfx('wish');
   }
@@ -908,8 +1082,9 @@ class Game{
   prog(){return Math.min(1.3,this.t/this.dur);}
   stageMul(v){return 1+(v-1)*Math.min(1,this.t/(this.dur*.4));}
   /* per-step escalation factors (see ESC_N / ESC_X): Extreme grows faster and also gets armor */
+  get escEvery(){return this.diffId==='easy'?ESC_EVERY_EASY:ESC_EVERY;}
   get escF(){return this.diffId==='extreme'?ESC_X:this.diffId==='easy'?ESC_E:ESC_N;}
-  escSteps(){return this.endless?this.en0.steps+(this.enMile-this.en0.mile)*ENDLESS_W:Math.floor(this.t/ESC_EVERY);}
+  escSteps(){return this.endless?this.en0.steps+(this.enMile-this.en0.mile)*ENDLESS_W:Math.floor(this.t/this.escEvery);}
   /* Extreme: 2% more enemies every 30 s (60 steps at most) */
   xSteps(){return this.diffId==='extreme'?Math.min(60,Math.floor(this.t/X_SPAWN_STEP)):0;}
   hpMul(){return ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
@@ -1050,10 +1225,10 @@ class Game{
   }
   spawnPack(){this.spawnRing(Math.round(5+this.sd+Math.min(1,this.prog())*(8+this.sd*2)),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
-  spawnBoss(id,final,at){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k */
+  spawnBoss(id,final,at,hk){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k */
     const bd=BOSSES[id],p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
-    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1);
+    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
     Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0});
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;
@@ -1067,10 +1242,14 @@ class Game{
     if(bd.rnd&&!e.sparring)pat=bd.pats[Math.floor(Math.random()*bd.pats.length)];
     if(bd.mix&&!e.sparring){const dd=Math.hypot(p.x-e.x,p.y-e.y);pat=dd<200?(Math.random()<.72?'jsword':'jbeam'):(Math.random()<.6?'jbeam':'jsword');}
     const zd=e.sparring?Math.max(d*1.1,p.maxHp*(.2+.05*Math.min(2,this.trialN))):d*1.1;
+    if(e.sparring&&Math.random()<SPAR_COPY_P&&this.sparCopy(e,zd,aim))return;   /* the Master imitates you */
     if(e.tf>=1&&Math.random()<.42){const ex=['slam','nova','lance','storm'];pat=ex[Math.floor(Math.random()*(e.tf>=2?4:2))];}
     if(!e.sparring&&!this.trial){const ext=this.bossExt(bd,e.final);if(Math.random()<(e.final?.3:.2)+.08*e.phase+.05*e.tf)pat=ext[Math.floor(Math.random()*ext.length)];}
     e.lp=pat;       /* last pattern: the renderer picks the strike / special frame of the Tamagami art from it */
     const sh=(a,s,r,c)=>this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:d,life:6,c:c||bd.c,bs:1});
+    /* move name above the boss (a boss can rename a move with bd.lb) and a charged beam */
+    const lab=(it,en)=>this.floatText(e.x,e.y-e.r*2.4,this.env.tr((bd.lb&&bd.lb[pat])||T(it,en)),1);
+    const jb=(ch,fi,w,len,mul,col)=>{this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:ch,fire:fi,w,len,col:col||bd.c,dmg:zd*mul,e,hcd:0});e.stun=ch+fi+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,60+w,col||bd.c,.5);};
     switch(pat){
       case'aim':sh(aim,230);break;
       case'tri':for(let i=-1;i<=1;i++)sh(aim+i*.22,240);break;
@@ -1088,53 +1267,209 @@ class Game{
       case'nova':{const n=24,o=rnd(0,TAU);for(let i=0;i<n;i++){if(i%8<2)continue;sh(o+i/n*TAU,175,8);}break;}
       case'lance':e.dashT=.9;for(let i=-3;i<=3;i++)sh(aim+i*.13,300,6);break;
       /* signature attacks of each boss (area / pattern attacks) */
-      case'wall':{const px=-Math.sin(aim),py=Math.cos(aim),gap=Math.floor(rnd(-3,4));this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Muro di ki!','Ki wall!')),1);
+      case'wall':{const px=-Math.sin(aim),py=Math.cos(aim),gap=Math.floor(rnd(-3,4));lab('Muro di ki!','Ki wall!');
         for(let o=-5;o<=5;o++){if(Math.abs(o-gap)<=1)continue;this.eb.push({x:e.x+px*o*38,y:e.y-e.r+py*o*38,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:8,dmg:d,life:7,c:bd.c,bs:1});}break;}
-      case'crossbeam':{const o=rnd(0,TAU);this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raggi incrociati!','Cross beams!')),1);
+      case'crossbeam':{const o=rnd(0,TAU);lab('Raggi incrociati!','Cross beams!');
         for(let k=0;k<4;k++)for(let i=1;i<=6;i++)this.bz.push({x:e.x+Math.cos(o+k*Math.PI/2)*i*100,y:e.y+Math.sin(o+k*Math.PI/2)*i*100,r:54,t:0,dur:.85+i*.09,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
-      case'rush':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Lampo!','Flash step!')),1);this.ring(e.x,e.y,60,bd.c,.4);
+      case'rush':{lab('Lampo!','Flash step!');this.ring(e.x,e.y,60,bd.c,.4);
         const a=rnd(0,TAU);e.x=p.x+Math.cos(a)*170;e.y=p.y+Math.sin(a)*170;this.ring(e.x,e.y,60,'#ffffff',.4);this.burst(e.x,e.y-e.r,16,bd.c);
         const a2=Math.atan2(p.y-18-e.y,p.x-e.x);for(let i=-2;i<=2;i++)sh(a2+i*.2,250,7);this.audio.sfx('leap');break;}
-      case'homing':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Sfere a ricerca!','Seeker orbs!')),1);
+      case'homing':{lab('Sfere a ricerca!','Seeker orbs!');
         for(let i=0;i<4;i++){const a=aim+(i-1.5)*.55;this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:9,dmg:d,life:5.5,c:'#ffffff',bs:1,hm:2.4});}break;}
-      case'vortex':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Vortice!','Vortex!')),1);this.vortex={x:e.x,y:e.y,t:0,dur:1.4,R:300,col:bd.c};this.bz.push({x:e.x,y:e.y,r:150,t:0,dur:1.4,dmg:zd*1.1,c:bd.c});this.audio.sfx('xcharge');break;}
-      case'encircle':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Cerchio mortale!','Death circle!')),1);
+      case'vortex':{lab('Vortice!','Vortex!');this.vortex={x:e.x,y:e.y,t:0,dur:1.4,R:300,col:bd.c};this.bz.push({x:e.x,y:e.y,r:150,t:0,dur:1.4,dmg:zd*1.1,c:bd.c});this.audio.sfx('xcharge');break;}
+      case'encircle':{lab('Cerchio mortale!','Death circle!');
         for(let i=0;i<8;i++){const a=i/8*TAU+rnd(0,.3);this.bz.push({x:p.x+Math.cos(a)*135,y:p.y+Math.sin(a)*135,r:62,t:0,dur:1.15,dmg:zd,c:bd.c});}this.audio.sfx('warn');break;}
-      case'jsword':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Fendente!','Slash!')),1);
+      case'jsword':{lab('Fendente!','Slash!');
         const c=Math.cos(aim),s2=Math.sin(aim);
         for(let k=0;k<3;k++){const off=e.r+30+k*58;this.bz.push({x:e.x+c*off,y:e.y+s2*off,r:60+k*8,t:0,dur:.36+k*.15,dmg:zd*1.2,c:bd.c});}
         e.dashT=.4;this.slashFx(e,aim);this.audio.sfx('leap');break;}
-      case'jbeam':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raggio di Janemba!','Janemba beam!')),1);
+      case'jbeam':{lab('Raggio di Janemba!','Janemba beam!');
         this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:1.0,fire:.7,w:30,len:1300,col:bd.c,dmg:zd*1.25,e,hcd:0});
         e.stun=1.0+.7+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,90,bd.c,.5);break;}
-      case'psy':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Psicocinesi!','Psychokinesis!')),1);const n=14,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,105,8,'#ff7ad0');sh(aim,200,9,'#ff7ad0');break;}
-      case'kienz':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Disco Distruttore!','Death Saucers!')),1);for(let i=-2;i<=2;i++)this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(aim+i*.3)*230,vy:Math.sin(aim+i*.3)*230,r:9,dmg:d,life:5,c:'#ffffff',bs:1,hm:1.6});break;}
-      case'fbeam':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raggio mortale!','Death Beam!')),1);
+      case'psy':{lab('Psicocinesi!','Psychokinesis!');const n=14,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,105,8,'#ff7ad0');sh(aim,200,9,'#ff7ad0');break;}
+      case'kienz':{lab('Disco Distruttore!','Death Saucers!');for(let i=-2;i<=2;i++)this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(aim+i*.3)*230,vy:Math.sin(aim+i*.3)*230,r:9,dmg:d,life:5,c:'#ffffff',bs:1,hm:1.6});break;}
+      case'fbeam':{lab('Raggio mortale!','Death Beam!');
         this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:.7,fire:.3,w:11,len:1000,col:bd.c,dmg:zd*1.2,e,hcd:0});e.stun=1.25;this.audio.sfx('xcharge');this.ring(e.x,e.y,70,bd.c,.4);break;}
-      case'dball':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Sfera della Morte!','Death Ball!')),1);
+      case'dball':{lab('Sfera della Morte!','Death Ball!');
         this.bz.push({x:p.x,y:p.y,r:190,t:0,dur:1.9,dmg:zd*1.4,c:bd.c});this.bz.push({x:p.x+rnd(-130,130),y:p.y+rnd(-100,100),r:96,t:0,dur:1.5,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
-      case'fnova':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Supernova!','Supernova!')),1);
+      case'fnova':{lab('Supernova!','Supernova!');
         this.bz.push({x:e.x,y:e.y,r:320,t:0,dur:1.7,dmg:zd*1.3,c:bd.c});for(let i=0;i<20;i++)sh(i/20*TAU,150,8);this.audio.sfx('warn');this.shake=Math.max(this.shake,.2);break;}
-      case'ckame':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Kamehameha di Cell!','Cell Kamehameha!')),1);
+      case'ckame':{lab('Kamehameha di Cell!','Cell Kamehameha!');
         this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:1.25,fire:.6,w:38,len:1200,col:bd.c,dmg:zd*1.35,e,hcd:0});e.stun=1.25+.6+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,90,bd.c,.5);break;}
-      case'cjr':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Cell Jr.!','Cell Jrs.!')),1);let k=0;for(const o of this.en)if(o.par===e&&!o.dead)k++;
+      case'cjr':{lab('Cell Jr.!','Cell Jrs.!');let k=0;for(const o of this.en)if(o.par===e&&!o.dead)k++;
         for(let i=0;i<3&&k+i<6;i++){const a=rnd(0,TAU),m=this.mkEnemy(ENEMIES.cellbomb,e.x+Math.cos(a)*(e.r+24),e.y+Math.sin(a)*(e.r+16));m.par=e;m.sum=1;m.age=0;this.en.push(m);this.ring(m.x,m.y,24,bd.c,.35);}this.audio.sfx('shrine');break;}
-      case'ctail':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Colpo di coda!','Tail whip!')),1);const c=Math.cos(aim),s2=Math.sin(aim);
+      case'ctail':{lab('Colpo di coda!','Tail whip!');const c=Math.cos(aim),s2=Math.sin(aim);
         for(let k=0;k<4;k++){const off=e.r+16+k*46;this.bz.push({x:e.x+c*off,y:e.y+s2*off,r:54,t:0,dur:.3+k*.1,dmg:zd*1.1,c:bd.c});}e.dashT=.35;this.slashFx(e,aim);this.audio.sfx('leap');break;}
-      case'cregen':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Rigenerazione!','Regeneration!')),1);e.hp=Math.min(e.max,e.hp+e.max*.025);this.ring(e.x,e.y,120,'#8be07a',.6);this.burst(e.x,e.y-e.r,16,'#8be07a');{const n=12,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,140,7);}break;}
-      case'solar':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Taiyoken!','Solar Flare!')),1);this.flash=.55;this.flashC='#ffffff';
+      case'cregen':{lab('Rigenerazione!','Regeneration!');e.hp=Math.min(e.max,e.hp+e.max*.025);this.ring(e.x,e.y,120,'#8be07a',.6);this.burst(e.x,e.y-e.r,16,'#8be07a');{const n=12,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,140,7);}break;}
+      case'solar':{lab('Taiyoken!','Solar Flare!');this.flash=.55;this.flashC='#ffffff';
         for(let i=0;i<5;i++){const a=rnd(0,TAU),r=i?rnd(60,200):0;this.bz.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r,r:70,t:0,dur:1.1+i*.1,dmg:zd,c:bd.c});}this.audio.sfx('warn');break;}
       /* Tamagami: hammer slam (No. 3), crimson palm blasts (No. 3), sword wave (No. 2), bullet storm (No. 2) */
-      case'hammer':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Martello!','Hammer!')),1);
+      case'hammer':{lab('Martello!','Hammer!');
         this.bz.push({x:p.x,y:p.y,r:125,t:0,dur:1.4,dmg:zd*1.3,c:bd.c});this.bz.push({x:p.x+Math.cos(aim)*-110,y:p.y+Math.sin(aim)*-110,r:90,t:0,dur:1.7,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
-      case'palm':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Onde cremisi!','Crimson blasts!')),1);for(let k=-1;k<=1;k+=2)for(let i=0;i<3;i++)sh(aim+k*.14+(i-1)*.06,250+i*30,7,'#ff4a4a');break;}
-      case'swordwave':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Onda di spada!','Sword wave!')),1);const px=-Math.sin(aim),py=Math.cos(aim);
+      case'palm':{lab('Onde cremisi!','Crimson blasts!');for(let k=-1;k<=1;k+=2)for(let i=0;i<3;i++)sh(aim+k*.14+(i-1)*.06,250+i*30,7,'#ff4a4a');break;}
+      case'swordwave':{lab('Onda di spada!','Sword wave!');const px=-Math.sin(aim),py=Math.cos(aim);
         for(let o=-5;o<=5;o++)this.eb.push({x:e.x+px*o*34,y:e.y-e.r+py*o*34,vx:Math.cos(aim)*(215-Math.abs(o)*6),vy:Math.sin(aim)*(215-Math.abs(o)*6),r:8,dmg:d,life:6,c:'#d8c8ff',bs:1});this.slashFx(e,aim);this.audio.sfx('leap');break;}
-      case'bulletstorm':{this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Raffica di energia!','Energy barrage!')),1);for(let i=0;i<9;i++)sh(aim+rnd(-.5,.5),rnd(250,340),6,'#c8a8ff');break;}
+      case'bulletstorm':{lab('Raffica di energia!','Energy barrage!');for(let i=0;i<9;i++)sh(aim+rnd(-.5,.5),rnd(250,340),6,'#c8a8ff');break;}
       case'storm':{e.spin+=.4;for(let i=0;i<5;i++)sh(e.spin+i*TAU/5,175,6);sh(aim,300,8);break;}
+      /* canonical moves of the androids, the Kaioshin, Champa and Zeno-sama */
+      case'dbomber':{lab('Bomba Mortale!','Deadly Bomber!');this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:15,dmg:d*1.4,life:6.5,c:'#ff3b3b',bs:1,hm:2.2});this.audio.sfx('xcharge');break;}
+      case'sdh':{lab('Martello Mortale!','Deadly Hammer!');this.bz.push({x:p.x,y:p.y,r:112,t:0,dur:1.3,dmg:zd*1.35,c:bd.c});this.bz.push({x:p.x+Math.cos(aim)*-120,y:p.y+Math.sin(aim)*-120,r:84,t:0,dur:1.55,dmg:zd,c:bd.c});this.audio.sfx('warn');break;}
+      case'slice':{lab('Attacco a Fendente!','Slicing Attack!');const c=Math.cos(aim),s2=Math.sin(aim);
+        for(let k=0;k<5;k++){const off=e.r+14+k*50;this.bz.push({x:e.x+c*off,y:e.y+s2*off,r:46+k*3,t:0,dur:.32+k*.1,dmg:zd*1.1,c:bd.c});}
+        e.dashT=.4;this.slashFx(e,aim);this.audio.sfx('leap');break;}
+      case'achg':{lab('Carica Androide!','Android Charge!');e.dashT=1;for(let i=-2;i<=2;i++)sh(aim+i*.1,310,7);this.audio.sfx('leap');break;}
+      case'squall':{lab('Tempesta di Energia!','Energy Squall!');for(let i=0;i<10;i++)sh(aim+rnd(-.45,.45),rnd(230,340),6,'#ffd27a');break;}
+      case'mkb':{lab('Colpo di Ki Multiplo!','Multi-step Ki Blast!');for(let st=0;st<3;st++)for(let i=-2;i<=2;i++)sh(aim+i*.17+(st-1)*.05,190+st*55,6);break;}
+      case'ffspark':{lab('Cannone Scintilla FF!','F.F. Spark Cannon!');jb(.95,.45,24,1000,1.25,'#8ad8ff');break;}
+      case'barrier':{   /* the boss shields himself: most of the damage he takes is absorbed for a moment */
+        if((e.barCd||0)>0){sh(aim,260,8);sh(aim+.2,260,8);sh(aim-.2,260,8);break;}
+        lab('Barriera!','Barrier!');e.bar=2.4;e.barCd=11;this.ring(e.x,e.y-e.r,e.r*2.2,'#8ad8ff',.5);this.audio.sfx('abBarrier');break;}
+      case'rpunch':{lab('Pugno Razzo!','Rocket Punch!');e.dashT=.3;this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(aim)*380,vy:Math.sin(aim)*380,r:17,dmg:d*1.5,life:3.2,c:'#cfd8e0',bs:1});for(let i=-1;i<=1;i+=2)sh(aim+i*.2,300,7);this.audio.sfx('leap');break;}
+      case'hflash':{lab('Lampo Infernale!','Hell\'s Flash!');jb(1.3,.6,44,1200,1.4);break;}
+      case'eyebeam':{lab('Raggio Oculare!','Eye Beam!');jb(.6,.3,10,1000,1.15,'#ff4a4a');break;}
+      case'invis':{lab('Raggio Invisibile!','Invisible Eye Blast!');jb(.5,.25,14,900,1.1,'#e8d8ff');break;}
+      case'selfd':{   /* only when badly hurt, then not again for a while */
+        if(e.hp>e.max*.45||(e.sdCd||0)>0){sh(aim,300,8);sh(aim+.25,300,8);sh(aim-.25,300,8);break;}
+        e.sdCd=40;e.stun=Math.max(e.stun||0,3.5);this.say(this.env.tr(T('AUTODISTRUZIONE!','SELF-DESTRUCT!')),'#ffb13b',2,this.env.tr(T('Allontanati dal robot!','Get away from the robot!')));
+        this.bz.push({x:e.x,y:e.y,r:340,t:0,dur:3.4,dmg:zd*1.7,c:'#ffb13b'});this.audio.sfx('warn');break;}
+      case'kiai':{lab('Kiai!','Kiai!');this.bz.push({x:e.x,y:e.y,r:190,t:0,dur:.8,dmg:zd*1.2,c:bd.c});{const n=16,o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,190,7,'#ffffff');}this.ring(e.x,e.y,150,'#ffffff',.5);this.audio.sfx('warn');break;}
     }
   }
+  /* ---------- Room of Spirit and Time: the Master imitates your character ability and your weapons (damage x SPAR_COPY_MUL = 40% less) ---------- */
+  sparCopy(e,zd,aim){
+    const p=this.p,dm=zd*SPAR_COPY_MUL,ab=ABIL[this.C.id],ws=[...this.weapons.values()];
+    if(!ab&&!ws.length)return false;
+    const useAb=ab&&(!ws.length||Math.random()<.4),w=useAb?null:ws[Math.floor(Math.random()*ws.length)];
+    const col=useAb?ab.c:(w.color||'#ffffff'),nm=useAb?ab.n:((WEAPONS[w.id]&&WEAPONS[w.id].n)||T(w.id,w.id));
+    this.floatText(e.x,e.y-e.r*2.4,this.env.tr(nm)+'!',1);
+    const sh=(a,s,r,ox,oy)=>this.eb.push({x:e.x+(ox||0),y:e.y-e.r+(oy||0),vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:dm,life:6,c:col,bs:1});
+    const zone=(x,y,r,dur,m)=>this.bz.push({x,y,r,t:0,dur,dmg:dm*(m||1),c:col});
+    const beam=(ch,fi,wd,len)=>{this.jbeams.push({x:e.x,y:e.y-e.r*.6,a:aim,t:0,charge:ch,fire:fi,w:wd,len,col,dmg:dm*1.2,e,hcd:0});e.stun=ch+fi+.15;this.audio.sfx('xcharge');this.ring(e.x,e.y,60+wd,col,.5);};
+    const ring=(n,sp)=>{const o=rnd(0,TAU);for(let i=0;i<n;i++)sh(o+i/n*TAU,sp||170,7);};
+    if(useAb){
+      switch(ab.m){
+        case'beam':case'sbc':beam(1.0,.5,34,1100);break;
+        case'nova':ring(20,175);zone(e.x,e.y,200,.9,1.1);break;
+        case'sphere':zone(p.x,p.y,170,1.8,1.3);break;
+        case'erase':zone(p.x,p.y,150,1.6,1.4);break;
+        case'blind':for(let i=0;i<4;i++){const a=rnd(0,TAU),r=i?rnd(60,190):0;zone(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,70,1.1+i*.1);}this.flash=.35;this.flashC='#ffffff';break;
+        case'timestop':for(let i=0;i<5;i++){const a=rnd(0,TAU),r=i?rnd(50,220):0;zone(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,76,1.0+i*.18);}break;
+        case'barrier':if((e.barCd||0)>0){sh(aim,260,8);break;}e.bar=2.2;e.barCd=10;this.ring(e.x,e.y-e.r,e.r*2.2,col,.5);this.audio.sfx('abBarrier');break;
+        case'regen':case'absorb':e.hp=Math.min(e.max,e.hp+e.max*.03);this.ring(e.x,e.y,120,col,.6);this.burst(e.x,e.y-e.r,14,col);break;
+        case'clones':case'ghosts':for(const o of[-90,90])for(let i=-1;i<=1;i++)sh(aim+i*.14,260,6,o,0);this.ring(e.x-90,e.y,30,col,.3);this.ring(e.x+90,e.y,30,col,.3);break;
+        case'dash':e.dashT=1;for(let i=-2;i<=2;i++)sh(aim+i*.1,300,7);this.audio.sfx('leap');break;
+        case'crit':case'jackpot':sh(aim,360,11);sh(aim+.12,320,7);sh(aim-.12,320,7);break;
+        case'rewind':{const a=rnd(0,TAU);e.x=p.x+Math.cos(a)*190;e.y=p.y+Math.sin(a)*190;this.ring(e.x,e.y,60,col,.4);const a2=Math.atan2(p.y-18-e.y,p.x-e.x);for(let i=-2;i<=2;i++)sh(a2+i*.2,250,7);break;}
+        default:{e.dashT=.8;for(let i=-2;i<=2;i++)sh(aim+i*.16,270,8);}   /* kaioken, berserk, buff: he powers up and rushes in */
+      }
+    }else{
+      const kind=GHOST_KIND[w.id]||'blast';
+      if(kind==='shot'){const n=Math.min(5,Math.max(2,Math.round(((w.st&&w.st.n&&w.st.n[w.L])||2))));for(let i=0;i<n;i++)sh(aim+(i-(n-1)/2)*.16,280,7);}
+      else if(kind==='beam')beam(.8,.4,30,950);
+      else if(kind==='chain'){const c=Math.cos(aim),s2=Math.sin(aim);for(let k=0;k<5;k++)zone(p.x+c*-40*k+rnd(-18,18),p.y+s2*-40*k+rnd(-18,18),52,.55+k*.14);}
+      else zone(p.x,p.y,100,1.1,1.1);
+    }
+    return true;
+  }
+  /* ---------- signature moves of the bosses (BOSSES[id].sig): every one is announced, telegraphed and has its own animation ----------
+     dtoss: Dodoria hurls his whole body at you (3 s of warning, the path is drawn with the width of his body)
+     grab:  Dr. Gero lunges, grabs you and drains your life for 3 s (stun him, hit him hard or dash to break free)
+     rain:  Super Buu raises a hand and fires a rain of ki upward that falls around you 3 s later */
+  startBossMove(e){
+    const k=e.bd.sig,p=this.p,tr=o=>this.env.tr(o),nm=tr((BOSSES[e.bid]||e.bd).n),a=Math.atan2(p.y-e.y,p.x-e.x);
+    e.sgT=e.bd.sigCd||12;e.vis=null;
+    if(k==='dtoss'){e.bm={k,t:0,st:0,a,L:560,ox:e.x,oy:e.y,hit:false,lock:2,warn:BM_DODO_WARN};this.say(nm.toUpperCase()+'!',e.bd.c,2,tr(T('Si prepara a lanciarsi su di te: esci dalla traiettoria!','He is about to hurl himself at you: leave the path!')));}
+    else if(k==='grab'){e.bm={k,t:0,st:0,a,L:330,ox:e.x,oy:e.y,hit:false,lock:.7,warn:1.15};this.say(nm.toUpperCase()+'!',e.bd.c,1.8,tr(T('Sta per afferrarti: scatta via!','He is about to grab you: dash away!')));}
+    else if(k==='rain'){e.bm={k,t:0,st:0,n:BM_RAIN_N[Math.max(0,['easy','normal','hard','extreme'].indexOf(this.diffId))]||55,fired:0,nx:0};this.say(nm.toUpperCase()+'!',e.bd.c,2,tr(T('Pioggia di ki: tieniti in movimento!','Rain of ki: keep moving!')));}
+    else return;
+    e.sq=k==='dtoss'?1:0;this.audio.sfx('warn');this.floatText(e.x,e.y-e.r*2.6,'!',1);
+  }
+  endBossMove(e){e.bm=null;e.vis=null;e.sq=0;}
+  updateBossMove(e,dt){
+    const m=e.bm,p=this.p;m.t+=dt;
+    if(m.k==='dtoss'||m.k==='grab'){
+      const tel=m.k==='dtoss',R=tel?e.r*2.6+30:0;
+      if(m.st===0){   /* warning: stands still, the aim follows you and then locks */
+        e.vis={ox:Math.sin(m.t*(34+m.t*10))*(.6+m.t*(tel?.8:.3)),oy:0,flash:m.t>m.warn*.4,rot:0,sx:1,sy:1};if(tel)e.sq=1;
+        if(m.t<m.lock){m.a+=clamp(angDiff(Math.atan2(p.y-e.y,p.x-e.x),m.a),-dt*5,dt*5);m.L=tel?clamp(Math.hypot(p.x-e.x,p.y-e.y)+300,560,900):330;}
+        if(!m.b1&&m.t>=m.lock){m.b1=true;this.audio.sfx('warn');this.floatText(e.x,e.y-e.r*2.6,'!!',1);}
+        if(this.fx.length<420&&Math.random()<dt*40){const a=rnd(0,TAU),d=e.r*rnd(1.2,2.2),l=.3;this.fx.push({x:e.x+Math.cos(a)*d,y:e.y-e.r+Math.sin(a)*d*.7,vx:-Math.cos(a)*d/l,vy:-Math.sin(a)*d*.7/l,l,m:l,c:tel?'#ff4a4a':'#9cff7a',s:3});}
+        if(m.t>=m.warn){m.st=1;m.t=0;m.ox=e.x;m.oy=e.y;e.sq=0;this.audio.sfx('leap');if(tel){this.ring(e.x,e.y,e.r*2,'#ff4a4a',.4);this.shake=Math.max(this.shake,.2);}}
+      }else if(m.st===1){   /* the rush */
+        const sp=tel?1250:1100,c=Math.cos(m.a),s=Math.sin(m.a),d=Math.min(m.L,m.t*sp),cx=e.x,cy=e.y-e.r*.5;
+        e.face=c>=0?1:-1;
+        const hr=e.r+(tel?18:22);
+        if(!m.hit&&Math.hypot(p.x-cx,p.y-18-cy)<hr+8&&(tel||p.inv<=0)){
+          m.hit=true;
+          if(tel){this.hurt(e.dmg*2.2,e);this.bv={x:c*620,y:s*620,t:.25};this.shake=Math.max(this.shake,.5);this.burst(p.x,p.y-14,16,'#ff4a4a');}
+          else if(!this.dashT&&p.inv<=0&&!this.sb.god){this.held={e,t:0,hp0:e.hp,ticks:0};this.say(this.env.tr(T('PRESO!','GRABBED!')),'#9cff7a',2.4,this.env.tr(T('Stordiscilo, colpiscilo forte o scatta per liberarti','Stun him, hit him hard or dash to break free')));this.audio.sfx('abAbsorb');m.st=2;m.t=0;this.floatText(p.x,p.y-60,'!',3);}
+        }
+        e.x=m.ox+c*d;e.y=m.oy+s*d;
+        e.vis={ox:0,oy:0,flash:false,rot:tel?m.t*20*e.face:0,sx:tel?1:1.12,sy:tel?1:.9};
+        if(this.fx.length<440){const col=tel?'#ff8fb8':'#cfd8e0';this.fx.push({x:e.x+rnd(-e.r*.4,e.r*.4),y:e.y-e.r+rnd(-e.r*.5,e.r*.5),vx:rnd(-30,30),vy:rnd(-30,30),l:.3,m:.3,c:col,s:e.r*.22});this.fx.push({x:e.x,y:e.y-e.r*.5,vx:-c*80,vy:-s*80,l:.25,m:.25,c:'#ffffff',s:4});}
+        if(d>=m.L&&m.st===1){
+          e.vis=null;e.stun=Math.max(e.stun||0,tel?1.5:1.1);this.endBossMove(e);
+          if(tel){   /* body slam at the end of the path */
+            this.ring(e.x,e.y,R,'#ff8fb8',.55);this.ring(e.x,e.y,R*.6,'#ffffff',.4);this.burst(e.x,e.y-6,26,'#ff8fb8');this.shake=Math.max(this.shake,.7);this.audio.sfx('boom');
+            if(!m.hit&&Math.hypot(p.x-e.x,p.y-e.y)<R)this.hurt(e.dmg*1.2,e);
+          }else this.floatText(e.x,e.y-e.r*2.4,this.env.tr(T('Mancato!','Missed!')),1);
+        }
+      }else{ /* grab: the hold itself is run by updateHeld */
+        if(!this.held||this.held.e!==e)this.endBossMove(e);else{e.vis={ox:0,oy:0,flash:false,rot:0,sx:1,sy:1};}
+      }
+      return;
+    }
+    if(m.k==='rain'){
+      const hx=e.x+e.face*e.r*1.5,hy=e.y-e.r*2.9;   /* (the raised hand, see Renderer.drawBuuHand) */
+      if(m.st===0){   /* the hand goes up and gathers energy */
+        e.vis={ox:Math.sin(m.t*50)*.8,oy:0,flash:false,rot:0,sx:1,sy:1};
+        if(this.fx.length<420&&Math.random()<dt*50)this.fx.push({x:hx+rnd(-30,30),y:hy+rnd(-26,26),vx:0,vy:0,l:.3,m:.3,c:'#ff7ac0',s:3});
+        if(m.t>=.9){m.st=1;m.t=0;this.audio.sfx('xcharge');this.ring(hx,hy,60,'#ff7ac0',.5);}
+      }else if(m.st===1){   /* every 0.1 s one ball of ki shoots up from the hand */
+        e.vis={ox:0,oy:0,flash:false,rot:0,sx:1,sy:1};
+        m.nx-=dt;
+        while(m.nx<=0&&m.fired<m.n){m.nx+=.1;m.fired++;this.rain.push({t:0,hx:hx+rnd(-8,8),hy,mk:false,done:false});if(m.fired%3===1)this.audio.sfx('shot');}
+        if(m.fired>=m.n){m.st=2;m.t=0;}
+      }else{if(m.t>.6)this.endBossMove(e);}
+    }
+  }
+  /* Super Buu's rain: each ball flies up, and 3 s after it was fired it comes down near the player (the spot is marked 1 s before) */
+  updateRain(dt){
+    const p=this.p;this.rainSfx=Math.max(0,(this.rainSfx||0)-dt);
+    for(const r of this.rain){
+      r.t+=dt;
+      if(!r.mk&&r.t>=2){const a=rnd(0,TAU),d=Math.sqrt(Math.random())*240;r.lx=p.x+Math.cos(a)*d;r.ly=p.y+Math.sin(a)*d*.85;r.mk=true;}
+      if(r.t>=3&&!r.done){
+        r.done=true;const R=38;
+        this.ring(r.lx,r.ly,R*1.2,'#ff7ac0',.3);this.burst(r.lx,r.ly-4,5,'#ffffff');this.burst(r.lx,r.ly-4,4,'#ff7ac0');
+        if(this.rainSfx<=0){this.rainSfx=.12;this.audio.sfx('boom');}
+        if(Math.hypot(p.x-r.lx,(p.y-r.ly)/.85)<R+10)this.hurt(p.maxHp*.02,{boss:1,pct:1});
+        if(this.eb.length)this.cutC(r.lx,r.ly,R);
+      }
+    }
+    if(this.rain.length)this.rain=this.rain.filter(r=>!r.done);
+  }
+  /* Dr. Gero's hold: 3 s, the life drain comes in 6 ticks (5% / 15% / 25% / 35% of your maximum health by difficulty) and he heals from it */
+  updateHeld(dt){
+    const h=this.held,p=this.p,e=h.e;
+    const free=(why)=>{this.held=null;if(e.bm)this.endBossMove(e);p.inv=Math.max(p.inv,.8);this.floatText(p.x,p.y-60,this.env.tr(why),3);this.bv={x:(p.x>=e.x?1:-1)*420,y:0,t:.2};};
+    if(e.dead||this.ended){this.held=null;return;}
+    if(e.stun>0)return free(T('Liberato!','Freed!'));
+    if(e.hp<h.hp0-e.max*.06)return free(T('Liberato!','Freed!'));
+    h.t+=dt;
+    p.x=e.x+e.face*(e.r+12);p.y=e.y+2;
+    const pct=BM_GERO_DRAIN[Math.max(0,['easy','normal','hard','extreme'].indexOf(this.diffId))]||.15,N=6;
+    while(h.ticks<N&&h.t>=(h.ticks+1)*(3/N)){
+      h.ticks++;
+      if(p.inv<=0&&!this.sb.god){const d=p.maxHp*pct/N;p.hp-=d;this.floatText(p.x,p.y-44,Math.round(d),4);e.hp=Math.min(e.max,e.hp+e.max*.004);this.emote('pain',.6);if(p.hp<=0){this.held=null;this.endBossMove(e);this.lethal();return;}}
+      this.audio.sfx('abAbsorb');this.shake=Math.max(this.shake,.15);
+      this.fx.push({bolt:true,pts:[[p.x,p.y-14],[(p.x+e.x)/2+rnd(-10,10),(p.y+e.y)/2-18+rnd(-8,8)],[e.x,e.y-e.r]],l:.4,m:.4,c:'#9cff7a'});
+      for(let i=0;i<4&&this.fx.length<440;i++)this.fx.push({x:p.x+rnd(-8,8),y:p.y-rnd(0,24),vx:(e.x-p.x)*2.4,vy:(e.y-e.r-p.y)*2.4,l:.4,m:.4,c:'#9cff7a',s:3});
+    }
+    if(h.t>=3)free(T('Libero!','Released!'));
+  }
   bossExt(bd,final){
+    if(bd.ext)return bd.ext;   /* a boss with its own list of special moves (the androids, the Kaioshin ...) */
     const POOL=['wall','crossbeam','rush','homing','vortex','encircle'];
     if(final)return POOL;
     const i=Math.max(0,Object.keys(BOSSES).indexOf(bd.id));
@@ -1220,17 +1555,17 @@ class Game{
     }
     this.bz=this.bz.filter(z=>!z.done);
   }
-  /* boss phase 2: swap to the stronger form (new sprite, faster, harder) */
+  /* a boss changes form (v55): it recovers 50% of its health and every stat grows by 20% (health, damage, speed, armor); the Freezer and Cell lines
+     gain only 2.5% speed (`spdK` in their definitions). The new form brings the look, the attack patterns and the name; the numbers come from the rule. */
   bossTransform(e){
-    const nb=BOSSES[e.bd.p2],old=e.bd;e.p2=!nb.p2;e.pf=(e.pf||0)+1;
+    const nb=BOSSES[e.bd.p2],old=e.bd,K=TRANS_K;e.p2=!nb.p2;e.pf=(e.pf||0)+1;
     e.bd=Object.assign({},nb,{id:old.id,hp:old.hp});
-    e.r=nb.r;e.spd=nb.spd;e.dmg*=nb.dmg/old.dmg;e.sh=.8;e.phase=0;e.stun=1.2;e.esid=undefined;e.pwUntil=this.t+1.2;     /* new sheet (Fury) and a power-up pose while it changes */
-    if(!old.mini)e.hp=Math.min(e.max,e.hp+e.max*.1);
-    if(old.mini){const f=1.12;e.max*=f;e.hp*=f;}
-    e.armor+=old.mini?(nb.arm||2):1.5;
+    e.r=nb.r;e.spd*=(nb.spdK||old.spdK||K);e.dmg*=K;e.armor*=K;e.sh=.8;e.phase=0;e.stun=1.2;e.esid=undefined;e.pwUntil=this.t+1.2;     /* new sheet (Fury) and a power-up pose while it changes */
+    e.max*=K;e.hp=Math.min(e.max,e.hp*K+e.max*TRANS_HEAL);
     this.ring(e.x,e.y,320,nb.c,.9);this.pillar(e.x,e.y,nb.c,1.4);this.bolt(e.x,e.y-20,300,nb.c,14);this.burst(e.x,e.y-20,50,'#ffffff');
     this.flash=.7;this.flashC=nb.c;this.shake=.8;this.audio.sfx('transform');this.eb=[];
-    this.say(this.env.tr(nb.n).toUpperCase()+'!',nb.c,3.4);
+    this.say(this.env.tr(nb.n).toUpperCase()+'!',nb.c,3.4,this.env.tr(T('Recupera il 50% della vita, statistiche +20%','Recovers 50% health, stats +20%')));
+    this.floatText(e.x,e.y-e.r*2.4,'+50% HP',1);
   }
   explode(e){
     const p=this.p,rad=e.def.rad;
@@ -1243,11 +1578,11 @@ class Game{
   /* ---------- main update ---------- */
   update(dt){
     if(this.modal||this.ended)return;
-    const rdt=dt;if(this.dying&&this.updateDying(rdt))return;dt*=this.timeScale;
+    const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}dt*=this.timeScale;
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial;
-    this.rt+=dt;if(!inTrial){const e0=Math.floor(this.t/ESC_EVERY);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/ESC_EVERY)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
+    this.rt+=dt;if(!inTrial){const e0=Math.floor(this.t/this.escEvery);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/this.escEvery)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
     if(dt>0)this.xpRate+=(this.xpAcc/dt-this.xpRate)*(1-Math.exp(-dt/45));this.xpAcc=0;   /* XP income per second, smoothed over ~45 s (calibrates the Endless level curve) */
     if(p.inv>0)p.inv-=dt;
     if(this.shake>0)this.shake-=dt;
@@ -1261,13 +1596,14 @@ class Game{
     if(this.buffs.dmg>0){this.buffs.dmg-=dt;if(this.buffs.dmg<=0)this.recalc();}
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 
-    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!inTrial){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
     if(!(this.trial&&this.trial.zeno))p.hp=Math.min(p.maxHp,p.hp+S.regen*dt);   /* no passive regeneration inside Zeno's Shop */
     if(!inTrial)this.updateZones(dt);
     if(this.kai>0)this.updateKaioken(dt);
+    if(this.rain.length)this.updateRain(dt);if(this.held)this.updateHeld(dt);
     this.updateTotemFx(dt);this.updateDanger(dt);this.updateBeams(dt);this.updateBossShock(dt);this.updateAbility(dt);
     if(this.bers>0)this.updateBerserk(dt);else if(this.bersCd>0)this.bersCd-=dt;
     this.updatePet(dt);
@@ -1287,7 +1623,7 @@ class Game{
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
     }
-    for(const b of this.bossQ)if(!inTrial&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final);}
+    for(const b of this.bossQ)if(!inTrial&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final,undefined,b.k);}
 
     /* trinket specials */
     if(this.trinkets.length){
@@ -1379,7 +1715,9 @@ class Game{
       case'regen':S.regen+=.6*k;break;
       case'blind':S.dodge=Math.min(.75,S.dodge+.1*k);break;
       case'dash':S.spd*=1+.08*k;break;
-      case'clones':S.might*=1+.08*k;S.spd*=1+.06*k;break;
+      case'clones':case'ghosts':S.might*=1+.08*k;S.spd*=1+.06*k;break;
+      case'sbc':S.might*=1+.07*k;S.crit+=.04*k;break;
+      case'sphere':S.might*=1+.06*k;S.area*=1+.08*k;break;
       case'crit':S.crit+=.06*k;break;
       case'barrier':S.taken*=Math.max(.4,1-.15*k);break;
       case'timestop':S.cd=Math.max(this.cdMin(.3),S.cd*Math.max(.5,1-.08*k));break;
@@ -1654,6 +1992,13 @@ class Game{
           break;
         case'boss':{
           if(e.xf){this.updateBossXform(e,dt);break;}
+          if(e.bar>0)e.bar-=dt;if(e.barCd>0)e.barCd-=dt;if(e.sdCd>0)e.sdCd-=dt;
+          if(e.bd.sig&&!this.trial&&!e.sparring){   /* signature move: wait, warn, do it (see startBossMove) */
+            if(e.sgT===undefined)e.sgT=rnd(3.5,6);
+            e.sgT-=dt;
+            if(e.bm){this.updateBossMove(e,dt);break;}
+            if(e.sgT<=0&&dist<640){this.startBossMove(e);break;}
+          }
           /* too slow? the boss powers up: heals, gets stronger and learns new attacks */
           if(e.tf<2&&e.hp>e.max*.1&&!this.trial){e.tfT-=dt;if(e.tfT<=0)this.startBossXform(e);}
           if(e.dashT>0){e.dashT-=dt;sp*=3;}
