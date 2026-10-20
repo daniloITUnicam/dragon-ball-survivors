@@ -6,7 +6,7 @@ await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await w
 const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
 const r=await pg.evaluate(()=>{const o={};
  o.maxMight=[0,1,2,3,4].map(r=>Math.max(...TRINKETS.map(t=>(trinMods(t,r).might||0))));
- o.capsOk=[0,1,2,3,4].every(r=>TRINKETS.every(t=>{const m=trinMods(t,r);return Object.keys(m).every(k=>m[k]<=TCAP[k]*RS[r]+1e-9);}));
+ o.capsOk=[0,1,2,3,4].every(r=>TRINKETS.every(t=>{const m=trinMods(t,r);return Object.keys(m).every(k=>k==='proj'||m[k]<=TCAP[k]*RS[r]+1e-9);}));
  o.descSample=TRINKETS.filter(t=>t.id==='dragonheart').map(t=>[0,3,4].map(r=>trinDesc(t,r).en));
  __app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;window.G=g;
  window.step=(n)=>{for(let f=0;f<n;f++){if(g.modal&&g.modal.type!=='tswap'){try{__app.resolveModal(0);}catch(e){}if(g.modal)g.modal=null;}g.update(1/60);if(g.p.hp<g.p.maxHp*.2&&!(g.trial&&g.trial.zeno))g.p.hp=g.p.maxHp;}};

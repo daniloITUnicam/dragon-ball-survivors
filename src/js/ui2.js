@@ -120,10 +120,10 @@ Object.assign(UI.prototype,{
       kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+S.gold.toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
     const fe=g.formEntry;
     const ups=[kr(null,g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
-      ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
+      ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
-    const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf)))));});
+    const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf))),this.perfBar(pf)));});
     /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
@@ -169,7 +169,7 @@ Object.assign(UI.prototype,{
         hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
       const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
-      return{k:p.k,c:p.c,n:p.n,cat:PASS_ICON[o.id],fx:[{i:PASS_ICON[o.id],t:p.d}],lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('upgTag'):this.t('newPass'),d:null,hints:hints&&hints.length?hints:null};}
+      return{k:p.k,c:p.c,img:PASS_IMG[o.id],n:p.n,cat:PASS_ICON[o.id],fx:[{i:PASS_ICON[o.id],t:p.d}],lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('upgTag'):this.t('newPass'),d:null,hints:hints&&hints.length?hints:null};}
     if(o.type==='z')return{k:'金',c:'#ffd23f',cat:'coin',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
     {const gg=this.app.game,n=gg?gg.senzu:0,full=n>=SENZU_MAX;
       return{k:'豆',c:'#8be07a',cat:'hp',n:T('Fagiolo Senzu','Senzu Bean'),tag:this.t('senzuTitle'),d:T(full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}),full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}))};}
@@ -178,18 +178,19 @@ Object.assign(UI.prototype,{
     if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf)};}
+    if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
     const fc=info.cat&&CAT_COL[info.cat];
     return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
-      glyph(info.k,info.c),
+      info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+(CAT_COL[x.i]||fc||info.c)},h('b',null,this.tr(x.t))))):null,
         info.d?h('div',{class:'cd'},this.tr(info.d)):null,
+        info.pf!=null?this.perfBar(info.pf):null,
         info.hints?info.hints.map(x=>this.evoHint(x.pid,x.wid,x.evo,x.ready)):null),
       i<10&&onclick?h('span',{class:'key'},i===9?0:i+1):null);
   },

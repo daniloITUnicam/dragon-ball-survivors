@@ -88,6 +88,10 @@ Pixel art icon, 64x64, a mystic trinket (a small round talisman with a gem in th
 Clean 1 px dark outline, two-tone shading, flat magenta background (#FF00FF).
 ```
 
-## 3. Cosa fare dopo
+## 3. Icone del negozio — completate (v59)
+Tutte le 20 icone del negozio sono nel gioco (`assets/shopicons/<id>.webp`, 128 px): `hp`, `armor`, `speed`, `exp`, `might`, `crit`, `scan`, `broly`, `gold`, `regen`, `magnet`, `cd`, `luck`, `revive`, `proj`, `tslot`, `ban`, `rr`, `sk`, `bn`.
+Per sostituirne una basta rigenerarla in stile pixel art Dragon Ball (icona singola centrata, bordo scuro, aura di fiamme, senza testo) e rimettere il file con lo stesso nome; `build.py` la incorpora da solo.
+
+## 4. Cosa fare dopo
 Mandami i PNG (anche più per volta) con i nomi indicati: collego io gli effetti nel gioco e converto i personaggi in fogli sprite (`assets/sprites/<id>.png`).
 Se Gemini sbaglia il colore o il disegno di un frame, rigenera **solo quel frame** con lo stesso riferimento allegato; non ricominciare da capo.

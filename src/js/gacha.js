@@ -19,15 +19,15 @@ const isWeekend=(d)=>{const w=(d||new Date()).getDay();return w===0||w===6;};
 const ticketPrice=(kind,d)=>{const b=TICKET_PRICE[kind];return b?Math.round(b*(kind==='t10'&&isWeekend(d)?1-TICKET_WEEKEND:1)):0;};
 const trinketKey=(id,r)=>id+'@'+r;
 /* the trinkets that can come out at rarity r (the same rule as Zeno-sama's stock: stat trinkets at any rarity, effect-only ones at their own) */
-function gachaPool(r){return TRINKETS.filter(t=>t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4);}
+function gachaPool(r){return TRINKETS.filter(t=>canAt(t,r));}
 function gachaRarity(lucky,rnd){
   const w=GACHA.rates[lucky?'l':'n'],tot=w.reduce((a,b)=>a+b,0);let q=(rnd||Math.random)()*tot;
   for(let i=0;i<w.length;i++){q-=w[i];if(q<=0)return i;}
   return 0;
 }
 function gachaRoll(lucky,rnd){
-  const r=gachaRarity(lucky,rnd),pool=gachaPool(r);
-  return{id:pool[Math.floor((rnd||Math.random)()*pool.length)%pool.length].id,r};
+  const r=gachaRarity(lucky,rnd);
+  return{id:pickTrinket(r,null,rnd).id,r};
 }
 /* the zenny a trinket found in a run is sold for: its market value in Zeno-sama's shop (grows with the stage like his prices) plus a bonus (Mythic: +1000) */
 const trinketSale=(r,sd)=>Math.round((ZENO_PRICE[r]*(1+.3*(sd||0))+GACHA.sell[r])*ZMUL);   /* market value + bonus, like every other income 20% lower (ZMUL) */

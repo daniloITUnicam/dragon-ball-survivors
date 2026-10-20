@@ -127,7 +127,8 @@
 .tslot .tplus{font-family:var(--display);font-size:44px;line-height:1}
 .tslot.on{border-style:solid;border-color:var(--c);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 22%,transparent),rgba(0,0,0,.35));box-shadow:0 0 14px color-mix(in srgb,var(--c) 70%,transparent)}
 .tslot .glyph{font-size:34px;width:auto}
-.tslot .tsn{font-size:10px;line-height:1.05;text-align:center;max-width:70px;overflow:hidden;color:var(--ink)}
+.tslot .tsn{font-size:10px;line-height:1.05;text-align:center;max-width:68px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--ink)}
+.tslot .perf{width:100%;box-sizing:border-box;padding:0 7px;margin:3px 0 0}
 .tslotwrap .unq{font-size:11px;padding:2px 8px}
 .tsrow{display:flex;gap:8px;justify-content:center;align-items:flex-start}
 .tsone{display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -169,10 +170,12 @@
 @media(max-width:700px){.gov .gtiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:50vh}}
 
 /* ---- v54: trinket perfection (0-100%) and the Ultra Instinct shimmer at 100% ---- */
-.perf{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--pc,#9aa4b0)}
+.perf{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:4px 0;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--pc,#9aa4b0)}
 .perf .pbar{flex:1 1 60px;max-width:150px;height:6px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden;position:relative}
 .perf .pbar i{display:block;height:100%;width:var(--p,0%);background:var(--pc,#9aa4b0);border-radius:4px;box-shadow:0 0 6px var(--pc,#9aa4b0)}
-.perf.sm{margin:3px 0 0}.perf.sm .pbar{max-width:none;height:4px}
+.perf .pbar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),rgba(0,0,0,.55) calc(25% - 1px) 25%);pointer-events:none}   /* ticks at 25 / 50 / 75 */
+.perf .pe{font-size:10px;font-weight:700;opacity:.7;color:#9aa4b0}
+.perf.sm{margin:3px 0 0;gap:5px;flex-wrap:nowrap}.perf.sm .pbar{max-width:none;min-width:0;flex:1 1 0;height:5px}.perf.sm .pv{font-size:10px;min-width:20px;text-align:right;line-height:1}
 .perf.ui .pbar i{background:linear-gradient(90deg,#9fd8ff,#ffffff,#9fd8ff,#ffffff);background-size:200% 100%;animation:uiShim 1.6s linear infinite}
 .perf.ui{color:#e8f4ff;text-shadow:0 0 8px #8ad8ff}
 @keyframes uiShim{from{background-position:0 0}to{background-position:-200% 0}}
@@ -182,3 +185,7 @@
 .tsverdict{display:inline-block;margin:4px 0;padding:2px 10px;border-radius:999px;font-weight:900;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor}
 .tsverdict.up{color:#9affb0}.tsverdict.down{color:#ff9a9a}.tsverdict.eq{color:#ffe08a}
 .tssell{margin-top:6px;font-size:13px;opacity:.9;display:flex;gap:4px;align-items:center}
+/* pixel-art icon of an upgrade (shop, level-up cards, pause list): a framed tile in the upgrade's colour */
+.glyph.gimg{display:flex;align-items:center;justify-content:center;text-shadow:none;width:58px}
+.glyph.gimg img{width:56px;height:56px;image-rendering:pixelated;display:block;border-radius:9px;border:2px solid var(--c,#ffd23f);box-shadow:0 0 10px color-mix(in srgb,var(--c,#ffd23f) 55%,transparent);background:#10131c}
+.card.shopi .pips i.on{background:var(--c,#ffd23f)}

@@ -16,6 +16,33 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21',date:'2026-10-21',
+    name:T("Quantità, Scanner e 128 nuovi cimeli","Amount, Scanner and 128 new trinkets"),
+    sum:T("Nuovi potenziamenti del negozio (Quantità, Scanner Sfere del Drago e Urlo di Broly!), Armatura Saiyan più forte, 128 nuovi cimeli con combinazioni di statistiche diverse e la barra del roll da 0 a 100 su ogni cimelio.","New shop upgrades (Amount, Dragon Ball Scanner and Broly's Roar!), a stronger Saiyan Armor, 128 new trinkets with different stat combinations and the 0 to 100 roll bar on every trinket."),
+    new:[
+      {g:T("Negozio","Shop"),l:[
+        T("Quantità: ogni arma lancia +1 proiettile per livello (massimo 2 acquisti, 2000 Zenny il primo, poi 6000). Si somma ai proiettili delle trasformazioni e dei cimeli.","Amount: every weapon fires +1 projectile per level (2 purchases max, 2000 Zenny for the first, then 6000). It adds to the projectiles from transformations and trinkets."),
+        T("Scanner Sfere del Drago (con l'icona del radar): +5% frequenza di comparsa delle Sfere del Drago per livello, valido per le sfere normali, le Super Sfere e quelle lasciate dai nemici (massimo 2 acquisti, 3000 Zenny il primo, poi 9000).","Dragon Ball Scanner (with the radar icon): +5% Dragon Ball spawn rate per level, for normal balls, Super Dragon Balls and enemy drops (2 purchases max, 3000 Zenny for the first, then 9000).")
+      ]},
+      {g:T("Grafica","Graphics"),l:[
+        T("Ogni potenziamento del negozio ha il suo colore di scritta (Vitalità rosso, Agilità blu, Armatura azzurro, Danno arancione, Studio ambra, Occhio Critico rosa, Magnetismo viola, Fortuna lime...).","Every shop upgrade has its own text colour (Vitality red, Agility blue, Saiyan Armor light blue, Damage orange, Study amber, Keen Eye pink, Magnetism violet, Luck lime...)."),
+        T("Ogni potenziamento del negozio (20 su 20) ha la sua icona pixel art in stile Dragon Ball e il suo colore del testo. Le stesse icone compaiono in partita: sulle carte di level-up e nella pausa per Vigore, Armatura da Battaglia, Volo veloce, Zenkai, Meditazione, Fagioli Senzu, Scouter e Camera Gravitazionale, e nella barra dei potenziamenti in alto a sinistra.","Every shop upgrade (20 of 20) now has its own Dragon Ball style pixel-art icon and text colour. The same icons show in the game: on the level-up cards and in the pause list for Vigor, Battle Armor, Swift Flight, Zenkai, Meditation, Senzu Beans, Scouter and Gravity Chamber, and in the upgrade bar at the top left.")
+      ]},
+      {g:T("Difficoltà","Difficulty"),l:[
+        T("Urlo di Broly! (nuovo potenziamento del negozio, con l'immagine di Broly): +5% frequenza di comparsa dei nemici per livello, fino a +25% al massimo (5 acquisti, 666 Zenny il primo, poi 1132, 1925, 3272 e 5563). Più nemici significa più esperienza e bottino, ma anche più pericolo.","Broly's Roar! (new shop upgrade, with Broly's picture): +5% enemy spawn rate per level, up to +25% (5 purchases, 666 Zenny for the first, then 1132, 1925, 3272 and 5563). More enemies means more experience and loot, but also more danger.")
+      ]},
+      {g:T("Cimeli e negozio","Trinkets and shop"),l:[
+        T("128 nuovi cimeli, ognuno con una combinazione diversa di 2 o 3 statistiche (78 coppie e 40 terne, per esempio Anello del Guerriero: danno e velocità). Come gli altri cimeli con statistiche esistono a tutte le rarità, da Comune a Mitico: ogni rarità ha ora più di 100 combinazioni diverse nel Gacha, nel negozio di Zeno e nei forzieri.","128 new trinkets, each with a different combination of 2 or 3 stats (78 pairs and 40 triples, for example Ring of the Warrior: damage and speed). Like the other stat trinkets they exist at every rarity, Common to Mythic: each rarity now has over 100 different combinations in the Gacha, Zeno's shop and chests."),
+        T("10 di questi cimeli danno anche Quantità (+proiettili per ogni arma) e compaiono solo a Leggendario e Mitico: Leggendario +2 (+3 con roll 100), Mitico +3 (+4 da roll 50, +5 con roll 100).","10 of these trinkets also give Amount (+projectiles for every weapon) and only come out at Legendary and Mythic: Legendary +2 (+3 with a 100 roll), Mythic +3 (+4 from a 50 roll, +5 with a 100 roll)."),
+        T("Barra del roll da 0 a 100 su ogni cimelio: nella Borsa, negli slot della schermata del personaggio (con il numero a destra), nelle carte dei forzieri e delle scelte in partita, nell'elenco della pausa, nei risultati del Gacha e nella nuvoletta del negozio di Zeno. Tacche a 25, 50 e 75; a 100 la barra brilla come l'aura Ultra Istinto.","0 to 100 roll bar on every trinket: in the Bag, in the slots of the character screen (with the number on the right), on chest and in-run choice cards, in the pause list, in the Gacha results and in Zeno's shop bubble. Ticks at 25, 50 and 75; at 100 the bar shimmers like the Ultra Instinct aura."),
+        T("I cimeli con soli effetti (Cuore di Kaioh, Aureola, ...) restano ben rappresentati: pesano 12 volte un cimelio con statistiche nell'estrazione.","Effect-only trinkets (Kaioh's Heart, Halo, ...) stay well represented: they weigh 12 times a stat trinket in the draw."),
+        T("Nelle partite i cimeli con statistiche escono ora a qualsiasi rarità (come nel Gacha e da Zeno), non solo a quella di base.","In runs, stat trinkets now come out at any rarity (like in the Gacha and from Zeno), not just their base one.")
+      ]}
+    ],
+    bal:[
+      T("Armatura Saiyan: +2 armatura per livello (prima +1,25), cioè +12 al massimo (prima +7,5).","Saiyan Armor: +2 armor per level (was +1.25), +12 at the maximum (was +7.5).")
+    ]
+  },
   {id:'2026-10-20f',date:'2026-10-20',
     name:T("Cooler su Namek, cimeli extra e password","Cooler on Namek, extra trinkets and password"),
     sum:T("Cooler arriva su Pianeta Namek con le sue trasformazioni, gli slot extra dei cimeli si vedono davvero, il Maestro della Stanza dello Spirito e del Tempo imita le tue armi, la password si reimposta con un codice e c'è il login con Google.","Cooler arrives on Planet Namek with his transformations, the extra trinket slots are finally visible, the Master of the Room of Spirit and Time copies your weapons, the password is reset with a code and Google login is here."),

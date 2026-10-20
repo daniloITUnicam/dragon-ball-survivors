@@ -13,6 +13,8 @@ function h(tag,props,...kids){
 const LOGO_URL=('__LOGO__'?'data:image/webp;base64,__LOGO__':'');
 const WIP_URL=('__WIP__'?'data:image/webp;base64,__WIP__':'');
 const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
+/* pixel-art icon (shop upgrades): a framed tile in the upgrade's colour */
+const imgGlyph=(src,c)=>h('span',{class:'glyph gimg',style:'--c:'+c},h('img',{src,alt:'',draggable:'false'}));
 /* zenny coin icon (replaces the plain "Z") */
 function zIcon(){
   const e=document.createElement('span');e.className='zi';
@@ -338,8 +340,8 @@ class UI{
     const d=this.save;
     const cards=SHOP.map(it=>{
       const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost);
-      return h('div',{class:'card shopi'},
-        glyph(it.k,'#ffd23f'),h('div',{class:'col'},h('div',{class:'cn'},this.tr(it.n)),h('div',{class:'cd'},this.tr(it.d)),
+      return h('div',{class:'card shopi',style:'--c:'+it.c},
+        SHOP_IMG[it.id]?imgGlyph(SHOP_IMG[it.id],it.c):glyph(it.k,it.c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+it.c},this.tr(it.n)),h('div',{class:'cd'},this.tr(it.d)),
           h('div',{class:'pips'},Array.from({length:it.max},(_,i)=>h('i',{class:i<lv?'on':''}))),
           it.id==='ban'&&lv>0?h('button',{class:'btn small primary banman','data-fid':'shbanm',onclick:()=>{this.sfx();this.push('bans');}},this.t('banManage',{a:d.banned.length,b:lv})):null),
         h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},

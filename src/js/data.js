@@ -634,18 +634,31 @@ const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
 function rollPf(luck){let q=Math.random();if(luck>0)q=Math.pow(q,1/(1+luck*1.2));return Math.min(100,Math.round(q*104));}   /* about 4% of the rolls are a perfect 100 */
 const hasPf=t=>!!(t&&t.m);
 const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
+/* Quantità (key proj): +1 projectile for every weapon. Only Legendary and Mythic trinkets carry it: Legendary 2 (3 with a perfect 100 roll), Mythic 3 (4 from a 50 roll, 5 with a perfect 100 roll) */
+const trinProj=(r,pf)=>{const p=pf==null?PF_NOM:pf;return r<3?0:r===3?2+(p>=100?1:0):3+(p>=50?1:0)+(p>=100?1:0);};
+/* can this trinket come out at rarity r? stat trinkets at any rarity (unless minR says otherwise), effect-only ones only at their own */
+const canAt=(t,r)=>(t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4)&&(t.minR==null||r>=t.minR);
+/* weighted pick among the trinkets that fit rarity r: an effect-only trinket weighs FX_W stat trinkets, so the big pool of stat trinkets does not bury them */
+const FX_W=12;
+function pickTrinket(r,ok,rnd){
+  const pool=TRINKETS.filter(t=>canAt(t,r)&&(!ok||ok(t)));if(!pool.length)return null;
+  const wt=t=>t.m&&!t.sp||t.m&&t.x?1:FX_W;let q=(rnd||Math.random)()*pool.reduce((s,t)=>s+wt(t),0);
+  for(const t of pool){q-=wt(t);if(q<=0)return t;}
+  return pool[pool.length-1];
+}
 function trinMods(t,r,pf){
   if(!t||!t.m)return{};
   if(r==null)r=t.r;
   const k=RS[r]/RS[t.r],o={},f=pfK(pf);
-  for(const key in t.m){const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
+  for(const key in t.m){if(key==='proj'){o.proj=trinProj(r,pf);continue;}const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
   return o;
 }
 function trinStats(t,r,pf){
   const m=trinMods(t,r,pf),out=[];
   for(const key in m){
     const v=m[key];if(!v)continue;const L=TLAB[key]||[key,key];
-    if(key==='armor'||key==='regen'){const n=Math.round(v*10)/10;out.push({k:key,v,t:T('+'+String(n).replace('.',',')+' '+L[0],'+'+n+' '+L[1])});}
+    if(key==='proj'){out.push({k:key,v,t:T('+'+v+' quantità','+'+v+' amount')});}
+    else if(key==='armor'||key==='regen'){const n=Math.round(v*10)/10;out.push({k:key,v,t:T('+'+String(n).replace('.',',')+' '+L[0],'+'+n+' '+L[1])});}
     else if(key==='cd')out.push({k:key,v,t:T('-'+Math.round(v*100)+'% '+L[0],'-'+Math.round(v*100)+'% '+L[1])});
     else out.push({k:key,v,t:T('+'+Math.round(v*100)+'% '+L[0],'+'+Math.round(v*100)+'% '+L[1])});
   }
@@ -798,11 +811,14 @@ const SHOP=[
  {id:'might',k:'力',n:T('Danno','Damage'),d:T('+6% danno per livello.','+6% damage per level.'),max:6,base:156,g:1.5},
  {id:'speed',k:'速',n:T('Agilità','Agility'),d:T('+4% velocità per livello.','+4% speed per level.'),max:6,base:120,g:1.5},
  {id:'magnet',k:'引',n:T('Magnetismo','Magnetism'),d:T('+20% raccolta per livello.','+20% pickup range per level.'),max:6,base:84,g:1.5},
- {id:'armor',k:'鎧',n:T('Armatura Saiyan','Saiyan Armor'),d:T('+1,25 armatura per livello.','+1.25 armor per level.'),max:6,base:192,g:1.5},
+ {id:'armor',k:'鎧',n:T('Armatura Saiyan','Saiyan Armor'),d:T('+2 armatura per livello.','+2 armor per level.'),max:6,base:192,g:1.5},
  {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-4% ricarica per livello.','-4% cooldown per level.'),max:6,base:180,g:1.5},
  {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+9% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+9% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
  {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+4% probabilità di critico per livello.','+4% crit chance per level.'),max:6,base:180,g:1.5},
  {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2880,g:3.2},
+ {id:'broly',k:'怒',n:T('Urlo di Broly!','Broly\'s Roar!'),d:T('+5% frequenza dei nemici per livello: più nemici, più esperienza e bottino, ma anche più pericolo (massimo 5 acquisti).','+5% enemy spawn rate per level: more enemies, more experience and loot, but more danger (5 purchases max).'),max:5,base:666,g:1.7},
+ {id:'scan',k:'探',n:T('Scanner Sfere del Drago','Dragon Ball Scanner'),d:T('+5% frequenza delle Sfere del Drago per livello, anche Super e quelle dei nemici (massimo 2 acquisti).','+5% Dragon Ball spawn rate per level, Super ones and enemy drops too (2 purchases max).'),max:2,base:3000,g:3},
+ {id:'proj',k:'弾',n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (massimo 2 acquisti).','+1 amount: every weapon fires one more projectile (2 purchases max).'),max:2,base:2000,g:3},
  {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme (massimo 2 acquisti).','+1 trinket slot: carry up to 3 trinkets at once (2 purchases max).'),max:2,base:3600,g:3},
  {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:420,g:1.4},
  {id:'rr',k:'換',n:T('Reroll','Reroll'),d:T('+1 reroll a partita: al level-up ritira tutte e 3 le carte potenziamento. Fino a 5.','+1 reroll per run: on a level-up, redraws all 3 upgrade cards. Up to 5.'),max:5,base:500,g:1.6},
@@ -810,6 +826,9 @@ const SHOP=[
  {id:'bn',k:'除',n:T('Ban','Ban'),d:T('+1 ban a partita: al level-up bandisci un\'arma o un potenziamento (a tua scelta) per il resto della partita. Fino a 5.','+1 ban per run: on a level-up, ban a weapon or upgrade (your choice) for the rest of the run. Up to 5.'),max:5,base:700,g:1.7}
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
+/* text colour of every shop upgrade (health red, agility blue, ...) */
+const SHOP_COL={gold:'#ffe14a',exp:'#ffb52e',hp:'#ff5a5a',regen:'#5fe08a',might:'#ff7a1a',speed:'#4ab0ff',magnet:'#b98cff',armor:'#7fe7ff',cd:'#3fe3c8',luck:'#c4ee4a',crit:'#ff4d7a',revive:'#f4f0ff',broly:'#7bd02a',scan:'#ffa63d',proj:'#ff7ad9',tslot:'#d9a066',ban:'#9aa4b8',rr:'#8f9bff',sk:'#c8ced8',bn:'#ff8a8a'};
+for(const it of SHOP)it.c=SHOP_COL[it.id]||'#ffd23f';
 const shopCost=(it,lv)=>Math.round(it.base*Math.pow(it.g,lv));
 
 /* ---------- Achievements ---------- */

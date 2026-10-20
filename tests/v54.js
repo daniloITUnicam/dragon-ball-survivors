@@ -12,7 +12,7 @@ let r=await ev(()=>{const out={nom:true,disjoint:true,eff:[],bad:[]};
   for(const t of TRINKETS){
     if(!t.m){out.eff.push(t.id+':'+hasPf(t));continue;}
     for(let rr=0;rr<5;rr++){const a=trinMods(t,rr),b=trinMods(t,rr,50);for(const k in a)if(Math.abs(a[k]-b[k])>1e-9)out.nom=false;}
-    for(let rr=0;rr<4;rr++){const hi=trinMods(t,rr,100),lo=trinMods(t,rr+1,0);for(const k in hi)if(!(hi[k]<lo[k]-1e-9))out.bad.push(t.id+' '+k+' r'+rr+'->'+(rr+1)+' '+hi[k]+'>='+lo[k]);}
+    for(let rr=0;rr<4;rr++){const hi=trinMods(t,rr,100),lo=trinMods(t,rr+1,0);for(const k in hi)if(k!=='proj'&&!(hi[k]<lo[k]-1e-9))out.bad.push(t.id+' '+k+' r'+rr+'->'+(rr+1)+' '+hi[k]+'>='+lo[k]);}
   }
   let n100=0,min=999,max=-1;for(let i=0;i<20000;i++){const q=rollPf(0);if(q===100)n100++;if(q<min)min=q;if(q>max)max=q;}
   let hiLuck=0;for(let i=0;i<20000;i++)hiLuck+=rollPf(.6);let loLuck=0;for(let i=0;i<20000;i++)loLuck+=rollPf(0);
@@ -45,7 +45,7 @@ r=await ev(()=>{const g=G;g.save.settings.trinRefuse=true;g.save.shop.tslot=0;g.
 ok(r.lowRar===true&&r.sameLow===true&&r.sameHigh===false&&r.higher===false&&r.buy===false,'skip-lower: lower rarity and same rarity with less perfection are refused; better ones, higher rarities and shop offers are not');
 ok(r.up===90&&r.keep===90&&r.sold,'a carried trinket found again: 90% replaces 60% in place, 10% is sold');
 /* the bag trinket starts the run with its own perfection */
-r=await ev(()=>{const A=__app,d=A.save.d;d.bag=[{id:'potara',r:1,at:1,p:88}];d.equip={id:'potara',r:1};A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.sb.nospawn=true;g.sb.god=true;window.G=g;
+r=await ev(()=>{const A=__app,d=A.save.d;d.bag=[{id:'potara',r:1,at:1,p:88}];d.equips=[{id:'potara',r:1},null,null];d.equip=d.equips[0];A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.sb.nospawn=true;g.sb.god=true;window.G=g;
   const m=trinMods(TRINKETS.find(t=>t.id==='potara'),1,88);return{p:g.trP('potara'),src:g.tSrc.potara,might:m.might};});
 ok(r.p===88&&r.src==='bag','the equipped bag trinket starts the run with its stored perfection ('+r.p+'%)');
 await go();

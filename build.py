@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -23,6 +23,10 @@ _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
 _wip = ROOT/'assets'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu
 js = js.replace('__WIP__', base64.b64encode(_wip.read_bytes()).decode() if _wip.exists() else '')
+_si = {}
+for _f in sorted((ROOT/'assets'/'shopicons').glob('*.webp')) if (ROOT/'assets'/'shopicons').is_dir() else []:   # shop upgrade icons, file name = shop id
+    _si[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__SHOPICONS__*/{}', json.dumps(_si, separators=(',', ':')))
 _xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
 js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
 _hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)

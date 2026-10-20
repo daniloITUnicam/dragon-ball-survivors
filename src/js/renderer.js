@@ -911,6 +911,8 @@ this.W=1;this.H=1;this.Z=1;
     const gr=g.createLinearGradient(0,0,0,c.height);gr.addColorStop(0,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=gr;g.fillRect(0,0,c.width,c.height);
     return this.stoneC[id]={c,ox:sp.ox,oy:sp.oy,s:sp.s};
   }
+  /* shop / upgrade pixel-art icon as an image (null until it has decoded, or when that upgrade has none) */
+  shopImg(id){const c=this.shopImgC||(this.shopImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof SHOP_IMG!=='undefined'&&SHOP_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}
   statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
   drawSuperBall(l){
     const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,pulse=.5+.5*Math.sin(t*3.2);
@@ -1285,7 +1287,8 @@ this.W=1;this.H=1;this.Z=1;
       const lv=g.pass[id];if(!(lv>0))continue;pshown++;const P=PASS[id];
       this.zones.push({x:px0,y:py0,w:ps,h:ps,k:'pass',id});
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(px0,py0,ps,ps);ctx.strokeStyle=hexA(P.c,.75);ctx.lineWidth=1.8*U;ctx.strokeRect(px0,py0,ps,ps);
-      txt(P.k,px0+ps/2,py0+ps*.62,P.c,'center',F(28,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      {const pim=this.shopImg(PASS_IMG[id]);if(pim){const s=ps-13*U;ctx.save();ctx.imageSmoothingEnabled=true;ctx.drawImage(pim,px0+(ps-s)/2,py0+3*U,s,s);ctx.restore();}
+       else txt(P.k,px0+ps/2,py0+ps*.62,P.c,'center',F(28,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
       for(let i=0;i<5;i++){ctx.fillStyle=i<lv?P.c:'rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(px0+ps/2+(i-2)*6.4*U,py0+ps-5.5*U,2.3*U,0,TAU);ctx.fill();}
       px0+=ps+4*U;
     }
@@ -1478,7 +1481,7 @@ this.W=1;this.H=1;this.Z=1;
       const it=zt.look||zt.near;
       if(it){
         const td=TRINKETS.find(q=>q.id===it.id),col=RARITY[it.rar].c,aff=g.run.coins>=it.price,full=false;
-        const lines=trinStats(td,it.rar,it.pf).map(x=>[tr(x.t),true]);if(hasPf(td)&&it.pf!=null)lines.push([tr2('Perfezione: '+it.pf+'%','Perfection: '+it.pf+'%'),true]);
+        const lines=trinStats(td,it.rar,it.pf).map(x=>[tr(x.t),true]);if(hasPf(td)&&it.pf!=null)lines.push(['\0perf',true],['\0bar',true]);
         if(td.x)lines.push([tr(td.x),true,1]);else if(td.sp)lines.push([tr(td.d),true,1]);
         const cc=g.trinkets.length>=g.tcap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&TRINKETS.find(q=>q.id===cc);
         const pw=Math.min(268*U,W-16*U),lh=18*U,ph=(78+Math.max(1,lines.length)*18+(it.sold?0:20))*U;
@@ -1500,7 +1503,12 @@ this.W=1;this.H=1;this.Z=1;
         txt(tr(RARITY[it.rar].n)+(ccd?'  ·  '+tr2('sostituirà','replaces')+' '+tr(ccd.n):(cc==='*'?'  ·  '+tr2('sostituirà un cimelio','replaces a trinket'):'')),px+52*U,py+44*U,'#c8c0e0','left',F(12));
         let yy=py+72*U;
         txt(tr2('Statistiche','Stats'),px+12*U,yy-6*U,'#8a82a8','left',F(11));
-        for(const [tx2,good,small] of lines){txt(tx2,px+14*U,yy+12*U,good?'#9affb0':'#ff9a9a','left',F(small?12:14));yy+=lh;}
+        for(const [tx2,good,small] of lines){
+          if(tx2==='\0perf'){txt(tr2('Perfezione','Perfection')+'  '+it.pf+' / 100'+(it.pf>=100?' ✦':''),px+14*U,yy+12*U,perfColor(it.pf),'left',F(13));}
+          else if(tx2==='\0bar'){const bx=px+14*U,bw=pw-28*U,by=yy+2*U;ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(bx,by,bw,6*U);ctx.fillStyle=perfColor(it.pf);ctx.fillRect(bx,by,bw*it.pf/100,6*U);ctx.fillStyle='rgba(0,0,0,.55)';for(let q=1;q<4;q++)ctx.fillRect(bx+bw*q/4-.5*U,by,U,6*U);
+            ctx.fillStyle='#8a82a8';txt('0',bx,by+16*U,'#8a82a8','left',F(9));txt('100',bx+bw,by+16*U,'#8a82a8','right',F(9));}
+          else txt(tx2,px+14*U,yy+12*U,good?'#9affb0':'#ff9a9a','left',F(small?12:14));
+          yy+=lh;}
         if(!it.sold)txt((it.price>0?'Z '+it.price:tr2('GRATIS','FREE'))+(it.disc?'  ·  −30%':'')+(aff?'':'  ·  '+tr2('monete insufficienti','not enough coins')),px+14*U,py+ph-10*U,it.free?'#ffe14a':aff?'#ffe08a':'#ff9a9a','left',F(14));
       }
     }

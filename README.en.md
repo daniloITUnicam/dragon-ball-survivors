@@ -47,6 +47,10 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 21, 2026 update (trinket roll bar)
+
+New shop upgrades (**Amount**: +1 projectile per weapon, max 2; **Dragon Ball Scanner**: +5% spawn rate per level, max 2; **Broly's Roar!**: +5% enemy spawn rate per level, max 5, from 666), Saiyan Armor +2 per level, **128 new trinkets** (2-3 stat combinations, at every rarity; 10 with Amount at Legendary/Mythic only, up to +5 with a 100 roll) and the 0 to 100 roll bar on every trinket. Patch notes entry `2026-10-21`; the trinkets are regenerated with `tools/gen_trinkets.py`.
+
 ### 🆕 October 20, 2026 update, part 6 (Cooler, extra trinkets, Master, password and Google)
 
 Details in the game's **patch notes** (entry `2026-10-20f`): Cooler as a late Planet Namek boss with three forms, extra trinket slots visible (up to 3), the Master of the Room of Spirit and Time copies your weapons, forgotten password with a 6-digit code, a "Continue with Google" button and a fix for the Tamagami sprite. Supabase setup: [`docs/SUPABASE.md`](docs/SUPABASE.md). Gemini prompts for the missing sprites: [`docs/PROMPT_GEMINI_SPRITES.md`](docs/PROMPT_GEMINI_SPRITES.md).

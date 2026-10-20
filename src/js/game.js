@@ -53,9 +53,10 @@ class Game{
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
-    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.ballEvery=clamp(this.dur*.28,100,270);this.ballAt=this.ballEvery*.75;
+    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.scanK=1+.05*(this.save.shop.scan||0);   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
+    this.ballEvery=clamp(this.dur*.28,100,270)/this.scanK;this.ballAt=this.ballEvery*.75;
     /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 3 are owned), later and farther away, and a Tamagami statue guards it */
-    this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<SUP_CHANCE?{at:this.dur*rnd(.28,.55),done:false}:null;
+    this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<Math.min(1,SUP_CHANCE*this.scanK)?{at:this.dur*rnd(.28,.55),done:false}:null;
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
@@ -83,7 +84,7 @@ class Game{
 
   /* ---------- stats ---------- */
   tMods(){
-    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0};
+    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0};
     for(const id of this.trinkets){const t=TRINKETS.find(x=>x.id===id);if(t&&t.m){const tmx=trinMods(t,this.trR(id),this.trP(id));for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
@@ -96,14 +97,14 @@ class Game{
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
     S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
     S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
-    S.armor=(P.armor||0)+(C.armor||0)+1.25*sl('armor')+(fm?fm.armor:0)+tm.armor;
+    S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
     S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
     S.gold=1+.18*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
-    S.proj=fm?(fm.idx>=6?2:fm.idx>=3?1:0):0;
+    S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(tm.proj||0);   /* forms + shop "Quantità" + trinkets */
     S.luck=Math.min(.9,.09*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
@@ -221,7 +222,7 @@ class Game{
   trP(id){const p=this.tPf[id];return p!=null?p:PF_NOM;}   /* perfection (0-100) of a carried trinket */
   get perfAura(){return this.trinkets.some(id=>hasPf(TRINKETS.find(x=>x.id===id))&&this.trP(id)>=100);}   /* a carried trinket at 100% perfection: Ultra Instinct aura */
   trR(id){const r=this.tRar[id];if(r!=null)return r;const t=TRINKETS.find(x=>x.id===id);return t?t.r:0;}
-  rarOf(id){const t=TRINKETS.find(x=>x.id===id);return Math.random()<.01&&t&&t.m&&(!t.sp||t.x)?4:(t?t.r:0);}    /* 1%: it turns out mythic (only trinkets with stats can: an effect alone has nothing to scale) */
+  rarOf(id){const t=TRINKETS.find(x=>x.id===id),rr=this.rrar&&this.rrar[id];if(this.rrar)delete this.rrar[id];return Math.random()<.01&&t&&t.m&&(!t.sp||t.x)?4:(rr!=null?rr:(t?t.r:0));}   /* rr: the rarity this trinket was rolled at (stat trinkets exist at every rarity) */    /* 1%: it turns out mythic (only trinkets with stats can: an effect alone has nothing to scale) */
   /* a trinket found during the run is not kept: it is sold for zenny when something replaces it and at the end of the run (the one from the bag is never sold) */
   sellTrinket(id,rar,why){
     const t=TRINKETS.find(x=>x.id===id);if(!t)return 0;
@@ -295,8 +296,8 @@ class Game{
     for(let tries=0;tries<14;tries++){
       let r=Math.random()*w.reduce((a,b)=>a+b,0),ri=0;
       for(let i=0;i<4;i++){r-=w[i];if(r<=0){ri=i;break;}}
-      const c=TRINKETS.filter(t=>t.r===ri&&!this.trinkets.includes(t.id)&&!excl.includes(t.id));
-      if(c.length)return pick(c).id;
+      const c=pickTrinket(ri,t=>!this.trinkets.includes(t.id)&&!excl.includes(t.id));
+      if(c){(this.rrar||(this.rrar={}))[c.id]=ri;return c.id;}
     }
     const any=TRINKETS.filter(t=>!this.trinkets.includes(t.id)&&!excl.includes(t.id));return any.length?pick(any).id:null;
   }
@@ -898,7 +899,7 @@ class Game{
     if(r<.022)this.spawnLoot('coin',e.x,e.y);
     else if(r<.022+.0075*(1+L+this.S.lootRate*.5)){const k=this.pickLoot();if(k)this.spawnLoot(k,e.x,e.y);}
     if(this.has('lootdrop')&&Math.random()<.005)this.spawnLoot(pick(['coin','heal','magnet','dmg','haste']),e.x,e.y);
-    if(!this.stage.sup&&Math.random()<.0007)this.spawnLoot('ball',e.x,e.y);
+    if(!this.stage.sup&&Math.random()<.0007*this.scanK)this.spawnLoot('ball',e.x,e.y);
   }
   /* ---- loot director: item rarity, cooldowns and "scripted" help when the player needs something ---- */
   lootWeights(){
@@ -1097,7 +1098,7 @@ class Game{
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk);}
-  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps());}
+  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*(this.save.shop.broly||0));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -2172,8 +2173,7 @@ class Game{
     for(let i=0;i<4;i++){
       let r=4;if(Math.random()>=.01){let q=Math.random()*WT;r=0;for(let k=0;k<4;k++){q-=W[k];if(q<=0){r=k;break;}}}
       /* trinkets with stats can appear at any rarity; special-effect ones only at their own */
-      const pool=TRINKETS.filter(t=>!this.trinkets.includes(t.id)&&!used.includes(t.id)&&(t.m&&!t.sp||t.m&&t.x||t.r===r&&r<4));
-      const c=pool.length?pick(pool):null;if(!c)continue;
+      const c=pickTrinket(r,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id));if(!c)continue;
       used.push(c.id);items.push({id:c.id,rar:r,pf:rollPf(L),x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
     }
     items.forEach((it,i)=>{it.x=(i-(items.length-1)/2)*112;if(it.rar>=2){it.price=Math.round(it.price*.7);it.disc=true;}});   /* Epic and above: -30% */

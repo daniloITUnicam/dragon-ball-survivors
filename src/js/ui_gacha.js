@@ -15,7 +15,8 @@ Object.assign(UI.prototype,{
   /* name, rarity and effect text of a trinket at a rarity, in the language of the player */
   tinfo(id,r,p){const t=this.tdef(id),pf=hasPf(t)?(p!=null?p:PF_NOM):null;return{t,c:RARITY[r].c,name:this.tr(t.n),rar:this.tr(RARITY[r].n),desc:this.tr(trinDesc(t,r,pf)),stats:trinStats(t,r,pf),perf:pf};},
   /* perfection of a trinket: a bar (0-100%) and, at 100%, the Ultra Instinct shimmer */
-  perfBar(p,compact){if(p==null)return null;return h('div',{class:'perf'+(p>=100?' ui':'')+(compact?' sm':''),style:'--p:'+p+'%;--pc:'+perfColor(p),title:this.t('perfLabel')+' '+p+'%'+(p>=100?' · '+this.t('perfUI'):'')},h('span',{class:'pbar'},h('i')),compact?null:h('b',null,this.t('perfLabel')+' '+p+'%'+(p>=100?' ✦':'')));},
+  perfBar(p,compact){if(p==null)return null;return h('div',{class:'perf'+(p>=100?' ui':'')+(compact?' sm':''),style:'--p:'+p+'%;--pc:'+perfColor(p),title:this.t('perfLabel')+' '+p+' / 100'+(p>=100?' · '+this.t('perfUI'):'')},
+    compact?null:h('span',{class:'pe'},'0'),h('span',{class:'pbar'},h('i')),compact?h('span',{class:'pv'},p):h('span',{class:'pe'},'100'),compact?null:h('b',null,this.t('perfLabel')+' '+p+' / 100'+(p>=100?' ✦':'')));},
   fmtDate(ts){try{return new Date(ts).toLocaleString(this.app.i18n.lang,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return new Date(ts).toISOString().slice(0,16).replace('T',' ');}},
   /* a trinket as a small card (bag) */
   tcard(id,r,o){
@@ -137,7 +138,7 @@ Object.assign(UI.prototype,{
         [...grp.values()].sort((p,q)=>q.x.r-p.x.r||(q.nw-p.nw)||q.c-p.c).forEach((e,ix)=>{
           const i=this.tinfo(e.x.id,e.x.r,e.p);bestSnd=Math.max(bestSnd,e.x.r);
           cards.append(h('div',{class:'gtile r'+e.x.r,style:'--c:'+i.c+';--d:'+Math.min(ix,40)*.02+'s',title:i.name+' · '+i.rar+'\n'+i.desc},glyph(i.t.k,i.c),
-            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(e.up?' ↑':''))),
+            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(e.up?' ↑':'')),this.perfBar(i.perf,true)),
             h('span',{class:'gtc'},'×'+e.c),e.nw?h('span',{class:'gnew'},this.t('gNew')):h('span',{class:'gdup'},this.t('gDup'))));
         });
         if(!skip)snd('gPop'+best);

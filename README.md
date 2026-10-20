@@ -55,6 +55,10 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 21 ottobre 2026 (barra del roll dei cimeli)
+
+Nuovi potenziamenti del negozio (**Quantità**: +1 proiettile per arma, max 2; **Scanner Sfere del Drago**: +5% comparsa per livello, max 2; **Urlo di Broly!**: +5% frequenza dei nemici per livello, max 5, da 666), Armatura Saiyan +2 per livello, **128 nuovi cimeli** (combinazioni di 2-3 statistiche, a tutte le rarità; 10 con Quantità solo a Leggendario/Mitico, fino a +5 con roll 100) e la barra del roll da 0 a 100 su ogni cimelio. Voce `2026-10-21` delle note di patch; i cimeli si rigenerano con `tools/gen_trinkets.py`.
+
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 6 (Cooler, cimeli extra, Maestro, password e Google)
 
 Dettaglio nelle **note di patch del gioco** (voce `2026-10-20f`): Cooler boss del tardo Pianeta Namek con tre forme, slot extra dei cimeli visibili (fino a 3), il Maestro della Stanza dello Spirito e del Tempo imita le tue armi, password dimenticata con codice a 6 cifre, pulsante «Continua con Google» e correzione dello sprite dei Tamagami. Configurazione di Supabase: [`docs/SUPABASE.md`](docs/SUPABASE.md). Prompt per Gemini degli sprite mancanti: [`docs/PROMPT_GEMINI_SPRITES.md`](docs/PROMPT_GEMINI_SPRITES.md).
