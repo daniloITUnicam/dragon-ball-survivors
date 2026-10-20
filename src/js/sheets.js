@@ -105,10 +105,12 @@ Sprites.BOSS_SHEET={raditz:'raditz',bardock:'bardock',turles:'turles',cooler:'co
   hit:'hit',hit2:'hit',toppo:'toppo',toppo2:'toppo',toppo3:'toppo',jiren:'jiren',jiren2:'jiren',jiren3:'jiren',jiren4:'jiren',
   kale:'kale',kale2:'kale_0',kale3:'kale_0',caulifla:'caulifla',caulifla2:'caulifla',caulifla3:'caulifla',cabba:'cabba',cabba2:'cabba_1',
   frost:'frost',frost2:'frost_2',freezer:'freezer_3',cell:'cell',cellsemi:'cell_0',cellperf:'cell_1',cellmax:'cell_1',c16:'c16',c17:'c17',
-  vegeta:'vegeta',bu:'bu',superbu:'bu_2',kidbu:'bu_5',janemba:'janemba',janemba2:'janemba',broly:'broly_0',broly2:'broly_0'};
+  vegeta:'vegeta',bu:'bu',superbu:'bu_2',kidbu:'bu_5',janemba:'janemba',janemba2:'janemba',broly:'broly_0',broly2:'broly_0',tama1:'tama1',tama2:'tama2',tama3:'tama3'};
+/* the Tamagami change sheet when they enter Fury (the boss keeps its id, e.pf counts the transformations); sheets of 9 frames: 0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit */
+Sprites.BOSS_SHEET_F={tama1:'tama1f',tama2:'tama2f',tama3:'tama3f'};
 Sprites.ENEMY_SHEET={sai:'saibaman'};
 Sprites.enemySheet=function(e){
-  const id=e.boss?(e.bid&&Sprites.BOSS_SHEET[e.bid]):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
+  const id=e.boss?(e.bid&&((e.pf&&Sprites.BOSS_SHEET_F[e.bid]&&Sprites.sheets[Sprites.BOSS_SHEET_F[e.bid]])?Sprites.BOSS_SHEET_F[e.bid]:Sprites.BOSS_SHEET[e.bid])):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
   return id&&Sprites.sheets[id]?id:null;
 };
 Sprites.sheetEnemy=function(sid,frame,flash){

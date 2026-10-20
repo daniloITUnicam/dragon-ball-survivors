@@ -1062,6 +1062,7 @@ class Game{
     const zd=e.sparring?Math.max(d*1.1,p.maxHp*(.2+.05*Math.min(2,this.trialN))):d*1.1;
     if(e.tf>=1&&Math.random()<.42){const ex=['slam','nova','lance','storm'];pat=ex[Math.floor(Math.random()*(e.tf>=2?4:2))];}
     if(!e.sparring&&!this.trial){const ext=this.bossExt(bd,e.final);if(Math.random()<(e.final?.3:.2)+.08*e.phase+.05*e.tf)pat=ext[Math.floor(Math.random()*ext.length)];}
+    e.lp=pat;       /* last pattern: the renderer picks the strike / special frame of the Tamagami art from it */
     const sh=(a,s,r,c)=>this.eb.push({x:e.x,y:e.y-e.r,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:r||7,dmg:d,life:6,c:c||bd.c,bs:1});
     switch(pat){
       case'aim':sh(aim,230);break;
@@ -1216,7 +1217,7 @@ class Game{
   bossTransform(e){
     const nb=BOSSES[e.bd.p2],old=e.bd;e.p2=!nb.p2;e.pf=(e.pf||0)+1;
     e.bd=Object.assign({},nb,{id:old.id,hp:old.hp});
-    e.r=nb.r;e.spd=nb.spd;e.dmg*=nb.dmg/old.dmg;e.sh=.8;e.phase=0;e.stun=1.2;
+    e.r=nb.r;e.spd=nb.spd;e.dmg*=nb.dmg/old.dmg;e.sh=.8;e.phase=0;e.stun=1.2;e.esid=undefined;e.pwUntil=this.t+1.2;     /* new sheet (Fury) and a power-up pose while it changes */
     if(!old.mini)e.hp=Math.min(e.max,e.hp+e.max*.1);
     if(old.mini){const f=1.12;e.max*=f;e.hp*=f;}
     e.armor+=old.mini?(nb.arm||2):1.5;

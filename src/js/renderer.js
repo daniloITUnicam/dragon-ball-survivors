@@ -56,6 +56,8 @@ function drawShenron(ctx,x,y,s,a){
 }
 /* the 7 Dragon Balls (1..7 stars): assets/dragonballs.webp, one 64x64 frame each (build.py replaces __DBALLS__) */
 const DBALLS_URL=('__DBALLS__'?'data:image/webp;base64,__DBALLS__':'');
+/* Tamagami patterns that are a weapon strike (frames 5 wind-up and 6 strike of their art); every other pattern uses the special pose (frame 7) */
+const TAMA_WEAPON={hammer:1,slam:1,swordwave:1,rush:1,lance:1,jsword:1};
 class Renderer{
   constructor(canvas,save){
     this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;
@@ -225,7 +227,7 @@ this.W=1;this.H=1;this.Z=1;
   fxEnd(){if(FXL.m===1)return;FXL.m=1;this.ctx.globalAlpha=1;}
   resetCtx(){const c=this.ctx;try{for(let i=0;i<40;i++)c.restore();}catch(e){}c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.setLineDash([]);c.lineCap='butt';c.lineJoin='miter';c.shadowBlur=0;c.filter='none';}
   draw(g,dt){
-    Sprites.warmStep();
+    Sprites.warmStep();this.fdt=dt;
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p;
     FXL.a=s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1);FXL.m=1;
     this.resetCtx();
@@ -581,10 +583,11 @@ this.W=1;this.H=1;this.Z=1;
   }
   drawEnemy(e,t){
     const ctx=this.ctx,def=e.boss?e.bd:e.def,sd=def.sp,u=sd.u||def.u||1.6;
-    const frame=e.atk>0?(e.atk>.18?5:6):(e.fuse>0?5:(e.st===2&&e.ai==='charge')?6:1+((t*8+e.ph)|0)%4);
+    let frame=e.atk>0?(e.atk>.18?5:6):(e.fuse>0?5:(e.st===2&&e.ai==='charge')?6:1+((t*8+e.ph)|0)%4);
     const fuseFlash=e.fuse>0&&((e.fuse*12)|0)%2===0,warn=(e.st===1&&e.ai==='charge')||(e.xf&&!e.xf.released&&((t*14)|0)%2===0)||(e.st===1&&(e.ai==='slam'||e.ai==='leap')&&((t*16)|0)%2===0);
     const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0);
     const esid=e.esid!==undefined?e.esid:(Object.keys(Sprites.sheets).length?(e.esid=Sprites.enemySheet(e)):null);   /* pack art for this boss / enemy, if any */
+    if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
     const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
     ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();
@@ -714,13 +717,19 @@ this.W=1;this.H=1;this.Z=1;
     const gr=g.createLinearGradient(0,0,0,c.height);gr.addColorStop(0,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=gr;g.fillRect(0,0,c.width,c.height);
     return this.stoneC[id]={c,ox:sp.ox,oy:sp.oy,s:sp.s};
   }
+  statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
   drawSuperBall(l){
-    const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,cy=gy-S*.62-10-fl,pulse=.5+.5*Math.sin(t*3.2);
-    if(l.tama){   /* a stone pedestal and, until it wakes up, the guardian's statue (the ball sits in its chest) */
+    const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,pulse=.5+.5*Math.sin(t*3.2);
+    /* a Tamagami guardian: until it wakes up its statue (pedestal included) stands there and the ball floats above its head; afterwards the bare pedestal stays */
+    const tid=Math.max(1,Math.min(3,star)),art=l.tama&&!l.woke&&Sprites.sheets['tamas'+tid]?this.statueArt(tid):null;
+    const hy=art?art.oy+S*.5+12:S*.62+10;l.hy=l.hy===undefined?hy:l.hy+(hy-l.hy)*Math.min(1,(this.fdt||.016)*5);     /* the ball glides down when the statue wakes */
+    const cy=gy-l.hy-fl;
+    if(l.tama&&!art){
       ctx.save();ctx.fillStyle='rgba(70,74,88,.9)';ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,210,90,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(gx,gy+2,40,14,0,0,TAU);ctx.stroke();ctx.restore();
-      if(!l.woke){const id='tama'+Math.max(1,Math.min(3,star)),st=this.stoneSprite(id),bd=BOSSES[id];
+      if(!l.woke){const st=this.stoneSprite('tama'+tid),bd=BOSSES['tama'+tid];
         if(st&&bd){const k=(bd.sp.u||bd.u||3)/(st.s||Sprites.S);ctx.save();ctx.translate(gx,gy);ctx.scale(k,k);ctx.imageSmoothingEnabled=false;ctx.drawImage(st.c,-st.ox,-st.oy);ctx.restore();}}
     }
+    if(art){ctx.save();ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(gx,gy+1,art.c.width*.46,10,0,0,TAU);ctx.fill();ctx.translate(gx,gy);ctx.imageSmoothingEnabled=false;ctx.drawImage(art.c,-art.ox,-art.oy);ctx.restore();}
     ctx.save();ctx.translate(gx,gy);ctx.scale(1,.4);GLOW.at(ctx,0,0,86+8*pulse,'#ffd23f',.5);ctx.restore();
     ctx.fillStyle='rgba(0,0,0,.34)';ctx.beginPath();ctx.ellipse(gx,gy,26-fl*.5,8-fl*.15,0,0,TAU);ctx.fill();
     ctx.save();ctx.globalCompositeOperation='lighter';
@@ -731,6 +740,7 @@ this.W=1;this.H=1;this.Z=1;
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(gx,cy);ctx.rotate(t*.6);ctx.fillStyle='#ffe28a';ctx.globalAlpha=.11+.07*pulse;
     if(!FXL.on)for(let i=0;i<12;i++){ctx.rotate(TAU/12);ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(-6,-(120+14*Math.sin(t*2.4+i)));ctx.lineTo(6,-(120+14*Math.sin(t*2.4+i)));ctx.closePath();ctx.fill();}
     ctx.restore();
+    if(art){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(art.c,gx-art.ox,gy+6-art.oy);ctx.restore();}
     const pop=Math.min(1,.4+t*3);
     if(im){ctx.save();ctx.translate(gx,cy);ctx.scale(pop,pop);ctx.imageSmoothingEnabled=true;ctx.drawImage(im,(star-1)*64,0,64,64,-S/2,-S/2,S,S);
       ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.16+.16*pulse;ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.arc(0,0,S*.47,0,TAU);ctx.fill();ctx.restore();}
@@ -1017,7 +1027,7 @@ this.W=1;this.H=1;this.Z=1;
   }
 
   /* ---------- HUD (screen space) ---------- */
-  /* provisional icons of the weapon target (to be replaced by the sprite sheet): crosshair, heart + up arrow, heart + down arrow, skull */
+  /* fallback icons of the weapon target while assets/tgt.webp loads (TgtArt): crosshair, heart + up arrow, heart + down arrow, skull */
   tgtIcon(ctx,mode,x,y,r,c,t){
     ctx.save();ctx.translate(x,y);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=Math.max(1.5,r*.18);ctx.lineCap='round';ctx.lineJoin='round';
     if(mode===0){const k=1+.06*Math.sin(t*6);ctx.beginPath();ctx.arc(0,0,r*.72*k,0,TAU);ctx.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.5,Math.sin(a)*r*.5);ctx.lineTo(Math.cos(a)*r*1.15,Math.sin(a)*r*1.15);ctx.stroke();}ctx.beginPath();ctx.arc(0,0,r*.16,0,TAU);ctx.fill();}
@@ -1096,11 +1106,18 @@ this.W=1;this.H=1;this.Z=1;
     txt((fe?tr(fe.n):tt('baseForm'))+(nxt?'  ·  '+tt('nextForm')+' '+nxt:''),m,fy,fe?fe.aura:'#fff','left',F(12));
     /* weapon target (TAB): closest / most HP / least HP / boss; only the active one is shown */
     if(!g.ended){
-      const mode=g.tgt|0,c=['#ffd23f','#ff6b8a','#8ad8ff','#ff5a3d'][mode],bh=26*U,bw=134*U,by2=fy+8*U,nm=[['Più vicino','Closest'],['Più Salute','Most HP'],['Meno Salute','Least HP'],['Boss','Boss']][mode];
-      this.zones.push({x:m,y:by2,w:bw,h:bh,k:'target'});
-      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(m,by2,bw,bh);ctx.strokeStyle=hexA(c,.8);ctx.lineWidth=1.6*U;ctx.strokeRect(m,by2,bw,bh);
-      this.tgtIcon(ctx,mode,m+bh/2,by2+bh/2,bh*.34,c,g.rt);
-      txt('['+(this.keyHints.target||'Tab')+'] '+tr2(nm[0],nm[1]),m+bh+2*U,by2+bh*.68,'#fff','left',F(12));
+      const mode=g.tgt|0,c=['#ffd23f','#ff6b8a','#8ad8ff','#ff5a3d'][mode],bh=26*U,bw=134*U,by2=fy+13*U,nm=[['Più vicino','Closest'],['Più Salute','Most HP'],['Meno Salute','Least HP'],['Boss','Boss']][mode];
+      if(this.tgtMode!==mode){this.tgtMode=mode;this.tgtAt=g.rt;}
+      const pw=Math.min(98*U,W*.2),dh=TgtArt.draw(ctx,mode,m,by2,pw,Math.max(0,1-(g.rt-this.tgtAt)/.28));
+      if(dh){   /* the artwork panel of the active mode + the key hint under it */
+        this.zones.push({x:m,y:by2,w:pw,h:dh,k:'target'});
+        txt('['+(this.keyHints.target||'Tab')+']',m+pw/2,by2+dh+12*U,'#fff','center',F(11));
+      }else{    /* art not loaded yet: the simple box */
+        this.zones.push({x:m,y:by2,w:bw,h:bh,k:'target'});
+        ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(m,by2,bw,bh);ctx.strokeStyle=hexA(c,.8);ctx.lineWidth=1.6*U;ctx.strokeRect(m,by2,bw,bh);
+        this.tgtIcon(ctx,mode,m+bh/2,by2+bh/2,bh*.34,c,g.rt);
+        txt('['+(this.keyHints.target||'Tab')+'] '+tr2(nm[0],nm[1]),m+bh+2*U,by2+bh*.68,'#fff','left',F(12));
+      }
     }
     /* pet ability button (bottom-left) */
     this.petBtn=null;

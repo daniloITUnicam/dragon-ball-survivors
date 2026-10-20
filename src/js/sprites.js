@@ -132,6 +132,8 @@ class Sprites{
     if(c.cape){R(-9-wd,-22,18+2*wd,21,c.cape);R(-9-wd,-22,3.4,21,sh(c.cape,-.2));R(5+wd,-22,3,21,sh(c.cape,-.1));}
     if(c.gsword){R(-17,-54,4,46,'#b8c8e8');R(-17,-54,1.4,46,'#ffffff');R(-20,-11,10,3,'#f2c230');R(-16.6,-9,4.8,6,'#5a1a1a');R(-17,-57,4,3,'#e8f0ff');}
     if(c.sword){R(-11,-40,2,26,'#dfe9f2');R(-11,-40,.8,26,'#fff');R(-13,-15,6,2,'#8a5a2a');R(-11.4,-13.5,2.8,3,'#5a3a1a');}
+    if(c.hammer){R(-12,-36,1.8,30,'#4a3a2a');R(-17,-42,11,8,'#8c909c');R(-17,-42,11,1.6,'#c8ccd8');R(-17,-35.4,11,1.2,'#50545e');R(-17,-42,1.4,8,'#6c7080');}   /* Tamagami No. 3: the giant sledgehammer */
+    if(c.trident){R(-12,-40,1.6,34,'#2a2a34');R(-15,-42.4,7.6,1.4,'#7ad0ff');R(-15,-45,1.4,3.2,'#9be4ff');R(-11.6,-46.4,1.4,4.6,'#9be4ff');R(-9,-45,1.4,3.2,'#9be4ff');}   /* Tamagami No. 2: the trident */
     /* legs + boots: short chibi legs, walking cycle */
     for(let s2=0;s2<2;s2++){
       const x=s2?.8+wd/2:-4.6-wd/2,r=s2?ps.r:ps.l,ex=ps.atk===2?(s2?1.2:-1):ps.atk===1?(s2?-.6:.8):0;

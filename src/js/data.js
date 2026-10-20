@@ -450,18 +450,18 @@ const BOSSES={
   jiren:{n:T('Jiren','Jiren'),hp:150000,spd:90,r:36,u:3.8,dmg:58,pats:['cross','mix','bigring'],cd:1.35,c:'#e03a3a',sp:H({skin:'#a0a8b8',outfit:'#c8302a',legs:'#c8302a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#e8e8f0',hs:'bald',eye:'#3a3a4a',wide:true,boot:'#2a2a3a'},3.8),p2:'jiren2',p2at:0.7},
   jiren2:{n:T('Jiren (Piena Potenza)','Jiren (Full Power)'),hp:0,spd:108,r:42,u:4.5,dmg:72,pats:['rage','cross','bigring'],cd:0.98,c:'#ff2a2a',p2:'jiren3',p2at:0.42,sp:H({skin:'#b8bfd0',outfit:'#e03a2a',legs:'#e03a2a',armor:'#2a2a3a',shoulder:'#2a2a3a',hair:'#e8e8f0',hs:'bald',eye:'#ff2a2a',wide:true,boot:'#2a2a3a'},4.5)},
   /* Tamagami (Dragon Ball Daima): the guardians of the Super Dragon Balls. A stone statue until you come close; Number N guards the N-star ball; at half health it enters its Fury form. */
-  tama1:{n:T('Tamagami N°1','Tamagami No. 1'),hp:14000,spd:66,r:32,u:3.5,dmg:24,pats:['wall','cross','nova'],cd:1.9,c:'#7ad9a8',tama:1,p2:'tama1f',p2at:.5,
-    sp:H({skin:'#7d8f88',outfit:'#3b5a4f',legs:'#2d4a40',armor:'#9fd9bb',shoulder:'#b8e8cf',hair:'#d8f0e0',hs:'horns',eye:'#ffe14a',wide:true,boot:'#2d4a40',staff:true},3.5)},
-  tama1f:{n:T('Tamagami N°1 (Furia)','Tamagami No. 1 (Fury)'),hp:0,spd:84,r:34,u:3.7,dmg:32,pats:['crossbeam','nova','wall'],cd:1.4,c:'#a8ffd0',
-    sp:H({skin:'#9ab8ae',outfit:'#3b5a4f',legs:'#2d4a40',armor:'#c8ffe4',shoulder:'#e0fff0',hair:'#f0fff8',hs:'horns',eye:'#ff6a2a',wide:true,boot:'#2d4a40',staff:true},3.7)},
-  tama2:{n:T('Tamagami N°2','Tamagami No. 2'),hp:11000,spd:112,r:24,u:2.7,dmg:22,pats:['swordwave','bulletstorm','rush'],cd:1.5,c:'#b48aff',tama:2,p2:'tama2f',p2at:.5,
-    sp:H({skin:'#e8c8b0',outfit:'#5a3a9a',legs:'#3a2a6a',armor:'#7a5ac0',shoulder:'#9a7ae0',hair:'#3a2a6a',hs:'bob',eye:'#2a1a4a',boot:'#2a1a4a',sword:true},2.7)},
-  tama2f:{n:T('Tamagami N°2 (Furia)','Tamagami No. 2 (Fury)'),hp:0,spd:138,r:25,u:2.8,dmg:30,pats:['swordwave','bulletstorm','crossbeam'],cd:1.1,c:'#6a8aff',
-    sp:H({skin:'#a07ad0',outfit:'#5a3a9a',legs:'#3a2a6a',armor:'#7a5ac0',shoulder:'#9a7ae0',hair:'#3a2a6a',hs:'bob',eye:'#ffe14a',boot:'#2a1a4a',sword:true},2.8)},
-  tama3:{n:T('Tamagami N°3','Tamagami No. 3'),hp:9500,spd:56,r:28,u:2.9,dmg:30,pats:['hammer','palm','slam'],cd:2.0,c:'#e6cf9a',tama:3,p2:'tama3f',p2at:.5,
-    sp:H({skin:'#8a8a94',outfit:'#d9ca9e',legs:'#6c6c78',armor:'#d9ca9e',shoulder:'#efe2b6',hair:'#efe2b6',hs:'horns',eye:'#ff3b3b',wide:true,boot:'#5c5c68'},2.9)},
+  tama1:{n:T('Tamagami N°1','Tamagami No. 1'),hp:14000,spd:66,r:32,u:3.5,dmg:24,pats:['swordwave','rush','cross'],cd:1.8,c:'#e8506a',tama:1,p2:'tama1f',p2at:.5,
+    sp:H({skin:'#4a3a6a',outfit:'#5a4a8a',legs:'#4a3a6a',armor:'#d5d9e4',shoulder:'#eef0f6',hair:'#d5d9e4',hs:'horns',eye:'#ff2a2a',boot:'#4a3a6a',sword:true},3.5)},
+  tama1f:{n:T('Tamagami N°1 (Furia)','Tamagami No. 1 (Fury)'),hp:0,spd:84,r:34,u:3.7,dmg:32,pats:['swordwave','rush','crossbeam'],cd:1.3,c:'#ff3a4a',
+    sp:H({skin:'#3a2a4a',outfit:'#8a1a2a',legs:'#5a1a2a',armor:'#aeb2c0',shoulder:'#d8dae6',hair:'#aeb2c0',hs:'horns',eye:'#ff6a3a',boot:'#5a1a2a',sword:true},3.7)},
+  tama2:{n:T('Tamagami N°2','Tamagami No. 2'),hp:11000,spd:112,r:24,u:2.7,dmg:22,pats:['rush','bulletstorm','cross'],cd:1.5,c:'#7ae0ff',tama:2,p2:'tama2f',p2at:.5,
+    sp:H({skin:'#c8ccd8',outfit:'#e8ecf4',legs:'#c8ccd8',armor:'#f0f3fa',shoulder:'#ffffff',hair:'#e8ecf4',hs:'horns',eye:'#3aff8a',boot:'#aab0c0',trident:true},2.7)},
+  tama2f:{n:T('Tamagami N°2 (Furia)','Tamagami No. 2 (Fury)'),hp:0,spd:138,r:25,u:2.8,dmg:30,pats:['rush','bulletstorm','crossbeam'],cd:1.1,c:'#b48aff',
+    sp:H({skin:'#a898d8',outfit:'#c0a8f0',legs:'#9a88d0',armor:'#d8c8ff',shoulder:'#efe6ff',hair:'#c0a8f0',hs:'horns',eye:'#ffe14a',boot:'#8a78c0',trident:true},2.8)},
+  tama3:{n:T('Tamagami N°3','Tamagami No. 3'),hp:9500,spd:56,r:28,u:2.9,dmg:30,pats:['hammer','palm','slam'],cd:2.0,c:'#b8bcc8',tama:3,p2:'tama3f',p2at:.5,
+    sp:H({skin:'#3a3a44',outfit:'#4a4a54',legs:'#2a2a32',armor:'#5a5a66',shoulder:'#e8e8f0',hair:'#e8e8f0',hs:'bald',eye:'#ff3b3b',wide:true,boot:'#2a2a32',hammer:true},2.9)},
   tama3f:{n:T('Tamagami N°3 (Furia)','Tamagami No. 3 (Fury)'),hp:0,spd:74,r:29,u:3.0,dmg:38,pats:['hammer','palm','nova'],cd:1.5,c:'#ff9a3a',
-    sp:H({skin:'#8a8a94',outfit:'#ff9a3a',legs:'#6c6c78',armor:'#ffb04a',shoulder:'#ffd27a',hair:'#efe2b6',hs:'horns',eye:'#ffe14a',wide:true,boot:'#5c5c68'},3.0)}
+    sp:H({skin:'#3a3a44',outfit:'#6a3a1a',legs:'#2a2a32',armor:'#6a5a50',shoulder:'#ffd27a',hair:'#ffd27a',hs:'bald',eye:'#ffb04a',wide:true,boot:'#2a2a32',hammer:true},3.0)}
 };
 
 /* ---------- Stages ---------- */
@@ -1055,9 +1055,9 @@ Object.assign(ENEMY_DESC,{
 });
 
 const BOSS_DESC={
- tama1:T('Guardiano della Super Sfera a 1 stella: una statua che si risveglia quando ti avvicini. Muri di ki e raggi a croce; sotto metà salute entra in Furia.','Guardian of the 1-star Super Dragon Ball: a statue that awakens when you come close. Ki walls and cross beams; below half health it enters its Fury form.'),
- tama2:T('Guardiano della Super Sfera a 2 stelle: piccolo e velocissimo, brandisce un tridente. Onde di spada e raffiche di colpi; in Furia diventa viola con occhi gialli.','Guardian of the 2-star Super Dragon Ball: small and very fast, wielding a trident. Sword waves and bullet storms; in Fury he turns purple with yellow eyes.'),
- tama3:T('Guardiano della Super Sfera a 3 stelle: basso e massiccio, con un martello gigante. Colpi di martello a terra e onde rosse dai palmi; in Furia brilla di arancione.','Guardian of the 3-star Super Dragon Ball: short and bulky, with a giant hammer. Ground slams and crimson palm blasts; in Fury he glows orange.'),
+ tama1:T('Guardiano della Super Sfera a 1 stella: la Spada, un guerriero d\'argento simile a un insetto, con occhi rossi e katana. Si risveglia quando ti avvicini; onde di spada, cariche fulminee e raggi a croce. Sotto metà salute entra in Furia (armatura venata di rosso).','Guardian of the 1-star Super Dragon Ball: the Sword, an insect-like silver warrior with red eyes and a katana. It awakens when you come close; sword waves, lightning dashes and cross beams. Below half health it enters its Fury form (armor veined with red).'),
+ tama2:T('Guardiano della Super Sfera a 2 stelle: la Lancia, snello e velocissimo, occhi verdi e tridente. Cariche con la lancia e raffiche di energia; in Furia diventa viola con occhi gialli.','Guardian of the 2-star Super Dragon Ball: the Spear, slim and very fast, green eyes and a trident. Spear charges and energy barrages; in Fury he turns violet with yellow eyes.'),
+ tama3:T('Guardiano della Super Sfera a 3 stelle: il Martello, basso e massiccio, spuntoni sulle spalle e visiera rossa. Colpi di martello a terra e onde rosse dai palmi; in Furia brilla di arancione.','Guardian of the 3-star Super Dragon Ball: the Hammer, short and bulky, with shoulder spikes and a red visor. Ground slams and crimson palm blasts; in Fury he glows orange.'),
  hfz1:T('Freezer torna dall\'Inferno: si evolve ogni settimo della sua vita, fino alla forma dorata e a quella nera.','Frieza returns from Hell: he evolves every seventh of his life, up to his golden and black forms.'),
  hcell1:T('Cell torna dall\'Inferno: si evolve ogni sesto della sua vita (assorbe C-17 e C-18, resiste all\'autodistruzione di Goku) fino alla forma dorata e a quella nera.','Cell returns from Hell: he evolves every sixth of his life (absorbing C-17 and C-18, surviving Goku\'s self-destruct) up to his golden and black forms.'),
  janembaf:T('Il demone nato dal male: enorme e lento, a metà scontro si trasforma nel vero Janemba con spada e raggio.','The demon born of evil: huge and slow, he transforms mid-fight into the true Janemba with sword and beam.'),

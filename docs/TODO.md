@@ -6,9 +6,7 @@ Aggiornato il 20 ottobre 2026 (v53). Voci con 🎨 = **serve uno sprite / un ass
 - [ ] 🎨 Piccolo — **Cannone Speciale Makankosappo** (sprite e animazione dell'abilità unica).
 - [ ] 🎨 Toppo — **Sfera della Giustizia**: sfera oscura lanciata dal personaggio.
 - [ ] 🎨 Icona **globale del cimelio** colorata per rarità (slot, borsa, notifiche).
-- [ ] 🎨 Sprite sheet degli **indicatori TAB** (più vicino / HP+ / HP− / boss): **da inviare di nuovo** (non più disponibile in sessione). In v53 il riquadro a sinistra dell'HUD usa icone provvisorie disegnate (`Renderer.tgtIcon`); basta sostituirle con il tuo foglio.
 - [ ] 🎨 Sprite di **Dyspo** sbagliato (viola, stessa razza di Beerus): cercare riferimenti e rifarlo.
-- [ ] 🎨 Sprite dei **Tamagami** (statue guardiane delle 3 Super Sfere): in v53 sono **provvisori** (sprite procedurali `tama1/2/3` + versione «pietra» per la statua); servono sprite definitivi (N°1 inventato, N°2 e N°3 ispirati a Daima), animazioni e attacchi.
 - [ ] 🎨 Sprite dei boss canonici di Rovine degli Androidi: 13, 14, 15, 16, 17, 18, 19, 21 (+ Cell Perfetto, Gero).
 - [ ] 🎨 Sprite dei Kaioshin / Dei della Distruzione e di Zeno come boss finale.
 - [ ] 🎨 Suono del **level-up** mancante (cercare e proporre alternative).
@@ -32,4 +30,4 @@ Aggiornato il 20 ottobre 2026 (v53). Voci con 🎨 = **serve uno sprite / un ass
 
 ## ✅ Fatto
 - v52: vedi le note di patch (`2026-10-20`) e il README.
-- v53 (Gameplay / bilanciamento / armi, sezione 3 della richiesta del 20 ottobre): note di patch `2026-10-20b`.
+- v53 (Gameplay / bilanciamento / armi, sezione 3 della richiesta del 20 ottobre): note di patch `2026-10-20b`. Indicatori TAB: foglio dell'utente integrato (`assets/src/tgt_src.jpg` → `tools/gen_tgt.py` → `assets/tgt.webp`). Sprite dei Tamagami (normali, Furia, statue) integrati dai fogli dell'utente (`assets/src/tama/` → `tools/import_tama.py` → `assets/sprites/tama*.png`).

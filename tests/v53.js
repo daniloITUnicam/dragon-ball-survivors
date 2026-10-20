@@ -54,6 +54,10 @@ ok(r.fb===0&&r.near===0,'without a boss the boss mode falls back to the closest 
 r=await ev(()=>{const g=G;g.tgt=0;const t0=g.tgt;g.cycleTarget();g.cycleTarget();g.cycleTarget();g.cycleTarget();return[t0,g.tgt];});
 ok(r[1]===0,'cycleTarget runs through the 4 modes and wraps');
 await ev(()=>{G.tgt=0;});
+/* the TAB panels (assets/tgt.webp) are drawn in the HUD */
+await wait(500);
+r=await ev(()=>{const g=G;const c=document.createElement('canvas');c.width=300;c.height=300;const x=c.getContext('2d');const out=[];for(let m=0;m<4;m++)out.push(TgtArt.draw(x,m,0,0,100,0));return{ok:TgtArt.ok,h:out,cell:TGT_CELL};});
+ok(r.ok&&r.h.every(h=>Math.abs(h-100*r.cell[1]/r.cell[0])<1e-6),'the four TAB panels (Closest / HP+ / HP- / Boss) load and draw ('+r.h.map(h=>Math.round(h)).join(',')+' px)');
 /* ---------- weapon count ---------- */
 await go({char:'gotenks',weapons:1});
 r=await ev(()=>({w:[...G.weapons.keys()],max:G.maxW}));
@@ -117,6 +121,16 @@ r=await ev(()=>{const g=G;const res=[];for(const id of['tama1','tama2','tama3'])
 ok(r.length===0,'every Tamagami attack pattern runs without errors '+r.join('|'));
 r=await ev(()=>{const g=G;g.en=[];g.eb=[];g.bossAlive=0;g.spawnBoss('tama3',false,{x:g.p.x+300,y:g.p.y,k:1});const e=g.en[0];e.hp=e.max*.4;g.updateEnemies(.016);for(let i=0;i<5;i++)g.updateEnemies(.016);return{id:e.bd.id,name:e.bd.n.en,fury:/Fury/.test(e.bd.n.en)||e.p2||e.xf||e.mt};});
 ok(r.fury,'below half health a Tamagami enters its Fury form ('+r.name+')');
+/* the Tamagami art: sheets loaded, boss / Fury sheet mapping, frame choice by attack, statues */
+r=await ev(()=>{const g=G,out={};out.sheets=['tama1','tama1f','tama2','tama2f','tama3','tama3f','tamas1','tamas2','tamas3'].every(k=>Sprites.sheets[k]&&Sprites.sheets[k].cols===(/^tamas/.test(k)?1:9));
+  const res=[];for(const id of['tama1','tama2','tama3']){g.en=[];g.eb=[];g.bz=[];g.bossAlive=0;g.spawnBoss(id,false,{x:g.p.x+300,y:g.p.y,k:1});const e=g.en[0];const a=Sprites.enemySheet(e);e.hp=e.max*.4;g.updateEnemies(.016);for(let i=0;i<5;i++)g.updateEnemies(.016);const b=Sprites.enemySheet(e);res.push(a+'>'+b);}
+  out.res=res;return out;});
+ok(r.sheets,'the 9 Tamagami sheets (3 normal, 3 Fury, 3 statues) are loaded');
+ok(r.res.join()==='tama1>tama1f,tama2>tama2f,tama3>tama3f','each Tamagami uses its sheet and switches to the Fury sheet: '+r.res.join(' '));
+r=await ev(()=>{const g=G,out=[];g.en=[];g.eb=[];g.bz=[];g.bossAlive=0;g.spawnBoss('tama3',false,{x:g.p.x+200,y:g.p.y,k:1});const e=g.en[0];e.spd=0;e.sh=99;
+  e.lp='hammer';e.atk=.4;e.stun=0;g.update(.001);out.push(e.lp);e.lp='palm';
+  return{lp:out[0],tw:Object.keys(typeof TAMA_WEAPON!=='undefined'?TAMA_WEAPON:{}).join(',')};});
+ok(r.lp==='hammer'&&/hammer/.test(r.tw)&&/swordwave/.test(r.tw),'the weapon patterns are listed for the strike frames ('+r.tw+')');
 /* HUD indicator + render without errors */
 await go({stage:4});
 await ev(()=>{G.save.sball=[1,2];G.spawnLoot('sball',G.p.x+300,G.p.y);});
