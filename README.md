@@ -224,6 +224,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - **Sprite nuovi** (`assets/dragonballs.webp`, 7 frame 64×64 ricavati dall'immagine di riferimento): ogni sfera ha da **1 a 7 stelle** e in una partita non ne compaiono due uguali finché non le hai tutte; il contatore in basso a destra mostra quali hai.
 - **Rimbalzano davvero** sul terreno (lancio, rimbalzi sempre più bassi, poi un saltello ogni 1,6 s) con squash e stretch, **onda d'urto e scintille a ogni atterraggio**, bagliore pulsante, raggi rotanti, colonna di luce e stelline che brillano.
 - **Suono dedicato** alla raccolta: `assets/sphere_sound.mp3` (incorporato in `DBS_AUDIO=embed`, copiato in `site/assets/` dal workflow in modalità `link`; se manca si sente il vecchio jingle sintetico).
+- **Suono del level-up**: `assets/level_up_sound.mp3` (chiave `levelup` in `SFX_FILES`), riprodotto a velocità ×2 (`playBuf('levelup',.9,2)`); finché non è decodificato suona l'accordo sintetizzato. Il suono della scelta della carta (`lvl`) non cambia.
 - **Raccolta:** niente più attrazione e raggio ridotto (11 px invece di 20 + magnete): bisogna **passarci sopra**. Le frecce ai bordi dello schermo restano.
 - **Serie di uccisioni:** contatore in alto a destra (si azzera dopo 4 s senza uccisioni); ai traguardi **25, 50, 100, 200, 350, 500, 750, 1000…** un banner, onde di luce e un po' di esperienza (qualche % di livello). Quattro nuovi obiettivi (50 / 200 / 500 / 1000 di fila).
 

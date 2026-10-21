@@ -663,7 +663,7 @@ class Game{
   /* ---------- progression ---------- */
   addXp(v){const a=v*this.S.xp;this.xp+=a;this.xpAcc+=a;}
   levelUp(){
-    this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('lvl');
+    this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('levelup');
     if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
     this.emote('happy',1.1);
     this.ring(this.p.x,this.p.y,110,'#ffd23f',.5);this.pillar(this.p.x,this.p.y,'#ffe9a0',.55);this.burst(this.p.x,this.p.y-20,18,'#ffd23f');

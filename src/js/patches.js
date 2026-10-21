@@ -28,6 +28,9 @@ const PATCHES=[
       ]},
     ],
     fix:[
+      {g:T("Suoni","Sounds"),l:[
+        T("Nuovo suono per il level-up (assets/level_up_sound.mp3), riprodotto a velocità doppia: dura meno di 1 secondo. Il suono della scelta della carta resta quello di prima.","New level-up sound (assets/level_up_sound.mp3), played at double speed: it lasts under 1 second. The sound of picking a card stays as before."),
+      ]},
       {g:T("Codice","Code"),l:[
         T("L'impostazione si chiama ora lvAuto / lvPrio (prima endAuto / endPrio); i salvataggi vecchi vengono convertiti da soli.","The setting is now called lvAuto / lvPrio (it was endAuto / endPrio); old saves are converted automatically."),
         T("Sprite riordinati in assets/sprites: quelli usati, le sorgenti (_sorgenti) e quelli non più usati (_inutilizzati) sono in cartelle separate; il gioco non cambia.","Sprites reorganized in assets/sprites: the ones in use, the sources (_sorgenti) and the ones no longer used (_inutilizzati) now live in separate folders; the game does not change."),

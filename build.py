@@ -52,7 +52,7 @@ STAGE_KEYS = {1: ['saiyan plains', 'plains', 'pianura saiyan', 'pianura'], 2: ['
 def _norm(t):
     t = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()
     return ' '.join(re.sub(r'[^a-z0-9]+', ' ', t).split())
-SFX_FILES = {'sphere sound': 'sphere'}     # assets/sphere_sound.mp3 = the Dragon Ball pick-up sound (game key 'sphere')
+SFX_FILES = {'sphere sound': 'sphere', 'level up sound': 'levelup'}     # assets/sphere_sound.mp3 = the Dragon Ball pick-up sound (key 'sphere'); assets/level_up_sound.mp3 = the level-up sound (key 'levelup', played at x2 speed)
 _MIME = {'.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4', '.wav': 'audio/wav'}
 _tracks = {}; _src = {}
 for f in sorted((ROOT/'assets').glob('*')):

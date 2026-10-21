@@ -216,6 +216,7 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 - **New sprites** (`assets/dragonballs.webp`, 7 frames of 64×64 taken from the reference image): every ball has **1 to 7 stars**, and a run never drops two equal ones until you have them all; the counter at the bottom right shows which ones you own.
 - They **really bounce** on the ground (toss, hops that get lower, then a small hop every 1.6 s) with squash and stretch, a **shock wave and sparks at every landing**, a pulsing glow, turning rays, a pillar of light and twinkling stars.
 - **Dedicated pick-up sound:** `assets/sphere_sound.mp3` (embedded with `DBS_AUDIO=embed`, copied to `site/assets/` by the workflow in `link` mode; the old synthesized jingle plays if it is missing).
+- **Level-up sound:** `assets/level_up_sound.mp3` (key `levelup` in `SFX_FILES`), played at x2 speed (`playBuf('levelup',.9,2)`); until it is decoded the synthesized chime plays. The card-pick sound (`lvl`) is unchanged.
 - **Pick-up:** no attraction any more and a smaller radius (11 px instead of 20 + magnet): you have to **walk over them**. The screen-edge arrows stay.
 - **Kill streak:** a counter at the top right (resets after 4 s without kills); at **25, 50, 100, 200, 350, 500, 750, 1000…** a banner, light waves and a little experience (a few % of a level). Four new achievements (50 / 200 / 500 / 1000 in a row).
 
