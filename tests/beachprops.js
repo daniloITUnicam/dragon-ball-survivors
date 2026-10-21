@@ -8,7 +8,7 @@ const r=await pg.evaluate((th)=>{const idx=STAGES.findIndex(s=>s.theme===th);win
  const os=__app.renderer.getObst(th),defs=OBSTACLES[th],n=defs.length,cnt=new Array(n).fill(0),all=World.visible(th,-9000,-9000,9000,9000);let wet=0,cells=0;
  for(const o of all){cnt[o.t]++;if(Sea.wet(th,o.x,o.y)>-.05)wet++;}
  const tot=defs.reduce((a,d)=>a+d.w,0);
- return{rdy:os.rdy,sheet:!!(Sprites.sheets[PROP_SHEET[th]]&&Sprites.sheets[PROP_SHEET[th]].anch),sm:os.every(s=>s.sm===1),n:all.length,wet,
+ return{rdy:os.rdy,sheet:!!(Sprites.sheets[PROP_SHEET[th]]&&Sprites.sheets[PROP_SHEET[th]].anch),sm:os.every((s,i)=>defs[i].im===undefined||s.sm===1),n:all.length,wet,
   share:cnt.map((c,i)=>[(c/all.length*100).toFixed(1),(defs[i].w/tot*100).toFixed(1)]),dens:(all.length/(18000/230*18000/230)).toFixed(3),mirror:all.filter(o=>defs[o.t].nf&&o.f!==1).length};},TH);
 console.log(JSON.stringify(r));
 if(!r.rdy||!r.sheet||!r.sm)console.log('FAIL sheet not used');

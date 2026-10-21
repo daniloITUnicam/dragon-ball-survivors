@@ -36,7 +36,7 @@ class Game{
     this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
     this.diffId=o.diff;this.D=DIFF[o.diff];this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
-    this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):0,hp:1,maxHp:1,face:1,inv:0,mv:false};
+    this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
@@ -982,6 +982,7 @@ class Game{
   /* nothing may lie on the water (the hero cannot walk there): the nearest dry spot around (x,y), looking outwards in rings and keeping a little margin from the shore.
      Stages without sea, lava stages and trials return the point unchanged; with no dry spot within 720 px (open sea) the object is put next to the hero */
   dryPos(x,y){
+    if(this.stage.theme==='void'&&!this.trial){const o={x,y};TOPARENA.clamp(o,14);return[o.x,o.y];}   /* nothing lies outside the ring (nor inside the tower) */
     if(this.trial||!Sea.has(this.stage.theme)||this.lavaMap())return[x,y];
     const ok=(a,b)=>!this.waterAt(a,b)&&!this.waterAt(a+16,b)&&!this.waterAt(a-16,b)&&!this.waterAt(a,b+12)&&!this.waterAt(a,b-12);
     if(ok(x,y))return[x,y];
@@ -1159,6 +1160,13 @@ class Game{
   spawnSpot(a,d,i){
     const p=this.p;
     if(this.stage.theme==='snake')return Snake.spot(p.x,d+((i||0)%9)*34,Math.cos(a)>=0?1:-1);
+    if(this.stage.theme==='void'){   /* Tournament of Power: the arena is closed, so aim at the first direction (turning either way) that lands inside it, away from the tower */
+      for(let k=0;k<16;k++){
+        const aa=a+(k%2?1:-1)*Math.ceil(k/2)*.42,dd=k>10?d*.6:d,dy=Math.sin(aa)*dd,x=p.x+Math.cos(aa)*dd,y=p.y+(dy<0?dy*TOP_K:dy);
+        if(TOPARENA.inside(x,y,70)&&Math.hypot(x,y)>TOPARENA.TR+40)return[x,y];
+      }
+      const o={x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d};TOPARENA.clamp(o,40);return[o.x,o.y];
+    }
     const dy=Math.sin(a)*d;
     return[p.x+Math.cos(a)*d,p.y+(dy<0?dy*TOP_K:dy)];   /* above the player: 50% farther away */
   }
@@ -2072,6 +2080,7 @@ class Game{
           }
         }
       }
+      if(this.stage.theme==='void'&&!this.trial)TOPARENA.clamp(e,e.r*.3);   /* flyers, hoverers and bosses too */
       if(e.ai!=='explode'&&!e.under&&dist<e.r+8)this.hurt(e.dmg,e);
     }
   }

@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -159,6 +159,16 @@ if _sd.is_dir():
         cols = e.get('cols', 7)
         if not e.get('fw') and w % cols:
             print(f'sprites: WARNING {f.name}: width {w} is not a multiple of {cols} frames')
+        _ps = float(os.environ.get('DBS_PROP_SCALE') or 0)   # DBS_PROP_SCALE=.75: the prop atlases (sid ...props) are shrunk in the single-file build (size limit); sheet gets k = the factor
+        if _ps and 0 < _ps < 1 and sid.endswith('props') and e.get('rects'):
+            try:
+                from PIL import Image
+                import io
+                im = Image.open(io.BytesIO(raw)).convert('RGBA'); im = im.resize((max(1, round(im.width*_ps)), max(1, round(im.height*_ps))), Image.LANCZOS)
+                im = im.quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE); bio = io.BytesIO(); im.save(bio, 'PNG', optimize=True); raw = bio.getvalue()
+                e = dict(e); e['rects'] = [[round(r[0]*_ps), round(r[1]*_ps), max(1, round(r[2]*_ps)), max(1, round(r[3]*_ps))] for r in e['rects']]
+                e['anch'] = [[a_[0]*_ps, a_[1]*_ps] for a_ in e['anch']]; e['k'] = _ps
+            except ImportError: print('sprites: DBS_PROP_SCALE needs Pillow - atlases left as they are')
         e['u'] = 'data:image/png;base64,' + base64.b64encode(raw).decode()
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')

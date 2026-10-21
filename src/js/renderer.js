@@ -177,7 +177,7 @@ this.W=1;this.H=1;this.Z=1;
       if(rdy&&d.im!==undefined&&BP.rects[d.im]){   /* sheet art: a crop of the atlas, foot at the anchor, drawn smoothed at d.ws world px per sprite px */
         const r=BP.rects[d.im],a=BP.anch[d.im],c=document.createElement('canvas');c.width=r[2];c.height=r[3];
         c.getContext('2d').drawImage(BP.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
-        return{c,ox:a[0],oy:a[1],sc:d.ws/(3.1/Sprites.S),kind,lu:d.lu,sm:1};
+        return{c,ox:a[0],oy:a[1],sc:d.ws/(BP.k||1)/(3.1/Sprites.S),kind,lu:d.lu,sm:1};
       }
       const sp=Sprites.paint(d.W,d.H,d.W/2,d.H-1,R=>d.art(R,C));sp.sc=d.sc||1;sp.kind=kind;return sp;
     });
@@ -196,6 +196,7 @@ this.W=1;this.H=1;this.Z=1;
   }
   terrain(cx,cy,vw,vh,t,theme){
     if(theme==='snake'){this.snakeTerrain(cx,cy,vw,vh,t);return;}
+    if(theme==='void'){TopArt.draw(this.ctx,cx,cy,vw,vh,t,Ambient);return;}   /* the closed ring of the Tournament of Power */
     const ctx=this.ctx,TS=64,tl=this.getTiles(theme),dec=this.getDecor(theme),th=THEMES[theme],A=Ambient;
     const x0=Math.floor(cx/TS),y0=Math.floor(cy/TS),x1=Math.floor((cx+vw)/TS),y1=Math.floor((cy+vh)/TS+1.6);
     const water=th.water&&tl.water.length;
@@ -290,12 +291,14 @@ this.W=1;this.H=1;this.Z=1;
     const list=g.en.slice();
     if(!g.trial){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
     if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
+    if(theme==='void'&&!g.trial&&vx1>-70&&vx0<70&&vy1>-440&&vy0<70)list.push({tw:1,y:TOPARENA.TR*.4});   /* the tower in the middle of the ring */
     if(g.pet)list.push({pet:g.pet,y:g.pet.y});
     if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
     this._snapN=0;
     list.sort((a,b)=>a.y-b.y);
     for(const e of list){
       if(e.co){this.drawCorpse(e.co,t);continue;}
+      if(e.tw){TopArt.tower(ctx,t);continue;}
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,t,g);continue;}
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}

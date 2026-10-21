@@ -27,16 +27,16 @@ const ADDK={firefly:1,mote:1,sparkle:1,ember:1,wisp:1,flash:1,meteor:1,soul:1,sh
 const FLOWC=['#ff6a8a','#ffd23f','#ffffff','#b890ff'];
 /* animated obstacles: m=sway|bob|flag, a=amplitude (world px), g=[ax,ay,radius,colour,alpha,pulse speed] glows (art units), em=[kind,ax,ay,rate/s] emitters */
 const OBA={
-  plains:[{m:'sway',a:5},0,0,{em:[['smoke',-.5,-23,.8]]}],
-  namek:[{m:'sway',a:4},{g:[[0,-14,16,'#9ae8ff',.22,1.6]]},0,{g:[[0,-20,12,'#6ad0e8',.5,2.2],[-14,-3,5,'#f2c230',.7,5],[14,-3,5,'#f2c230',.7,4.3]]}],
+  plains:[{m:'sway',a:5},0,0,{em:[['smoke',10.9,-57.2,.8]]}],
+  namek:[{m:'sway',a:4}],
   waste:[],
   other:[{g:[[0,-14,15,'#ffb0f0',.35,1.8]]},{m:'bob',a:2.5},0,0,0,0,0,0,0,{em:[['mote',0,-19,.6]]}],
   void:[{g:[[0,-20,20,'#6ad0ff',.5,2.2]],em:[['mote',0,-30,.8]]},{g:[[2,-7,12,'#6ad0ff',.45,3]]},{g:[[0,-17,20,'#ff6aa0',.5,2.6]],em:[['mote',0,-18,.9]]}],
   beach:[{m:'sway',a:6},0,0,0],
   redrock:[0,0,{g:[[0,-14,15,'#ff4a5a',.5,2.4]]}],
   arena:[],
-  sky:[0,{m:'bob',a:3},{g:[[0,-30,12,'#ffd23f',.6,2.2]]},0],
-  hell:[{g:[[0,-4,26,'#ff7a1a',.55,2.6]],em:[['ember',0,-9,2.4]]},0,{g:[[-3.5,-12,6,'#ff2a1a',.8,6],[3.5,-12,6,'#ff2a1a',.8,5.3]],em:[['wisp',0,-18,.25]]}]
+  sky:[0,{m:'bob',a:3},{g:[[0,-48,22,'#ff90e0',.5,2.2]]},{g:[[0,-30,24,'#a070ff',.4,1.8]]},{g:[[0,-19,14,'#8ad8ff',.5,2.4]]},{g:[[0,-52,13,'#ffd23f',.5,2.6]]},0,{m:'bob',a:2.5}],
+  hell:[0,0,0,0,{g:[[0,-45,10,'#ff7a1a',.55,3.1],[0,-24,10,'#ff7a1a',.5,2.7]]},0,0,0,0,{g:[[0,-32,30,'#b040ff',.45,2]]},{g:[[0,-29,18,'#d040ff',.6,3.2]],em:[['mote',0,-34,1.2]]}]
 };
 /* decor animation per index (originals first, then extra variants) */
 const DECA={

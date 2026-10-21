@@ -264,10 +264,11 @@ class UI{
     this.pvAcc=(this.pvAcc||0)+dt;if(this.pvAcc<1/24)return;const step=this.pvAcc;this.pvAcc=0;
     const r=this.app.renderer,old=r.ctx,S=.4,W=240,H=96,t=this.animT;
     for(const cv of document.querySelectorAll('canvas.stprev')){
-      const th=cv.dataset.theme,seed=+cv.dataset.seed||0,pc=cv.getContext('2d'),vw=W/S,vh=H/S;
+      const th=cv.dataset.theme,seed=+cv.dataset.seed||0,pc=cv.getContext('2d'),Sc=th==='void'?.2:S,vw=W/Sc,vh=H/Sc;   /* (the ring of the Tournament of Power is shown wider, so the tower fits) */
       let cx=seed*733+t*26,cy=seed*411+Math.sin(t*.25+seed)*60;
       if(th==='snake'){cx=((t*40+seed*50)%6000)-3000;cy=Snake.f(cx)-vh/2;}
-      try{r.ctx=pc;pc.setTransform(S,0,0,S,-cx*S,-cy*S);pc.imageSmoothingEnabled=false;r.terrain(cx,cy,vw,vh,t,th);}catch(e){}
+      if(th==='void'){cx=Math.sin(t*.25)*120-vw/2+200;cy=-228-vh/2;}   /* the tower and its shadow, swaying slowly */
+      try{r.ctx=pc;pc.setTransform(Sc,0,0,Sc,-cx*Sc,-cy*Sc);pc.imageSmoothingEnabled=false;r.terrain(cx,cy,vw,vh,t,th);if(th==='void'){pc.translate(0,TOPARENA.TR*.4);TopArt.tower(pc,t);}}catch(e){}
       r.ctx=old;pc.setTransform(1,0,0,1,0,0);
       const g=pc.createLinearGradient(0,H*.45,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(8,14,28,.55)');pc.fillStyle=g;pc.fillRect(0,0,W,H);
     }

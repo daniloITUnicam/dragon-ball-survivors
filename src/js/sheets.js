@@ -91,7 +91,7 @@ Sprites.loadPack=function(onLoad){
     img.onload=()=>{
       const cols=Math.max(1,d.cols||7),fw=d.fw||Math.floor(img.width/cols),fh=d.fh||img.height;
       Sprites.nSheets=(Sprites.nSheets||0)+1;
-      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null,kinds:d.kinds||null,anim:d.anim||null,pp:d.pp||null,fps:d.fps||0,dry:d.dry||null,anch:d.anch||null};
+      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null,kinds:d.kinds||null,anim:d.anim||null,pp:d.pp||null,fps:d.fps||0,dry:d.dry||null,anch:d.anch||null,k:d.k||1};
       if(d.rects&&(d.kinds||d.anch)&&typeof World!=='undefined')World.cache.clear();   /* rocks are placed from the atlas: cells computed before it was decoded are redone */
       if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
       if(onLoad)onLoad(id);

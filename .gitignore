@@ -15,3 +15,7 @@ assets/sprites/*/
 !assets/sprites/_sorgenti/
 !assets/sprites/_inutilizzati/
 assets/sprite test/
+
+# archivi usati per trasferire le modifiche dal cloud al PC
+sync*.tar
+sync*.tar.old
