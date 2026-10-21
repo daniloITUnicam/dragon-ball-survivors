@@ -55,6 +55,18 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 22 ottobre 2026, parte 2 (serie, orde, totem e altari con [E])
+
+- **Serie** (`Game.streakWin(n)`): finestra = 4 s · (0,3/4)^(min(n,1500)/1500) (`STREAK_MIN`, `STREAK_CAP`); `streakW` tiene la durata dell'ultima uccisione per la barra HUD.
+- **Orde**: `spawnHorde` imposta `hordeBoost = HORDE_BOOST_T` (20 s), durante cui `spAcc` cresce ×`HORDE_BOOST` (2,5). Nessun messaggio.
+- **Totem della Ricchezza**: `wealthT = TOTEM_WEALTH_T` (150 s) in `updateTotemFx`; alla fine `totemFx.gold/magnet = 0` e `recalc()`.
+- **Elementi della mappa** (`MapDirector.update/use`): tutti si usano con [E] dentro `f.near` (90 px); dopo l'uso `f.fade` va da 0 a `FEAT_FADE` (1,2 s) e poi `dead` (la Stanza e il portale di Zeno non ne hanno: entrano subito). `Renderer.drawFeature`: lampo, scossa, salita e dissolvenza con scintille; le scritte di richiamo sono per tipo. La Stanza dello Spirito e del Tempo: sprite ×1,5 (`WS.chamber` .24 → .36). Nella Stanza i tasti 1-9 cliccano la card `data-fid="o<i>"` (`App` keydown, tipo `trial`).
+- **Terreno** (`world.js`): `ZONE_P` .2 → .045, `ZONE_HEAL` .06 → .008. **Sprite di trappole e pozze** (`assets/sprites/props/zonesprites.png`, foglio `zonesprites`: 12 fotogrammi di trappola = 4 quiete, 4 avviso, 4 punte; poi 12 della pozza = 6 quiete, 6 cura/dissolvenza): `Renderer.drawZones` sceglie il fotogramma da `World.trapState` e dalla fase `(rt+ph)%TRAP_PERIOD`; la pozza usa i fotogrammi di cura mentre ci sei dentro e ti curi. Senza il foglio resta il disegno a codice.
+
+### 🆕 Aggiornamento del 22 ottobre 2026 (forzieri illustrati)
+
+I forzieri sono sprite (`assets/sprites/props/chests.png`, foglio `chests` in `sprites.json`: 5 rarità × 5 fotogrammi = chiuso, chiuso con respiro, coperchio che si alza, aperto, aperto fermo; ancora = base del forziere). `Renderer.drawChest` li disegna a 34 px × (1+0,1·rarità) × (élite 1,2 / boss finale 1,5), con alone e colonna di luce; senza il foglio resta il disegno a codice. All'avvicinarsi (`updatePickups`) parte `c.op` (0,85 s): trema (0–0,3), coperchio (0,3–0,5, anello d'urto e scossa), aperto con raggi di luce nel colore della rarità; poi si apre la finestra dei premi e il forziere sparisce. Voce `2026-10-22` delle note di patch.
+
 ### 🆕 Aggiornamento del 21 ottobre 2026 (barra del roll dei cimeli)
 
 Nuovi potenziamenti del negozio (**Quantità**: +1 proiettile per arma, max 2; **Scanner Sfere del Drago**: +5% comparsa per livello, max 2; **Urlo di Broly!**: +5% frequenza dei nemici per livello, max 5, da 666), Armatura Saiyan +2 per livello, **128 nuovi cimeli** (combinazioni di 2-3 statistiche, a tutte le rarità; 10 con Quantità solo a Leggendario/Mitico, fino a +5 con roll 100) e la barra del roll da 0 a 100 su ogni cimelio. Voce `2026-10-21` delle note di patch; i cimeli si rigenerano con `tools/gen_trinkets.py`.

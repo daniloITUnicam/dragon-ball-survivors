@@ -700,7 +700,7 @@ const TOTEMS=[
  {id:'risk',k:'怒',c:'#ff7a3a',n:T('Totem del Rischio','Totem of Risk'),d:T('Esperienza x2, ma subisci il 50% di danni in più per 3 minuti.','XP x2, but you take 50% more damage for 3 minutes.')},
  {id:'vigor',k:'命',c:'#ff6b8a',n:T('Totem della Vitalità','Totem of Vitality'),d:T('+15% salute massima, +0,4 salute/s e cura immediata del 30%.','+15% max HP, +0.4 HP/s and an instant 30% heal.')},
  {id:'fury',k:'力',c:'#ff9d1c',n:T('Totem della Furia','Totem of Fury'),d:T('+12% danno, ma ricarica +8% più lenta.','+12% damage, but cooldowns are 8% slower.')},
- {id:'wealth',k:'金',c:'#ffd23f',n:T('Totem della Ricchezza','Totem of Wealth'),d:T('+35% zenny e +25% raccolta.','+35% zenny and +25% pickup range.')},
+ {id:'wealth',k:'金',c:'#ffd23f',n:T('Totem della Ricchezza','Totem of Wealth'),d:T('+35% zenny e +25% raccolta per 150 secondi.','+35% zenny and +25% pickup range for 150 seconds.')},
  {id:'guard',k:'守',c:'#8ad8ff',n:T('Totem Guardiano','Guardian Totem'),d:T('Una barriera blocca un colpo, poi si ricarica ogni 25s.','A barrier blocks one hit, then recharges every 25s.')},
  {id:'storm',k:'雷',c:'#cfe8ff',n:T('Totem della Tempesta','Storm Totem'),d:T('Ogni 20s un fulmine colpisce fino a 4 nemici vicini. Ogni trasformazione: ricarica −20%.','Every 20s lightning strikes up to 4 nearby enemies. Every transformation: cooldown −20%.')},
  {id:'spirit',k:'癒',c:'#9affc8',n:T('Totem dello Spirito','Spirit Totem'),d:T('Ogni 20s un impulso cura il 6% (fino al 12% con le trasformazioni) e stordisce i nemici vicini. Ogni trasformazione: ricarica −20%.','Every 20s a pulse heals 6% (up to 12% with transformations) and stuns nearby enemies. Every transformation: cooldown −20%.')},

@@ -17,7 +17,7 @@ const MAP={
   }
 };
 const mhash=(a,b)=>hash(a+MAP.ix,b+MAP.iy);
-const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4;
+const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4,ZONE_P=.045,ZONE_HEAL=.008;   /* share of ground cells holding a trap or a pool: 4.5% (it was 20%), of which healing pools 0.8% (it was 6%) */
 const OB_DENS={beach:.14,waste:.12,redrock:.12,plains:.12,arena:.10,other:.10,hell:.12,sky:.10,namek:.12};   /* share of the 230 px cells that hold a prop (default .15) */
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
@@ -236,14 +236,14 @@ const World={
     if(c!==undefined)return c;
     c=null;const q=mhash(cx*5+1,cy*9+2);
     if(theme==='snake'){   /* only on the body: one row of cells, y follows the path */
-      if(cy===0&&q<.2&&Math.abs(cx)<26){const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL;if(Math.abs(x)>340){const y=Snake.f(x)+(mhash(cx+9,cy+1)-.5)*Snake.HW*.8;c=q<.06?{kind:'heal',x,y,r:82,ph:0,id:k}:{kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};}}
+      if(cy===0&&q<ZONE_P&&Math.abs(cx)<26){const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL;if(Math.abs(x)>340){const y=Snake.f(x)+(mhash(cx+9,cy+1)-.5)*Snake.HW*.8;c=q<ZONE_HEAL?{kind:'heal',x,y,r:82,ph:0,id:k}:{kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};}}
       this.zc.set(k,c);return c;
     }
-    if(q<.2){
+    if(q<ZONE_P){
       const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL,y=(cy+.2+mhash(cx+9,cy+1)*.6)*ZONE_CELL;
       const dry=!Sea.has(theme)||[[0,0],[100,0],[-100,0],[0,100],[0,-100]].every(o=>Sea.wet(theme,x+o[0],y+o[1])<-.03);   /* no pool or trap in a lake */
       if(x*x+y*y>340*340&&dry&&(theme!=='void'||TOPARENA.inside(x,y,200))){
-        if(q<.06)c={kind:'heal',x,y,r:82,ph:0,id:k};
+        if(q<ZONE_HEAL)c={kind:'heal',x,y,r:82,ph:0,id:k};
         else c={kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};
       }
     }

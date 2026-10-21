@@ -2,7 +2,7 @@
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
-const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+const FEAT_FADE=1.2,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
@@ -27,7 +27,7 @@ const DMG_T=1.1;   /* seconds a damage number stays on screen (every other float
 const SPAR_COPY_MUL=.6,SPAR_COPY_P=.7;   /* Room of Spirit and Time: the Master copies your abilities and weapons 7 attacks in 10, with 40% less damage */
 /* how the Master reproduces each weapon (v57): his copies look like yours (orbs, spears, the Kamehameha sprite beam, tinted zones); anything not listed here uses GHOST_KIND, else a blast on you */
 const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin:'spear',breaker:'beam',hellzone:'grenade',chrono:'rewind',shock:'shock',hakai:'erase',meteor:'meteor',dyn:'kick'};
-const TOTEM_CD=20,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
+const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
 class Game{
@@ -646,7 +646,7 @@ class Game{
     else if(id==='risk')this.riskT=TOTEM_RISK_T;
     else if(id==='vigor'){tf.hp=.15;tf.regen=.4;this.recalc();this.heal(p.maxHp*.3);}
     else if(id==='fury'){tf.might=.12;tf.cd=.08;}
-    else if(id==='wealth'){tf.gold=.35;tf.magnet=.25;}
+    else if(id==='wealth'){tf.gold=.35;tf.magnet=.25;this.wealthT=TOTEM_WEALTH_T;}   /* temporary: 150 s */
     else if(id==='guard'){tf.guard=1;this.barrierReady=true;}
     else if(id==='storm'){tf.storm=1;this.stormT=8;}
     else if(id==='spirit'){tf.spirit=1;this.pulseT=12;}
@@ -659,6 +659,7 @@ class Game{
   totemHeal(){return Math.min(.12,.06+.015*Math.max(0,this.formIdx+1));}
   updateTotemFx(dt){
     const tf=this.totemFx,p=this.p;
+    if(this.wealthT>0){this.wealthT-=dt;if(this.wealthT<=0){this.wealthT=0;tf.gold=0;tf.magnet=0;this.recalc();this.floatText(p.x,p.y-60,this.env.tr(T('Il Totem della Ricchezza si è esaurito','The Totem of Wealth has run out')),3);}}
     if(tf.storm){
       this.stormT-=dt;
       if(this.stormT<=0){
@@ -876,8 +877,10 @@ class Game{
     if(this.abTier>=1&&this.abil.m==='absorb')this.heal(this.p.maxHp*.004);   /* Cell / C-21 passive: every kill feeds you */
   }
   /* every kill within STREAK_WIN s of the last one grows the streak (HUD counter, top right); reaching a milestone pays a little XP (a few % of a level) */
+  /* the time window shrinks as the streak grows: 4 s at the start, exponentially down to 0.3 s at 1500 kills (3.4 s at 100, 1.7 s at 500, 0.7 s at 1000) */
+  streakWin(n){return STREAK_WIN*Math.pow(STREAK_MIN/STREAK_WIN,Math.min(n,STREAK_CAP)/STREAK_CAP);}
   bumpStreak(){
-    const n=++this.streak;this.streakT=STREAK_WIN;this.streakPop=.28;if(n>(this.run.streak||0))this.run.streak=n;
+    const n=++this.streak;this.streakW=this.streakWin(n);this.streakT=this.streakW;this.streakPop=.28;if(n>(this.run.streak||0))this.run.streak=n;
     /* coin streak: a hidden bar refilled by every kill and drained 1% every 0.5 s; every CK_EVERY kills in a row pay CK_COINS coins */
     this.cstk++;this.cstkT=1;if(this.cstk%CK_EVERY===0){this.addZenny(CK_COINS);this.run.cstkPaid=(this.run.cstkPaid||0)+CK_COINS;this.audio.sfx('coin');this.floatText(this.p.x,this.p.y-46,'+Z '+CK_COINS,1);}
     const ix=STREAK_MS.indexOf(n);if(ix<0&&!(n>2000&&n%500===0))return;
@@ -1272,7 +1275,7 @@ class Game{
   }
   spawnHorde(){
     const pr=Math.min(1,this.prog()),n=Math.round(8+this.sd*3+pr*(40+this.sd*14));
-    this.spawnRing(n,null,e=>{e.hp*=1.15;e.max=e.hp;});
+    this.spawnRing(n,null,e=>{e.hp*=1.15;e.max=e.hp;});this.hordeBoost=HORDE_BOOST_T;   /* the horde also speeds up the regular spawns for 20 s (no message) */
     this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=.4;
   }
   spawnPack(){this.spawnRing(Math.round(5+this.sd+Math.min(1,this.prog())*(8+this.sd*2)),this.rosterPick());}
@@ -1688,7 +1691,8 @@ class Game{
       const fin=this.finalOn?1.5:this.bossAlive>0?.7:1;
       this.updateWave();this.updateElites();this.updateBallPlan();this.updateSuperPlan();
       const wv=this.waveMul();
-      this.spAcc+=this.spawnRate()*fin*wv.rate*dt;
+      if(this.hordeBoost>0)this.hordeBoost-=dt;
+      this.spAcc+=this.spawnRate()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
       const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
@@ -2184,9 +2188,14 @@ class Game{
     for(const c of this.chests){
       c.t+=dt;
       const d=Math.hypot(p.x-c.x,p.y-c.y);
-      if(d<28&&!this.modal){
-        c.dead=true;this.run.chests++;this.audio.sfx('chest');this.emote('wow',1);
-        this.modal={type:'chest',rar:c.rar||0,rewards:this.chestRewards(c.final,c.boss,c.elite,c.rar)};
+      if(c.op===undefined&&d<28&&!this.modal){c.op=0;this.audio.sfx('chest');}   /* touched: the lid pops open first (renderer), then the reward window */
+      if(c.op!==undefined){
+        c.op+=dt;
+        if(!c.burst&&c.op>.34){c.burst=1;this.ring(c.x,c.y-14,64+16*(c.rar||0),RARITY[c.rar||0].c,.5);this.shake=Math.max(this.shake,.18);}
+        if(c.op>=.85&&!this.modal){
+          c.dead=true;this.run.chests++;this.emote('wow',1);
+          this.modal={type:'chest',rar:c.rar||0,rewards:this.chestRewards(c.final,c.boss,c.elite,c.rar)};
+        }
       }
     }
   }
@@ -2327,11 +2336,10 @@ class MapDirector{
       f.t+=dt;
       const d=Math.hypot(p.x-f.x,p.y-f.y);
       f.near=d<90;
+      if(f.fade!==undefined){f.fade+=dt;if(f.fade>=FEAT_FADE)f.dead=true;continue;}   /* used: flash, then dissolve */
       if(f.used)continue;
       if(f.t>f.ttl){f.dead=true;continue;}
-      if(f.kind==='altar'||f.kind==='chamber'||f.kind==='totem'||f.kind==='secret'){if(f.near&&g.input.interact)this.use(f);}   /* same radius as the [E] prompt */
-      else if(f.kind==='zenoportal'){if(d<38)this.use(f);}
-      else if(d<30)this.use(f);
+      if(f.near&&g.input.interact)this.use(f);   /* every altar, totem, spring, font, button and portal: [E] within the same radius as the prompt */
     }
     g.input.interact=false;
     g.feat=g.feat.filter(f=>!f.dead);
@@ -2402,7 +2410,7 @@ class MapDirector{
       g.ring(f.x,f.y,120,'#ff3b3b',.6);g.ring(f.x+95,f.y+14,90,'#c080ff',.8);g.flash=Math.max(g.flash,.25);g.flashC='#e0b8ff';g.shake=Math.max(g.shake,.3);g.audio.sfx('transform');
       g.say(g.env.tr(T('Si è aperto un portale misterioso...','A mysterious portal has opened...')),'#e0b8ff',3);return;}
     if(f.kind==='zenoportal'){g.startZeno();f.used=true;f.dead=true;return;}
-    if(f.kind==='totem'){g.modal={type:'totem',opts:g.rollTotems()};f.used=true;f.dead=true;return;}
+    if(f.kind==='totem'){g.modal={type:'totem',opts:g.rollTotems()};f.used=true;f.fade=0;return;}
     if(f.kind==='shrine'){
       const k=pick(['might','spd','cd','hp','regen','magnet']);
       const val={might:.05,spd:.04,cd:.04,hp:8,regen:.2,magnet:.08}[k];
@@ -2419,6 +2427,6 @@ class MapDirector{
     }else if(f.kind==='font'){
       g.addXp(g.need*.4/g.S.xp);g.say(g.env.tr(T('Fonte dell\'esperienza','Experience font')),'#8ad8ff',2);g.audio.sfx('pickup');g.ring(f.x,f.y,100,'#8ad8ff',.5);
     }
-    f.used=true;f.dead=true;
+    f.used=true;f.fade=0;
   }
 }
