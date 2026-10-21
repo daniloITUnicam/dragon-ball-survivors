@@ -99,7 +99,7 @@ class Game{
     S.magnet=100*(C.mag||1)*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
-    S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
+    S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.30:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
     S.gold=1+.18*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
@@ -1135,10 +1135,16 @@ class Game{
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
+  /* Extreme: a softer start and a slightly softer endgame for regular enemies (bosses keep their own numbers). Health x0.30 and damage x0.55 at the start, back to x1 at 65% / 50% of the stage; from 65% on they ease down again to HP -12% / damage -10% at the end */
+  xEase(){
+    if(this.diffId!=='extreme')return{hp:1,dmg:1};
+    const p=this.prog(),l=clamp((p-.65)/.35,0,1);
+    return{hp:(p>=.65?1:.3+.7*Math.pow(p/.65,1.5))*(1-.12*l),dmg:(p>=.5?1:.55+.45*(p/.5))*(1-.10*l)};
+  }
   mkEnemy0(def,x,y){
-    const fb=this.finalOn,esc=this.escSteps(),F=this.escF,hp=def.hp*this.hpMul()*(fb?1.35:1)*(1+F.hp*esc);   /* final boss fight: tougher crowd that hits a bit softer */
+    const fb=this.finalOn,esc=this.escSteps(),F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*xe.hp*(fb?1.35:1)*(1+F.hp*esc);   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*(fb?.85:1)*(1+F.dmg*esc),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*xe.dmg*(fb?.85:1)*(1+F.dmg*esc),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0};
   }
   rosterPick(){

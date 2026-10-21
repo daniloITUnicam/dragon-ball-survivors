@@ -16,6 +16,14 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21p',date:'2026-10-21',
+    name:T("Estremo più giocabile all'inizio e meno duro alla fine","Extreme: gentler start, slightly softer endgame"),
+    sum:T("In Estremo i nemici normali partono molto più deboli e tornano ai valori di prima a metà stage; a fine stage sono un po' più deboli di prima. Nell'x2 l'esperienza è più alta.","In Extreme regular enemies start much weaker and are back to the old values by mid-stage; at the end of the stage they are a little weaker than before. In x2 experience is higher."),
+    bal:[
+      T("Estremo (anche con x2), inizio: Salute dei nemici normali ×0,30 e danno ×0,55 a inizio stage, che risalgono a ×1 al 65% (Salute) e al 50% (danno) della durata. Esempio, Torneo del Potere in Estremo x2: il Guerriero Eliminato parte con 264 di Salute (prima 881) e colpisce per 33 (prima 59); al 15% dello stage ha 525 di Salute (prima 1.389). I boss non cambiano.","Extreme (x2 too), start: regular enemies' health x0.30 and damage x0.55 at the start of the stage, rising back to x1 at 65% (health) and 50% (damage) of its length. Example, Tournament of Power in Extreme x2: the Eliminated Fighter starts with 264 health (it was 881) and hits for 33 (it was 59); at 15% of the stage it has 525 health (it was 1,389). Bosses are unchanged."),
+      T("Estremo, fine stage: dal 65% della durata i nemici normali calano piano piano fino a Salute −12% e danno −10% alla fine.","Extreme, end of the stage: from 65% of its length regular enemies ease down to −12% health and −10% damage at the end."),
+      T("Modalità x2: l'esperienza passa da ×0,18 a ×0,30 (prima 5,6 volte meno del normale, ora 3,3).","x2 mode: experience goes from x0.18 to x0.30 (it was 5.6 times less than normal, now 3.3)."),
+    ]},
   {id:'2026-10-21o',date:'2026-10-21',
     name:T("Modalità test riservata e Dati di gioco nascosti","Test mode restricted, Game data hidden"),
     sum:T("La modalità test esiste solo per l'account del proprietario e per quelli autorizzati; «Dati di gioco» compare solo con la modalità test accesa, ma la registrazione continua in background.","Test mode exists only for the owner's account and the allowed ones; \"Game data\" only shows with Test mode on, but recording goes on in the background."),
