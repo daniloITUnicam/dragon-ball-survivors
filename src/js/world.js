@@ -18,7 +18,7 @@ const MAP={
 };
 const mhash=(a,b)=>hash(a+MAP.ix,b+MAP.iy);
 const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4;
-const OB_DENS={beach:.14,waste:.2,redrock:.19,plains:.17,arena:.17,hell:.18};   /* share of the 230 px cells that hold a prop (default .15) */
+const OB_DENS={beach:.14,waste:.12,redrock:.12,plains:.17,arena:.10,other:.10,hell:.18};   /* share of the 230 px cells that hold a prop (default .15) */
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
 const OBS=(w,r,W,H,art,sc)=>({w,r,W,H,art,sc});   /* sc: the sprite is drawn that many times larger than the base 3.1 px per art unit (r is already the scaled collision radius) */
@@ -32,7 +32,7 @@ const rockSheet=theme=>{const id=ROCK_SHEET[theme],S=id&&typeof Sprites!=='undef
 /* IM: the obstacle is drawn from a rect of the theme's prop sheet (PROP_SHEET, assets/sprites/props/): im = rect index, ws = world px per sprite px, ww = drawn width (the base must stand on dry land),
    nf = never mirrored (lettering), lu = world px per art unit for ObjLife's critters (they were placed on the old procedural art). The old procedural art stays as the fallback while the sheet is not decoded. */
 const IM=(d,im,ws,o)=>Object.assign(d,{im,ws},o);
-const PROP_SHEET={beach:'beachprops'};
+const PROP_SHEET={beach:'beachprops',redrock:'redrockprops',waste:'wasteprops',arena:'arenaprops',other:'otherprops'};
 const ROCK=(w,kind)=>OB(w,14,26,18,R=>{},kind);   /* a rock obstacle: its art is the sprite, so nothing is painted (and nothing is placed until the sprites are decoded) */
 const tri=(R,cx,base,hgt,hw,c1,c2)=>{for(let i=0;i<hgt;i++){const k=i/hgt,w=hw*(1-k)*2;R(cx-w/2,base-i-1,w,1,i%5<2?c2:c1);}};
 const OBSTACLES={
@@ -50,19 +50,29 @@ const OBSTACLES={
     OB(.28,30,50,32,(R,C)=>{R(-20,-10,40,7,'#7a5ab0');R(-17,-14,34,5,'#9a7ad0');R(-12,-18,24,5,'#b898e8');C(R,0,-20,9,'#6ad0e8');R(-6,-24,12,4,'#d8f4ff');R(-22,-6,44,3,'#4a3a7a');R(-14,-3,3,3,'#f2c230');R(11,-3,3,3,'#f2c230');}),
     OBS(1.4,18.0,24,24,MA.crystalN,1.8)
   ],
-  waste:[
-    OBS(1.6,20.7,16,14,MA.crate,2.3),OBS(1.6,16.1,14,19,MA.barrel,2.3),OBS(1.4,16.0,16,20,MA.tomb,2.0),OBS(1,17.1,24,16,MA.skullpile,1.9),OBS(1.2,9.0,20,26,MA.cactus,1.5),
-    OB(3,15,26,16,R=>{R(-11,-8,22,8,'#8a3a3a');R(-7,-13,14,6,'#6a2a2a');R(-5,-12,4,4,'#8ac0d8');R(2,-12,4,4,'#8ac0d8');R(-9,-3,5,3,'#222');R(5,-3,5,3,'#222');}),
-    OB(3,14,26,34,R=>{R(-6,-26,12,26,'#5a5650');R(-4,-22,3,4,'#2a2622');R(1,-14,3,4,'#2a2622');R(-6,-28,5,3,'#5a5650');}),
-    OB(3,16,28,14,R=>{R(-11,-5,22,5,'#6a6460');R(-8,-9,16,5,'#7a746e');R(-3,-12,8,4,'#8a847e');R(4,-8,6,3,'#4a4642');}),
-    OB(.5,12,16,26,R=>{R(-1,-24,2,24,'#4a3a2a');R(-7,-18,6,1.4,'#4a3a2a');R(1,-12,6,1.4,'#4a3a2a');}),
-    OB(.6,14,26,18,R=>{R(-12,-8,24,8,'#6a6460');R(-9,-14,18,7,'#7a746e');})
+  waste:[   /* sheet art (assets/sprites/props/wasteprops.png): the weight is the chance of each prop relative to the others */
+    IM(OBS(1.6,24,16,14,MA.crate,2.3),0,.5,{ww:119,lu:8.37}),
+    IM(OBS(1.6,21,14,19,MA.barrel,2.3),1,.5,{ww:114,lu:7.19}),
+    IM(OBS(1.2,19,16,20,MA.tomb,2.0),2,.5,{ww:109,lu:5.7}),
+    IM(OBS(1.2,25,24,16,MA.skullpile,1.9),3,.5,{ww:134,lu:7.2}),
+    IM(OBS(1.4,9,20,26,MA.cactus,1.5),4,.5,{ww:90}),
+    IM(OB(1.2,31,26,16,R=>{R(-11,-8,22,8,'#8a3a3a');R(-7,-13,14,6,'#6a2a2a');R(-5,-12,4,4,'#8ac0d8');R(2,-12,4,4,'#8ac0d8');R(-9,-3,5,3,'#222');R(5,-3,5,3,'#222');}),5,.5,{ww:153}),
+    IM(OB(1,15,26,34,R=>{R(-6,-26,12,26,'#5a5650');R(-4,-22,3,4,'#2a2622');R(1,-14,3,4,'#2a2622');R(-6,-28,5,3,'#5a5650');}),6,.5,{ww:123}),
+    IM(OB(1,33,28,14,R=>{R(-11,-5,22,5,'#6a6460');R(-8,-9,16,5,'#7a746e');R(-3,-12,8,4,'#8a847e');R(4,-8,6,3,'#4a4642');}),7,.5,{ww:166}),
+    IM(OB(.8,8,16,26,R=>{R(-1,-24,2,24,'#4a3a2a');R(-7,-18,6,1.4,'#4a3a2a');R(1,-12,6,1.4,'#4a3a2a');}),8,.5,{ww:116}),
+    IM(OB(.8,33,26,18,R=>{R(-12,-8,24,8,'#6a6460');R(-9,-14,18,7,'#7a746e');}),9,.5,{ww:166})
   ],
-  other:[
-    OB(4,8,18,30,R=>{R(-2,-26,4,26,'#ff9ad8');R(-4,-16,8,16,'#ff7ac0');R(-1,-24,1.5,12,'#ffd0f0');}),
-    OB(3,14,30,22,(R,C)=>{C(R,-6,-6,6,'#fff0ff');C(R,3,-8,8,'#ffe0ff');C(R,10,-5,5,'#fff0ff');R(-12,-1,26,1,'#d8b0ff');}),
-    OB(.4,26,44,36,(R,C)=>{for(let i=0;i<22;i++){const hw=Math.sqrt(1-(i/22)*(i/22))*17;R(-hw,-i-4,hw*2,1,'#ff9ec7');}R(-17,-4,34,4,'#e87aa0');R(-3,-14,6,10,'#f4f1ea');R(-1,-34,2,10,'#8a4fc0');C(R,0,-35,2,'#ffd23f');}),
-    OBS(1.2,11.4,14,21,MA.lantern,1.9)
+  other:[   /* sheet art (otherprops.png): slime blobs, puddles and a geyser were added to the old four */
+    IM(OB(3,9,18,30,R=>{R(-2,-26,4,26,'#ff9ad8');R(-4,-16,8,16,'#ff7ac0');R(-1,-24,1.5,12,'#ffd0f0');}),0,.501,{ww:75}),
+    IM(OB(2,24,30,22,(R,C)=>{C(R,-6,-6,6,'#fff0ff');C(R,3,-8,8,'#ffe0ff');C(R,10,-5,5,'#fff0ff');R(-12,-1,26,1,'#d8b0ff');}),1,.501,{ww:130}),
+    IM(OB(.3,67,44,36,(R,C)=>{for(let i=0;i<22;i++){const hw=Math.sqrt(1-(i/22)*(i/22))*17;R(-hw,-i-4,hw*2,1,'#ff9ec7');}R(-17,-4,34,4,'#e87aa0');R(-3,-14,6,10,'#f4f1ea');R(-1,-34,2,10,'#8a4fc0');C(R,0,-35,2,'#ffd23f');}),2,.511,{ww:337}),
+    IM(OBS(1.2,9,14,21,MA.lantern,1.9),3,.501,{ww:92,lu:5.3}),
+    IM(OB(2,14,26,18,R=>{}),4,.5,{ww:76}),
+    IM(OB(1.5,18,26,18,R=>{}),5,.5,{ww:98}),
+    IM(OB(1.2,20,26,18,R=>{}),6,.5,{ww:108}),
+    IM(OB(1.2,21,26,18,R=>{}),7,.499,{ww:113}),
+    IM(OB(1.5,14,26,18,R=>{}),8,.5,{ww:105}),
+    IM(OB(.8,10,26,18,R=>{}),9,.501,{ww:75})
   ],
   void:[
     OB(4,8,18,40,R=>{R(-4,-34,8,34,'#2a3a6a');R(-.6,-34,1.2,34,'#6ad0ff');R(-5,-36,10,3,'#3a4a8a');}),
@@ -73,7 +83,7 @@ const OBSTACLES={
   beach:[   /* the weight (first number) is the chance of each prop relative to the others: the palm is the commonest, the Kame House the rarest */
     IM(OB(6,6,30,42,(R,C)=>{R(-1.5,-24,3,24,'#8a6a3a');R(0,-30,2.5,8,'#8a6a3a');for(const [a,b] of [[-10,-30],[-6,-34],[6,-34],[10,-30],[0,-36]])C(R,a,b,4,'#2f9a4a');C(R,0,-31,3,'#5ac05a');}),0,.42,{ww:89}),
     IM(OB(1.2,11,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');}),1,.42,{ww:67}),
-    IM(OB(.25,28,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),2,.42,{ww:142,nf:1}),
+    IM(OB(.4,63,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),2,.586,{ww:313,nf:1}),
     IM(OB(3,9,20,16,(R,C)=>{C(R,-4,-6,6,'#d8a8d8');C(R,3,-5,6,'#e8c0e8');R(-2,-3,4,3,'#8a6a3a');}),3,.42,{ww:66}),
     IM(OB(.8,17,26,18,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),4,.42,{ww:85}),
     IM(OBS(1.5,21,16,14,MA.crate,2.3),5,.42,{ww:97,lu:7.8}),
@@ -84,21 +94,29 @@ const OBSTACLES={
     IM(OBS(3,9,26,16,MA.agave,1.2),10,.42,{ww:85,lu:4.2}),
     IM(OBS(1.5,18,18,18,MA.rockpile,2.0),11,.42,{ww:126})
   ],
-  redrock:[
-    OB(4,14,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');}),
-    OB(3,8,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');}),
-    OB(.4,17,30,22,(R,C)=>{C(R,0,-10,10,'#d8d8e8');R(-10,-3,20,3,'#8a8a9a');R(-4,-14,8,6,'#6ad0ff');R(-3,-13,2,1,'#fff');R(-12,-2,24,2,'#4a4a5a');}),
-    OB(2,10,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),
-    OB(.7,14,26,18,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),
-    OBS(1.6,9.0,20,26,MA.cactus,1.5),OBS(.8,17.1,24,16,MA.skullpile,1.9),OBS(.8,16.1,14,19,MA.barrel,2.3),OBS(.8,20.7,16,14,MA.crate,2.3)
+  redrock:[   /* sheet art (redrockprops.png) */
+    IM(OB(4,23,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');}),0,.499,{ww:113}),
+    IM(OB(3,11,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');}),1,.5,{ww:84}),
+    IM(OB(.4,22,30,22,(R,C)=>{C(R,0,-10,10,'#d8d8e8');R(-10,-3,20,3,'#8a8a9a');R(-4,-14,8,6,'#6ad0ff');R(-3,-13,2,1,'#fff');R(-12,-2,24,2,'#4a4a5a');}),2,.501,{ww:127}),
+    IM(OB(.35,32,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),3,.5,{ww:173}),
+    IM(OB(.8,23,26,18,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),4,.5,{ww:115}),
+    IM(OBS(2.2,11,20,26,MA.cactus,1.5),5,.501,{ww:106}),
+    IM(OBS(1,28,24,16,MA.skullpile,1.9),6,.5,{ww:149,lu:6.5}),
+    IM(OBS(1,19,14,19,MA.barrel,2.3),7,.563,{ww:103,lu:7.96}),
+    IM(OBS(1,24,16,14,MA.crate,2.3),8,.501,{ww:118,lu:8.43})
   ],
-  arena:[
-    OB(4,9,18,38,R=>{R(-5,-30,10,30,'#b8b0a0');R(-6,-32,12,3,'#d8d0c0');R(-6,-3,12,3,'#8a8274');R(-1,-24,1.4,14,'#6a6254');}),
-    OB(4,12,26,14,R=>{R(-10,-5,20,5,'#9a9284');R(-7,-9,14,5,'#b0a898');R(1,-7,6,3,'#7a7264');R(-9,-3,3,3,'#6a6254');}),
-    OB(2,5,16,34,R=>{R(-.8,-30,1.6,30,'#6a6254');R(-1.6,-31,3.2,1.6,'#9a9284');}),
-    OB(.5,14,28,22,R=>{R(-11,-8,22,8,'#8a8274');R(-8,-14,16,7,'#b0a898');R(-2,-20,4,7,'#d8d0c0');}),
-    OB(.6,14,26,18,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');}),
-    OBS(1.6,18.0,16,22,MA.pillar,2.0),OBS(1,11.4,18,34,MA.banner,1.9),OBS(1,16.1,14,19,MA.barrel,2.3),OBS(1,20.7,16,14,MA.crate,2.3)
+  arena:[   /* sheet art (arenaprops.png). The ring of the Cell Games (gd) is a huge floor drawn under everything and never blocks */
+    IM(OB(2,10,18,38,R=>{R(-5,-30,10,30,'#b8b0a0');R(-6,-32,12,3,'#d8d0c0');R(-6,-3,12,3,'#8a8274');R(-1,-24,1.4,14,'#6a6254');}),0,.38,{ww:69}),
+    IM(OB(3,26,26,14,R=>{R(-10,-5,20,5,'#9a9284');R(-7,-9,14,5,'#b0a898');R(1,-7,6,3,'#7a7264');R(-9,-3,3,3,'#6a6254');}),1,.499,{ww:128}),
+    IM(OB(.6,17,16,34,R=>{R(-.8,-30,1.6,30,'#6a6254');R(-1.6,-31,3.2,1.6,'#9a9284');}),2,.5,{ww:119}),
+    IM(OB(1.2,24,28,22,R=>{R(-11,-8,22,8,'#8a8274');R(-8,-14,16,7,'#b0a898');R(-2,-20,4,7,'#d8d0c0');}),3,.501,{ww:118}),
+    IM(OB(2,25,26,18,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');}),4,.5,{ww:124}),
+    IM(OBS(1.6,14,16,22,MA.pillar,2.0),5,.5,{ww:94}),
+    IM(OBS(1.2,7,18,34,MA.banner,1.9),6,.5,{ww:99}),
+    IM(OBS(1.2,23,14,19,MA.barrel,2.3),7,.499,{ww:123,lu:6.6}),
+    IM(OBS(1.2,25,16,14,MA.crate,2.3),8,.499,{ww:127,lu:7.77}),
+    IM(OB(.6,0,40,20,R=>{}),9,1.173,{ww:900,gd:1,nf:1}),
+    IM(OB(.5,35,26,18,R=>{}),10,.5,{ww:174})
   ],
   sky:[
     OB(4,8,16,34,R=>{R(-4,-30,8,30,'#f4f1ea');R(-5,-32,10,3,'#fff');R(-5,-3,10,3,'#c8c0d8');R(-1,-28,1,24,'#d8d0e0');}),
@@ -173,7 +191,7 @@ const World={
       if(x*x+y*y>260*260&&!(Sea.wet(theme,x,y)>-.05)){   /* never in the water or on the wet shore */
         let tot=0;for(const d of defs)tot+=d.w;let q=mhash(cx+31,cy+9)*tot,ti=0;
         for(;ti<defs.length-1;ti++){q-=defs[ti].w;if(q<=0)break;}
-        c={x,y,t:ti,r:defs[ti].r*1.5,f:defs[ti].nf?1:mhash(cx+2,cy+8)<.5?-1:1};
+        c={x,y,t:ti,r:defs[ti].r*1.5,f:defs[ti].nf?1:mhash(cx+2,cy+8)<.5?-1:1,gd:defs[ti].gd};
         const ww=defs[ti].ww;if(ww)for(const k of[-.4,.4])if(Sea.wet(theme,x+k*ww,y)>-.05){c=null;break;}   /* a wide prop never stands half in the water */
         const rk=c&&defs[ti].rk;
         if(rk){
@@ -224,7 +242,7 @@ const World={
     if(theme==='snake'){Snake.clamp(o,rad);return;}
     const cx=Math.floor(o.x/OB_CELL),cy=Math.floor(o.y/OB_CELL);
     for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){
-      const b=this.cell(theme,gx,gy);if(!b)continue;
+      const b=this.cell(theme,gx,gy);if(!b||b.gd)continue;   /* (a floor prop never blocks) */
       const dx=o.x-b.x,dy=o.y-b.y,rr=b.r+rad,d2=dx*dx+dy*dy;
       if(d2<rr*rr){const d=Math.sqrt(d2)||.01;o.x=b.x+dx/d*rr;o.y=b.y+dy/d*rr;}
     }

@@ -183,6 +183,17 @@ this.W=1;this.H=1;this.Z=1;
     });
     out.rdy=rdy;this.obst[theme]=out;return out;
   }
+  /* floor props (a def with gd, e.g. the ring of the Cell Games): one huge sheet sprite painted on the ground, above the tiles and under everything else; they never block. Foot at the anchor, so they
+     reach far above and beside their position: the query is wide. */
+  groundProps(theme,cx,cy,vw,vh){
+    const defs=OBSTACLES[theme];if(!defs||!defs.some(d=>d.gd))return;
+    const os=this.getObst(theme),ctx=this.ctx;
+    for(const b of World.visible(theme,cx-480,cy-60,cx+vw+480,cy+vh+640)){
+      if(!b.gd)continue;const sp=os[b.t];if(!sp||!sp.sm)continue;   /* nothing until the sheet is decoded */
+      const k=3.1/Sprites.S*sp.sc;ctx.save();ctx.imageSmoothingEnabled=true;ctx.translate(b.x,b.y);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();
+    }
+    ctx.imageSmoothingEnabled=false;
+  }
   terrain(cx,cy,vw,vh,t,theme){
     if(theme==='snake'){this.snakeTerrain(cx,cy,vw,vh,t);return;}
     const ctx=this.ctx,TS=64,tl=this.getTiles(theme),dec=this.getDecor(theme),th=THEMES[theme],A=Ambient;
@@ -246,7 +257,7 @@ this.W=1;this.H=1;this.Z=1;
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
     const theme=g.stage.theme;
     Ambient.setCfg(s);if(g.trial){Ambient.on=false;Ambient.wxOn=false;Ambient.dnOn=false;Ambient.nt=0;Ambient.evI=0;}else Ambient.update(g,dt,t,cx,cy,g.vw,g.vh,theme,p);
-    if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else this.terrain(cx,cy,g.vw,g.vh,t,theme);
+    if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else{this.terrain(cx,cy,g.vw,g.vh,t,theme);this.groundProps(theme,cx,cy,g.vw,g.vh);}
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
     if(theme==='snake'&&Ambient.on&&Ambient.lod>=.5)Ambient.flockShadows(ctx,cx,cy,g.vw,g.vh,t,3,1,0);   /* shadows of the bird flocks gliding over the cloud sea */
@@ -277,7 +288,7 @@ this.W=1;this.H=1;this.Z=1;
     for(const c of (g.trial?[]:g.chests))this.drawChest(c,t);
     /* entities, depth sorted */
     const list=g.en.slice();
-    if(!g.trial){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))list.push({ob:b,y:b.y,spr:os[b.t]});}
+    if(!g.trial){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
     if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
     if(g.pet)list.push({pet:g.pet,y:g.pet.y});
     if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
