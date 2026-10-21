@@ -297,6 +297,10 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .amsg{padding:8px 10px;border-radius:8px;font-size:14px;text-align:left;border-left:4px solid}
 .amsg.err{background:rgba(255,90,74,.14);border-color:#ff5a4a;color:#ffc9c2}
 .amsg.ok{background:rgba(95,211,95,.14);border-color:#5fd35f;color:#c8f5c8}
+.amsg.info{background:rgba(120,170,255,.14);border-color:#78aaff;color:#d4e4ff}
+/* "Forgot password?" without e-mail recovery: the tooltip opens above the button, in a box */
+.forgotno{position:relative}
+.forgotno[data-tip]:hover::after,.forgotno[data-tip]:focus-visible::after{left:50%;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%);white-space:normal;width:min(340px,78vw);text-align:center;line-height:1.35}
 .accard{width:100%;box-sizing:border-box;padding:14px;border:3px solid var(--line);border-radius:12px;background:var(--panel);text-align:left;display:flex;flex-direction:column;gap:4px}
 .aemail{font-size:18px;font-weight:700;word-break:break-all}
 .ast{font-weight:700}.ast.ok{color:#5fd35f}.ast.syncing{color:#4aa8ff}.ast.offline,.ast.error{color:#ffc233}.ast.conflict{color:#ff7a5a}

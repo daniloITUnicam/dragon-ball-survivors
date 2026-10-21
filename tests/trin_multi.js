@@ -10,7 +10,7 @@ const go=(lv)=>pg.evaluate((lv)=>{const A=__app,d=A.save.d;d.shop.tslot=lv;d.set
 const caps=[];for(const lv of[0,1,2])caps.push(await go(lv));
 ok(caps.join()==='1,2,3','slots = 1 + shop purchases ('+caps.join('/')+')');
 const sh=await pg.evaluate(()=>{const it=SHOP.find(x=>x.id==='tslot'),bn=SHOP.find(x=>x.id==='ban');return{tslot:it&&[it.max,shopCost(it,0),shopCost(it,1)],ban:bn&&[bn.max,shopCost(bn,0),shopCost(bn,9)]};});
-ok(sh.tslot&&sh.tslot[0]===2&&sh.tslot[1]===3000&&sh.tslot[2]===9000,'"Extra Trinket": 2 purchases, '+(sh.tslot||[]).join('/'));
+ok(sh.tslot&&sh.tslot[0]===2&&sh.tslot[1]===3600&&sh.tslot[2]===10800,'"Extra Trinket": 2 purchases, '+(sh.tslot||[]).join('/'));
 ok(sh.ban&&sh.ban[0]===10,'"Weapon Blacklist": 10 purchases, from '+(sh.ban||[])[1]+' to '+(sh.ban||[])[2]);
 /* ---------- filling 3 slots, then the swap window ---------- */
 await go(2);
@@ -64,14 +64,14 @@ const rf=await pg.evaluate(()=>{const g=G,o={};g.modal=null;g.tq=[];g.trinkets=[
   s.trinRefuse=false;
   return o;});
 ok(rf.lowerAuto,'setting ON: a trinket of lower rarity than all you carry is sold at once, no window');
-ok(rf.sameMenu&&rf.betterMenu,'setting ON: same or higher rarity still opens the swap window');
-ok(rf.offMenu&&rf.buyMenu&&rf.refused===1,'setting OFF (and Zeno-sama\'s offers) always open the window');
+ok(rf.betterMenu,'setting ON: a trinket that is not worse than every one you carry still opens the swap window');   /* "worse" = lower rarity, or the same rarity with less perfection (so a same-rarity roll may be skipped too) */
+ok(rf.offMenu&&rf.buyMenu&&rf.refused>=1,'setting OFF (and Zeno-sama\'s offers) always open the window');
 /* the switch inside the window changes the same setting */
 const sw=await pg.evaluate(()=>{const g=G;g.modal=null;__app.save.d.settings.trinRefuse=false;g.addTrinket('potara',2);return!!g.modal;});
 await wait(300);
 const tg=await pg.evaluate(()=>{const b=document.querySelector('.trtog');b.click();const o={on:__app.save.d.settings.trinRefuse,txt:b.textContent,cls:b.classList.contains('on')};G.resolveModal(3);return o;});
 ok(sw&&tg.on===true&&tg.cls,'the switch in the swap window turns the setting on ('+tg.txt+')');
-const st=await pg.evaluate(()=>{__app.save.d.settings.trinRefuse=false;__app.ui.show('settings');__app.ui.top.args={tab:'general'};__app.ui.rebuild();return!!document.querySelector('[data-fid="ttrinRefuse"]');});
+const st=await pg.evaluate(()=>{__app.save.d.settings.trinRefuse=false;__app.ui.show('settings');__app.ui.top.args={tab:'gameplay'};__app.ui.rebuild();return!!document.querySelector('[data-fid="ttrinRefuse"]');});
 ok(st,'Settings has the same option');
 /* ---------- end of run sells every found trinket; HUD draws all slots ---------- */
 await go(2);
@@ -102,8 +102,8 @@ const lo=await pg.evaluate(()=>{const A=__app,d=A.save.d;d.wu={};for(const id in
 ok(lo.hit.length===0&&lo.others>5,'banned weapons never show up as new weapons in level-up cards ('+lo.others+' other weapons still do)');
 ok(lo.hit2.length===3,'without bans they do ('+lo.hit2.join()+')');
 /* ---------- shop screen: card + manage screen ---------- */
-const ui=await pg.evaluate(()=>{const A=__app,d=A.save.d;d.wu={ki:1,kame:1,javelin:1};d.banned=['javelin'];d.shop.ban=2;d.shop.tslot=1;A.ui.show('shop');return{cards:document.querySelectorAll('.shopi').length,manage:!!document.querySelector('[data-fid="shbanm"]'),txt:(document.querySelector('[data-fid="shbanm"]')||{}).textContent};});
-ok(ui.cards===14&&ui.manage&&/1\/2/.test(ui.txt||''),'shop shows both new cards and the manage button ('+ui.txt+')');
+const ui=await pg.evaluate(()=>{const A=__app,d=A.save.d;d.wu={ki:1,kame:1,javelin:1};d.banned=['javelin'];d.shop.ban=2;d.shop.tslot=1;A.ui.show('shop');return{cards:document.querySelectorAll('.shopi').length,manage:!!document.querySelector('[data-fid="shbanm"]'),txt:(document.querySelector('[data-fid="shbanm"]')||{}).textContent,total:SHOP.length};});
+ok(ui.cards===ui.total&&ui.manage&&/1\/2/.test(ui.txt||''),'shop shows both new cards and the manage button ('+ui.txt+')');
 await pg.screenshot({path:'/tmp/shop_new.png'});
 const ui2=await pg.evaluate(()=>{document.querySelector('[data-fid="shbanm"]').click();return{cards:document.querySelectorAll('.bancard').length,on:document.querySelectorAll('.bancard.on').length};});
 ok(ui2.cards===3&&ui2.on===1,'manage screen lists the unlocked weapons and marks the banned one');

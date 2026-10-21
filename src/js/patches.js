@@ -16,6 +16,27 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21b',date:'2026-10-21',
+    name:T("Sicurezza e pulizia","Security and cleanup"),
+    sum:T("Account e salvataggi più protetti (password più robuste, blocco dopo troppi tentativi, login Google a prova di link truccati, salvataggi manomessi ripuliti) e codice ripulito da parti inutilizzate.","Safer accounts and saves (stronger passwords, a pause after too many attempts, Google sign-in that ignores forged links, tampered saves cleaned up) and the code tidied of unused parts."),
+    new:[
+      {g:T("Sicurezza","Security"),l:[
+        T("Password dell'account: servono almeno 8 caratteri, non un solo carattere ripetuto, non la tua email e non una password famosa (password, 12345678...).","Account password: at least 8 characters, not one repeated character, not your e-mail and not a famous password (password, 12345678...)."),
+        T("Dopo 5 password sbagliate in 5 minuti l'accesso si ferma per un minuto, con il conto alla rovescia.","After 5 wrong passwords within 5 minutes the sign-in pauses for a minute, with a countdown."),
+        T("Accesso con Google: il ritorno dalla pagina di Google vale solo se hai premuto il pulsante Google su questo dispositivo, così un link truccato non può collegarti all'account di un altro.","Google sign-in: the return from Google only counts if you pressed the Google button on this device, so a forged link cannot sign you into somebody else's account."),
+        T("Salvataggi (sul dispositivo, nel cloud o incollati): numeri fuori scala, testi enormi e chiavi pericolose vengono ripuliti prima dell'uso, e un salvataggio rovinato non blocca più il gioco.","Saves (on the device, in the cloud or pasted): out-of-range numbers, huge texts and dangerous keys are cleaned before use, and a damaged save no longer stops the game."),
+        T("Il sito non esegue script iniettati (Content-Security-Policy), non manda l'indirizzo di provenienza ad altri siti e usa il server cloud solo via https.","The site refuses injected scripts (Content-Security-Policy), does not send the referring address to other sites and only talks to the cloud server over https."),
+      ]},
+      {g:T("Account","Account"),l:[
+        T("«Password dimenticata?» ora mostra un avviso (al passaggio del mouse o toccandolo): il recupero della password non è disponibile, si crea un nuovo account o si entra con Google; il modulo di registrazione lo ricorda. Il recupero via email si riaccende con SUPABASE_RESET=1 (serve un SMTP tuo su Supabase).","«Forgot password?» now shows a notice (on hover or when tapped): password recovery is not available, create a new account or sign in with Google; the sign-up form says so too. E-mail recovery comes back with SUPABASE_RESET=1 (needs your own SMTP on Supabase)."),
+        T("Il pulsante «Continua con Google» è sempre visibile nella schermata Account (se Google non è ancora attivo sul progetto, lo spiega).","The «Continue with Google» button is always visible on the Account screen (if Google is not enabled on the project yet, it says so)."),
+      ]},
+    ],
+    fix:[
+      {g:T("Codice","Code"),l:[
+        T("Pulizia del codice: rimossi gli sprite vecchi dei nemici e alcune funzioni mai usate; aggiunti test automatici per sicurezza e per il controllo delle traduzioni.","Code cleanup: removed the old enemy sprites and a few functions that were never used; added automatic tests for security and for the translation check."),
+      ]},
+    ]},
   {id:'2026-10-21',date:'2026-10-21',
     name:T("Quantità, Scanner e 128 nuovi cimeli","Amount, Scanner and 128 new trinkets"),
     sum:T("Nuovi potenziamenti del negozio (Quantità, Scanner Sfere del Drago e Urlo di Broly!), Armatura Saiyan più forte, 128 nuovi cimeli con combinazioni di statistiche diverse e la barra del roll da 0 a 100 su ogni cimelio.","New shop upgrades (Amount, Dragon Ball Scanner and Broly's Roar!), a stronger Saiyan Armor, 128 new trinkets with different stat combinations and the 0 to 100 roll bar on every trinket."),

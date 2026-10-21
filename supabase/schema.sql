@@ -9,6 +9,13 @@ create table if not exists public.saves (
   constraint saves_size check (pg_column_size(data) < 200000)
 );
 
+-- a save is always a JSON object (never a number, a string or a list); added separately so that running this file again on an existing table also adds it
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'saves_is_object') then
+    alter table public.saves add constraint saves_is_object check (jsonb_typeof(data) = 'object');
+  end if;
+end $$;
+
 alter table public.saves enable row level security;
 
 -- every account can read and write ONLY its own row

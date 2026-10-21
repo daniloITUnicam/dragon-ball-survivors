@@ -4,7 +4,7 @@ function h(tag,props,...kids){
   const e=document.createElement(tag);
   if(props)for(const k in props){
     const v=props[k];
-    if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k==='style')e.style.cssText=v;
+    if(k==='class')e.className=v;else if(k==='style')e.style.cssText=v;
     else if(k.startsWith('on'))e[k]=v;else if(v!==false&&v!==null&&v!==undefined)e.setAttribute(k,v===true?'':v);
   }
   for(const c of kids.flat(3)){if(c===null||c===undefined||c===false)continue;e.append(c.nodeType?c:document.createTextNode(String(c)));}

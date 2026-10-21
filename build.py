@@ -14,10 +14,11 @@ if _cf.exists():
 _url = (os.environ.get('SUPABASE_URL') or _cc.get('url') or '').strip().rstrip('/')
 _key = (os.environ.get('SUPABASE_ANON_KEY') or _cc.get('key') or '').strip()
 _goo = (os.environ.get('SUPABASE_GOOGLE') or ('1' if _cc.get('google') else '')).strip().lower() in ('1','true','yes')
+_res = (os.environ.get('SUPABASE_RESET') or ('1' if _cc.get('reset') else '')).strip().lower() in ('1','true','yes')
 _ok = re.compile(r'^[A-Za-z0-9_\-.:/]*$')
 if not (_ok.match(_url) and _ok.match(_key)):
     sys.exit('invalid characters in SUPABASE_URL / SUPABASE_ANON_KEY')
-js = js.replace('__SUPABASE_URL__', _url).replace('__SUPABASE_KEY__', _key).replace('__SUPABASE_GOOGLE__', '1' if _goo else '')
+js = js.replace('__SUPABASE_URL__', _url).replace('__SUPABASE_KEY__', _key).replace('__SUPABASE_GOOGLE__', '1' if _goo else '').replace('__SUPABASE_RESET__', '1' if _res else '')
 print('cloud:', 'ON ('+_url+')' if _url and _key else 'off (no Supabase settings)')
 _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
@@ -142,7 +143,26 @@ html = html.replace('__GLYPHS__', urllib.parse.quote(''.join(dict.fromkeys(glyph
 # page by the deploy workflow) to notice a new release while somebody is playing (src/js/update.js). Same sources -> same id. ----
 _bid = hashlib.sha1((js + '\0' + css + '\0' + html).encode('utf8')).hexdigest()[:12]
 js = js.replace('__BUILD_ID__', _bid)
-html = html.replace('/*__CSS__*/', css).replace('/*__JS__*/', js.replace('</script>', '<\\/script>'))
+js = js.replace('</script>', '<\\/script>')
+# ---- Content-Security-Policy (a <meta> tag: GitHub Pages cannot send headers). The only inline script is the game itself and it is allowed BY HASH:
+# an injected <script> or onclick="" would not run. Default: on for link builds (the published site), off for the single-file embed build
+# (the Artifact wrapper adds its own scripts, which a page-level policy would block). DBS_CSP=1 / DBS_CSP=0 forces it. ----
+_csp_env = os.environ.get('DBS_CSP')
+if _csp_env == '1' or (_csp_env is None and _mode == 'link'):
+    _sha = base64.b64encode(hashlib.sha256(('\n' + js + '\n').encode('utf8')).digest()).decode()
+    _o = urllib.parse.urlsplit(_url) if _url else None
+    _conn = " ".join(["'self'", "data:", "blob:"] + ([f'{_o.scheme}://{_o.netloc}'] if _o and _o.netloc else []))
+    _csp = ("default-src 'none'; "
+            f"script-src 'sha256-{_sha}'; "
+            "style-src 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src https://fonts.gstatic.com data:; "
+            "img-src 'self' data: blob:; media-src 'self' data: blob:; "
+            f"connect-src {_conn}; "
+            "worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'")
+    html = html.replace('<!--__CSP__-->', f'<meta http-equiv="Content-Security-Policy" content="{_csp}">')
+else:
+    html = html.replace('<!--__CSP__-->\n', '')
+html = html.replace('/*__CSS__*/', css).replace('/*__JS__*/', js)
 out = pathlib.Path(os.environ['DBS_OUT']) if os.environ.get('DBS_OUT') else ROOT/'dist'/'dragon-ball-survivors.html'
 out.parent.mkdir(exist_ok=True)
 out.write_text(html, encoding='utf8')

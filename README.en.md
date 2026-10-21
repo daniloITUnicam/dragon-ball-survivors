@@ -176,7 +176,7 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 **⚖️ Weapons, economy, unlocks**
 - Evolved Ki Blast −50% damage (`KI_EVO_DMG`). Kamehameha: beam duration 0.95 → 0.64 s over levels 1-5 (it was 0.6 s), evolutions 0.80 → 0.68 s and 0.78 → 0.62 s; width ×1.2 / ×2.6 / ×3.1 (it was ×1 / ×1.8 / ×2.1); the base beam is sky blue with a dense blue glow (`KAME_*`).
 - **Zenny −20% everywhere** (`ZMUL = 0.8`): coins 4-32, bag 20-1040, Elite 20, boss 48, first-clear bonus 160 per stage, Wish 240, Gacha duplicates 64 / 144 / 320 / 640 / 1280, sold trinkets. The Gacha pulls up to **100 at a time** (×1/×10/×100).
-- Shop: **Extra Trinket** (up to 3 trinkets, 3,000 and 9,000 zenny) and **Weapon Blacklist** (up to 10 bans, from 350 zenny ×1.4). Weapons unlock by winning a stage with an owner. Setting **«Refuse lower-rarity trinkets»**.
+- Shop: **Extra Trinket** (up to 3 trinkets, 3,600 and 10,800 zenny) and **Weapon Blacklist** (up to 10 bans, from 420 zenny ×1.4). Weapons unlock by winning a stage with an owner. Setting **«Refuse lower-rarity trinkets»**.
 - Transformations: **Kaioken and Ultra Instinct for Goku only**; the other Saiyans get «Saiyan Fury»; **Vegeta** starts at «Saiyan Pride» and ends with **Ultra Ego**; King Kai uses Gravity x10/x100 and Heavenly Master (`SSJ_FORMS`, lines `vegeta` and `saiyan2` in `data.js`).
 
 **🖥️ Interface**
@@ -397,7 +397,7 @@ New form lines: Chiaotzu, Turles, Demons (Dabura, King Piccolo), Special Force (
 
 **🌐 Hosting.** New guide [`docs/HOSTING.md`](docs/HOSTING.md) (Italian) and a GitHub Actions workflow to publish the game on your own domain on every push.
 
-**☁️ Accounts and cloud saves (optional).** With a free [Supabase](https://supabase.com) project the game offers **log in / sign up** (email + password, optional Google, password reset) and **per-account cloud saves** synced across devices. You can always play **as a guest**; if both the device and the cloud already hold progress at first login, the game asks which one to keep. Full guide (Italian): [`docs/SUPABASE.md`](docs/SUPABASE.md); SQL schema in [`supabase/schema.sql`](supabase/schema.sql).
+**☁️ Accounts and cloud saves (optional).** With a free [Supabase](https://supabase.com) project the game offers **log in / sign up** (email + password, optional Google, password reset) and **per-account cloud saves** synced across devices. You can always play **as a guest**; if both the device and the cloud already hold progress at first login, the game asks which one to keep. Full guide (Italian): [`docs/SUPABASE.md`](docs/SUPABASE.md); SQL schema in [`supabase/schema.sql`](supabase/schema.sql). Security measures and recommended settings (Italian): [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ### 👥 New characters (first wave)
 Sparking! ZERO-style roster additions: **Broly** (all forms), **Zamasu**, **Fused Zamasu**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Android 21**. More **canonical** forms:

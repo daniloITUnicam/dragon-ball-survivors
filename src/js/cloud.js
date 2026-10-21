@@ -3,10 +3,11 @@
    - Auth: GoTrue REST (email/password, optional Google, password reset).
    - Data: one row per user in public.saves (PostgREST), protected by Row Level Security.
    - The local save always works (guest mode); when signed in, every change is uploaded after a short delay. */
-const SESS_KEY='dbs-cloud-session';
+const SESS_KEY='dbs-cloud-session',FAIL_KEY='dbs-auth-fails',OAUTH_KEY='dbs-oauth-wait';
+const LOCK_AFTER=5,LOCK_WINDOW=5*60000,LOCK_FOR=60000;   /* 5 wrong passwords within 5 minutes: sign-in is paused for a minute (the server has its own limits too) */
 class Cloud{
   constructor(sd,notify){
-    this.sd=sd;this.notify=notify||(()=>{});this.cfg=CLOUD;this.enabled=!!CLOUD.on;
+    this.sd=sd;this.notify=notify||(()=>{});this.cfg=CLOUD;this.enabled=!!CLOUD.on&&Cloud.urlOk(CLOUD.url);   /* never send a password or a token over plain http */
     this.sess=this.loadSess();this.status='idle';this.err='';this.dirty=false;this.timer=0;this.busy=false;
     this.lastSync=0;this.pending=null;this.recovery=false;this.ready=false;this.applying=false;
     this.prov=null;this.recoverEmail='';this.recoverAt=0;this.hashCode='';
@@ -21,15 +22,30 @@ class Cloud{
       }
     }
   }
+  /* the project address must be https (plain http only for a server on this computer, for testing) */
+  static urlOk(u){return /^https:\/\/[^\s/]+/i.test(u||'')||/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i.test(u||'');}
+  /* a password that is too easy to guess: under 8 characters, one repeated character, the e-mail address or a very common one */
+  static weakPw(pw,email){
+    pw=String(pw||'');const l=pw.toLowerCase();
+    return pw.length<8||/^(.)\1+$/.test(pw)||(!!email&&(l===String(email).toLowerCase()||l===String(email).split('@')[0].toLowerCase()))||/^(password|passw0rd|12345678|123456789|1234567890|qwertyui|qwerty123|dragonball|dragonballz|gokugoku|iloveyou|11111111|00000000)$/.test(l);
+  }
+  /* wrong-password counter kept in this browser: it survives a page reload */
+  fails(){try{return(safeJSON(localStorage.getItem(FAIL_KEY)||'[]')||[]).filter(t=>typeof t==='number'&&Date.now()-t<LOCK_WINDOW);}catch(e){return[];}}
+  lockLeft(){const f=this.fails();if(f.length<LOCK_AFTER)return 0;const left=f[f.length-1]+LOCK_FOR-Date.now();return left>0?Math.ceil(left/1000):0;}
+  noteFail(){try{const f=this.fails();f.push(Date.now());localStorage.setItem(FAIL_KEY,JSON.stringify(f.slice(-20)));}catch(e){}}
+  clearFails(){try{localStorage.removeItem(FAIL_KEY);}catch(e){}}
   get signedIn(){return !!(this.enabled&&this.sess);}
   /* Google button: shown when the provider is enabled in the Supabase project (read from /auth/v1/settings); SUPABASE_GOOGLE=1 only decides while that is unknown */
+  /* "Forgot password?" by e-mail: only when the project sends e-mails (SMTP + template, docs/SUPABASE.md) and the build says so (SUPABASE_RESET=1) */
+  get resetOn(){return !!this.enabled&&!!this.cfg.reset;}
   get googleOn(){return !!this.enabled&&(this.prov?!!this.prov.google:!!this.cfg.google);}
   async loadSettings(){
     try{const j=await this.req('/auth/v1/settings'),ex=(j&&j.external)||{};this.prov={google:!!ex.google,autoconfirm:!!(j&&j.mailer_autoconfirm),signup:!(j&&j.disable_signup)};this.notify({type:'prov'});}
     catch(e){}
   }
   followTab(raw){
-    let o=null;try{o=raw?JSON.parse(raw):null;}catch(e){}
+    let o=null;try{o=raw?safeJSON(raw):null;}catch(e){}
+    if(o&&(typeof o.access_token!=='string'||typeof o.refresh_token!=='string'))o=null;   /* anything that is not a session is ignored */
     if(!o){if(this.sess){this.sess=null;this.pending=null;this.ready=false;this.dirty=false;this.setStatus('idle');this.notify({type:'auth'});}return;}
     const had=!!this.sess&&this.sess.user&&o.user&&this.sess.user.id===o.user.id;
     this.sess=o;
@@ -39,9 +55,10 @@ class Cloud{
   get uid(){return this.sess&&this.sess.user?this.sess.user.id:'';}
   setStatus(s,err){this.status=s;this.err=err||'';this.notify({type:'status'});}
   /* ---------- session storage ---------- */
-  loadSess(){try{const r=localStorage.getItem(SESS_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+  loadSess(){try{const r=localStorage.getItem(SESS_KEY),o=r?safeJSON(r):null;return o&&typeof o.access_token==='string'&&typeof o.refresh_token==='string'?o:null;}catch(e){return null;}}
   saveSess(){try{if(this.sess)localStorage.setItem(SESS_KEY,JSON.stringify(this.sess));else localStorage.removeItem(SESS_KEY);}catch(e){}}
   setSession(o,user){
+    if(!o||typeof o.access_token!=='string'||typeof o.refresh_token!=='string')throw new Error('invalid session');   /* never store anything that is not a session */
     const exp=o.expires_at?o.expires_at*1000:Date.now()+(o.expires_in||3600)*1000;
     this.sess={access_token:o.access_token,refresh_token:o.refresh_token,expires_at:exp,user:user||o.user||(this.sess&&this.sess.user)||null};
     this.saveSess();
@@ -54,7 +71,7 @@ class Cloud{
     let r;
     try{r=await fetch(this.cfg.url+path,{method:o.method||'GET',headers:h,body:o.body!==undefined?JSON.stringify(o.body):undefined,keepalive:!!o.keepalive});}
     catch(e){const x=new Error('network');x.net=true;throw x;}
-    let j=null;try{const t=await r.text();j=t?JSON.parse(t):null;}catch(e){}
+    let j=null;try{const t=await r.text();j=t?safeJSON(t):null;}catch(e){}
     if(!r.ok){const m=(j&&(j.msg||j.error_description||j.message||j.error))||('HTTP '+r.status);const x=new Error(m);x.status=r.status;x.code=j&&(j.error_code||j.code);throw x;}
     return j;
   }
@@ -68,8 +85,11 @@ class Cloud{
     return{confirm:true};
   }
   async signIn(email,pw){
-    const j=await this.req('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:pw}});
-    this.setSession(j);this.afterAuth();return{session:true};
+    const w=this.lockLeft();if(w>0){const x=new Error('locked');x.locked=true;x.wait=w;throw x;}
+    let j;
+    try{j=await this.req('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:pw}});}
+    catch(e){if(!e.net&&(e.status===400||e.status===401||/invalid/i.test(String(e.code)+e.message)))this.noteFail();throw e;}
+    this.clearFails();this.setSession(j);this.afterAuth();return{session:true};
   }
   /* password reset, step 1: Supabase e-mails a link AND (when the "Reset Password" template contains {{ .Token }}, see docs/SUPABASE.md) a one-time code */
   async recover(email){await this.req('/auth/v1/recover'+this.rq(),{method:'POST',body:{email}});this.recoverEmail=email;this.recoverAt=Date.now();}
@@ -87,8 +107,8 @@ class Cloud{
   google(){
     const u=this.googleUrl();
     let framed=false;try{framed=window.top!==window.self;}catch(e){framed=true;}
+    try{localStorage.setItem(OAUTH_KEY,String(Date.now()));}catch(e){}   /* "this device started a Google sign-in": a session handed over in the address without this is refused (see start) */
     if(framed){
-      try{localStorage.setItem('dbs-oauth-wait',String(Date.now()));}catch(e){}
       let w=null;try{w=window.open(u,'dbs-google','width=520,height=680');}catch(e){}
       if(w)return true;
     }
@@ -122,24 +142,29 @@ class Cloud{
     const hs=typeof location!=='undefined'?location.hash:'';
     if(hs&&hs.length>1){
       const q=new URLSearchParams(hs.slice(1));
-      if(q.get('error_description')||q.get('error')){this.hashErr=(q.get('error_description')||q.get('error')).replace(/\+/g,' ');this.hashCode=q.get('error_code')||q.get('error')||'';this.cleanHash();this.notify({type:'hashError'});}
+      if(q.get('error_description')||q.get('error')){this.hashErr=(q.get('error_description')||q.get('error')).replace(/\+/g,' ').slice(0,200);   /* text from the address bar: shown as plain text, short */
+        this.hashCode=q.get('error_code')||q.get('error')||'';this.cleanHash();this.notify({type:'hashError'});}
       else if(q.get('access_token')){
         const tok=q.get('access_token'),type=q.get('type');
+        /* a Google return carries no "type". Somebody could send you a link holding THEIR session so that your progress ends up in their account: it is only accepted when this device has just started a Google sign-in */
+        if(!type&&!this.oauthWaiting()){this.hashErr='Sign-in not started here';this.hashCode='oauth_state';this.cleanHash();this.notify({type:'hashError'});if(this.sess){this.notify({type:'auth'});await this.sync();}return;}
         try{
           const u=await this.req('/auth/v1/user',{token:tok});
           this.setSession({access_token:tok,refresh_token:q.get('refresh_token'),expires_in:+q.get('expires_in')||3600,expires_at:+q.get('expires_at')||0},u);
           if(type==='recovery'){this.recovery=true;this.notify({type:'recovery'});}
           else if(this.popupHandover())return;   /* this was the Google popup: the page that opened it takes over */
+          if(!type)try{localStorage.removeItem(OAUTH_KEY);}catch(e){}
         }catch(e){this.hashErr=e.message;this.hashCode='';this.notify({type:'hashError'});}
         this.cleanHash();
       }
     }
     if(this.sess){this.notify({type:'auth'});await this.sync();}
   }
+  oauthWaiting(){try{const w=+localStorage.getItem(OAUTH_KEY)||0;return !!w&&Date.now()-w<15*60000;}catch(e){return false;}}
   popupHandover(){
     try{
-      const w=+localStorage.getItem('dbs-oauth-wait')||0;
-      if(window.opener&&w&&Date.now()-w<15*60000){localStorage.removeItem('dbs-oauth-wait');this.cleanHash();window.close();return true;}
+      const w=+localStorage.getItem(OAUTH_KEY)||0;
+      if(window.opener&&w&&Date.now()-w<15*60000){localStorage.removeItem(OAUTH_KEY);this.cleanHash();window.close();return true;}
     }catch(e){}
     return false;
   }
@@ -166,6 +191,7 @@ class Cloud{
   }
   silentWrite(){this.sd.silent=true;try{this.sd.write();}finally{this.sd.silent=false;}}
   apply(rd){
+    if(!rd||typeof rd!=='object'||Array.isArray(rd)||JSON.stringify(rd).length>400000)throw new Error('invalid save');   /* a cloud save must be an object of reasonable size */
     const sd=this.sd,keepSet=sd.d.settings,keepBinds=sd.d.binds;
     const nd=sd.normalize(rd);nd.settings=keepSet;nd.binds=keepBinds;nd.cloud={uid:this.uid};nd.updated=rd.updated||Date.now();
     nd.patchSeen=Cloud.newerPatch(sd.d.patchSeen,nd.patchSeen);   /* the patch notes read on this device stay read after the cloud save is applied */

@@ -3,7 +3,6 @@
    and the ground decor (flat details, in renderer.getDecor). Every painter gets (R,C): R(x,y,w,h,colour) in art units (origin at the bottom centre), C = circle helper.
    Sprites.paint adds the dark outline. Integer coordinates keep the pixels crisp. ====== */
 const MA={};
-const maRows=(R,n,fn)=>{for(let i=0;i<n;i++){const o=fn(i);if(o)R(o[0],o[1],o[2],o[3],o[4]);}};
 /* a leaf / blade from (0,y0) to a tip (tx,ty), thinning out */
 const maBlade=(R,y0,tx,ty,w0,c1,c2,tip)=>{const n=Math.max(Math.abs(tx),Math.abs(ty-y0))|0;for(let i=0;i<=n;i++){const k=i/n,x=Math.round(tx*k),y=Math.round(y0+(ty-y0)*k),w=Math.max(1,Math.round(w0*(1-k)+.6));R(x-(w>>1),y,w,1,i%3===0?c2:c1);}if(tip)R(tx,ty-1,1,1,tip);};
 

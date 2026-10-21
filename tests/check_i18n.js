@@ -11,7 +11,7 @@ for(const f of['ui.js','ui2.js','ui3.js','ui4.js','ui_gacha.js','ui_account.js',
 }
 for(const e of extra)keys.add(e);
 let bad=0;
-for(const k of keys){if(k==='act_'||k==='tab_')continue;for(const l of['it','en','es','fr','de','pt'])if(!S[l][k]){console.log('MISSING',l,k);bad++;}}
+for(const k of keys){if(k.endsWith('_'))continue;   /* prefix of a key built at run time ('act_'+x, 'bagSort_'+id): the real keys are listed above or checked below */for(const l of['it','en','es','fr','de','pt'])if(!S[l][k]){console.log('MISSING',l,k);bad++;}}
 for(const k of Object.keys(S.it))if(!S.en[k]){console.log('EN missing',k);bad++;}
 for(const k of Object.keys(S.en))if(!S.it[k]){console.log('IT missing',k);bad++;}
 console.log(bad?'FAIL '+bad:'i18n OK ('+keys.size+' keys, '+Object.keys(S.it).length+' strings)');

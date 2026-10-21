@@ -5,12 +5,13 @@ Object.assign(UI.prototype,{
   cloudErrText(e){
     const m=String((e&&e.message)||''),code=String((e&&e.code)||'');
     if(e&&e.net)return this.t('clErrNet');
+    if(e&&e.locked)return this.t('clErrLock',{s:e.wait});
     if(/invalid login|invalid_credentials/i.test(m+code))return this.t('clErrCreds');
     if(/not confirmed|email_not_confirmed/i.test(m+code))return this.t('clErrConfirm');
     if(/otp_expired|token has expired|invalid.*token|otp/i.test(m+code))return this.t('clErrCode');
     if(/same_password|different from the old/i.test(m+code))return this.t('clErrSame');
     if(/already|exists/i.test(m+code))return this.t('clErrExists');
-    if(/at least|weak|short|password/i.test(m)&&/6|weak|short|character/i.test(m))return this.t('clErrWeak');
+    if(/at least|weak|short|password/i.test(m)&&/\d|weak|short|character/i.test(m))return this.t('clErrWeak');
     if(/rate|too many|over_.*limit/i.test(m+code)||(e&&e.status===429))return this.t('clErrRate');
     if(/valid email|invalid.*email|email_address/i.test(m+code))return this.t('clErrEmail');
     return this.t('clErrGeneric',{m});
@@ -52,7 +53,7 @@ Object.assign(UI.prototype,{
     if(c.recovery&&c.signedIn){
       go=async()=>{
         if(st.busy)return;
-        if((st.pw||'').length<6)return say('err',this.t('clErrWeak'));
+        if(Cloud.weakPw(st.pw,c.sess&&c.sess.user&&c.sess.user.email))return say('err',this.t('clErrWeak'));
         if(st.pw!==st.pw2)return say('err',this.t('clErrMatch'));
         st.busy=true;this.rebuild(true);
         try{await c.updatePassword(st.pw);c.recovery=false;st.pw=st.pw2='';say('ok',this.t('clOkPass'));}
@@ -81,10 +82,12 @@ Object.assign(UI.prototype,{
     }
     /* ----- signed out ----- */
     const tabBtn=(id,key)=>h('button',{class:'btn small tab'+(st.tab===id?'':' alt'),'data-fid':'atab'+id,onclick:()=>{this.sfx('uiTab');st.tab=id;st.step=1;st.msg=null;st.pw2='';st.code='';this.rebuild(true);}},this.t(key));
-    const googleBlock=c.googleOn?[h('div',{class:'aor'},h('span',null,this.t('clOr'))),
-      h('div',{class:'row'},h('button',{class:'btn gbtn','data-fid':'agoogle',onclick:()=>{this.sfx();c.google();}},h('span',{class:'gmark'},'G'),' '+this.t('clGoogle')))]:[];
+    /* the Google button is always offered; while the provider is not enabled in the Supabase project (known from /auth/v1/settings) it explains that instead of sending the player to an error page */
+    const googleBlock=c.enabled?[h('div',{class:'aor'},h('span',null,this.t('clOr'))),
+      h('div',{class:'row'},h('button',{class:'btn gbtn','data-fid':'agoogle',onclick:()=>{this.sfx();if(c.prov&&!c.prov.google)return say('info',this.t('clGoogleOff'));c.google();}},h('span',{class:'gmark'},'G'),' '+this.t('clGoogle')))]:[];
     const guest=h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'aguest','data-back':true,onclick:()=>{this.sfx('uiBack');this.pop();}},this.t('clGuest')));
     /* ----- password reset: 1) the e-mail address, 2) the code from the e-mail + the new password (opening the link in the e-mail works too) ----- */
+    if(st.tab==='reset'&&!c.resetOn)st.tab='login';   /* e-mail recovery is off unless the build enables it */
     if(st.tab==='reset'){
       const sent=st.step===2;
       const back=()=>{st.tab='login';st.step=1;st.msg=null;st.pw=st.pw2=st.code='';this.rebuild(true);};
@@ -98,7 +101,7 @@ Object.assign(UI.prototype,{
         }
         const code=(st.code||'').replace(/\s+/g,'');
         if(code.length<4)return say('err',this.t('clErrCode'));
-        if((st.pw||'').length<6)return say('err',this.t('clErrWeak'));
+        if(Cloud.weakPw(st.pw,st.email))return say('err',this.t('clErrWeak'));
         if(st.pw!==st.pw2)return say('err',this.t('clErrMatch'));
         st.busy=true;st.msg=null;this.rebuild(true);
         try{await c.resetWithCode(st.email.trim(),code,st.pw);st.pw=st.pw2=st.code='';st.tab='login';st.step=1;say('ok',this.t('clOkReset'));}
@@ -131,7 +134,7 @@ Object.assign(UI.prototype,{
     go=async()=>{
       if(st.busy)return;
       if(!validEmail())return say('err',this.t('clErrEmail'));
-      if(reg){if((st.pw||'').length<6)return say('err',this.t('clErrWeak'));if(st.pw!==st.pw2)return say('err',this.t('clErrMatch'));}
+      if(reg){if(Cloud.weakPw(st.pw,st.email))return say('err',this.t('clErrWeak'));if(st.pw!==st.pw2)return say('err',this.t('clErrMatch'));}
       else if(!st.pw)return say('err',this.t('clErrCreds'));
       st.busy=true;st.msg=null;this.rebuild(true);
       try{
@@ -149,7 +152,11 @@ Object.assign(UI.prototype,{
         reg?field('apw2','password',this.t('clPass2'),'pw2','new-password'):null,
         msg,
         h('div',{class:'row'},h('button',{type:'button',class:'btn primary','data-fid':'asubmit',disabled:st.busy,onclick:()=>{this.sfx();go();}},st.busy?'…':this.t(reg?'clRegister':'clLogin'))),
-        !reg?h('div',{class:'row'},h('button',{type:'button',class:'btn small alt','data-fid':'aforgot',disabled:st.busy,onclick:()=>{this.sfx();st.tab='reset';st.step=1;st.msg=null;st.pw=st.pw2=st.code='';this.rebuild(true);}},this.t('clForgot'))):null),
+        reg?h('p',{class:'sub anorec'},this.t(c.resetOn?'clPassTip':'clNoRecovery')):null,
+        !reg?h('div',{class:'row'},c.resetOn
+          ?h('button',{type:'button',class:'btn small alt','data-fid':'aforgot',disabled:st.busy,onclick:()=>{this.sfx();st.tab='reset';st.step=1;st.msg=null;st.pw=st.pw2=st.code='';this.rebuild(true);}},this.t('clForgot'))
+          /* no e-mail recovery in this build: the button stays, with a tooltip (hover / focus) and, for touch screens, a message when pressed, saying so */
+          :h('button',{type:'button',class:'btn small alt forgotno','data-fid':'aforgot','data-tip':this.t('clForgotTip'),'aria-label':this.t('clForgot')+'. '+this.t('clForgotTip'),onclick:()=>{this.sfx();say('info',this.t('clForgotTip'));}},this.t('clForgot'))):null),
       googleBlock,
       h('div',{class:'row'},this.streamerToggle()),
       guest);

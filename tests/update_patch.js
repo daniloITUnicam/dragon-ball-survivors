@@ -48,7 +48,7 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
   await pg.evaluate(()=>{__app.save.d.settings.lang='en';__app.applySettings();__app.ui.rebuild();});
   await pg.click('.patchbtn');await wait(200);
   const en=await pg.evaluate(()=>({h:[...document.querySelectorAll('.pncard')[0].querySelectorAll('.pnsec h4')].map(x=>x.textContent),d:document.querySelector('.pndate').textContent}));
-  ok(/What's new/.test(en.h[0])&&en.h.some(x=>/Balance/.test(x))&&/October/.test(en.d),'English: '+en.h.join(' | ')+' · '+en.d);
+  ok(/What's new/.test(en.h[0])&&en.h.some(x=>/Balance|Bug fixes/.test(x))&&/October/.test(en.d),'English: '+en.h.join(' | ')+' · '+en.d);
   await pg.evaluate(()=>{__app.ui.pop();__app.save.d.settings.lang='it';__app.applySettings();__app.ui.rebuild();});
 
   /* ---------- the watcher does nothing while the build is current ---------- */

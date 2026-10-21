@@ -85,7 +85,7 @@ class App{
     const ui=this.ui,top=ui&&ui.top&&ui.top.name;
     if(ev.type==='conflict'){if(this.state==='menu'&&top!=='cloudConflict')ui.push('cloudConflict');return;}
     if(ev.type==='recovery'){if(top!=='account')ui.push('account');else ui.rebuild(true);return;}
-    if(ev.type==='hashError'){if(/otp_expired|access_denied/.test(this.cloud.hashCode||'')&&!this.cloud.signedIn){ui.openReset('clErrLink');return;}ui.toast({type:'info',msg:this.cloud.hashErr});return;}
+    if(ev.type==='hashError'){if(this.cloud.resetOn&&/otp_expired|access_denied/.test(this.cloud.hashCode||'')&&!this.cloud.signedIn){ui.openReset('clErrLink');return;}ui.toast({type:'info',msg:this.cloud.hashCode==='oauth_state'?ui.t('clErrState'):this.cloud.hashErr});return;}
     if(ev.type==='prov'){if(top==='main'||top==='account')ui.rebuild(true);return;}
     if(ev.type==='applied')this.applySettings();
     if(top==='main'||top==='account'||(ev.type==='applied'&&this.state==='menu'))ui.rebuild(true);

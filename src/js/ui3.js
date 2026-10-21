@@ -13,7 +13,7 @@ const CHAR_META={
   c16:['and','u7','z'],cooler:['arc','u7','z'],toppo:['ali','u11','s'],hit:['ali','u6','s'],kefla:['fus','u6','s'],beerus:['god','u7','s'],jiren:['ali','u11','s'],whis:['god','u7','s'],
   gogeta:['fus','u7','s'],dyspo:['ali','u11','s'],caulifla:['sai','u6','s'],gero:['and','u7','z'],c21:['and','u7','z'],kale:['sai','u6','s'],zamasu:['god','u10','s'],black:['god','alt','s'],
   fzamasu:['fus','alt','s'],videl:['hum','u7','z'],bulma:['hum','u7','z'],yajirobe:['hum','u7','z'],saiyaman:['half','u7','z'],chaozu:['hum','u7','z'],recoome:['ali','u7','z'],guldo:['ali','u7','z'],
-  turles:['sai','u7','z'],nail:['nam','u7','z'],kingkai:['god','u7','z'],pan:['half','u7','z'],dabura:['dem','u7','z'],popo:['gen','u7','z'],uub:['hum','u7','z'],frost:['arc','u6','s'],kpiccolo:['dem','u7','z']
+  turles:['sai','u7','z'],nail:['nam','u7','z'],kingkai:['god','u7','z'],pan:['half','u7','z'],dabura:['dem','u7','z'],popo:['gen','u7','z'],uub:['hum','u7','z'],frost:['arc','u6','s'],kpiccolo:['dem','u7','z'],zeno:['god','u7','s']
 };
 const chMeta=id=>{const m=CHAR_META[id]||['ali','u7','z'];return{race:CH_RACE[m[0]],raceK:m[0],uni:CH_UNI[m[1]],ser:CH_SER[m[2]]};};
 const CH_SORTS=[['default',T('Predefinito','Default')],['name',T('Nome','Name')],['race',T('Razza','Race')],['universe',T('Universo','Universe')],['series',T('Serie','Series')],

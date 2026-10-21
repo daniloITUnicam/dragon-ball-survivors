@@ -165,16 +165,16 @@ const bu=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={},sl=m
   d.tickets.t1=150;U.rebuild(true);
   q('pullt1x100').click();out.bulk=!!document.querySelector('.gov.bulk');out.reels=document.querySelectorAll('.greel').length;
   document.querySelector('.gskip').click();await sl(900);
-  const tiles=[...document.querySelectorAll('.gtile')];out.tiles=tiles.length;out.cnt=tiles.reduce((s,t)=>s+(+t.querySelector('.gtc').textContent.replace('×','')||0),0);
+  const tiles=[...document.querySelectorAll('.gtile')];out.tiles=tiles.length;out.cnt=tiles.length;
   out.sum=document.querySelector('.gsum').textContent;out.again=(q('again')||{}).textContent;out.left=d.tickets.t1;out.bag=d.bag.length;
   out.order=tiles.map(t=>+/ r(\d)/.exec(t.className)[1]);
   q('again').click();await sl(300);document.querySelector('.gskip')&&document.querySelector('.gskip').click();await sl(900);out.left2=d.tickets.t1;   /* only 50 left: it pulls 50 */
-  out.cnt2=[...document.querySelectorAll('.gtile .gtc')].reduce((s,t)=>s+(+t.textContent.replace('×','')||0),0);
+  out.cnt2=document.querySelectorAll('.gtile').length;
   q('gclose').click();out.closed=!document.querySelector('.gov');return out;});
 ok(bu.t1==='on,on,off,-'&&bu.t10==='on,on,-,-'&&bu.l10==='off,off','ticket cards: x1 / x10 / x100 buttons, no "All" button ('+bu.t1+' | '+bu.t10+' | '+bu.l10+')');
 ok(bu.reels10===10&&!bu.bulk10&&bu.cards10===10,'10 pulls keep the 10-reel summon');
 ok(bu.bulk&&bu.reels===1,'more than 10 pulls use the compact summon (one quick reel)');
-ok(bu.tiles>=1&&bu.tiles<100&&bu.cnt===100&&bu.left===50&&bu.bag>=1,'100 pulls are grouped into tiles with their counts ('+bu.tiles+' tiles, counts add up to '+bu.cnt+')');
+ok(bu.tiles===100&&bu.left===50&&bu.bag>=1,'100 pulls are shown one small tile each ('+bu.tiles+' tiles)');
 ok(bu.order.every((r,i)=>i===0||bu.order[i-1]>=r),'best rarity first');
 ok(/×50/.test(bu.again||'')&&bu.left2===0&&bu.cnt2===50,'"Pull again" repeats the amount, limited by the tickets left ('+bu.again+')');
 ok(bu.closed,'the summary closes');
@@ -190,17 +190,18 @@ ok(my.leg,'a Legendary shows the golden banner');
 ok(my.none,'a Common has no banner');
 /* the bag */
 const bg=await pg.evaluate(async()=>{const A=__app,d=A.save.d,U=A.ui,out={};
-  d.bag=[];const t0=Date.now()-100000;[['scouter',0],['scouter',3],['armor',4],['potara',1],['cape',1],['crystal',2],['dragonheart',3],['senzubag',0]].forEach(([id,r],i)=>d.bag.push({id,r,at:t0+i*1000}));d.equip=null;U.bagF=null;U.bagSel='';
+  d.bag=[];const t0=Date.now()-100000;[['scouter',0],['scouter',3],['armor',4],['potara',1],['cape',1],['crystal',2],['dragonheart',3],['senzubag',0]].forEach(([id,r],i)=>d.bag.push({id,r,at:t0+i*1000}));d.equip=null;d.equips=[null,null,null];U.bagF=null;U.bagSel='';
   U.show('main');U.push('chars');out.slot=!!document.querySelector('.tslot');out.slotEmpty=document.querySelector('.tslot').textContent;
   document.querySelector('.tslot').click();out.screen=U.top.name;out.cards=document.querySelectorAll('.baggrid .tcard').length;
   const search=document.querySelector('.achsearch');search.value='crit';search.dispatchEvent(new Event('input'));out.crit=[...document.querySelectorAll('.baggrid .tcard .cn')].map(x=>x.textContent);
   search.value='';search.dispatchEvent(new Event('input'));
   document.querySelector('[data-fid="rc0"]').click();out.noCommon=document.querySelectorAll('.baggrid .tcard').length;
   document.querySelector('[data-fid="rc0"]').click();out.all=document.querySelectorAll('.baggrid .tcard').length;
-  const sel=()=>document.querySelector('.bagsort');
-  sel().value='rar';sel().dispatchEvent(new Event('change'));out.byRar=document.querySelector('.baggrid .tcard .ctag').textContent;
-  sel().value='old';sel().dispatchEvent(new Event('change'));out.oldest=document.querySelector('.baggrid .tcard .cn').textContent;
-  sel().value='new';sel().dispatchEvent(new Event('change'));out.newest=document.querySelector('.baggrid .tcard .cn').textContent;
+  const srt=k=>document.querySelector('[data-fid="bs_'+k+'"]').click();   /* sorting is a column of icon buttons */
+  srt('rar');out.byRar=document.querySelector('.baggrid .tcard .ctag').textContent;
+  srt('old');out.oldest=document.querySelector('.baggrid .tcard .cn').textContent;
+  srt('new');out.newest=document.querySelector('.baggrid .tcard .cn').textContent;
+  document.querySelector('.baggrid .tcard').click();   /* select the newest one, then equip it */
   document.querySelector('[data-fid="beq"]').click();out.afterEquip=U.top.name;out.eq=d.equip&&d.equip.id+d.equip.r;out.slotFull=document.querySelector('.tslot.on')&&document.querySelector('.tslot .tsn').textContent;
   document.querySelector('[data-fid="tunq"]').click();out.unq=d.equip;
   return out;});

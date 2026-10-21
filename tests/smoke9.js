@@ -10,7 +10,7 @@ await pg.evaluate(()=>{window.__app.ui.push('grimoire');});await wait(400);await
 await pg.evaluate(()=>{window.__app.ui.grimSel='kame';window.__app.ui.rebuild();});await wait(300);await pg.screenshot({path:'/tmp/o/s9_grim_kame.png'});
 // in-game
 await pg.evaluate(()=>{window.__app.ui.show('main');window.__app.startGame({stage:1,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'dende'});});await wait(1500);
-const aud=await pg.evaluate(()=>{const a=window.__app.audio;return{files:Object.keys(a.files||{}),on:Object.entries(a.files||{}).map(([k,f])=>[k,f.on,!f.el.paused,f.el.loop])};});console.log('audio',JSON.stringify(aud));
+const aud=await pg.evaluate(()=>{const a=window.__app.audio;return{files:Object.keys(a.files||{}),on:Object.entries(a.files||{}).map(([k,f])=>[k,f.on,f.el?!f.el.paused:null,f.el?f.el.loop:null])};});console.log('audio',JSON.stringify(aud));
 await pg.evaluate(()=>{const g=window.__app.game;g.addWeapon('kame');const w=g.weapons.get('kame');w.lv=5;g.recalc();});
 await pg.evaluate(()=>{const g=window.__app;g.game.pass.might=0;});
 await pg.evaluate(()=>{const g=window.__app.game;g.modal={type:'level',options:[{type:'p',id:'might',lv:0},{type:'w',id:'kame',lv:5},{type:'h'}]};});await wait(900);await pg.screenshot({path:'/tmp/o/s9_levelup.png'});

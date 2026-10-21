@@ -88,7 +88,6 @@ class Input{
     const pad=this.getPad();this.padPrev=[];
     if(pad)for(let i=0;i<pad.buttons.length;i++)this.padPrev[i]=pad.buttons[i].pressed;
   }
-  cancelRebind(){this.rebind=null;}
   finishRebind(code){
     const r=this.rebind;this.rebind=null;if(!r)return;
     if(code!==null&&code!==undefined){

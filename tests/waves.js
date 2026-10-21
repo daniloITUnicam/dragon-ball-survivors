@@ -50,7 +50,8 @@ const plans=[];for(const [st,df] of [[5,'normal'],[0,'easy'],[10,'hard'],[3,'ext
   plans.push(await pg.evaluate(()=>{const g=G;return{st:g.stage.id,dur:g.dur,el:g.elitePlan.map(e=>Math.round(e.t)),boss:g.bossQ.map(b=>Math.round(b.t)),fin:g.bossQ.filter(b=>b.final).map(b=>Math.round(b.t))[0],ballAt:Math.round(g.ballAt),every:Math.round(g.ballEvery)};}));}
 for(const p of plans){
   const apart=p.el.every(t=>p.boss.every(bt=>Math.abs(bt-t)>=28))&&p.el.every((t,i)=>!i||t-p.el[i-1]>=60)&&(!p.fin||p.el.every(t=>t<=p.fin-32));
-  ok(p.el.length>=1&&apart,'stage '+p.st+' ('+p.dur+' s): elites at '+p.el.join(', ')+' - bosses '+p.boss.join(', '));
+  /* a stage with a boss every ~50 s (Android Ruins on Easy) has no gap that is 28 s from every boss: no elite there is by design */
+  ok((p.el.length>=1||p.boss.length>=5)&&apart,'stage '+p.st+' ('+p.dur+' s): elites at '+p.el.join(', ')+' - bosses '+p.boss.join(', '));
   ok(p.ballAt>=75&&p.ballAt<p.dur*.6&&p.every>=100&&p.every<=270,'  guaranteed ball from '+p.ballAt+' s, then every '+p.every+' s');
 }
 /* ---------- elite fight ---------- */

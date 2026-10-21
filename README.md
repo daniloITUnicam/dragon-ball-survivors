@@ -184,7 +184,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 **⚖️ Armi, economia, sblocchi**
 - Colpo di Ki evoluto −50% di danno (`KI_EVO_DMG`). Kamehameha: durata del raggio 0,95 → 0,64 s sui livelli 1-5 (prima 0,6 s), evoluzioni 0,80 → 0,68 s e 0,78 → 0,62 s; larghezza ×1,2 / ×2,6 / ×3,1 (prima ×1 / ×1,8 / ×2,1); la base è celeste con un denso alone blu (`KAME_*`).
 - **Zenny −20% ovunque** (`ZMUL = 0,8`): monete 4-32, Borsa 20-1040, Élite 20, boss 48, bonus primo completamento 160 per stage, Desiderio 240, doppioni del Gacha 64 / 144 / 320 / 640 / 1280, vendita dei cimeli. Il Gacha estrae fino a **100 alla volta** (×1/×10/×100).
-- Negozio: **Cimelio Extra** (fino a 3 cimeli, 3.000 e 9.000 zenny) e **Lista Nera Armi** (fino a 10 ban, da 350 zenny ×1,4). Armi sbloccate vincendo uno stage con chi le possiede. Impostazione **«Rifiuta cimeli di rarità inferiore»**.
+- Negozio: **Cimelio Extra** (fino a 3 cimeli, 3.600 e 10.800 zenny) e **Lista Nera Armi** (fino a 10 ban, da 420 zenny ×1,4). Armi sbloccate vincendo uno stage con chi le possiede. Impostazione **«Rifiuta cimeli di rarità inferiore»**.
 - Trasformazioni: **Kaioken e Ultra Istinto solo per Goku**; gli altri Saiyan hanno «Furia Saiyan»; **Vegeta** parte da «Orgoglio Saiyan» e finisce con **Ultra Ego**; Re Kaioh usa Gravità x10/x100 e Maestro Celeste (`SSJ_FORMS`, linee `vegeta` e `saiyan2` in `data.js`).
 
 **🖥️ Interfaccia**
@@ -403,7 +403,7 @@ Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Spe
 
 **🌐 Hosting.** Nuova guida [`docs/HOSTING.md`](docs/HOSTING.md) e workflow GitHub Actions per pubblicare il gioco sul proprio dominio a ogni push.
 
-**☁️ Account e salvataggi cloud (opzionale).** Con un progetto [Supabase](https://supabase.com) gratuito il gioco ha **login/registrazione** (email + password, Google opzionale, reset password) e **salva i progressi per account**, sincronizzati su ogni dispositivo. Si può sempre giocare **come ospite**; se al primo accesso esistono progressi sia sul dispositivo sia nel cloud, il gioco chiede quale usare. Guida completa: [`docs/SUPABASE.md`](docs/SUPABASE.md) (schema SQL in [`supabase/schema.sql`](supabase/schema.sql)).
+**☁️ Account e salvataggi cloud (opzionale).** Con un progetto [Supabase](https://supabase.com) gratuito il gioco ha **login/registrazione** (email + password, Google opzionale, reset password) e **salva i progressi per account**, sincronizzati su ogni dispositivo. Si può sempre giocare **come ospite**; se al primo accesso esistono progressi sia sul dispositivo sia nel cloud, il gioco chiede quale usare. Guida completa: [`docs/SUPABASE.md`](docs/SUPABASE.md) (schema SQL in [`supabase/schema.sql`](supabase/schema.sql)). Misure di sicurezza e impostazioni consigliate: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 **🖼️ Sprite dei personaggi in HD + spritesheet personalizzati.** I personaggi giocabili usano ora lo stesso motore HD di nemici e boss (pixel più fini, contorno colorato, luce di bordo e ombra). In più puoi **sostituire la grafica con i tuoi spritesheet PNG** (forma base e trasformazioni, con camminata e attacco): metti i file in `assets/sprites/` e ricompila. Guida e modello vuoto in [`docs/SPRITES.md`](docs/SPRITES.md).
 

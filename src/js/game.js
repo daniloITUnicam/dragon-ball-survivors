@@ -1818,7 +1818,6 @@ class Game{
     if(!d||id==='none'){this.pet=null;return;}
     this.pet={d,x:this.p.x-34,y:this.p.y+4,cd:d.cd*.35,t:0,face:1,fl:0,act:0};
   }
-  petReady(){return !!this.pet&&this.pet.cd<=0;}
   /* the companion goes for XP gems the player cannot reach, carries up to PET_CARRY of them above its head and hands them over (they fly the last bit to you);
      and when five or more enemies close in from three sides it releases a shockwave (every 5 s) */
   petFindGem(q){

@@ -22,14 +22,16 @@ class SaveData{
     };
   }
   load(){
-    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw)return this.normalize(JSON.parse(raw));}catch(e){}
+    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw)return this.normalize(safeJSON(raw));}catch(e){}
     const d=this.defaults();
     if(typeof PATCHES!=='undefined'&&PATCHES.length)d.patchSeen=PATCHES[0].id;   /* a brand-new player has no patch notes to catch up on */
     return d;
   }
   /* merge a stored/cloud object over the defaults and repair old formats */
   normalize(obj){
+    obj=sanitizeData(obj&&typeof obj==='object'&&!Array.isArray(obj)?obj:null);
     const d=deepMerge(this.defaults(),obj);
+    d.zenny=Math.max(0,Math.floor(+d.zenny||0));   /* the balance is never negative or fractional, whatever the file says */
     /* saves from before the universal dash: Shift used to be a second key for the pet, it now belongs to the dash */
     if(!(obj&&obj.binds&&obj.binds.kb&&obj.binds.kb.dash)){d.binds.kb.pet=(d.binds.kb.pet||[]).filter(k=>k!=='ShiftLeft'&&k!=='ShiftRight');if(!d.binds.kb.pet.length)d.binds.kb.pet=['KeyQ'];}
     if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
