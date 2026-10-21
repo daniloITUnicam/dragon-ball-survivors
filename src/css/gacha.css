@@ -125,7 +125,10 @@
 .bagside .bagdet{flex:none;position:static;width:100%;box-sizing:border-box}
 .rarbox{display:flex;flex-direction:column;gap:6px;align-items:flex-end;text-align:right}
 .rarlbl{font:700 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8fa0b8}
-.rarbox .rchips{justify-content:flex-end}
+.rarbox{width:100%;box-sizing:border-box}
+/* the five rarity chips stay on ONE row: no wrapping, a little smaller so that they fit the side column */
+.rarbox .rchips{justify-content:flex-end;flex-wrap:nowrap;gap:4px}
+.rarbox .rchip{flex:0 1 auto;white-space:nowrap;font-size:11px;padding:4px 7px}
 .rchip{font:700 12px var(--body);padding:5px 10px;border-radius:99px;border:2px solid var(--c);background:transparent;color:var(--c);cursor:pointer;opacity:.5}
 .rchip.on{background:color-mix(in srgb,var(--c) 22%,transparent);opacity:1}
 .bagsort{padding:7px 10px;border-radius:9px;border:2px solid rgba(255,255,255,.18);background:rgba(8,14,30,.7);color:#fff;font:600 14px var(--body)}

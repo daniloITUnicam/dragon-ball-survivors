@@ -1,6 +1,6 @@
 'use strict';
 /* ====== XpBar: the experience bar of the HUD, made from the artwork in assets/xpbar.webp (see tools/gen_xpbar.py) ======
-   The atlas holds: the left cap (EXP medallion + the two level plates), the right cap (number panel), the beam (a body that is
+   The atlas holds: the left cap (EXP medallion + the lower level plate), the right cap (number panel), the beam (a body that is
    stretched to the filled length + a head of fixed size) and two rails that run between the caps. The game draws the real values on the
    plates (level, XP / next level, percentage) and the beam grows with the experience. Layout numbers: XPB_META (generated). */
 const XPBAR_URL=('__XPBAR__'?'data:image/webp;base64,__XPBAR__':'');
@@ -64,11 +64,6 @@ const XpBar={
       ctx.strokeText(str,tx0,ty0);ctx.fillStyle=col;ctx.fillText(str,tx0,ty0);return ctx.measureText(str).width;
     };
     const P=(bx,by,bw,bh,ox,oy)=>({x:ox+bx*s,y:oy+by*s,w:bw*s,h:bh*s});
-    {   /* upper-left plate: LV + level */
-      const b=P(212,37,78,31,x,y),cy=b.y+b.h*.52;
-      put('LV',b.h*.62,'#f5c84a',b.x+3*s,cy,'left');
-      put(String(tx.lv),b.h*.9,'#ffffff',b.x+b.w-4*s,cy,'right',b.w-30*s);
-    }
     {   /* lower-left plate */
       const b=P(212,155,96,23,x,y),cy=b.y+b.h*.55;
       put(tx.lvl,b.h*.78,'#f5c84a',b.x+b.w/2,cy,'center',b.w-8*s);

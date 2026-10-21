@@ -16,6 +16,46 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21f',date:'2026-10-21',
+    name:T("Nuova musica per le mappe","New stage music"),
+    sum:T("Sei mappe ricevono il loro brano e Freezer ha il suo tema da boss: ora tutte le mappe hanno la loro musica; i boss, tranne Cell e Freezer, usano ancora quella sintetizzata.","Six stages get their own track and Freezer gets a boss theme: every stage now has its own music; bosses other than Cell and Freezer still use the synthesized music."),
+    new:[
+      {g:T("Musica delle mappe","Stage music"),l:[
+        T("Pianura Saiyan: ora ha un brano suo.","Saiyan Plains: now has a track of its own."),
+        T("Pianeta Vegeta: ora ha un brano suo.","Planet Vegeta: now has a track of its own."),
+        T("Arena dei Cell Game: ora ha un brano suo (durante lo scontro con Cell suona sempre «Perfect Cell's Theme»).","Cell Games Arena: now has a track of its own («Perfect Cell's Theme» still plays during the fight with Cell)."),
+        T("Regno degli Dei: ora ha un brano suo.","Realm of the Gods: now has a track of its own."),
+        T("Via del Serpente: ora ha un brano suo.","Snake Way: now has a track of its own."),
+        T("Inferno: ora ha un brano suo.","Hell: now has a track of its own."),
+      ]},
+      {g:T("Musica dei boss","Boss music"),l:[
+        T("Pianeta Namek: durante lo scontro con Freezer, il boss finale, suona il suo tema (rifacimento in stile arcade). Finito il boss riparte la musica della mappa.","Planet Namek: Freezer, the final boss, has his own theme (an arcade-style remix) while you fight him. When the boss falls the stage music comes back."),
+      ]},
+    ],
+  },
+  {id:'2026-10-21e',date:'2026-10-21',
+    name:T("Dati di gioco e musica di Cell","Game data and Cell's music"),
+    sum:T("Ogni partita può registrare statistiche dettagliate (tempo di uccisione dei boss, livelli, nemici e danni minuto per minuto) da esportare per bilanciare il gioco; il boss finale di Cell ha il suo brano.","Every run can record detailed stats (boss kill times, levels, enemies and damage minute by minute) to export for balancing; Cell's final boss has its own theme."),
+    new:[
+      {g:T("Dati di gioco","Game data"),l:[
+        T("Nuovo: Impostazioni > Partita > «Dati di gioco». Con l'interruttore acceso (di base lo è) ogni partita registra, solo su questo dispositivo e senza inviare nulla: un punto ogni minuto (livello, XP, uccisioni, nemici vivi in media e al massimo, danni inflitti e subiti al secondo, Salute media e minima, cure, monete, gemme, oggetti raccolti, distanza percorsa, armi e potenziamenti con i livelli, tutte le statistiche del personaggio) e uno ogni 10 secondi (nemici, Salute, danni).","New: Settings > Gameplay > «Game data». With the switch on (it is by default) every run records, on this device only and without sending anything: a point every minute (level, XP, kills, enemies alive on average and at the peak, damage dealt and taken per second, average and lowest Health, healing, coins, gems, pick-ups, distance walked, weapons and upgrades with their levels, all the character stats) and one every 10 seconds (enemies, Health, damage)."),
+        T("Per ogni level-up: a che secondo, quanti secondi dal precedente, nemici vivi, Salute, le tre carte offerte, quella scelta (a mano o in automatico), se hai seguito la carta consigliata e quanto hai impiegato a scegliere.","For every level-up: at what second, seconds since the previous one, enemies alive, Health, the three cards offered, the one picked (by hand or automatic), whether you followed the advised card and how long you took to choose."),
+        T("Per ogni boss: quando compare, tempo di uccisione (dalla comparsa e dal primo colpo), i tuoi danni al secondo contro di lui, i danni che subisci nello scontro, il tuo livello e, se perdi, la Salute che gli resta.","For every boss: when it shows up, kill time (from the spawn and from the first hit), your damage per second against it, the damage you take during the fight, your level and, if you lose, the Health it has left."),
+        T("Per tipo di nemico (quanti ne compaiono, quanti ne uccidi, Salute media, vita media, danni che ti fa), per arma (danni, colpi, critici, uccisioni, quando l'hai presa), danni subiti per fonte, causa di morte, oggetti raccolti e usi di abilità, scatto, Senzu, compagno, rilancio, salto e esclusione, forziere, forme, prove e resurrezioni.","Per enemy type (how many appear, how many you kill, average Health, average lifetime, damage they deal to you), per weapon (damage, hits, crits, kills, when you got it), damage taken by source, cause of death, pick-ups and uses of ability, dash, Senzu, companion, reroll, skip and ban, chests, forms, trials and revivals."),
+      ]},
+      {g:T("Esportazione","Export"),l:[
+        T("Esporta da quella schermata: tutto in JSON o a tabelle CSV (partite, minuto per minuto, livelli, boss, armi, nemici), oppure copia il JSON; «Cancella i dati» li elimina (serve premere due volte). Si tengono le ultime 40 partite. Le partite in modalità test non vengono registrate. Per leggere i dati c'è tools/analyze_telemetry.py (tassi di vittoria, ritmo dei livelli, tempi dei boss, cause di morte, armi, carte scelte).","Export from that screen: everything as JSON or as CSV tables (runs, minute by minute, levels, bosses, weapons, enemies), or copy the JSON; «Delete the data» removes it (press twice). The last 40 runs are kept. Test-mode runs are not recorded. tools/analyze_telemetry.py reads the data (win rates, level pacing, boss times, causes of death, weapons, cards picked)."),
+      ]},
+      {g:T("Musica","Music"),l:[
+        T("Arena dei Cell Game: durante lo scontro con Cell, il boss finale, suona «Perfect Cell's Theme». Finito il boss riparte la musica della mappa. Gli altri boss restano con la musica sintetizzata.","Cell Games Arena: «Perfect Cell's Theme» plays during the fight with Cell, the final boss. When the boss falls the stage music comes back. Other bosses keep the synthesized music."),
+      ]},
+    ],
+    fix:[
+      {g:T("Suoni","Sound"),l:[
+        T("Via del Serpente: un brano chiamato «snake way» (o «via del serpente») messo in assets viene ora riconosciuto come musica di quella mappa; prima non veniva abbinato a nessuna.","Snake Way: a track named «snake way» (or «via del serpente») placed in assets is now recognised as that stage's music; before it was matched to no stage."),
+      ]},
+    ],
+  },
   {id:'2026-10-21d',date:'2026-10-21',
     name:T("Level-up automatico in ogni modalità","Auto level-up in every mode"),
     sum:T("Il level-up automatico, prima solo dell'Infinita, funziona in tutte le partite: si accende da Impostazioni > Partita > «Priorità», dove ordini anche quali armi e potenziamenti prendere per primi.","The auto level-up, which used to exist only in Endless, now works in every run: turn it on from Settings > Gameplay > «Priorities», where you also order which weapons and upgrades to take first."),
@@ -27,7 +67,18 @@ const PATCHES=[
         T("Chi aveva acceso la «Selezione automatica» dell'Infinita la ritrova accesa, con le stesse priorità.","If you had turned on Endless «Auto-select», it is still on, with the same priorities."),
       ]},
     ],
+    bal:[
+      {g:T("Economia","Economy"),l:[
+        T("Serie di uccisioni (+50 monete ogni 50 di fila): la barra nascosta ora cala del 3% al secondo, cioè 1,5% ogni 0,5 secondi (prima 2% al secondo, 1% ogni 0,5 secondi). Senza uccisioni la serie finisce dopo circa 33 secondi invece di 50. La serie di 4 secondi dell'Esperienza non cambia.","Kill streak (+50 coins every 50 in a row): the hidden bar now drops 3% per second, that is 1.5% every 0.5 seconds (before: 2% per second, 1% every 0.5 seconds). With no kills the streak ends after about 33 seconds instead of 50. The 4-second XP streak is unchanged."),
+      ]},
+    ],
     fix:[
+      {g:T("Ricompense","Pickups"),l:[
+        T("I potenziamenti a tempo, Fuoco rapido (il fulmine) e Danni +15% (la freccia rossa), vengono attirati verso di te da tutta l'area di raccolta del personaggio, alla stessa velocità delle gemme di Esperienza (prima solo dal 70% dell'area, più piano, e il Fuoco rapido per niente). Il potenziamento Calamita li attira da qualsiasi distanza, come le borse di zenny.","The timed power-ups, Rapid fire (the lightning bolt) and Damage +15% (the red arrow), are pulled toward you from the character's whole pickup range, at the speed of the Experience gems (before: only the inner 70% of the range, slower, and Rapid fire not at all). The Magnet power-up pulls them from any distance, like the zenny bags."),
+      ]},
+      {g:T("Interfaccia","Interface"),l:[
+        T("Barra EXP: tolta la targhetta «LV» in alto a sinistra (il livello è già scritto grande sulla barra) e la scritta «NEXT» in alto a destra.","EXP bar: removed the small «LV» plate at the top left (the level is already written big on the bar) and the «NEXT» label at the top right."),
+      ]},
       {g:T("Suoni","Sounds"),l:[
         T("Nuovo suono per il level-up (assets/level_up_sound.mp3), riprodotto a velocità doppia: dura meno di 1 secondo. Il suono della scelta della carta resta quello di prima.","New level-up sound (assets/level_up_sound.mp3), played at double speed: it lasts under 1 second. The sound of picking a card stays as before."),
       ]},

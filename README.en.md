@@ -121,7 +121,7 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 **💰 Shop and economy** (`data.js` `SHOP`, `game.js`, `gacha.js`)
 - Stronger upgrades and base prices +20%; new **Reroll / Skip / Ban** (up to 5 each) on the level-up window (`Game.rerollLevel/skipLevel/banLevel`, `banRun`). Total Shop cost: **115,166** zenny (before: 73,115).
 - Bosses: 10× ticket at **100%**; Elites: 1× ticket at 100%; **buy tickets** (1× 1,000, 10× 10,000, −20% on Saturday and Sunday; `ticketPrice`, `Progress.buyTicket`); **auto-open** tickets (setting).
-- **Kill streak**: +50 coins every 50 kills in a row, hidden bar −1% every 0.5 s (`CK_*`, `Game.cstk`).
+- **Kill streak**: +50 coins every 50 kills in a row, hidden bar −1.5% every 0.5 s, i.e. −3% per second: the streak ends ~33 s after the last kill (`CK_*`, `Game.cstk`).
 - Zeno-sama: Epic and above −30%, one random free item per visit, music no longer slowed, a bigger bounce.
 - x2 mode no longer gives the final zenny multiplier.
 
@@ -139,6 +139,8 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 - **Every 50 levels** (`checkMilestone`): +100 coins and 4 enemy growth steps at once (Normal/Hard +40% HP, +8% damage; Easy +4%/+4%; Extreme +60%/+20%/+60% armor) with an elegant message. Time no longer strengthens enemies (`escSteps` is frozen). Gentle XP curve (`endlessNeed`: ~12 s per level, +0.1 s per level).
 - **Zeno-sama's shop** (the red button) every 300 s, open for 240 s; trinket quality depends on Luck.
 - **Auto level-up** (every mode, `settings.lvAuto`): `levelUp` → `autoLevel` picks the card with `autoPick` and opens no menu; switch and list in the own menu *Settings > Gameplay > Priorities* (`UI.screen_priority`, switch with a `data-tip` tooltip; the list can only be ordered during a run): `enPrio`, up to 10 entries (5 weapons + 5 upgrades), stored in `settings.lvPrio`, ordered with ▲ ▼ (`UI.prioRows`).
+- **Game data / telemetry** (`src/js/telemetry.js`, setting `tele`, on by default): hooks wrapped around `Game` methods (the game code is untouched) record per run rows per minute (`min`), every 10 s (`s10`), per level-up (`lv`), boss (`boss`), enemy type (`et`), weapon, damage source (`hb`), deaths, pick-ups (`lt`) and uses (`use`); at the end of the run the record goes to `localStorage` (`TELE_KEY`, last 40 runs, device only). Settings > Gameplay > *Game data*: switch, last-run summary, JSON/CSV export, copy, delete. Sandbox runs are not recorded. Analysis: `python3 tools/analyze_telemetry.py dbs-all.json`. Test: `tests/telemetry.js`.
+- **Cell final-boss music**: `assets/perfect cell theme.mp3` → key `boss8` (`BOSS_KEYS` in `build.py`); `app.js` plays it while the final boss is alive (see `docs/MUSIC.md`).
 - **Payout**: after "Continue" only the coins earned after the win are paid (`rewardLines`: `run.coins − min(bank.coins, run.minC)`); what is spent at Zeno's eats the old coins first.
 
 **🎬 Map events** (`src/js/events.js` data + logic, `src/js/events_draw.js` animations)

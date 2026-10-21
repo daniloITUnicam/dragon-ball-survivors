@@ -63,6 +63,7 @@ Object.assign(UI.prototype,{
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
         row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
+        row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')),
         toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
         toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
@@ -124,6 +125,35 @@ Object.assign(UI.prototype,{
       h('div',{class:'srow'},h('div',{class:'sl'},h('b',null,this.t('lvAuto'))),sw),
       h('h3',{class:'h3s'},this.t('endPrio')),
       g?[h('p',{class:'sub'},this.t('endPrioD')),h('div',{class:'prlist'},this.prioRows(g,rb))]:h('p',{class:'sub'},this.t('prioHint'))));
+  },
+  /* ---------- game data (telemetry): switch, summary of the last run, export, delete ---------- */
+  screen_telemetry(){
+    const st=this.save.settings,rb=()=>this.rebuild(true),runs=TeleStore.load(),last=runs[runs.length-1],on=this.t(st.tele!==false?'on':'off');
+    const sw=h('button',{class:'btn small tipabove'+(st.tele!==false?'':' alt'),'data-fid':'telesw','data-tip':this.t('teleSwD'),'aria-label':this.t('teleSw')+': '+on+'. '+this.t('teleSwD'),
+      onclick:()=>{this.sfx();st.tele=st.tele===false;this.app.save.write();rb();}},on);
+    const ex=(key,name,get,mime)=>h('button',{class:'btn small','data-fid':'tx_'+name,onclick:()=>{this.sfx();TeleStore.download('dbs-'+name+(mime==='application/json'?'.json':'.csv'),get(),mime).then(ok=>{if(!ok)this.toast({type:'info',msg:this.t('teleFail')});});}},this.t(key));
+    const csv=k=>()=>TeleStore.csv(k,runs),kb=Math.round(TeleStore.json(runs).length/1024);
+    const sum=[];
+    if(last){
+      const mm=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0'),stg=STAGES.find(x=>x.id===last.stage);
+      sum.push(h('p',{class:'sub'},this.t('teleLastL',{r:this.t('teleRes_'+last.res),st:stg?this.tr(stg.n):last.stage,d:last.diff,t:mm(last.dur),l:last.lvl,k:last.kills})));
+      for(const b of last.boss||[]){const bd=BOSSES[b.id],n=bd?this.tr(bd.n):b.id;
+        sum.push(h('p',{class:'sub'},b.killed?this.t('teleBossL',{b:n,t:b.kt,d:b.taken}):this.t('teleBossN',{b:n,h:Math.round((b.hpLeft||0)*100)})));}
+    }
+    const clr=h('button',{class:'btn small bad','data-fid':'teleclear',onclick:()=>{
+      if(this.teleArm){TeleStore.clear();this.teleArm=false;this.toast({type:'info',msg:this.t('teleCleared')});rb();}
+      else{this.teleArm=true;this.toast({type:'info',msg:this.t('teleClearSure')});setTimeout(()=>{this.teleArm=false;},4000);}
+    }},this.t('teleClear'));
+    const cp=h('button',{class:'btn small alt','data-fid':'tx_copy',onclick:async()=>{this.sfx();try{await navigator.clipboard.writeText(TeleStore.json(runs));this.toast({type:'info',msg:this.t('teleCopied')});}catch(e){this.toast({type:'info',msg:this.t('teleFail')});}}},this.t('teleCopy'));
+    return h('div',null,this.header('teleTitle'),h('div',{class:'settings'},
+      h('div',{class:'srow'},h('div',{class:'sl'},h('b',null,this.t('teleSw'))),sw),
+      h('p',{class:'sub'},this.t('teleRowD')),
+      runs.length?[h('p',{class:'sub'},this.t('teleCount',{n:runs.length,k:kb})),h('h3',{class:'h3s'},this.t('teleLast')),sum,
+        h('h3',{class:'h3s'},this.t('teleExp')),
+        h('div',{class:'row wrap'},ex('teleJson','all',()=>TeleStore.json(runs),'application/json'),ex('teleCsvR','runs',csv('runs'),'text/csv'),ex('teleCsvM','minutes',csv('minutes'),'text/csv'),
+          ex('teleCsvL','levels',csv('levels'),'text/csv'),ex('teleCsvB','bosses',csv('bosses'),'text/csv'),ex('teleCsvW','weapons',csv('weapons'),'text/csv'),ex('teleCsvE','enemies',csv('enemies'),'text/csv'),cp),
+        h('div',{class:'row'},clr)]
+      :h('p',{class:'sub'},this.t('teleNone'))));
   },
   /* ---------- pause ---------- */
   screen_pause(a){

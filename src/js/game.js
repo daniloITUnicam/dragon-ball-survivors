@@ -1,7 +1,7 @@
 /* every ESC_EVERY seconds (600: Normal, Hard and Extreme; Easy keeps ESC_EVERY_EASY = 60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
-const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.02;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1% every 0.5 s (2% per second) */
+const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
 const STREAK_WIN=4,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
@@ -942,7 +942,7 @@ class Game{
       case'coin':this.addZenny(l.v);this.audio.sfx('coin');break;
       case'bag':this.addZenny(l.v);this.audio.sfx('coin');this.audio.sfx('pkxp');this.run.bags=(this.run.bags||0)+1;this.floatText(l.x,l.y-34,'+Z '+l.v,1);this.ring(l.x,l.y-6,60,'#ffd23f',.45);this.shake=Math.max(this.shake,.08);break;
       case'heal':this.heal(p.maxHp*.3);this.audio.sfx('pkheal');this.ring(p.x,p.y,40,'#8be07a',.4);break;
-      case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;for(const q of this.loot)if((q.k==='bag'||q.k==='coin')&&!q.isle)q.att=true;this.audio.sfx('pkmagnet');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
+      case'magnet':for(const g of this.gm)g.att=true;if(this.rg)this.rg.att=true;for(const q of this.loot)if((q.k==='bag'||q.k==='coin'||q.k==='dmg'||q.k==='haste')&&!q.isle)q.att=true;this.audio.sfx('pkmagnet');this.ring(p.x,p.y,200,'#ff5a5a',.5);this.floatText(p.x,p.y-50,this.env.tr(T('Magnete!','Magnet!')),2);break;
       case'dmg':this.buffs.dmg=12;this.recalc();this.audio.sfx('pkdmg');this.floatText(p.x,p.y-50,this.env.tr(T('Danni +15% (12s)','Damage +15% (12s)')),2);break;
       case'haste':this.buffs.haste=10;this.recalc();this.audio.sfx('pkhaste');this.floatText(p.x,p.y-50,this.env.tr(T('Fuoco rapido (10s)','Rapid fire (10s)')),2);break;
       case'xp':this.addXp(l.v*.7);this.audio.sfx('pkxp');break;
@@ -2122,8 +2122,10 @@ class Game{
       l.t+=dt;
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
-      if((l.k==='coin'||l.k==='bag'||l.k==='heal'||l.k==='dmg')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
-      if(l.att&&(l.k==='bag'||l.k==='coin')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags and coins too */
+      if((l.k==='coin'||l.k==='bag'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
+      /* the timed power-ups (Damage +15%, Rapid fire) are drawn in by the whole pick-up range at the speed of the experience gems */
+      if((l.k==='dmg'||l.k==='haste')&&d<S.magnet){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
+      if(l.att&&(l.k==='bag'||l.k==='coin'||l.k==='dmg'||l.k==='haste')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags, coins and the timed power-ups too */
       if(l.ttl&&l.t>l.ttl){l.dead=true;continue;}
       if(l.k==='sball'&&!l.guard&&d<340){   /* the guardian: the Tamagami statue wakes up when you get near (without a statue: a ring of tougher enemies) */
         l.guard=true;

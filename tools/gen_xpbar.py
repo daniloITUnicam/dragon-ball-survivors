@@ -3,7 +3,7 @@
 
 The artwork is one picture on a black background with sample text baked in (LV 1, 12450 / 15000, 85%). The game needs the parts
 separately: the medallion + level plates (left cap), the number panel (right cap), the beam (body + head) that fills the bar, and the
-two rails that run between the caps. This script cuts them out, makes the black background transparent, erases the sample text and the
+two rails that run between the caps. This script cuts them out, makes the black background transparent, erases the sample text, the small LV plate and the "NEXT" label, and the
 beam from the caps (the game draws the real values / the real beam), and writes the atlas + the layout in src/js/xpbar_meta.js
 (the build embeds both). Usage: python3 tools/gen_xpbar.py"""
 import json, pathlib
@@ -85,6 +85,16 @@ def glow_off(img, rect, maxv=150, keep_warm=True):
 # ---- 3. left cap: erase "LV 1" and "LEVEL 1", cut the channel hole ----
 flat_fill(work, (256, 208, 334, 239))     # LV 1 (plate interior)
 flat_fill(work, (256, 326, 352, 349))     # LEVEL 1 (lower plate)
+# the small "LV n" plate above the channel is redundant (the level is written big on the bar): the plate and its silver frame go,
+# the warm (orange / gold) trims beside it stay, with a one pixel dark outline
+def drop_cool(img, rect):
+    x0, y0, x1, y1 = rect
+    sub = img[y0:y1, x0:x1]
+    r, g, b = sub[..., 0].astype(int), sub[..., 1].astype(int), sub[..., 2].astype(int)
+    warm = r > b + 25
+    keep = warm | (ndi.binary_dilation(warm, iterations=1) & (np.maximum(np.maximum(r, g), b) < 90))
+    sub[~keep, 3] = 0
+drop_cool(work, (252, 200, 375, 247))
 glow_off(work, (338, 180, LX1, 244))
 glow_off(work, (338, 326, LX1, 380))
 left = work[Y0:Y1, LX0:LX1].copy()
@@ -108,6 +118,7 @@ left[..., 3] = np.where(left[..., 3] < 70, 0, left[..., 3])
 # ---- 4. right cap: erase the numbers, remove arcs and the beam head, cut the channel hole ----
 flat_fill(work, (716, 212, 922, 246))     # 12450 / 15000
 flat_fill(work, (808, 259, 922, 311))     # 85%
+work[182:202, 867:925, 3] = 0              # the "NEXT" label above the number panel
 glow_off(work, (RX0, 180, 712, 248))
 glow_off(work, (RX0, 328, 830, 400))
 right = work[Y0:Y1, RX0:RX1].copy()

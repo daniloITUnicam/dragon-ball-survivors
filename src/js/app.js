@@ -168,7 +168,7 @@ class App{
         if(I.pressed('debug')&&g.sandbox)this.ui.toggleSandbox(g);
         g.update(dt);
         this.trackT-=dt;
-        if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?'finalboss':['boss','boss2','boss3'][g.stageIdx%3]):'stage'+g.stage.id);}
+        if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?(trackUri('boss'+g.stage.id)?'boss'+g.stage.id:'finalboss'):['boss','boss2','boss3'][g.stageIdx%3]):'stage'+g.stage.id);}
         if(g.dying&&g.modal)g.modal=null;
         if(g.modal&&!this.ui.modalEl&&!g.ended){this.state='modal';this.ui.openModal(g.modal,g);}
       }

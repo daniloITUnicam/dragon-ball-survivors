@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -48,7 +48,11 @@ STAGE_KEYS = {1: ['saiyan plains', 'plains', 'pianura saiyan', 'pianura'], 2: ['
               5: ['tournament of power', 'torneo del potere', 'tournament', 'torneo'],
               6: ['muten island', 'roshi island', 'roshis island', 'isola di muten', 'kame house', 'muten', 'roshi'],
               7: ['planet vegeta', 'pianeta vegeta', 'vegeta'], 8: ['cell games', 'cell game', 'arena dei cell game', 'cell'],
-              9: ['realm of the gods', 'regno degli dei', 'gods', 'dei'], 10: ['hell', 'inferno']}
+              9: ['realm of the gods', 'regno degli dei', 'gods', 'dei'], 10: ['hell', 'inferno'],
+              11: ['snake way', 'via del serpente', 'serpente', 'snake']}
+# Boss themes: the file plays during the FINAL boss of that stage (key 'boss<id>'); without a file the synthesized boss music plays. A name that matches here is never used as the stage music.
+BOSS_KEYS = {2: ['freezer theme', 'frieza theme', 'freezer boss', 'freezer', 'frieza'],
+             8: ['perfect cell theme', 'perfect cells theme', 'perfect cell', 'cell boss', 'cell final boss']}
 def _norm(t):
     t = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()
     return ' '.join(re.sub(r'[^a-z0-9]+', ' ', t).split())
@@ -60,6 +64,8 @@ for f in sorted((ROOT/'assets').glob('*')):
     nm = _norm(f.stem)
     if nm in SFX_FILES: continue          # a sound effect, handled below
     if nm in ('menu', 'main menu', 'menu theme'): key = 'menu'
+    elif any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for ks in BOSS_KEYS.values() for k in ks):
+        key = 'boss%d' % next(sid for sid, ks in BOSS_KEYS.items() if any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for k in ks))
     else:
         best = (0, None)
         for sid, ks in STAGE_KEYS.items():
@@ -81,19 +87,31 @@ if _mode == 'embed' and _budget and _src and sum(f.stat().st_size for f in _src.
             r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', str(f)], capture_output=True, text=True)
             try: return float(r.stdout.strip())
             except ValueError: return 0.0
-        tot = sum(_dur(f) for f in _src.values()) or 1
-        kbps = max(40, min(128, int(_budget * 8192 / tot)))
+        durs = {k: _dur(f) for k, f in _src.items()}
+        # bitrates the MP3 encoder offers: steps of 8 kbps up to 64 (16..32 only exist at 24 kHz or lower, so those tracks are mono), then 16
+        RATES = [16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128]
+        tot = sum(durs.values()) or 1
+        limit = _budget * 1048576                                    # bytes of audio allowed
+        base = max([r for r in RATES if r * 125 * tot <= limit] or [RATES[0]])   # highest rate for ALL tracks that fits the budget...
+        alloc = {k: base for k in durs}
+        left = limit - base * 125 * tot
+        nxt = RATES[RATES.index(base) + 1] if base != RATES[-1] else base
+        for k in sorted(durs, key=lambda k: -durs[k]):               # ...then the leftover promotes tracks (longest first) to the next rate
+            extra = (nxt - base) * 125 * durs[k]
+            if extra <= left: alloc[k] = nxt; left -= extra
+        _low = {k.strip() for k in (os.environ.get('DBS_AUDIO_LOW') or '').split(',') if k.strip()}   # DBS_AUDIO_LOW=stage3,menu: those tracks one step lower (fine tuning under a size limit)
         cache = ROOT/'dist'/'.audio'; cache.mkdir(parents=True, exist_ok=True)
-        _low = {k.strip() for k in (os.environ.get('DBS_AUDIO_LOW') or '').split(',') if k.strip()}   # DBS_AUDIO_LOW=stage3,menu: those tracks 8 kbps lower (the MP3 encoder only has steps of 8 kbps: this trims the page just under a size limit)
         for key, f in _src.items():
-            kb = max(32, kbps - 8) if key in _low else kbps
+            kb = alloc[key]
+            if key in _low and RATES.index(kb) > 0: kb = RATES[RATES.index(kb) - 1]
             h = hashlib.md5(f.read_bytes()).hexdigest()[:10]
             o = cache/('%s_%d_%s.mp3' % (key, kb, h))
             if not o.exists():
-                subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(f), '-vn', '-ac', '2', '-ar', '44100' if kb >= 80 else '32000',
-                                '-c:a', 'libmp3lame', '-b:a', '%dk' % kb, '-joint_stereo', '1', str(o)], check=True)
+                mono = kb < 40
+                subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(f), '-vn', '-ac', '1' if mono else '2', '-ar', '24000' if mono else ('44100' if kb >= 80 else '32000'),
+                                '-c:a', 'libmp3lame', '-b:a', '%dk' % kb] + ([] if mono else ['-joint_stereo', '1']) + [str(o)], check=True)
             _enc[key] = o
-        print('music: re-encoded to %d kbps (budget %.1f MB)' % (kbps, _budget))
+        print('music: re-encoded (budget %.1f MB): %s' % (_budget, ', '.join('%s %dk' % (k, v) for k, v in sorted(alloc.items()))))
 for key, f in _src.items():
     g = _enc.get(key, f)
     if _mode == 'link':

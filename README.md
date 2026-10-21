@@ -129,7 +129,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 **💰 Negozio ed economia** (`data.js` `SHOP`, `game.js`, `gacha.js`)
 - Potenziamenti più forti e prezzi base +20%; nuovi **Reroll / Salta / Ban** (fino a 5 ciascuno) sulla finestra di level-up (`Game.rerollLevel/skipLevel/banLevel`, `banRun`). Costo totale del Negozio: **115.166** zenny (prima 73.115).
 - Boss: ticket 10× al **100%**; Élite: ticket 1× al 100%; **acquisto ticket** (1× 1.000, 10× 10.000, −20% sabato e domenica; `ticketPrice`, `Progress.buyTicket`); **apertura automatica** dei ticket (impostazione).
-- **Serie di uccisioni**: +50 monete ogni 50 uccisioni di fila, barra nascosta −1% ogni 0,5 s (`CK_*`, `Game.cstk`).
+- **Serie di uccisioni**: +50 monete ogni 50 uccisioni di fila, barra nascosta −1,5% ogni 0,5 s, cioè −3% al secondo: la serie finisce ~33 s dopo l'ultima uccisione (`CK_*`, `Game.cstk`).
 - Zeno-sama: Epico e oltre −30%, un oggetto gratis a caso per visita, musica non più rallentata, rimbalzo più marcato.
 - La modalità x2 non dà più il moltiplicatore di zenny finale.
 
@@ -147,6 +147,8 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - **Ogni 50 livelli** (`checkMilestone`): +100 monete e 4 scatti di crescita dei nemici in un colpo (Normale/Difficile +40% Salute, +8% Danni; Facile +4%/+4%; Estrema +60%/+20%/+60% Armatura) con messaggio elegante. Il tempo non rafforza più i nemici (`escSteps` fisso). Curva XP dolce (`endlessNeed`: ~12 s a livello, +0,1 s a livello).
 - **Negozio di Zeno-sama** (il pulsante rosso) ogni 300 s, aperto 240 s; qualità dei cimeli legata alla Fortuna.
 - **Level-up automatico** (ogni modalità, `settings.lvAuto`): `levelUp` → `autoLevel` sceglie la carta con `autoPick` e non apre il menu; interruttore e lista nel menu proprio *Impostazioni > Partita > Priorità* (`UI.screen_priority`, interruttore con tooltip `data-tip`; la lista si ordina solo durante la partita): `enPrio`, fino a 10 voci (5 armi + 5 potenziamenti), salvate in `settings.lvPrio`, ordinate con ▲ ▼ (`UI.prioRows`).
+- **Dati di gioco / telemetria** (`src/js/telemetry.js`, impostazione `tele`, di base accesa): agganci attorno ai metodi di `Game` (nessuna modifica al codice di gioco) registrano per partita righe al minuto (`min`), ogni 10 s (`s10`), per level-up (`lv`), boss (`boss`), tipo di nemico (`et`), arma, fonte di danno (`hb`), morti, oggetti raccolti (`lt`) e usi (`use`); a fine partita il record va in `localStorage` (`TELE_KEY`, ultime 40 partite, solo sul dispositivo). Impostazioni > Partita > *Dati di gioco*: interruttore, ultimo riepilogo, export JSON/CSV, copia, cancella. Le partite sandbox non si registrano. Analisi: `python3 tools/analyze_telemetry.py dbs-all.json`. Test: `tests/telemetry.js`.
+- **Musica del boss finale di Cell**: `assets/perfect cell theme.mp3` → chiave `boss8` (`BOSS_KEYS` in `build.py`); `app.js` la usa quando il boss finale è vivo (vedi `docs/MUSIC.md`).
 - **Pagamento**: dopo «Continua» si pagano solo le monete guadagnate dopo la vittoria (`rewardLines`: `run.coins − min(bank.coins, run.minC)`); quello che si spende da Zeno consuma prima le vecchie.
 
 **🎬 Eventi di mappa** (`src/js/events.js` dati + logica, `src/js/events_draw.js` animazioni)
