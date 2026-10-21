@@ -113,7 +113,7 @@ const ObjLife={
   /* b = the obstacle {x,y,f}, sp = its painted sprite {kind,sc}, A = the Ambient object (for particles) */
   draw(c,b,sp,t,theme,A){
     const kind=sp&&sp.kind;if(!kind)return;
-    const gull=theme==='beach'||theme==='plains'||theme==='arena',U=3.1*(sp.sc||1),f=b.f||1,hb=hash(Math.round(b.x),Math.round(b.y)),ph=hb*40,ox=b.x,oy=b.y+2;
+    const gull=theme==='beach'||theme==='plains'||theme==='arena',U=sp.lu||3.1*(sp.sc||1),f=b.f||1,hb=hash(Math.round(b.x),Math.round(b.y)),ph=hb*40,ox=b.x,oy=b.y+2;
     const P=(ax,ay)=>[ox+f*ax*U,oy+ay*U];
     switch(kind){
       case'barrel':case'crate':case'crate2':{

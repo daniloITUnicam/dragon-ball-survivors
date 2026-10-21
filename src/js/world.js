@@ -18,7 +18,7 @@ const MAP={
 };
 const mhash=(a,b)=>hash(a+MAP.ix,b+MAP.iy);
 const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4;
-const OB_DENS={beach:.24,waste:.2,redrock:.19,plains:.17,arena:.17,hell:.18};   /* share of the 230 px cells that hold a prop (default .15) */
+const OB_DENS={beach:.14,waste:.2,redrock:.19,plains:.17,arena:.17,hell:.18};   /* share of the 230 px cells that hold a prop (default .15) */
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
 const OBS=(w,r,W,H,art,sc)=>({w,r,W,H,art,sc});   /* sc: the sprite is drawn that many times larger than the base 3.1 px per art unit (r is already the scaled collision radius) */
@@ -29,6 +29,10 @@ const OBS=(w,r,W,H,art,sc)=>({w,r,W,H,art,sc});   /* sc: the sprite is drawn tha
 const ROCK_SHEET={namek:'rocks',hell:'lavarocks'};
 const ROCK_S=1.2,ROCK_MAXW=150;
 const rockSheet=theme=>{const id=ROCK_SHEET[theme],S=id&&typeof Sprites!=='undefined'&&Sprites.sheets&&Sprites.sheets[id];return S&&S.rects?S:null;};   /* (the headless simulators have no sprites: no rocks there) */
+/* IM: the obstacle is drawn from a rect of the theme's prop sheet (PROP_SHEET, assets/sprites/props/): im = rect index, ws = world px per sprite px, ww = drawn width (the base must stand on dry land),
+   nf = never mirrored (lettering), lu = world px per art unit for ObjLife's critters (they were placed on the old procedural art). The old procedural art stays as the fallback while the sheet is not decoded. */
+const IM=(d,im,ws,o)=>Object.assign(d,{im,ws},o);
+const PROP_SHEET={beach:'beachprops'};
 const ROCK=(w,kind)=>OB(w,14,26,18,R=>{},kind);   /* a rock obstacle: its art is the sprite, so nothing is painted (and nothing is placed until the sprites are decoded) */
 const tri=(R,cx,base,hgt,hw,c1,c2)=>{for(let i=0;i<hgt;i++){const k=i/hgt,w=hw*(1-k)*2;R(cx-w/2,base-i-1,w,1,i%5<2?c2:c1);}};
 const OBSTACLES={
@@ -66,13 +70,19 @@ const OBSTACLES={
     OB(.5,18,36,26,R=>{R(-14,-8,28,8,'#2a3a6a');R(-11,-12,22,5,'#3a4a8a');R(-8,-17,16,5,'#4a5a9a');R(-3,-17,6,1,'#ff6aa0');}),
     OBS(2,16.2,24,24,MA.crystalV,1.8)
   ],
-  beach:[
-    OB(5,6,30,42,(R,C)=>{R(-1.5,-24,3,24,'#8a6a3a');R(0,-30,2.5,8,'#8a6a3a');for(const [a,b] of [[-10,-30],[-6,-34],[6,-34],[10,-30],[0,-36]])C(R,a,b,4,'#2f9a4a');C(R,0,-31,3,'#5ac05a');}),
-    OB(3,10,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');}),
-    OB(.3,26,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),
-    OB(2,9,20,16,(R,C)=>{C(R,-4,-6,6,'#d8a8d8');C(R,3,-5,6,'#e8c0e8');R(-2,-3,4,3,'#8a6a3a');}),
-    OB(.5,14,26,18,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),
-    OBS(2.2,20.7,16,14,MA.crate,2.3),OBS(.9,18.9,16,24,MA.crate2,2.1),OBS(2,16.1,14,19,MA.barrel,2.3),OBS(1.2,16.0,16,20,MA.tomb,2.0),OBS(.7,16.0,16,20,MA.tomb2,2.0),OBS(2.2,8.4,26,16,MA.agave,1.2),OBS(.8,18.0,18,18,MA.rockpile,2.0)
+  beach:[   /* the weight (first number) is the chance of each prop relative to the others: the palm is the commonest, the Kame House the rarest */
+    IM(OB(6,6,30,42,(R,C)=>{R(-1.5,-24,3,24,'#8a6a3a');R(0,-30,2.5,8,'#8a6a3a');for(const [a,b] of [[-10,-30],[-6,-34],[6,-34],[10,-30],[0,-36]])C(R,a,b,4,'#2f9a4a');C(R,0,-31,3,'#5ac05a');}),0,.42,{ww:89}),
+    IM(OB(1.2,11,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');}),1,.42,{ww:67}),
+    IM(OB(.25,28,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),2,.42,{ww:142,nf:1}),
+    IM(OB(3,9,20,16,(R,C)=>{C(R,-4,-6,6,'#d8a8d8');C(R,3,-5,6,'#e8c0e8');R(-2,-3,4,3,'#8a6a3a');}),3,.42,{ww:66}),
+    IM(OB(.8,17,26,18,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),4,.42,{ww:85}),
+    IM(OBS(1.5,21,16,14,MA.crate,2.3),5,.42,{ww:97,lu:7.8}),
+    IM(OBS(.8,20,16,24,MA.crate2,2.1),6,.42,{ww:114,lu:5.5}),
+    IM(OBS(1.5,18,14,19,MA.barrel,2.3),7,.42,{ww:114,lu:7.15}),
+    IM(OBS(.7,17,16,20,MA.tomb,2.0),8,.42,{ww:104,lu:5.65}),
+    IM(OBS(.3,17,16,20,MA.tomb2,2.0),9,.42,{ww:114,lu:5.65,nf:1}),
+    IM(OBS(3,9,26,16,MA.agave,1.2),10,.42,{ww:85,lu:4.2}),
+    IM(OBS(1.5,18,18,18,MA.rockpile,2.0),11,.42,{ww:126})
   ],
   redrock:[
     OB(4,14,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');}),
@@ -163,8 +173,9 @@ const World={
       if(x*x+y*y>260*260&&!(Sea.wet(theme,x,y)>-.05)){   /* never in the water or on the wet shore */
         let tot=0;for(const d of defs)tot+=d.w;let q=mhash(cx+31,cy+9)*tot,ti=0;
         for(;ti<defs.length-1;ti++){q-=defs[ti].w;if(q<=0)break;}
-        c={x,y,t:ti,r:defs[ti].r*1.5,f:mhash(cx+2,cy+8)<.5?-1:1};
-        const rk=defs[ti].rk;
+        c={x,y,t:ti,r:defs[ti].r*1.5,f:defs[ti].nf?1:mhash(cx+2,cy+8)<.5?-1:1};
+        const ww=defs[ti].ww;if(ww)for(const k of[-.4,.4])if(Sea.wet(theme,x+k*ww,y)>-.05){c=null;break;}   /* a wide prop never stands half in the water */
+        const rk=c&&defs[ti].rk;
         if(rk){
           const S=rockSheet(theme),kind=S&&S.kinds&&S.kinds[rk];
           if(!kind||!kind.length)c=null;   /* a rock whose sprites are not there (yet) is not placed */

@@ -16,6 +16,45 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21h',date:'2026-10-21',
+    name:T("Ostacoli nuovi all'Isola di Muten","New props on Roshi's Island"),
+    sum:T("Gli ostacoli dell'Isola di Muten hanno la grafica rifatta e sono meno fitti; ognuno ha la sua probabilità di comparire.","Roshi's Island props have redrawn art and are less crowded; each one has its own chance to appear."),
+    new:[
+      {g:T("Mappe","Maps"),l:[
+        T("Isola di Muten: nuova grafica per tutti i 12 ostacoli (palma, panchina, Kame House, cespuglio fiorito, scalinata, cassa, due casse impilate, barile, due lapidi, agave, mucchio di rocce). La palma continua a ondeggiare col vento; ragni, corvi, granchi e candele restano sugli oggetti.","Roshi's Island: new art for all 12 props (palm, bench, Kame House, flowering bush, stairs, crate, stacked crates, barrel, two gravestones, agave, rock pile). The palm still sways in the wind; spiders, crows, crabs and candles are still on the props."),
+        T("Ostacoli meno fitti sull'Isola di Muten: occupano il 14% delle zone (prima 24%).","Fewer props on Roshi's Island: they fill 14% of the map cells (it was 24%)."),
+        T("Probabilità di comparsa (su 100 ostacoli): palma 29, agave 15, cespuglio 15, cassa 7, barile 7, mucchio di rocce 7, panchina 6, scalinata 4, cassa doppia 4, lapide con croce 3, lapide «EROSO» 1,5, Kame House 1.","Chance of appearing (out of 100 props): palm 29, agave 15, bush 15, crate 7, barrel 7, rock pile 7, bench 6, stairs 4, stacked crates 4, cross gravestone 3, «EROSO» gravestone 1.5, Kame House 1."),
+        T("La scritta della Kame House e della lapide «EROSO» non viene più specchiata.","The lettering on the Kame House and the «EROSO» gravestone is no longer mirrored."),
+      ]},
+    ],
+  },
+  {id:'2026-10-21g',date:'2026-10-21',
+    name:T("Morte dei nemici, cimeli e musica dei boss","Enemy deaths, trinkets and boss music"),
+    sum:T("I nemici uccisi si dissolvono e i boss lasciano un'onda d'urto; i cimeli che porti fino alla fine finiscono nella Borsa (e la perfezione al 100% è più rara); i power-up a terra vengono attirati dal raggio di raccolta; i boss non finali hanno la loro musica.","Killed enemies dissolve and bosses leave a shock wave; the trinkets you carry to the end go into the Bag (and a perfect 100% is rarer); ground power-ups are pulled in by your pick-up range; non-final bosses have their own music."),
+    new:[
+      {g:T("Combattimento","Combat"),l:[
+        T("Ogni nemico ucciso si dissolve: lampo bianco, poi i pixel svaniscono con il bordo che brucia di bianco e il corpo che sale e si allontana dal colpo, con scintille del suo colore. Non c'è con «Riduci effetti» attivo.","Every killed enemy dissolves: a white flash, then its pixels vanish with a white-hot edge while the body drifts up and away from the blow, with sparks of its colour. Not shown with «Reduce effects» on."),
+        T("Quando un boss muore parte un'onda d'urto (tre anelli di luce, lampo bianco, scossa forte); il boss finale mantiene la sua sequenza di vittoria e aggiunge gli anelli.","When a boss dies a shock wave goes off (three rings of light, a white flash, a strong shake); the final boss keeps its victory sequence and adds the rings."),
+      ]},
+      {g:T("Cimeli","Trinkets"),l:[
+        T("I cimeli trovati in partita e portati fino alla fine non vengono più venduti: entrano nella Borsa come ricompensa (e compaiono nella schermata finale). Quelli equipaggiati dalla Borsa non si duplicano. Se la Borsa ha già lo stesso cimelio con la stessa rarità, il nuovo viene venduto come prima, oppure ne migliora la perfezione se è più alta.","Trinkets found during the run and still carried at the end are no longer sold: they go into the Bag as a reward (and show on the end screen). The ones equipped from the Bag are not duplicated. If the Bag already holds the same trinket at the same rarity, the new one is sold as before, or it improves that copy's perfection when higher."),
+        T("Perfezione dei cimeli più rara: la perfezione al 100% esce 1 volta su 1000 (prima circa 1 su 330); 90% o più circa 1 su 600, 80% o più circa 1 su 330, 50% o più circa 1 su 30; il valore tipico è intorno al 25%. La Fortuna alza la curva.","Rarer trinket perfection: a perfect 100% now comes up 1 time in 1000 (it was about 1 in 330); 90% or more about 1 in 600, 80% or more about 1 in 330, 50% or more about 1 in 30; the typical value is around 25%. Luck lifts the curve."),
+      ]},
+      {g:T("Musica dei boss","Boss music"),l:[
+        T("Tutti i boss che non sono il boss finale della mappa (per esempio Mercenario Tao) ora hanno una musica da boss battle generica.","Every boss that is not the stage's final boss (for example Mercenary Tao) now has a generic boss-battle track."),
+      ]},
+    ],
+    fix:[
+      {g:T("Raccolta","Pick-up"),l:[
+        T("Tutti gli oggetti a terra (zenny, cuori, Fortuna, Calamita, capsule, power-up a tempo) vengono attirati dal raggio di raccolta, come l'esperienza. Le Sfere del Drago restano da raccogliere a piedi.","All pick-ups on the ground (zenny, hearts, Fortune, Magnet, capsules, timed power-ups) are pulled in by your pick-up range, like experience. Dragon Balls still have to be picked up on foot."),
+        T("Niente più oggetti, power-up o Sfere del Drago generati sull'acqua.","Nothing — items, power-ups or Dragon Balls — is generated on water any more."),
+      ]},
+      {g:T("Interfaccia","Interface"),l:[
+        T("Finestra del forziere: lo Spazio preme «Raccogli».","Chest window: Space presses «Collect»."),
+        T("Sostituzione dei cimeli: il bottone della carta centrale è allineato in fondo alla carta come gli altri.","Trinket swap: the middle card's button sits at the bottom of the card like the others."),
+      ]},
+    ],
+  },
   {id:'2026-10-21f',date:'2026-10-21',
     name:T("Nuova musica per le mappe","New stage music"),
     sum:T("Sei mappe ricevono il loro brano e Freezer ha il suo tema da boss: ora tutte le mappe hanno la loro musica; i boss, tranne Cell e Freezer, usano ancora quella sintetizzata.","Six stages get their own track and Freezer gets a boss theme: every stage now has its own music; bosses other than Cell and Freezer still use the synthesized music."),
@@ -30,6 +69,11 @@ const PATCHES=[
       ]},
       {g:T("Musica dei boss","Boss music"),l:[
         T("Pianeta Namek: durante lo scontro con Freezer, il boss finale, suona il suo tema (rifacimento in stile arcade). Finito il boss riparte la musica della mappa.","Planet Namek: Freezer, the final boss, has his own theme (an arcade-style remix) while you fight him. When the boss falls the stage music comes back."),
+      ]},
+    ],
+    fix:[
+      {g:T("Interfaccia","Interface"),l:[
+        T("Barra EXP: tolta anche la targhetta «LIVELLO n» sotto la medaglia (il livello è già scritto grande sulla barra) e le parti grafiche rimaste vuote: i profili dorati sopra e sotto la barra e la base della targhetta.","EXP bar: the «LEVEL n» plate under the medallion is gone too (the level is already written big on the bar), along with the graphics it left empty: the gold trims above and below the bar and the base of the plate."),
       ]},
     ],
   },

@@ -631,8 +631,13 @@ const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza',
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
 const PF_SPREAD=[.88,1.12],PF_NOM=50;
 const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
-const PF_PERFECT=.003;   /* chance of a perfect 100: 0.3% (it was about 4%), up to about 0.7% with the maximum Luck */
-function rollPf(luck){const L=luck>0?luck:0;let q=Math.random();if(L>0)q=Math.pow(q,1/(1+L*1.2));if(Math.random()<PF_PERFECT*(1+L*1.5))return 100;return Math.min(99,Math.floor(q*100));}   /* 0-99 as usual, 100 only on the rare perfect roll */
+/* Perfection roll (0-100). PF_CURVE = [perfection X, chance of rolling X or more]: the typical roll is about 25, 50 or more is 1 in 30, 80 or more 1 in 330, 90 or more 1 in 600
+   and a perfect 100 is 1 in 1000. Between two points the chance falls in a straight line on a log scale. Luck multiplies the roll by 1 + 0.25 Luck (at the maximum Luck a perfect 100 is about 1 in 340). */
+const PF_CURVE=[[0,1],[10,.85],[25,.5],[35,.2],[42,.1],[50,1/30],[65,.008],[80,1/330],[90,1/600],[99.5,.001]];
+function rollPf(luck){
+  const L=luck>0?luck:0,u=Math.max(1e-9,1-Math.random()),C=PF_CURVE;let x=C[C.length-1][0];
+  for(let i=1;i<C.length;i++)if(u>=C[i][1]){const a=C[i-1],b=C[i],f=(Math.log(a[1])-Math.log(u))/(Math.log(a[1])-Math.log(b[1]));x=a[0]+(b[0]-a[0])*f;break;}
+  return Math.max(0,Math.min(100,Math.round(x*(1+L*.25))));}
 const hasPf=t=>!!(t&&t.m);
 const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
 /* Quantità (key proj): +1 projectile for every weapon. Only Legendary and Mythic trinkets carry it: Legendary 2 (3 with a perfect 100 roll), Mythic 3 (4 from a 50 roll, 5 with a perfect 100 roll) */

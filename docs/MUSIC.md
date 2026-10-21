@@ -18,6 +18,7 @@ Metti i brani in `assets/` (`.mp3`, `.ogg`, `.m4a`, `.wav`): il nome del file de
 | `snake way`, `via del serpente`, `snake` | Via del Serpente |
 | `freezer theme`, `freezer` | boss finale di Pianeta Namek (Freezer) |
 | `perfect cell theme`, `perfect cell` | boss finale dell'Arena dei Cell Game (Cell) |
+| `generic boss battle`, `generic boss` | tutti gli altri boss (quelli che non sono il boss finale del livello), chiave `bossgen` |
 
 Si usa il nome più lungo contenuto nel nome del file (anche in italiano: `isola di muten.mp3`, `pianeta namek.mp3`…). Gli alias sono in `STAGE_KEYS` in `build.py`. I file che non corrispondono a nulla vengono segnalati e ignorati. I boss usano la musica sintetizzata, tranne il boss finale della mappa che ha un brano suo (tabella `BOSS_KEYS` in `build.py`: per ora Freezer e Cell); finito il boss, il brano della mappa riparte da dove era.
 

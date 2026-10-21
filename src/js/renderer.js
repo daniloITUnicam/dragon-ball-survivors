@@ -170,9 +170,18 @@ this.W=1;this.H=1;this.Z=1;
   }
   getObst(theme){
     this.obst=this.obst||{};
-    if(this.obst[theme])return this.obst[theme];
-    const C=Sprites.circ,out=(OBSTACLES[theme]||[]).map(d=>{const sp=Sprites.paint(d.W,d.H,d.W/2,d.H-1,R=>d.art(R,C));sp.sc=d.sc||1;sp.kind=d.art&&d.art.kind;return sp;});
-    this.obst[theme]=out;return out;
+    const id=PROP_SHEET[theme],BP=id&&Sprites.sheets[id],rdy=!!(BP&&BP.anch&&BP.rects),have=this.obst[theme];
+    if(have&&have.rdy===rdy)return have;   /* rebuilt once the prop sheet has been decoded */
+    const C=Sprites.circ,out=(OBSTACLES[theme]||[]).map(d=>{
+      const kind=d.art&&d.art.kind;
+      if(rdy&&d.im!==undefined&&BP.rects[d.im]){   /* sheet art: a crop of the atlas, foot at the anchor, drawn smoothed at d.ws world px per sprite px */
+        const r=BP.rects[d.im],a=BP.anch[d.im],c=document.createElement('canvas');c.width=r[2];c.height=r[3];
+        c.getContext('2d').drawImage(BP.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
+        return{c,ox:a[0],oy:a[1],sc:d.ws/(3.1/Sprites.S),kind,lu:d.lu,sm:1};
+      }
+      const sp=Sprites.paint(d.W,d.H,d.W/2,d.H-1,R=>d.art(R,C));sp.sc=d.sc||1;sp.kind=kind;return sp;
+    });
+    out.rdy=rdy;this.obst[theme]=out;return out;
   }
   terrain(cx,cy,vw,vh,t,theme){
     if(theme==='snake'){this.snakeTerrain(cx,cy,vw,vh,t);return;}
@@ -271,12 +280,15 @@ this.W=1;this.H=1;this.Z=1;
     if(!g.trial){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))list.push({ob:b,y:b.y,spr:os[b.t]});}
     if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
     if(g.pet)list.push({pet:g.pet,y:g.pet.y});
+    if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
+    this._snapN=0;
     list.sort((a,b)=>a.y-b.y);
     for(const e of list){
+      if(e.co){this.drawCorpse(e.co,t);continue;}
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,t,g);continue;}
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
-      if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1);ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
+      if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1);ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,t);
     }
@@ -1258,7 +1270,7 @@ this.W=1;this.H=1;this.Z=1;
     /* xp bar */
     const xr=clamp(g.xp/g.need,0,1),xl=XpBar.layout(U,W);
     if(xl){   /* the artwork: medallion + level plates, a beam that fills up, XP / next and the percentage */
-      XpBar.draw(ctx,2*U,2*U,xl,xr,{lv:g.lvl,lvl:tt('xpLevel')+' '+g.lvl,cur:String(Math.floor(g.xp)),need:String(Math.round(g.need)),pct:Math.floor(xr*100)+'%'},g.rt);
+      XpBar.draw(ctx,2*U,2*U,xl,xr,{lv:g.lvl,cur:String(Math.floor(g.xp)),need:String(Math.round(g.need)),pct:Math.floor(xr*100)+'%'},g.rt);
     }else{    /* narrow screens: the thin bar */
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,W,11*U);ctx.fillStyle='#4ac8ff';ctx.fillRect(0,0,W*xr,11*U);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(0,0,W*xr,3*U);
       txt(tt('lv')+' '+g.lvl+'  ·  '+Math.floor(g.xp)+' / '+Math.round(g.need),m,30*U,'#fff','left',F(16));

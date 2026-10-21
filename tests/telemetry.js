@@ -75,14 +75,16 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   ok(await ev(()=>TeleStore.count())===0&&await ev(()=>document.body.textContent.includes(__app.ui.t('teleNone'))),'second press deletes the data');
 
   /* 7. music: Perfect Cell's theme for the final boss of the Cell Games; other stages keep the synthesized final-boss music */
-  ok(await ev(()=>!!trackUri('boss8')&&/perfect/i.test(decodeURIComponent(trackUri('boss8')))&&/cell games/i.test(decodeURIComponent(trackUri('stage8')))),'build maps "perfect cell theme" to the Cell final boss and "cell games" to the stage');
+  ok(await ev(()=>!!trackUri('fboss8')&&/perfect/i.test(decodeURIComponent(trackUri('fboss8')))&&/cell games/i.test(decodeURIComponent(trackUri('stage8')))),'build maps "perfect cell theme" to the Cell final boss and "cell games" to the stage');
   await start(7);
   await ev(()=>{const g=G;g.sb.nospawn=true;g.en.length=0;window.__pl=null;__app.audio.play=n=>{window.__pl=n;};g.spawnBoss('cell',true);});for(let i=0;i<30&&!await ev(()=>window.__pl);i++)await wait(200);
-  ok(await ev(()=>window.__pl)==='boss8','Cell Games: the final boss plays boss8 ('+await ev(()=>window.__pl)+')');
-  ok(await ev(()=>['stage1','stage7','stage8','stage9','stage10','stage11','boss2'].every(k=>!!trackUri(k))&&/freezer/i.test(decodeURIComponent(trackUri('boss2')))),'music files: Saiyan Plains, Vegeta, Cell Games, Realm of the Gods, Hell, Snake Way + Freezer boss theme');
+  ok(await ev(()=>window.__pl)==='fboss8','Cell Games: the final boss plays fboss8 ('+await ev(()=>window.__pl)+')');
+  ok(await ev(()=>['stage1','stage7','stage8','stage9','stage10','stage11','fboss2'].every(k=>!!trackUri(k))&&/freezer/i.test(decodeURIComponent(trackUri('fboss2')))),'music files: Saiyan Plains, Vegeta, Cell Games, Realm of the Gods, Hell, Snake Way + Freezer boss theme');
   await start(1);
   await ev(()=>{const g=G;g.sb.nospawn=true;g.en.length=0;window.__pl=null;__app.audio.play=n=>{window.__pl=n;};g.spawnBoss('freezer',true);});for(let i=0;i<30&&!await ev(()=>window.__pl);i++)await wait(200);
-  ok(await ev(()=>window.__pl)==='boss2','Namek: the final boss (Freezer) plays boss2 ('+await ev(()=>window.__pl)+')');
+  ok(await ev(()=>window.__pl)==='fboss2','Namek: the final boss (Freezer) plays fboss2 ('+await ev(()=>window.__pl)+')');
+  await ev(()=>{const g=G;g.en.length=0;window.__pl=null;g.spawnBoss('ginew',false);});for(let i=0;i<30&&!await ev(()=>window.__pl);i++)await wait(200);
+  ok(await ev(()=>window.__pl)==='bossgen'&&await ev(()=>/generic/i.test(decodeURIComponent(trackUri('bossgen')))),'a boss that is not the stage final (Ginew on Namek) plays the generic boss battle, not the Freezer theme ('+await ev(()=>window.__pl)+')');
   await start(0);
   await ev(()=>{const g=G;g.sb.nospawn=true;g.en.length=0;window.__pl=null;__app.audio.play=n=>{window.__pl=n;};g.spawnBoss('tao',true);});for(let i=0;i<30&&!await ev(()=>window.__pl);i++)await wait(200);
   ok(await ev(()=>window.__pl)==='finalboss','another stage: the final boss keeps the old music');

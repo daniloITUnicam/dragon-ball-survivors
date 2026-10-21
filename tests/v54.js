@@ -14,13 +14,13 @@ let r=await ev(()=>{const out={nom:true,disjoint:true,eff:[],bad:[]};
     for(let rr=0;rr<5;rr++){const a=trinMods(t,rr),b=trinMods(t,rr,50);for(const k in a)if(Math.abs(a[k]-b[k])>1e-9)out.nom=false;}
     for(let rr=0;rr<4;rr++){const hi=trinMods(t,rr,100),lo=trinMods(t,rr+1,0);for(const k in hi)if(k!=='proj'&&!(hi[k]<lo[k]-1e-9))out.bad.push(t.id+' '+k+' r'+rr+'->'+(rr+1)+' '+hi[k]+'>='+lo[k]);}
   }
-  let n100=0,min=999,max=-1;for(let i=0;i<20000;i++){const q=rollPf(0);if(q===100)n100++;if(q<min)min=q;if(q>max)max=q;}
+  let n100=0,min=999,max=-1;for(let i=0;i<200000;i++){const q=rollPf(0);if(q===100)n100++;if(q<min)min=q;if(q>max)max=q;}
   let hiLuck=0;for(let i=0;i<20000;i++)hiLuck+=rollPf(.6);let loLuck=0;for(let i=0;i<20000;i++)loLuck+=rollPf(0);
   const sc=TRINKETS.find(t=>t.id==='potara');out.pot=[trinMods(sc,1,0),trinMods(sc,1,50),trinMods(sc,1,100)].map(m=>m.might+'/'+m.hpPct).join('  ');
   return Object.assign(out,{n100,min,max,hiLuck:hiLuck/20000,loLuck:loLuck/20000});});
 ok(r.nom,'perfection 50% = the nominal stats of every trinket (nothing changes for what you already had)');
 ok(r.bad.length===0,'the stat ranges of neighbouring rarities never overlap: best Common < worst Rare ... best Legendary < worst Mythic '+(r.bad[0]||''));
-ok(r.min===0&&r.max===100&&r.n100>25&&r.n100<110,'perfection rolls span 0-100, a perfect 100 is very rare: about 0.3% ('+r.n100+'/20000); Luck raises the average ('+r.loLuck.toFixed(1)+' -> '+r.hiLuck.toFixed(1)+')');
+ok(r.min===0&&r.max===100&&r.n100>120&&r.n100<300,'perfection rolls span 0-100, a perfect 100 is 1 in 1000 ('+r.n100+'/200000); Luck raises the average ('+r.loLuck.toFixed(1)+' -> '+r.hiLuck.toFixed(1)+')');
 ok(r.eff.every(x=>/false$/.test(x)),'effect-only trinkets have no perfection ('+r.eff.join(' ')+')');
 console.log('   Potara (might/HP) at 0 / 50 / 100%: '+r.pot);
 /* ---------- chest: 4 trinkets, luck does not add more ---------- */

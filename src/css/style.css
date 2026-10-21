@@ -441,7 +441,8 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .tsarrow{align-self:center;font-size:30px;opacity:.8}
 .tswarn{color:#ffb86a;font-weight:700;margin:6px 0 10px}
 .tswap.multi{gap:10px}.tswap.multi .tscol{min-width:190px;max-width:250px;flex:1 1 190px;padding:10px 12px}
-.tsbtn{margin-top:10px;justify-content:center}.tsbtn .btn{width:100%}
+.tscol{display:flex;flex-direction:column}.tsextra{flex:1;display:flex;flex-direction:column}   /* the Replace button always sits at the bottom of its card */
+.tsbtn{margin-top:auto;padding-top:10px;justify-content:center}.tsbtn .btn{width:100%}
 .trrow{margin-top:8px}.trtog.on{background:#2e8b57;border-color:#7cffb0;color:#fff}
 .bangrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:8px 0}
 .bancard{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:10px;background:rgba(10,8,24,.8);border:2px solid color-mix(in srgb,var(--c,#fff) 45%,transparent);color:#fff;cursor:pointer;font:inherit;position:relative}

@@ -133,6 +133,14 @@ class Progress{
     ];
   }
   /* opts.keep: the run was ended by the game itself (a new release is being installed) - no 25% penalty for not winning */
+  /* a trinket carried to the end of the run joins the bag (one entry per trinket + rarity). Returns null when it cannot (Test mode, or the bag already has it: then the caller sells it) */
+  keepTrinket(g,id,r,p){
+    if(this.blocked(g))return null;
+    const d=this.d,t=TRINKETS.find(x=>x.id===id);if(!t||!(r>=0&&r<=4))return null;
+    const pf=hasPf(t)?Math.max(0,Math.min(100,Math.round(+p)||0)):PF_NOM,ob=d.bag.find(b=>b.id===id&&b.r===r);
+    if(ob){const old=ob.p!=null?ob.p:PF_NOM;if(hasPf(t)&&pf>old){ob.p=pf;return{up:1,from:old};}return null;}
+    d.bag.push({id,r,at:Date.now(),p:pf});return{up:0};
+  }
   finishRun(g,win,opts){
     if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins,ws:this.weaponLevels(g)};
     const d=this.d,st=d.stats,idx=g.stageIdx,stg=STAGES[idx],b=g.bank;
@@ -169,7 +177,7 @@ class Progress{
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,xc:!!d.xc[idx],ws:this.weaponLevels(g)};
+    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,kept:(g.run.tkept||[]).slice(),xc:!!d.xc[idx],ws:this.weaponLevels(g)};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);

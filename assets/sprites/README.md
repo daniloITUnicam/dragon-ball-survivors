@@ -7,8 +7,9 @@ Gli sprite del gioco, divisi per uso. Guida completa: [`docs/SPRITES.md`](../../
 | `boss/` | Tamagami `tama1-3`, forma Furia `tama1f-3f`, statue `tamas1-3` | sì | sì |
 | `effetti/` | `fxkame.png` (raggio del Kamehameha) | sì | sì |
 | `rocce/` | `rocks.png` (Namek), `lavarocks.png` (Inferno, con animazioni) | sì | sì |
+| `props/` | `beachprops.png` (i 12 ostacoli dell'Isola di Muten: rects e ancore in `sprites.json`) | sì | sì |
 | `sprites.json` | metadati di tutti i fogli sopra (frame, ancoraggi, rects, animazioni) | sì | sì |
-| `_sorgenti/` | arte di partenza dei generatori: `barre/` (barre EXP e Salute), `mirini/` (pannelli del TAB), `boss/` (fogli dei Tamagami), `rocce/` (fogli delle rocce) | no | sì |
+| `_sorgenti/` | arte di partenza dei generatori: `barre/` (barre EXP e Salute), `mirini/` (pannelli del TAB), `boss/` (fogli dei Tamagami), `rocce/` (fogli delle rocce), `props/` (immagine di partenza degli ostacoli dell'Isola di Muten) | no | sì |
 | `_inutilizzati/` | sprite che il gioco non usa: `personaggi/` (fogli di Goku e degli altri, con il loro `sprites.json`), `boss/` (riferimento Furia), `rocce-vecchie/` (i 20 pezzi del vecchio atlas) | no | sì (archivio) |
 
 - `build.py` incorpora i `.png` di queste cartelle e delle altre sottocartelle con nome minuscolo; salta quelle che iniziano con `_` e quelle con maiuscole o spazi. Il nome del file è l'id del foglio, unico in tutta la cartella.

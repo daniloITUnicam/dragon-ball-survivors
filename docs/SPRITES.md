@@ -10,6 +10,7 @@ sprites.json      metadati dei fogli in uso (frame, ancoraggi, rects delle rocce
 boss/             fogli usati dal gioco: Tamagami (tama1-3, tama1f-3f) e statue (tamas1-3)
 effetti/          fxkame.png (raggio del Kamehameha)
 rocce/            rocks.png (Namek), lavarocks.png (Inferno)
+props/            beachprops.png (ostacoli dell'Isola di Muten)
 _sorgenti/        arte di partenza dei generatori (non nel gioco, versionata): barre/ mirini/ boss/ rocce/
 _inutilizzati/    sprite che il gioco non usa (personaggi, vecchie rocce...): archivio versionato, non incorporato
 ```
@@ -108,6 +109,8 @@ Per Goku le 9 forme arrivano da fogli a griglia (una immagine per forma + una co
 - carica e scatto sono animati: dopo le 10 colonne standard il foglio ha colonne extra e `sprites.json` contiene `pw` (frame della carica) e `dh` (frame dello scatto); il gioco li scorre con `Sprites.poseFrame` (carica = avanzamento della trasformazione, scatto = durata dello scatto);
 - le emote diventano il foglio `emo<id>[_<forma>].png` (4 ritratti affiancati) mostrato nella scelta personaggio (`Sprites.emoSheet`), che cicla le emote della forma mostrata;
 - `grid_use: ["power","dash"]` con `keep_sheet` aggiunge solo carica/scatto a un foglio già costruito (usato per Kaioken); `fx_keep` riusa la scia del foglio esistente.
+
+**Ostacoli da foglio (Isola di Muten).** `assets/sprites/props/beachprops.png` è un atlas con i 12 ostacoli, uno per rettangolo; `sprites.json` (`beachprops`) ha `rects` ([x,y,w,h]), `anch` (il punto d'appoggio [x,y] di ogni sprite, dentro il suo rettangolo) e `names`. L'ordine è quello di `OBSTACLES.beach` (`world.js`): palma, panchina, Kame House, cespuglio, scalinata, cassa, cassa doppia, barile, lapide con croce, lapide «EROSO», agave, mucchio di rocce. Ogni definizione è avvolta da `IM(def, indice, scala, {ww, lu, nf})`: `scala` = px di mondo per px di sprite (0.42), `ww` = larghezza disegnata (la base non deve toccare l'acqua), `lu` = px di mondo per unità d'arte di `ObjLife` (ragni, uccelli e candele sono rimasti dove stavano sull'arte vecchia), `nf` = mai specchiato (scritte). `PROP_SHEET` (`world.js`) dice quale foglio usa quale mappa; `Renderer.getObst` ritaglia gli sprite dall'atlas (li disegna lisciati, a differenza delle rocce) e li rifà quando il foglio viene decodificato; finché non c'è, vale l'arte procedurale. Il **peso** di comparsa è il primo numero di `OB`/`OBS`, la **densità** della mappa `OB_DENS`. L'immagine di partenza è in `assets/sprites/_sorgenti/props/beach_ostacoli.jpg`. Test: `tests/beachprops.js [prefisso-screenshot]`.
 
 Stato attuale (21/10/2026): il gioco incorpora solo i fogli in `assets/sprites/boss/` (Tamagami e statue), `effetti/` (`fxkame.png`) e `rocce/` (`rocks.png` Namek, `lavarocks.png` Inferno), descritti da `assets/sprites/sprites.json`. I fogli dei personaggi (Goku compreso, `goku*.png`, `emogoku*.png`...) e le vecchie rocce sono in `assets/sprites/_inutilizzati/` (ignorata dalla build). Per riattivare un personaggio: copia i suoi `.png` in una cartella di `assets/sprites/` con nome minuscolo (es. `personaggi/`), le sue voci di `_inutilizzati/personaggi/sprites.json` in `sprites.json` e la riga di `tools/sprite_map_archivio.json` in `tools/sprite_map.json`.
 

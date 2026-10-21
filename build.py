@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -50,7 +50,9 @@ STAGE_KEYS = {1: ['saiyan plains', 'plains', 'pianura saiyan', 'pianura'], 2: ['
               7: ['planet vegeta', 'pianeta vegeta', 'vegeta'], 8: ['cell games', 'cell game', 'arena dei cell game', 'cell'],
               9: ['realm of the gods', 'regno degli dei', 'gods', 'dei'], 10: ['hell', 'inferno'],
               11: ['snake way', 'via del serpente', 'serpente', 'snake']}
-# Boss themes: the file plays during the FINAL boss of that stage (key 'boss<id>'); without a file the synthesized boss music plays. A name that matches here is never used as the stage music.
+# Boss themes: the file plays during the FINAL boss of that stage (key 'fboss<id>'); without a file the synthesized boss music plays. A name that matches here is never used as the stage music.
+# GENERIC_BOSS: the file plays during every other boss (not a stage's final boss), key 'bossgen'.
+GENERIC_BOSS = ['generic boss battle', 'generic boss', 'boss battle']
 BOSS_KEYS = {2: ['freezer theme', 'frieza theme', 'freezer boss', 'freezer', 'frieza'],
              8: ['perfect cell theme', 'perfect cells theme', 'perfect cell', 'cell boss', 'cell final boss']}
 def _norm(t):
@@ -64,8 +66,9 @@ for f in sorted((ROOT/'assets').glob('*')):
     nm = _norm(f.stem)
     if nm in SFX_FILES: continue          # a sound effect, handled below
     if nm in ('menu', 'main menu', 'menu theme'): key = 'menu'
+    elif nm in GENERIC_BOSS: key = 'bossgen'
     elif any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for ks in BOSS_KEYS.values() for k in ks):
-        key = 'boss%d' % next(sid for sid, ks in BOSS_KEYS.items() if any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for k in ks))
+        key = 'fboss%d' % next(sid for sid, ks in BOSS_KEYS.items() if any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for k in ks))
     else:
         best = (0, None)
         for sid, ks in STAGE_KEYS.items():

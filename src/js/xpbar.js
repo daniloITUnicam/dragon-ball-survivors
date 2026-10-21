@@ -1,6 +1,6 @@
 'use strict';
 /* ====== XpBar: the experience bar of the HUD, made from the artwork in assets/xpbar.webp (see tools/gen_xpbar.py) ======
-   The atlas holds: the left cap (EXP medallion + the lower level plate), the right cap (number panel), the beam (a body that is
+   The atlas holds: the left cap (EXP medallion; the level is written big on the bar, there are no level plates), the right cap (number panel), the beam (a body that is
    stretched to the filled length + a head of fixed size) and two rails that run between the caps. The game draws the real values on the
    plates (level, XP / next level, percentage) and the beam grows with the experience. Layout numbers: XPB_META (generated). */
 const XPBAR_URL=('__XPBAR__'?'data:image/webp;base64,__XPBAR__':'');
@@ -18,7 +18,7 @@ const XpBar={
     if(!this.ok||w<Lw+Rw+40*U)return null;
     return{s,w,h,Lw,Rw};
   },
-  /* x,y: top-left of the whole bar; f: filled fraction 0..1; tx: {lv, lvl, cur, need, pct}; t: seconds (animation) */
+  /* x,y: top-left of the whole bar; f: filled fraction 0..1; tx: {lv, cur, need, pct}; t: seconds (animation) */
   draw(ctx,x,y,L,f,tx,t){
     const M=XPB_META,I=this.img,s=L.s,ch=M.ch,mid=L.w-L.Lw-L.Rw;
     const cx0=x+ch.x0*s,cx1=x+L.Lw+mid+ch.rx*s,cy0=y+ch.y0*s,chH=(ch.y1-ch.y0)*s;
@@ -64,10 +64,6 @@ const XpBar={
       ctx.strokeText(str,tx0,ty0);ctx.fillStyle=col;ctx.fillText(str,tx0,ty0);return ctx.measureText(str).width;
     };
     const P=(bx,by,bw,bh,ox,oy)=>({x:ox+bx*s,y:oy+by*s,w:bw*s,h:bh*s});
-    {   /* lower-left plate */
-      const b=P(212,155,96,23,x,y),cy=b.y+b.h*.55;
-      put(tx.lvl,b.h*.78,'#f5c84a',b.x+b.w/2,cy,'center',b.w-8*s);
-    }
     const rx0=x+L.Lw+mid;
     {   /* upper-right plate: XP / next */
       const b=P(61,41,206,34,rx0,y),cy=b.y+b.h*.52,full=tx.cur+' / '+tx.need;

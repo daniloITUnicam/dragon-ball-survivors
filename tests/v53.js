@@ -103,7 +103,7 @@ await go();
 r=await ev(()=>{const g=G;g.t=800;g.lootCd={};let cap=0;for(let i=0;i<300;i++){const w=g.lootWeights();if(w.capsule)cap++;}return cap;});
 ok(r===0,'no more Hoi-Poi capsules on the ground');
 r=await ev(()=>{const g=G;g.p.x=0;g.p.y=0;g.p.hp=g.p.maxHp;g.S.magnet=400;g.loot=[{k:'dmg',x:150,y:0,v:0,t:1,star:0},{k:'haste',x:150,y:30,v:0,t:1,star:0}];g.updatePickups(.2);return{dmg:g.loot.find(l=>l.k==='dmg')?150-g.loot.find(l=>l.k==='dmg').x:-1,haste:150-g.loot.find(l=>l.k==='haste').x};});
-ok(r.dmg>0&&r.haste===0,'the red +15% damage arrow is attracted like coins and hearts');
+ok(r.dmg>0&&r.haste>0,'the timed power-ups (damage arrow, rapid fire) are drawn in by the pick-up range');
 /* ---------- Super Dragon Balls / Tamagami ---------- */
 await go({stage:4});
 r=await ev(()=>{const g=G;g.save.sball=[];g.boss0=g.bossAlive;g.spawnLoot('sball',900,900);const l=g.loot[g.loot.length-1];return{star:l.star,tama:l.tama,okStar:l.star>=1&&l.star<=3};});

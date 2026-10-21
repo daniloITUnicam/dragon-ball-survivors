@@ -292,10 +292,10 @@ Object.assign(UI.prototype,{
           this.perfBar(pf),h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null,extra||null);};
       const rep=(i,lbl)=>h('button',{class:'btn'+(i===weak?' primary':' alt'),'data-focus':i===weak?true:null,onclick:()=>{this.sfx('chest');this.app.resolveModal(i);}},(multi?(i+1)+' · ':'')+lbl);
       const curCols=curs.map((c,i)=>{const ct=TRINKETS.find(x=>x.id===c.id),cp=hasPf(ct)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf);
-        return col(ct,c.rar,cp,st,sn,this.t(c.src==='bag'?'swapCurBag':'swapCur'),h('div',null,dl(cp,np),c.src==='bag'?null:sell(this.t('swapSellOld'),c.rar),multi?h('div',{class:'row tsbtn'},rep(i,this.t('swapReplace'))):null));});
+        return col(ct,c.rar,cp,st,sn,this.t(c.src==='bag'?'swapCurBag':'swapCur'),h('div',{class:'tsextra'},dl(cp,np),c.src==='bag'?null:sell(this.t('swapSellOld'),c.rar),multi?h('div',{class:'row tsbtn'},rep(i,this.t('swapReplace'))):null));});
       const c0=curs[0],cmp=sc(m.nw.id,m.nw.rar,m.nw.pf)-Math.max(...curs.map(c=>sc(c.id,c.rar,c.pf))),vd=cmp>0?'up':cmp<0?'down':'eq';
       const verdict=h('div',{class:'tsverdict '+vd},this.t(cmp>0?'swapBetter':cmp<0?'swapWorse':'swapSame'));
-      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(TRINKETS.find(x=>x.id===c0.id),c0.rar,c0.pf),this.t('swapNew'),h('div',null,multi?null:dl(hasPf(TRINKETS.find(x=>x.id===c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
+      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(TRINKETS.find(x=>x.id===c0.id),c0.rar,c0.pf),this.t('swapNew'),h('div',{class:'tsextra'},multi?null:dl(hasPf(TRINKETS.find(x=>x.id===c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
       el=h('div',{class:'screen modal'},h('h2',null,this.t(multi?'swapTitleN':'swapTitle1')),
         h('p',{class:'sub'},this.t(multi?'swapSubN':'swapSub1',{n:curs.length})),
         h('div',{class:'tswap'+(multi?' multi':'')},multi?[newCol,h('div',{class:'tsarrow'},'→'),...curCols]:[curCols[0],h('div',{class:'tsarrow'},'→'),newCol]),
@@ -400,6 +400,7 @@ Object.assign(UI.prototype,{
             res.lines.filter(l=>l.v>0||l.k==='coins').map(l=>h('div',{class:'rline'},h('span',null,this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
             h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))),
             h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
+          !res.sandbox&&res.kept&&res.kept.length?h('div',{class:'echips kept'},res.kept.map(k=>{const i=this.tinfo(k.id,k.r,k.p);return h('span',{class:'tchip tkept',style:'--c:'+i.c,title:this.t(k.up?'trinketsUp':'trinketsKept')+'\n'+i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')},glyph(i.t.k,i.c),i.name+(k.up?' ↑':''));})):null,
           tk.length||(!res.sandbox&&res.sold)?h('div',{class:'echips'},
             tk.map(k=>h('span',{class:'tchip',title:this.t('ticketsFound')},h('i',{class:'tk'}),res.tickets[k]+'× '+this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10'))),
             !res.sandbox&&res.sold?h('span',{class:'tchip',title:this.t('trinketsSold')},'💰 '+res.sold):null):null),

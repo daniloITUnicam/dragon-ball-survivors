@@ -3,7 +3,7 @@
 
 The artwork is one picture on a black background with sample text baked in (LV 1, 12450 / 15000, 85%). The game needs the parts
 separately: the medallion + level plates (left cap), the number panel (right cap), the beam (body + head) that fills the bar, and the
-two rails that run between the caps. This script cuts them out, makes the black background transparent, erases the sample text, the small LV plate and the "NEXT" label, and the
+two rails that run between the caps. This script cuts them out, makes the black background transparent, erases the sample text, the two level plates (small upper one and the lower "LEVEL" one, with their trims) and the "NEXT" label, and the
 beam from the caps (the game draws the real values / the real beam), and writes the atlas + the layout in src/js/xpbar_meta.js
 (the build embeds both). Usage: python3 tools/gen_xpbar.py"""
 import json, pathlib
@@ -114,6 +114,10 @@ for (ya, yb) in ((190, 243), (330, 380)):
 left[(350 - Y0):, 330 - LX0:, 3] = 0
 left[:(200 - Y0), 340 - LX0:, 3] = 0
 left[..., 3] = np.where(left[..., 3] < 70, 0, left[..., 3])
+# the two level plates are gone (the level is written big on the bar): their gold slashes above and below the channel, the lower navy plate and its orange underline go too
+# (atlas coordinates of the left cap; the dragon balls and their flames stay)
+left[28:77, 290:, 3] = 0          # slashes of the upper plate
+left[153:187, 211:, 3] = 0        # lower plate + underline + slashes
 
 # ---- 4. right cap: erase the numbers, remove arcs and the beam head, cut the channel hole ----
 flat_fill(work, (716, 212, 922, 246))     # 12450 / 15000

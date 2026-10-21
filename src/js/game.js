@@ -38,7 +38,7 @@ class Game{
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
-    this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];
+    this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
@@ -233,6 +233,17 @@ class Game{
   sellHeld(){
     let v=0;
     for(const id of this.trinkets)if(this.tSrc[id]==='run'){this.tSrc[id]='sold';v+=this.sellTrinket(id,this.trR(id),'end');}
+    return v;
+  }
+  /* end of the run: the trinkets still carried (found ones, not the ones equipped from the bag, which are already there) go into the bag as a reward;
+     one the bag already holds (same trinket + rarity) is sold as before, and it upgrades the owned copy when its perfection is higher */
+  keepHeld(){
+    let v=0;const kept=this.run.tkept||(this.run.tkept=[]);
+    for(const id of this.trinkets)if(this.tSrc[id]==='run'){
+      const r=this.trR(id),p=this.trP(id),k=this.progress&&this.progress.keepTrinket?this.progress.keepTrinket(this,id,r,p):null;
+      this.tSrc[id]=k?'kept':'sold';
+      if(k)kept.push({id,r,p,up:!!k.up,from:k.from||0});else v+=this.sellTrinket(id,r,'end');
+    }
     return v;
   }
   /* takes a trinket out of its slot (a found one is sold; the one from the bag just goes back to the bag) */
@@ -452,7 +463,7 @@ class Game{
         if(f2){this.eb=[];for(const e of this.en){if(e.dead)continue;if(Math.hypot(e.x-p.x,e.y-p.y)<this.viewR)e.stun=Math.max(e.stun,e.boss?.6:1.5);}this.ring(p.x,p.y,this.viewR,c,.8);}   /* final form: wipes enemy bullets and stuns */
         this.audio.sfx('abTime');break;}
       case'jackpot':
-        for(let i=0,n=Math.round(12*(+v||1)*(f2?3:1));i<n;i++)this.loot.push({k:'coin',x:p.x+rnd(-60,60),y:p.y+rnd(-40,40),v:Math.round(4*(1+this.t/500)),t:0});
+        for(let i=0,n=Math.round(12*(+v||1)*(f2?3:1));i<n;i++){const[cx,cy]=this.dryPos(p.x+rnd(-60,60),p.y+rnd(-40,40));this.loot.push({k:'coin',x:cx,y:cy,v:Math.round(4*(1+this.t/500)),t:0});}
         this.heal(p.maxHp*(f2?.15:.06));this.luckT=Math.max(this.luckT,f2?60:30);this.recalc();this.pillar(p.x,p.y,c,.8);this.burst(p.x,p.y-12,24,c);this.audio.sfx('coin');break;
       case'buff':{
         const vv=f2?{m:(v.m||0)*1.4,s:(v.s||0)*1.4}:v;   /* final form: stronger and without the drawback */
@@ -832,7 +843,7 @@ class Game{
   }
   killEnemy(e){
     if(e.sparring){e.dead=true;this.burst(e.x,e.y-8,30,'#aab4ff');this.audio.sfx('boom');if(this.trial)this.trial.killed=true;return;}
-    e.dead=true;this.kills++;this.bumpStreak();
+    e.dead=true;this.kills++;this.bumpStreak();this.addCorpse(e);   /* it stays and dissolves (corpse.js) */
     if(e.bd&&e.bd.sig==='rain')this.rain=[];
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
     if(e.boss){
@@ -841,9 +852,10 @@ class Game{
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
-      this.chests.push({x:e.x,y:e.y,final:e.final,t:0,boss:true});
+      {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true});}
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
       this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
+      this.bossShock(e);   /* shock wave (corpse.js) */
       if(e.final){this.startVictory(e);}
       return;
     }
@@ -865,13 +877,13 @@ class Game{
     this.ring(p.x,p.y,70+Math.min(110,t*14),col,.5);this.burst(p.x,p.y-16,10+t*3,col);
     if(t>=3){this.flash=Math.max(this.flash||0,.14);this.flashC=col;}
   }
-  dropGem(x,y,v){if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
+  dropGem(x,y,v){[x,y]=this.dryPos(x,y);if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
   /* distance from the player to the screen edge along an angle (just off screen = this + a small margin) */
   edgeDist(a){const hw=this.vw/2+30,hh=this.vh/2+30,c=Math.abs(Math.cos(a))||1e-6,s=Math.abs(Math.sin(a))||1e-6;return Math.min(hw/c,hh/s);}
   /* accumulate XP into the red gem (created just outside the screen, towards where the gems were) */
   rgAdd(v,x,y){
     const p=this.p;
-    if(!this.rg){const a=Math.atan2(y-p.y,x-p.x),d=this.edgeDist(a);this.rg={x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,v:0,att:false,t:0,n:0};}
+    if(!this.rg){const a=Math.atan2(y-p.y,x-p.x),d=this.edgeDist(a);{const[rx,ry]=this.dryPos(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d);this.rg={x:rx,y:ry,v:0,att:false,t:0,n:0};}}
     this.rg.v+=v;this.rg.n++;
   }
   mergeGems(){
@@ -915,6 +927,7 @@ class Game{
   coinValue(t){return clamp(Math.round(ZMUL*(5+35*(t===undefined?this.t:t)/1800)),4,32);}   /* a loose coin: 4 zenny at the start, 32 at minute 30 and never more (it was 5 -> 40, then -20% on every zenny) */
   bagValue(t){return clamp(Math.round(ZMUL*1000*(t===undefined?this.t:t)/1800/5)*5,20,1040);}
   spawnLoot(k,x,y){
+    [x,y]=this.dryPos(x,y);
     const v=k==='coin'?this.coinValue():k==='bag'?this.bagValue():k==='xp'?Math.round(this.need*.3):0;
     this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0,tama:k==='sball'?1:0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
   }
@@ -966,6 +979,15 @@ class Game{
   }
   /* ---- water and lava (Sea): lakes and the sea are not walkable (you slide along the shore); lava can be crossed but burns 10% of the maximum HP per second ---- */
   waterAt(x,y){const th=this.stage.theme;return Sea.has(th)&&Sea.wet(th,x,y)>.012;}
+  /* nothing may lie on the water (the hero cannot walk there): the nearest dry spot around (x,y), looking outwards in rings and keeping a little margin from the shore.
+     Stages without sea, lava stages and trials return the point unchanged; with no dry spot within 720 px (open sea) the object is put next to the hero */
+  dryPos(x,y){
+    if(this.trial||!Sea.has(this.stage.theme)||this.lavaMap())return[x,y];
+    const ok=(a,b)=>!this.waterAt(a,b)&&!this.waterAt(a+16,b)&&!this.waterAt(a-16,b)&&!this.waterAt(a,b+12)&&!this.waterAt(a,b-12);
+    if(ok(x,y))return[x,y];
+    for(let r=24;r<=720;r+=24){const n=Math.max(8,Math.round(r/14)),a0=Math.random()*TAU;for(let i=0;i<n;i++){const a=a0+i/n*TAU,xx=x+Math.cos(a)*r,yy=y+Math.sin(a)*r;if(ok(xx,yy))return[xx,yy];}}
+    return[this.p.x,this.p.y];
+  }
   lavaMap(){const th=this.stage.theme;return Sea.has(th)&&!!Sea.PAL[th].lava;}
   blockWater(p,ox,oy){
     if(this.lavaMap()||!this.waterAt(p.x,p.y)||this.waterAt(ox,oy))return;   /* lava is not a wall; when already in the water (teleport, revive) nothing blocks */
@@ -1008,7 +1030,7 @@ class Game{
   }
   finish(win,opts){
     if(this.ended)return;this.ended=true;
-    this.sellHeld();
+    this.keepHeld();
     const res=this.progress.finishRun(this,win,opts);
     this.env.onEnd(res,this);
   }
@@ -1201,7 +1223,7 @@ class Game{
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
-    this.chests.push({x:e.x,y:e.y,final:false,t:0,elite:true});
+    {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true});}
     const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
@@ -1690,7 +1712,7 @@ class Game{
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}
-    this.fx=this.fx.filter(f=>f.l>0);
+    this.fx=this.fx.filter(f=>f.l>0);this.updateCorpses(dt);
     for(const t of this.tx)t.t+=dt;
     this.tx=this.tx.filter(t=>t.t<t.l);
     this.en=this.en.filter(e=>!e.dead);this.pr=this.pr.filter(b=>!b.dead);this.eb=this.eb.filter(b=>!b.dead);
@@ -1877,7 +1899,7 @@ class Game{
     if(id==='dende'){this.heal(p.maxHp*.30);this.floatText(p.x,p.y-56,tr(T('Guarigione!','Healed!')),2);this.pillar(p.x,p.y,'#8be07a',.6);}
     else if(id==='shenron'){for(const g of this.gm){if(Math.hypot(g.x-p.x,g.y-p.y)<400)g.att=true;}this.addXp(this.need*.05/Math.max(.2,this.S.xp));this.floatText(p.x,p.y-56,tr(T('Raccolta Magica!','Magic Gather!')),2);this.pillar(p.x,p.y,'#59d070',.8);this.ring(p.x,p.y,400,'#59d070',.6);}
     else if(id==='droid'){p.inv=Math.max(p.inv,1.5);this.barrierT=Math.max(this.barrierT,0);this.floatText(p.x,p.y-56,tr(T('Scudo!','Shield!')),2);this.ring(p.x,p.y,60,'#8ad8ff',.8);}
-    else if(id==='bubbles'){this.petLuckT=50;for(let i=0;i<3;i++)this.loot.push({k:'coin',x:p.x+rnd(-40,40),y:p.y+rnd(-30,30),v:this.coinValue(),t:0});this.recalc();this.floatText(p.x,p.y-56,tr(T('Fortuna +5% (50s)','Luck +5% (50s)')),2);}
+    else if(id==='bubbles'){this.petLuckT=50;for(let i=0;i<3;i++){const[cx,cy]=this.dryPos(p.x+rnd(-40,40),p.y+rnd(-30,30));this.loot.push({k:'coin',x:cx,y:cy,v:this.coinValue(),t:0});}this.recalc();this.floatText(p.x,p.y-56,tr(T('Fortuna +5% (50s)','Luck +5% (50s)')),2);}
     else if(id==='buu'){
       this.ring(p.x,p.y,210,'#ff9ec7',.7);
       for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(210+e.r)**2)e.stun=Math.max(e.stun,e.boss?.4:1);}
@@ -2122,9 +2144,8 @@ class Game{
       l.t+=dt;
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
-      if((l.k==='coin'||l.k==='bag'||l.k==='heal')&&d<S.magnet*.7){l.x+=dx/d*260*dt;l.y+=dy/d*260*dt;}
-      /* the timed power-ups (Damage +15%, Rapid fire) are drawn in by the whole pick-up range at the speed of the experience gems */
-      if((l.k==='dmg'||l.k==='haste')&&d<S.magnet){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
+      /* every other pick-up on the ground (zenny, bags, hearts, Fortune, Magnet, capsules, the timed power-ups...) is drawn in by the whole pick-up range at the speed of the experience gems */
+      if(l.k!=='ball'&&l.k!=='sball'&&d<S.magnet){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
       if(l.att&&(l.k==='bag'||l.k==='coin'||l.k==='dmg'||l.k==='haste')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags, coins and the timed power-ups too */
       if(l.ttl&&l.t>l.ttl){l.dead=true;continue;}
       if(l.k==='sball'&&!l.guard&&d<340){   /* the guardian: the Tamagami statue wakes up when you get near (without a statue: a ring of tougher enemies) */
@@ -2253,7 +2274,7 @@ class Game{
   /* ---------- sandbox helpers ---------- */
   jumpTo(t){this.t=Math.max(0,t);for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
   setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
-  spawnChestHere(final){this.chests.push({x:this.p.x+60,y:this.p.y,final:!!final,t:0});}
+  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y);this.chests.push({x:cx,y:cy,final:!!final,t:0});}
 }
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
@@ -2290,7 +2311,7 @@ class MapDirector{
     g.input.interact=false;
     g.feat=g.feat.filter(f=>!f.dead);
   }
-  pos(rmin,rmax){const a=rnd(0,TAU),d=rnd(rmin,rmax);return this.g.spawnSpot(a,d,0);}
+  pos(rmin,rmax){const a=rnd(0,TAU),d=rnd(rmin,rmax),[x,y]=this.g.spawnSpot(a,d,0);return this.g.dryPos(x,y);}
   /* Snake Way: every island beside the body holds three power-ups, laid on it the first time you come within ~1000 px (once per island, no cooldowns), and its name is announced */
   islands(dt){
     const g=this.g,p=g.p;if(g.stage.theme!=='snake'||g.trial)return;
@@ -2352,7 +2373,7 @@ class MapDirector{
     const g=this.g,p=g.p;
     if(f.kind==='chamber'){g.startTrial();f.used=true;f.dead=true;return;}
     if(f.kind==='secret'){          /* the mysterious red button opens the portal to Zeno's Shop */
-      f.used=true;f.pressed=true;g.feat.push({kind:'zenoportal',x:f.x+95,y:f.y+14,t:0,ttl:1e9,used:false,dead:false});
+      f.used=true;f.pressed=true;{const[zx,zy]=g.dryPos(f.x+95,f.y+14);g.feat.push({kind:'zenoportal',x:zx,y:zy,t:0,ttl:1e9,used:false,dead:false});}
       g.ring(f.x,f.y,120,'#ff3b3b',.6);g.ring(f.x+95,f.y+14,90,'#c080ff',.8);g.flash=Math.max(g.flash,.25);g.flashC='#e0b8ff';g.shake=Math.max(g.shake,.3);g.audio.sfx('transform');
       g.say(g.env.tr(T('Si è aperto un portale misterioso...','A mysterious portal has opened...')),'#e0b8ff',3);return;}
     if(f.kind==='zenoportal'){g.startZeno();f.used=true;f.dead=true;return;}
