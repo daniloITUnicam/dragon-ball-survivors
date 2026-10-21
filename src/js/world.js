@@ -22,27 +22,27 @@ const OB_DENS={beach:.24,waste:.2,redrock:.19,plains:.17,arena:.17,hell:.18};   
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
 const OBS=(w,r,W,H,art,sc)=>({w,r,W,H,art,sc});   /* sc: the sprite is drawn that many times larger than the base 3.1 px per art unit (r is already the scaled collision radius) */
-/* rock sprites (atlas rocks.png, same order as assets/sprites/rocks/rock_<n>.png): [w,h] in sprite px. 0 flat slab with lichen, 1-3 big boulders, 4/5/9/10/11 spires, 6 mid, 7-19 small stones.
-   Drawn at ROCK_S world px per sprite px (wide ones are shrunk to ROCK_MAXW); the collision circle comes from the sprite footprint, not from the painted fallback. */
-const ROCKD=[[91,55],[163,110],[161,94],[123,79],[34,66],[56,63],[90,53],[43,27],[42,32],[38,56],[24,45],[16,26],[45,28],[30,17],[23,14],[40,29],[49,30],[48,32],[16,9],[40,25]];
+/* Rock sprites. Two planets draw their rocks from a sprite atlas (assets/sprites/<sheet>.png, built by tools/make_rocks.py; sprites.json: rects [x,y,w,h] per rock,
+   kinds {name: [rock numbers]} = which rocks an obstacle of that kind may use, anim = the extra frames of the animated ones, dry = rocks without lava):
+   Namek -> rocks (grey-green stones), Inferno -> lavarocks (volcanic stones with lava). Nothing else uses them: the other planets keep their painted rocks.
+   A rock is drawn at ROCK_S world px per sprite px (wide ones are shrunk to ROCK_MAXW); the collision circle comes from the sprite footprint. */
+const ROCK_SHEET={namek:'rocks',hell:'lavarocks'};
 const ROCK_S=1.2,ROCK_MAXW=150;
-const rockScale=i=>Math.min(ROCK_S,ROCK_MAXW/ROCKD[i][0]);
-const RK_SMALL=[6,7,8,12,15,16,17,19],RK_BIG=[0,1,2,3],RK_SPIRE=[4,5,9,10,11],RK_MIX=[6,7,8,12,15,16,17,19,3,0];
-const rkDef=(w,rk,art,r)=>OB(w,r||14,26,18,art||(R=>{R(-10,-7,20,7,'#8a8f98');R(-7,-12,14,6,'#a0a6b0');}),rk);
+const rockSheet=theme=>{const id=ROCK_SHEET[theme],S=id&&typeof Sprites!=='undefined'&&Sprites.sheets&&Sprites.sheets[id];return S&&S.rects?S:null;};   /* (the headless simulators have no sprites: no rocks there) */
+const ROCK=(w,kind)=>OB(w,14,26,18,R=>{},kind);   /* a rock obstacle: its art is the sprite, so nothing is painted (and nothing is placed until the sprites are decoded) */
 const tri=(R,cx,base,hgt,hw,c1,c2)=>{for(let i=0;i<hgt;i++){const k=i/hgt,w=hw*(1-k)*2;R(cx-w/2,base-i-1,w,1,i%5<2?c2:c1);}};
 const OBSTACLES={
   plains:[
     OB(5,7,26,34,(R,C)=>{R(-1.5,-15,3,15,'#6a4a2a');C(R,0,-22,9,'#3f9e4a');C(R,-3,-25,5,'#5ac05a');}),
-    OB(4,11,22,14,R=>{R(-8,-6,16,6,'#8a8f98');R(-6,-10,12,5,'#a0a6b0');R(-3,-9,5,2,'#c0c6d0');},RK_MIX),
+    OB(4,11,22,14,R=>{R(-8,-6,16,6,'#8a8f98');R(-6,-10,12,5,'#a0a6b0');R(-3,-9,5,2,'#c0c6d0');}),
     OB(1.1,21,40,28,(R)=>{tri(R,0,0,24,18,'#8a7a62','#a89a80');R(-3,-24,6,3,'#f4f1ea');}),
     OB(.5,16,26,26,R=>{R(-10,-12,20,12,'#e8e4d8');R(-10,-14,20,3,'#e8742c');R(-4,-8,8,8,'#6ac0e8');R(-1,-20,2,6,'#8a8f98');}),
-    rkDef(.8,RK_BIG,R=>{R(-12,-8,24,8,'#8a8f98');R(-9,-14,18,7,'#a0a6b0');}),
+    OB(.8,14,26,18,R=>{R(-12,-8,24,8,'#8a8f98');R(-9,-14,18,7,'#a0a6b0');}),
     OBS(1.6,19.8,16,14,MA.haybale,2.2),OBS(1.2,20.0,24,16,MA.fence,2.0),OBS(.6,11.4,20,26,MA.sign,1.9),OBS(.9,20.7,16,14,MA.crate,2.3)
   ],
   namek:[
     OB(4,6,30,46,(R,C)=>{R(-1.5,-28,3,28,'#b8d7c0');C(R,0,-33,10,'#7bd6a6');C(R,-3,-36,6,'#9ee8bf');}),
-    OB(3,12,22,30,R=>{R(-8,-22,16,22,'#4a9fb4');R(-8,-22,4,22,'#7acce0');R(-9,-26,18,5,'#8ad8a8');R(-3,-10,2,10,'#2f7f94');}),
-    OB(1.2,22,40,28,R=>{tri(R,0,0,24,19,'#3f9e8a','#6ad0b0');R(-4,-22,8,3,'#b8f0d8');}),
+    ROCK(3,'mix'),ROCK(1.2,'big'),ROCK(1.2,'spire'),
     OB(.28,30,50,32,(R,C)=>{R(-20,-10,40,7,'#7a5ab0');R(-17,-14,34,5,'#9a7ad0');R(-12,-18,24,5,'#b898e8');C(R,0,-20,9,'#6ad0e8');R(-6,-24,12,4,'#d8f4ff');R(-22,-6,44,3,'#4a3a7a');R(-14,-3,3,3,'#f2c230');R(11,-3,3,3,'#f2c230');}),
     OBS(1.4,18.0,24,24,MA.crystalN,1.8)
   ],
@@ -50,9 +50,9 @@ const OBSTACLES={
     OBS(1.6,20.7,16,14,MA.crate,2.3),OBS(1.6,16.1,14,19,MA.barrel,2.3),OBS(1.4,16.0,16,20,MA.tomb,2.0),OBS(1,17.1,24,16,MA.skullpile,1.9),OBS(1.2,9.0,20,26,MA.cactus,1.5),
     OB(3,15,26,16,R=>{R(-11,-8,22,8,'#8a3a3a');R(-7,-13,14,6,'#6a2a2a');R(-5,-12,4,4,'#8ac0d8');R(2,-12,4,4,'#8ac0d8');R(-9,-3,5,3,'#222');R(5,-3,5,3,'#222');}),
     OB(3,14,26,34,R=>{R(-6,-26,12,26,'#5a5650');R(-4,-22,3,4,'#2a2622');R(1,-14,3,4,'#2a2622');R(-6,-28,5,3,'#5a5650');}),
-    OB(3,16,28,14,R=>{R(-11,-5,22,5,'#6a6460');R(-8,-9,16,5,'#7a746e');R(-3,-12,8,4,'#8a847e');R(4,-8,6,3,'#4a4642');},RK_MIX),
+    OB(3,16,28,14,R=>{R(-11,-5,22,5,'#6a6460');R(-8,-9,16,5,'#7a746e');R(-3,-12,8,4,'#8a847e');R(4,-8,6,3,'#4a4642');}),
     OB(.5,12,16,26,R=>{R(-1,-24,2,24,'#4a3a2a');R(-7,-18,6,1.4,'#4a3a2a');R(1,-12,6,1.4,'#4a3a2a');}),
-    rkDef(.6,RK_BIG,R=>{R(-12,-8,24,8,'#6a6460');R(-9,-14,18,7,'#7a746e');})
+    OB(.6,14,26,18,R=>{R(-12,-8,24,8,'#6a6460');R(-9,-14,18,7,'#7a746e');})
   ],
   other:[
     OB(4,8,18,30,R=>{R(-2,-26,4,26,'#ff9ad8');R(-4,-16,8,16,'#ff7ac0');R(-1,-24,1.5,12,'#ffd0f0');}),
@@ -68,26 +68,26 @@ const OBSTACLES={
   ],
   beach:[
     OB(5,6,30,42,(R,C)=>{R(-1.5,-24,3,24,'#8a6a3a');R(0,-30,2.5,8,'#8a6a3a');for(const [a,b] of [[-10,-30],[-6,-34],[6,-34],[10,-30],[0,-36]])C(R,a,b,4,'#2f9a4a');C(R,0,-31,3,'#5ac05a');}),
-    OB(3,10,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');},RK_SMALL),
+    OB(3,10,20,12,R=>{R(-7,-5,14,5,'#9a9a98');R(-5,-9,10,5,'#b8b8b4');R(-2,-8,4,1,'#d8d8d4');}),
     OB(.3,26,50,34,R=>{R(-20,-14,40,14,'#ffb0c8');R(-22,-20,44,7,'#d8402a');R(-18,-24,36,5,'#e8583a');R(-14,-11,8,8,'#6ac0e8');R(4,-11,8,11,'#8a5a2a');R(-1,-30,2,8,'#f4f1ea');R(-8,-26,16,3,'#f4f1ea');}),
     OB(2,9,20,16,(R,C)=>{C(R,-4,-6,6,'#d8a8d8');C(R,3,-5,6,'#e8c0e8');R(-2,-3,4,3,'#8a6a3a');}),
-    rkDef(.5,RK_BIG,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),
+    OB(.5,14,26,18,R=>{R(-12,-8,24,8,'#9a9a98');R(-9,-14,18,7,'#b8b8b4');}),
     OBS(2.2,20.7,16,14,MA.crate,2.3),OBS(.9,18.9,16,24,MA.crate2,2.1),OBS(2,16.1,14,19,MA.barrel,2.3),OBS(1.2,16.0,16,20,MA.tomb,2.0),OBS(.7,16.0,16,20,MA.tomb2,2.0),OBS(2.2,8.4,26,16,MA.agave,1.2),OBS(.8,18.0,18,18,MA.rockpile,2.0)
   ],
   redrock:[
-    OB(4,14,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');},RK_MIX),
-    OB(3,8,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');},RK_SPIRE),
+    OB(4,14,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');}),
+    OB(3,8,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');}),
     OB(.4,17,30,22,(R,C)=>{C(R,0,-10,10,'#d8d8e8');R(-10,-3,20,3,'#8a8a9a');R(-4,-14,8,6,'#6ad0ff');R(-3,-13,2,1,'#fff');R(-12,-2,24,2,'#4a4a5a');}),
     OB(2,10,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),
-    rkDef(.7,RK_BIG,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),
+    OB(.7,14,26,18,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),
     OBS(1.6,9.0,20,26,MA.cactus,1.5),OBS(.8,17.1,24,16,MA.skullpile,1.9),OBS(.8,16.1,14,19,MA.barrel,2.3),OBS(.8,20.7,16,14,MA.crate,2.3)
   ],
   arena:[
     OB(4,9,18,38,R=>{R(-5,-30,10,30,'#b8b0a0');R(-6,-32,12,3,'#d8d0c0');R(-6,-3,12,3,'#8a8274');R(-1,-24,1.4,14,'#6a6254');}),
-    OB(4,12,26,14,R=>{R(-10,-5,20,5,'#9a9284');R(-7,-9,14,5,'#b0a898');R(1,-7,6,3,'#7a7264');R(-9,-3,3,3,'#6a6254');},RK_MIX),
+    OB(4,12,26,14,R=>{R(-10,-5,20,5,'#9a9284');R(-7,-9,14,5,'#b0a898');R(1,-7,6,3,'#7a7264');R(-9,-3,3,3,'#6a6254');}),
     OB(2,5,16,34,R=>{R(-.8,-30,1.6,30,'#6a6254');R(-1.6,-31,3.2,1.6,'#9a9284');}),
     OB(.5,14,28,22,R=>{R(-11,-8,22,8,'#8a8274');R(-8,-14,16,7,'#b0a898');R(-2,-20,4,7,'#d8d0c0');}),
-    rkDef(.6,RK_BIG,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');}),
+    OB(.6,14,26,18,R=>{R(-12,-8,24,8,'#9a9284');R(-9,-14,18,7,'#b0a898');}),
     OBS(1.6,18.0,16,22,MA.pillar,2.0),OBS(1,11.4,18,34,MA.banner,1.9),OBS(1,16.1,14,19,MA.barrel,2.3),OBS(1,20.7,16,14,MA.crate,2.3)
   ],
   sky:[
@@ -98,10 +98,10 @@ const OBSTACLES={
     OBS(1,11.4,14,21,MA.lantern,1.9)
   ],
   hell:[
-    OB(4,13,24,18,R=>{R(-9,-7,18,7,'#3a1a1a');R(-6,-12,12,6,'#5a2a22');R(-3,-4,6,2,'#ff7a1a');R(-1,-10,2,3,'#ff9a3a');}),
+    ROCK(4,'mix'),ROCK(1.2,'big'),ROCK(1.4,'crater'),ROCK(1,'spire'),
     OB(3,8,14,36,R=>{tri(R,0,0,32,5,'#d8d0c0','#f4f0e4');R(-1,-24,2,3,'#3a1a1a');}),
     OB(.6,16,28,24,(R,C)=>{C(R,0,-10,10,'#e8e0d0');R(-5,-12,3,4,'#1a0a0a');R(2,-12,3,4,'#1a0a0a');R(-1,-8,2,3,'#3a1a1a');R(-4,-3,8,3,'#d8d0c0');R(-3,-2,1,2,'#3a1a1a');R(0,-2,1,2,'#3a1a1a');}),
-    OBS(2,17.1,20,16,MA.spikes,1.9),OBS(2,26.0,22,15,MA.lavarock,2.0),OBS(1.4,17.1,24,16,MA.skullpile,1.9),OBS(1,16.0,16,20,MA.tomb2,2.0)
+    OBS(2,17.1,20,16,MA.spikes,1.9),OBS(1.4,17.1,24,16,MA.skullpile,1.9),OBS(1,16.0,16,20,MA.tomb2,2.0)
   ]
 };
 /* ====== Snake Way: the only walkable ground is the snake's body, a winding corridor along the x axis ====== */
@@ -153,7 +153,7 @@ const Snake={
   }
 };
 const World={
-  cache:new Map(),key:'',rockOn:false,
+  cache:new Map(),key:'',
   cell(theme,cx,cy){
     const k=cx*100003+cy;let c=this.cache.get(k);
     if(c!==undefined)return c;
@@ -165,8 +165,15 @@ const World={
         for(;ti<defs.length-1;ti++){q-=defs[ti].w;if(q<=0)break;}
         c={x,y,t:ti,r:defs[ti].r*1.5,f:mhash(cx+2,cy+8)<.5?-1:1};
         const rk=defs[ti].rk;
-        if(this.rockOn&&rk){const v=rk[Math.floor(mhash(cx+19,cy+23)*rk.length)],sc=rockScale(v),wd=ROCKD[v][0]*sc,ht=ROCKD[v][1]*sc;
-          c.v=v;c.s=sc;c.r=Math.max(6,Math.min(.36*wd,.55*ht));}
+        if(rk){
+          const S=rockSheet(theme),kind=S&&S.kinds&&S.kinds[rk];
+          if(!kind||!kind.length)c=null;   /* a rock whose sprites are not there (yet) is not placed */
+          else{
+            const v=kind[Math.floor(mhash(cx+19,cy+23)*kind.length)],R=S.rects[v],sc=Math.min(ROCK_S,ROCK_MAXW/R[2]),wd=R[2]*sc,ht=R[3]*sc;
+            c.v=v;c.s=sc;c.r=Math.max(6,Math.min(.36*wd,.55*ht));
+            for(const k of[-.4,.4])if(Sea.wet(theme,x+k*wd,y)>-.05){c=null;break;}   /* the whole base stands on dry land, never half in the water */
+          }
+        }
       }
     }
     if(this.cache.size>4000)this.cache.clear();

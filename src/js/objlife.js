@@ -156,10 +156,6 @@ const ObjLife={
         c.fillStyle=col;for(let i=0;i<3;i++){const k=(t*.6+ph*.1+i/3)%1,[sx,sy]=P(-5+i*5,-8-i*4);this.star(c,sx,sy,2+4*Math.sin(k*Math.PI),Math.sin(k*Math.PI));}
         c.restore();break;}
       case'lantern':{const [wx,wy]=P(0,-8);this.flame(c,wx,wy+2,t,ph,2.4,'#ffd86a');break;}
-      case'lavarock':{
-        const [wx,wy]=P(0,-5);c.save();c.globalCompositeOperation='lighter';GLOW.at(c,wx,wy,40*(.85+.15*Math.sin(t*3+ph)),'#ff6a1a',.5);c.restore();
-        if(A&&Math.random()<.9*A.dt)A.puffAt('ember',wx+(Math.random()-.5)*20,wy-6);
-        break;}
       case'spikes':{
         if(hb<.5){const [wx,wy]=P(-5+hb*20,-11);this.fly(c,wx,wy,t,ph,6);}
         break;}

@@ -93,9 +93,6 @@ MA.spikes=R=>{    /* iron spikes */
   for(const x of[-6,-2,2,6]){R(x-1,-3,2,3,'#3a3a44');R(x-1,-10,1,7,'#6a6a78');R(x,-10,1,7,'#4a4a56');R(x-.5,-12,1,2,'#8a8a98');}
   R(-8,-2,16,2,'#2a2a32');
 };
-MA.lavarock=R=>{  /* a cooling rock veined with lava */
-  R(-9,-4,18,4,'#2a1214');R(-7,-8,14,4,'#3a1a1c');R(-4,-11,8,3,'#4a2224');R(-3,-3,6,1,'#ff7a2a');R(-1,-7,2,1,'#ff9a3a');R(3,-6,1,2,'#ff7a2a');R(-6,-6,1,2,'#ff5a1a');
-};
 
 /* ---- flat ground decor: [W,H,originX,originY,painter] per theme ---- */
 const maD=(W,H,ox,oy,fn)=>[W,H,ox,oy,fn];
@@ -145,7 +142,6 @@ MA.dec={
   namek:[
     maD(14,12,7,10,R=>{for(const [x,h,c] of[[-4,6,'#7ae0ff'],[0,9,'#c8f8ff'],[4,5,'#5ac8f0']]){for(let i=0;i<h;i++)R(x-1,-i-1,2,1,i%3===0?'#e8ffff':c);}R(-5,-1,10,1,'#2a8ab0');}),   /* small crystals */
     maD(16,12,8,11,R=>{for(const [tx,ty] of[[-5,-9],[-1,-10],[3,-9],[6,-6]])maBlade(R,-1,tx,ty,2,'#3aa46a','#5ac88a','#bff7d4');}),
-    maD(14,8,7,6,R=>{R(-6,-3,12,3,'#5ab0c0');R(-5,-4,10,1,'#8ad8e4');R(1,-2,4,1,'#3a8a9a');}),
     maD(10,10,5,8,R=>{R(-2,-7,4,7,'#5ac88a');R(-3,-8,6,2,'#7ae0a8');R(-1,-5,2,1,'#2a8a5a');})
   ],
   redrock:[

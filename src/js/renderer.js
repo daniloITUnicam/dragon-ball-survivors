@@ -24,7 +24,6 @@ const THEMES={
 /* per-theme multiply tint of the rock sprites (grey-green art: plains/beach/arena keep it as drawn) */
 /* extra share of tiles that get a ground decoration (the base is 2.5-9%) */
 const DEC_DENS={beach:.03,waste:.018,redrock:.015,plains:.012,namek:.012,arena:.01,hell:.012};
-const ROCK_TINT={redrock:'#e0a08a',waste:'#d8c2a4',hell:'#8a6a66'};
 const LOOT_COL={sball:'#ffd23f',coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
 /* tiny skull (progress-bar milestones): cranium + jaw, dark outline, eye sockets and nose */
 function drawSkull(ctx,x,y,r,col,a){
@@ -119,7 +118,6 @@ this.W=1;this.H=1;this.Z=1;
       out.push(P(18,12,9,11,R=>{R(-6,-6,12,6,'#8a8f98');R(-4,-9,8,4,'#a0a6b0');R(-2,-8,3,2,'#c0c6d0');}));
     }else if(theme==='namek'){
       out.push(P(30,46,15,45,R=>{R(-1.5,-28,3,28,'#b8d7c0');C(R,0,-33,10,'#7bd6a6');C(R,-3,-36,6,'#9ee8bf');}));
-      out.push(P(18,12,9,11,R=>{R(-6,-6,12,6,'#78a8b4');R(-4,-9,8,4,'#a6cdd6');}));
       out.push(P(24,30,12,29,R=>{R(-1,-20,2,20,'#b8d7c0');C(R,0,-24,7,'#5fc08e');}));
     }else if(theme==='waste'){
       out.push(P(26,30,13,29,R=>{R(-1,-20,2,20,'#4a3a2a');R(-7,-15,6,1.4,'#4a3a2a');R(1,-11,6,1.4,'#4a3a2a');R(-5,-19,1.4,5,'#4a3a2a');}));
@@ -156,7 +154,7 @@ this.W=1;this.H=1;this.Z=1;
     /* extra variants (less repetition): indices 3..5 match DECA in ambient.js */
     const X={
       plains:[P(14,10,7,9,R=>{R(-5,-4,1,4,'#2f8a3a');R(-2,-7,1,7,'#3f9e4a');R(1,-5,1,5,'#2f8a3a');R(4,-3,1,3,'#4aaa4a');}),P(10,8,5,7,R=>{R(-.8,-3,1.6,3,'#f0e8d8');R(-3,-6,6,3,'#d8402a');R(-1.5,-5.5,1,1,'#fff');R(1,-4.5,1,1,'#fff');}),P(18,8,9,7,R=>{R(-7,-4,14,4,'#7a5430');R(-7,-4,2,4,'#a67c4a');R(-3,-5,3,1,'#2f8a3a');})],
-      namek:[P(10,14,5,13,R=>{R(-.5,-9,1,9,'#7bd6a6');C(R,0,-10,3,'#9ee8ff');C(R,0,-10,1.4,'#fff');}),P(12,8,6,7,R=>{R(-4,-3,8,3,'#5a9a8a');R(-2,-5,4,2,'#8acaba');}),P(14,22,7,21,R=>{R(-.6,-18,1.2,18,'#9ac8a8');R(-4,-14,3,1,'#9ac8a8');R(1,-10,3,1,'#9ac8a8');C(R,0,-19,3,'#b8f0d0');})],
+      namek:[P(10,14,5,13,R=>{R(-.5,-9,1,9,'#7bd6a6');C(R,0,-10,3,'#9ee8ff');C(R,0,-10,1.4,'#fff');}),P(14,22,7,21,R=>{R(-.6,-18,1.2,18,'#9ac8a8');R(-4,-14,3,1,'#9ac8a8');R(1,-10,3,1,'#9ac8a8');C(R,0,-19,3,'#b8f0d0');})],
       waste:[P(12,6,6,5,R=>{R(-4,-2,8,2,'#e8e0d0');R(-2,-4,3,2,'#f4f0e4');R(-3,-1,1,1,'#222');}),P(16,10,8,9,R=>{R(-5,-3,10,3,'#7a6a3a');R(-3,-6,6,3,'#8a7a46');R(1,-8,2,2,'#9a8a56');}),P(10,18,5,17,R=>{R(-1.3,-14,2.6,14,'#4a8a3a');R(-4,-9,2.5,1.5,'#4a8a3a');R(-4,-12,1.5,4,'#4a8a3a');R(1.8,-8,2.5,1.5,'#4a8a3a');})],
       other:[P(10,14,5,13,R=>{R(-.5,-9,1,9,'#d8b0ff');C(R,0,-10,3,'#fff0ff');C(R,0,-10,1.5,'#ffd23f');}),P(12,14,6,13,R=>{R(-4,-8,2.5,8,'#ffa0e0');R(-1,-12,3,12,'#e8b0ff');R(2.5,-6,2,6,'#ffa0e0');}),P(14,8,7,7,R=>{C(R,-2,-3,3,'#fff0ff');C(R,2,-3,2.5,'#ffe0ff');})],
       beach:[P(8,6,4,5,R=>{R(-3,-2,6,2,'#fff4e8');R(-2,-4,4,2,'#ffd8c0');}),P(18,6,9,5,R=>{R(-7,-3,14,3,'#a8884a');R(-5,-4,6,1,'#c8a868');}),P(10,8,5,7,R=>{R(-1,-3,2,3,'#ff8a3a');R(-3,-2,6,1,'#ff8a3a');R(-.5,-5,1,5,'#ff8a3a');})],
@@ -277,7 +275,7 @@ this.W=1;this.H=1;this.Z=1;
     for(const e of list){
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,t,g);continue;}
-      if(e.ob&&e.ob.v!==undefined){const b=e.ob,ri=Sprites.rockImg(b.v,ROCK_TINT[theme]);if(ri){const wd=ri.c.width*b.s;ctx.fillStyle='rgba(0,0,0,.24)';ctx.beginPath();ctx.ellipse(b.x,b.y,Math.min(wd*.5,ri.c.height*b.s*.7),Math.min(wd*.5,ri.c.height*b.s*.7)*.34,0,0,TAU);ctx.fill();ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*b.s,b.s);ctx.imageSmoothingEnabled=false;ctx.drawImage(ri.c,-ri.ox,-ri.oy);ctx.restore();continue;}}
+      if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
       if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1);ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,t);
@@ -1115,6 +1113,26 @@ this.W=1;this.H=1;this.Z=1;
     /* the XP gems it is carrying float above its head */
     if(q.hold&&q.hold.length&&!g.trial)for(let i=0;i<q.hold.length;i++){const gm=q.hold[i],col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9,gy=gm.y+bob*.5+Math.sin(t*6+i*2)*1.2;
       GLOW.at(ctx,gm.x,gy,r*3,col,.45);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gy-r);ctx.lineTo(gm.x+r*.8,gy);ctx.lineTo(gm.x,gy+r);ctx.lineTo(gm.x-r*.8,gy);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gy-r*.5,2,r*.5);}
+  }
+  /* A rock of the Namek / Inferno atlas (World.cell gives it b.v = rock number, b.s = scale, b.f = mirror). It stands ON the ground point (b.x,b.y): the base is drawn there, set a
+     couple of pixels into the floor (the part below the ground line is cut off, so the bottom edge is flat and flush with the ground) and with no shadow, so it never hovers.
+     Animated rocks (lava pouring, craters bubbling, ...) loop their frames; on Inferno the ones with lava also light the ground around them and throw sparks, as the old lava rock did. */
+  drawRock(b,theme,t){
+    const ctx=this.ctx,id=ROCK_SHEET[theme],S=id&&Sprites.sheets[id],ph=(b.x*.0131+b.y*.0073)%7;
+    const ri=S&&Sprites.rockFrame(id,b.v,t,ph);if(!ri)return;
+    const sc=b.s,bw=ri.bw*sc,wd=ri.c.width*sc,ht=ri.c.height*sc;
+    const lava=!!S.dry&&S.dry.indexOf(b.v)<0;
+    if(lava&&Ambient.on){
+      const pu=.6+.4*Math.sin(t*2.3+ph*2);
+      GLOW.at(ctx,b.x,b.y,Math.max(5,bw*.54)*1.7,'#ff4a10',.2+.12*pu);
+      GLOW.at(ctx,b.x,b.y-ht*.5,Math.max(wd,ht)*.55,'#ff7a1a',.12+.1*pu);
+    }
+    ctx.save();ctx.beginPath();ctx.rect(b.x-wd,b.y-ht-8,wd*2,ht+8+1.5);ctx.clip();   /* nothing below the ground line */
+    ctx.translate(b.x,b.y+2);ctx.scale(b.f*sc,sc);ctx.imageSmoothingEnabled=false;ctx.drawImage(ri.c,-ri.ox,-ri.oy);ctx.restore();
+    if(lava&&Ambient.on&&!FXL.on){
+      const cr=S.kinds&&S.kinds.crater&&S.kinds.crater.indexOf(b.v)>=0;
+      if(Math.random()<Ambient.dt*(cr?1.6:.45))Ambient.puffAt('ember',b.x+(Math.random()-.5)*bw*.5,b.y-ht*(cr?.8:.55));
+    }
   }
   drawPillar(o){
     const ctx=this.ctx,x=o.x,y=o.y,r=o.r;

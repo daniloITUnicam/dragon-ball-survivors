@@ -16,6 +16,24 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21c',date:'2026-10-21',
+    name:T("Rocce nuove su Namek e Inferno","New rocks on Namek and Inferno"),
+    sum:T("Pianeta Namek e Inferno hanno rocce nuove disegnate a mano, appoggiate a terra, senza ombra; su Inferno sono di lava e molte si muovono in loop (vulcani che fumano, lava che cola, crateri che ribollono).","Planet Namek and Hell have new hand-drawn rocks standing on the ground, without a shadow; in Hell they are lava rocks and many loop-animate (smoking volcanoes, dripping lava, bubbling craters)."),
+    new:[
+      {g:T("Mappe","Maps"),l:[
+        T("Pianeta Namek: 20 rocce grigie nuove (massi, lastre, guglie) al posto delle vecchie pietre disegnate; ogni roccia poggia sul terreno con la base piatta a filo del suolo, senza ombra, e non viene mai piazzata, nemmeno in parte, nell'acqua o sulla riva.","Planet Namek: 20 new grey rocks (boulders, slabs, spires) replace the old drawn stones; every rock rests on the ground with a flat base flush with the floor, no shadow, and is never placed, not even partly, in the water or on the shore."),
+        T("Inferno: 30 rocce vulcaniche nuove con lava al posto delle vecchie rocce e dei sassi di lava; quelle con la lava illuminano il terreno attorno e lanciano scintille.","Hell: 30 new volcanic rocks with lava replace the old rocks and lava stones; the ones with lava light the ground around them and throw sparks."),
+        T("Inferno: 7 rocce sono animate in loop, vulcano grande, lastra che cola, doppio cratere, masso, masso medio che cola, guglia e piccolo vulcano; ognuna parte in un momento diverso, così non si muovono tutte insieme.","Hell: 7 rocks are animated in a loop, big volcano, dripping slab, twin crater, boulder, mid boulder, spire and small volcano; each starts at a different moment so they do not all move together."),
+      ]},
+    ],
+    fix:[
+      {g:T("Mappe","Maps"),l:[
+        T("Namek: tolti i sassi piccoli disegnati dal terreno e dagli oggetti; Inferno: tolta la vecchia roccia di lava con le braci. Gli altri pianeti non cambiano.","Namek: the small drawn pebbles are gone from the ground and the props; Hell: the old lava rock with embers is gone. The other planets do not change."),
+      ]},
+      {g:T("Codice","Code"),l:[
+        T("Il collegamento alle rocce usa un atlas per pianeta (tools/make_rocks.py) e un nuovo test automatico controlla base a terra, acqua, animazioni e che gli altri pianeti restino come prima.","Rocks now come from one atlas per planet (tools/make_rocks.py) and a new automatic test checks the base on the ground, water, animations and that the other planets stay as they were."),
+      ]},
+    ]},
   {id:'2026-10-21b',date:'2026-10-21',
     name:T("Sicurezza e pulizia","Security and cleanup"),
     sum:T("Account e salvataggi più protetti (password più robuste, blocco dopo troppi tentativi, login Google a prova di link truccati, salvataggi manomessi ripuliti) e codice ripulito da parti inutilizzate.","Safer accounts and saves (stronger passwords, a pause after too many attempts, Google sign-in that ignores forged links, tampered saves cleaned up) and the code tidied of unused parts."),

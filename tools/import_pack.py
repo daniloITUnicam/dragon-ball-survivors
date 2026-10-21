@@ -18,7 +18,7 @@ A form may set "grid": "<folder>" (frames cut by tools/import_grid.py: f00 idle,
 and "h": <idle height in px>: the sheet is then built from that folder (idle, walk, wind-up, thrust, a 4-frame charge pose and a 4-frame dash pose; the streak "fx" still comes
 from the pack). "grid_use": ["power","dash"] only replaces those poses of a normal form. The extra frames go after the 10 standard columns and sprites.json gets
 "pw": [frames of the charge animation], "dh": [frames of the dash animation]. The portraits become the sheet emo<id>[_<form>].png (4 frames, used by the character screen).
-Top-level "rocks": {"dir": "rocks"} packs <dir>/rock_<n>.png into the atlas rocks.png (+ "rects" in sprites.json) used for the rocks on the planets.
+(The rock atlases rocks.png / lavarocks.png are NOT built here any more: tools/make_rocks.py makes them, see docs/SPRITES.md; this script keeps their entries in sprites.json.)
 A character may define "fx" / "power" / "dash" once at character level as defaults for its forms."""
 import sys, os, re, json, glob, argparse
 from PIL import Image, ImageDraw
@@ -251,19 +251,6 @@ def main():
         im.save(os.path.join(a.out, f'fx{name}.png'), optimize=True)
         meta_all[f'fx{name}'] = dict(cols=1, fw=im.width, fh=im.height, ax=im.width // 2, ay=im.height // 2, ppu=1, has=[])
         print(f'fx{name:10} {im.width}x{im.height}')
-    rk = mp.get('rocks')
-    if rk and (not a.only or 'rocks' in a.only):
-        fs = sorted(glob.glob(os.path.join(a.pack, rk['dir'], 'rock_*.png')), key=num)
-        if fs:
-            ims = [Image.open(f).convert('RGBA') for f in fs]; AW = 512; x = y = rh = 0; pos = []
-            for im in ims:                        # shelf packing, 1 px gap
-                if x + im.width > AW: x = 0; y += rh + 1; rh = 0
-                pos.append((x, y)); x += im.width + 1; rh = max(rh, im.height)
-            atlas = Image.new('RGBA', (AW, y + rh), (0, 0, 0, 0))
-            for im, (px_, py_) in zip(ims, pos): atlas.alpha_composite(im, (px_, py_))
-            atlas.save(os.path.join(a.out, 'rocks.png'), optimize=True)
-            meta_all['rocks'] = dict(cols=1, fw=atlas.width, fh=atlas.height, ppu=1, has=[], rects=[[px_, py_, im.width, im.height] for im, (px_, py_) in zip(ims, pos)])
-            print(f'rocks {len(ims)} sprites -> {atlas.width}x{atlas.height}')
     json.dump(meta_all, open(os.path.join(a.out, 'sprites.json'), 'w', encoding='utf8'), indent=1)
 
 

@@ -84,7 +84,8 @@ const bl=await pg.evaluate(()=>{const g=G;g.en=[];g.hordeT=1e9;g.packT=1e9;g.wav
   g.ballSet=[1,2,3,4,5,6];g.balls=6;g.loot=[];g.t=g.ballAt+1;g.update(1/30);const b7=g.loot.find(l=>l.k==='ball');out.star7=b7&&b7.star;
   g.loot=[];g.ballAt=g.t-1;g.t=g.dur-30;g.update(1/30);out.late=g.loot.filter(l=>l.k==='ball').length;
   return out;});
-ok(bl.boss===0&&bl.n===1&&bl.guar&&bl.ttl===150&&bl.dist>=270&&bl.dist<=430,'a ball lands on the map (not during a boss fight) at '+bl.dist+' px, lasts 150 s ('+JSON.stringify(bl)+')');
+/* spawnSpot puts it 280-420 px away, 50% farther when it is above the player (TOP_K): so 280..630 px */
+ok(bl.boss===0&&bl.n===1&&bl.guar&&bl.ttl===150&&bl.dist>=270&&bl.dist<=640,'a ball lands on the map (not during a boss fight) at '+bl.dist+' px, lasts 150 s ('+JSON.stringify(bl)+')');
 ok(/DRAGON|DRAGO/i.test(bl.banner||''),'with an announcement ('+bl.banner+')');
 ok(bl.second===1&&bl.delayed>0,'never two at once: the next one waits ('+bl.second+' on the field)');
 ok(bl.balls===1,'walking over it collects it ('+bl.has+')');

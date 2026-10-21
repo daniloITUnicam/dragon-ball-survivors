@@ -47,14 +47,34 @@ Sprites.emoSheet=function(id,form){
   for(let f=form;f>=0;f--)if(Sprites.sheets['emo'+id+'_'+f])return 'emo'+id+'_'+f;
   return Sprites.sheets['emo'+id]?'emo'+id:null;
 };
-/* rock sprites of the planets (atlas rocks.png, meta.rects = [x,y,w,h] per rock), optionally multiplied by a tint colour; origin = bottom centre */
-Sprites.rockImg=function(i,tint){
-  const S=Sprites.sheets.rocks;if(!S||!S.rects||!S.rects[i])return null;
-  S.rc=S.rc||new Map();const k=i+'|'+(tint||'');let o=S.rc.get(k);if(o)return o;
-  const r=S.rects[i],c=document.createElement('canvas');c.width=r[2];c.height=r[3];const x=c.getContext('2d');x.imageSmoothingEnabled=false;
-  x.drawImage(S.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
-  if(tint){x.globalCompositeOperation='multiply';x.fillStyle=tint;x.fillRect(0,0,r[2],r[3]);x.globalCompositeOperation='destination-in';x.drawImage(S.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);}
-  o={c,ox:r[2]/2,oy:r[3]-1};S.rc.set(k,o);return o;
+/* Rock sprites of the planets: rock number i of a sprite atlas (Namek: rocks, Inferno: lavarocks; sprites.json rects = [x,y,w,h]).
+   Besides the picture it measures the BASE (the lowest opaque rows): ox = middle of the base, oy = its lowest row, bw = its width. Drawing at ox/oy puts the base exactly
+   on the ground point of the rock, so it stands on the floor instead of hovering; the contact shadow is sized from bw. */
+Sprites.rockImg=function(id,i){
+  const S=Sprites.sheets[id];if(!S||!S.rects||!S.rects[i])return null;
+  S.rc=S.rc||new Map();let o=S.rc.get(i);if(o)return o;
+  const r=S.rects[i],w=r[2],h=r[3],c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  x.drawImage(S.img,r[0],r[1],r[2],r[3],0,0,w,h);
+  let ox=w/2,oy=h-1,bw=w*.6;
+  try{
+    const d=x.getImageData(0,0,w,h).data;let yb=h-1;
+    while(yb>0){let any=false;for(let u=0;u<w&&!any;u++)if(d[(yb*w+u)*4+3]>40)any=true;if(any)break;yb--;}
+    let lo=w,hi=-1;for(let v=Math.max(0,yb-5);v<=yb;v++)for(let u=0;u<w;u++)if(d[(v*w+u)*4+3]>40){if(u<lo)lo=u;if(u>hi)hi=u;}
+    if(hi>=lo){ox=(lo+hi+1)/2;bw=hi-lo+1;oy=yb;
+      if(bw<w*.3){lo=w;hi=-1;for(let v=Math.max(0,yb-14);v<=yb;v++)for(let u=0;u<w;u++)if(d[(v*w+u)*4+3]>40){if(u<lo)lo=u;if(u>hi)hi=u;}   /* a pointed base: look a bit higher for the footprint */
+        if(hi>=lo)bw=Math.max(bw,(hi-lo+1)*.6);}}
+  }catch(e){}
+  o={c,ox,oy,bw};S.rc.set(i,o);return o;
+};
+/* the picture of rock i at time t: animated rocks (sprites.json anim: {rock: [extra frames]}) loop through [rock, ...frames] at `fps`, ping-pong for the numbers in `pp`;
+   every frame is drawn with the base of the first one so the rock never slides. ph = a per-rock phase so neighbours are not in step */
+Sprites.rockFrame=function(id,i,t,ph){
+  const S=Sprites.sheets[id],base=Sprites.rockImg(id,i),a=S&&S.anim&&S.anim[i];
+  if(!base||!a||!a.length)return base;
+  const n=a.length+1,pp=S.pp&&S.pp.indexOf(i)>=0,per=pp?2*n-2:n;
+  let k=Math.floor((t+ph)*(S.fps||5))%per;if(k<0)k+=per;if(k>=n)k=per-k;
+  if(!k)return base;
+  const f=Sprites.rockImg(id,a[k-1]);return f?{c:f.c,ox:base.ox,oy:base.oy,bw:base.bw}:base;
 };
 Sprites.sheetFrame=function(sid,frame){
   const S=Sprites.sheets[sid];if(!S)return null;
@@ -71,8 +91,8 @@ Sprites.loadPack=function(onLoad){
     img.onload=()=>{
       const cols=Math.max(1,d.cols||7),fw=d.fw||Math.floor(img.width/cols),fh=d.fh||img.height;
       Sprites.nSheets=(Sprites.nSheets||0)+1;
-      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null};
-      if(id==='rocks'&&typeof World!=='undefined'){World.rockOn=true;World.cache.clear();}
+      Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null,kinds:d.kinds||null,anim:d.anim||null,pp:d.pp||null,fps:d.fps||0,dry:d.dry||null};
+      if(d.rects&&d.kinds&&typeof World!=='undefined')World.cache.clear();   /* rocks are placed from the atlas: cells computed before it was decoded are redone */
       if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
       if(onLoad)onLoad(id);
     };
