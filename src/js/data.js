@@ -631,7 +631,8 @@ const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza',
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
 const PF_SPREAD=[.88,1.12],PF_NOM=50;
 const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
-function rollPf(luck){let q=Math.random();if(luck>0)q=Math.pow(q,1/(1+luck*1.2));return Math.min(100,Math.round(q*104));}   /* about 4% of the rolls are a perfect 100 */
+const PF_PERFECT=.003;   /* chance of a perfect 100: 0.3% (it was about 4%), up to about 0.7% with the maximum Luck */
+function rollPf(luck){const L=luck>0?luck:0;let q=Math.random();if(L>0)q=Math.pow(q,1/(1+L*1.2));if(Math.random()<PF_PERFECT*(1+L*1.5))return 100;return Math.min(99,Math.floor(q*100));}   /* 0-99 as usual, 100 only on the rare perfect roll */
 const hasPf=t=>!!(t&&t.m);
 const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
 /* Quantità (key proj): +1 projectile for every weapon. Only Legendary and Mythic trinkets carry it: Legendary 2 (3 with a perfect 100 roll), Mythic 3 (4 from a 50 roll, 5 with a perfect 100 roll) */
@@ -816,14 +817,14 @@ const SHOP=[
  {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+9% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+9% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
  {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+4% probabilità di critico per livello.','+4% crit chance per level.'),max:6,base:180,g:1.5},
  {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2880,g:3.2},
- {id:'broly',k:'怒',n:T('Urlo di Broly!','Broly\'s Roar!'),d:T('+5% frequenza dei nemici per livello: più nemici, più esperienza e bottino, ma anche più pericolo (massimo 5 acquisti).','+5% enemy spawn rate per level: more enemies, more experience and loot, but more danger (5 purchases max).'),max:5,base:666,g:1.7},
- {id:'scan',k:'探',n:T('Scanner Sfere del Drago','Dragon Ball Scanner'),d:T('+5% frequenza delle Sfere del Drago per livello, anche Super e quelle dei nemici (massimo 2 acquisti).','+5% Dragon Ball spawn rate per level, Super ones and enemy drops too (2 purchases max).'),max:2,base:3000,g:3},
- {id:'proj',k:'弾',n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (massimo 2 acquisti).','+1 amount: every weapon fires one more projectile (2 purchases max).'),max:2,base:2000,g:3},
- {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme (massimo 2 acquisti).','+1 trinket slot: carry up to 3 trinkets at once (2 purchases max).'),max:2,base:3600,g:3},
+ {id:'broly',k:'怒',n:T('Urlo di Broly!','Broly\'s Roar!'),d:T('+5% frequenza dei nemici per livello: più nemici, più esperienza e bottino, ma anche più pericolo.','+5% enemy spawn rate per level: more enemies, more experience and loot, but more danger.'),max:5,base:666,g:1.7},
+ {id:'scan',k:'探',n:T('Scanner Sfere del Drago','Dragon Ball Scanner'),d:T('+5% frequenza delle Sfere del Drago per livello, anche Super e quelle dei nemici.','+5% Dragon Ball spawn rate per level, Super ones and enemy drops too.'),max:2,base:3000,g:3},
+ {id:'proj',k:'弾',n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più.','+1 amount: every weapon fires one more projectile.'),max:2,base:2000,g:3},
+ {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme.','+1 trinket slot: carry up to 3 trinkets at once.'),max:2,base:3600,g:3},
  {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:420,g:1.4},
- {id:'rr',k:'換',n:T('Reroll','Reroll'),d:T('+1 reroll a partita: al level-up ritira tutte e 3 le carte potenziamento. Fino a 5.','+1 reroll per run: on a level-up, redraws all 3 upgrade cards. Up to 5.'),max:5,base:500,g:1.6},
- {id:'sk',k:'跳',n:T('Skip','Skip'),d:T('+1 skip a partita: al level-up salti la scelta senza prendere nulla. Fino a 5.','+1 skip per run: on a level-up, skip the choice and take nothing. Up to 5.'),max:5,base:400,g:1.6},
- {id:'bn',k:'除',n:T('Ban','Ban'),d:T('+1 ban a partita: al level-up bandisci un\'arma o un potenziamento (a tua scelta) per il resto della partita. Fino a 5.','+1 ban per run: on a level-up, ban a weapon or upgrade (your choice) for the rest of the run. Up to 5.'),max:5,base:700,g:1.7}
+ {id:'rr',k:'換',n:T('Reroll','Reroll'),d:T('+1 reroll a partita: al level-up ritira tutte e 3 le carte potenziamento.','+1 reroll per run: on a level-up, redraws all 3 upgrade cards.'),max:5,base:500,g:1.6},
+ {id:'sk',k:'跳',n:T('Skip','Skip'),d:T('+1 skip a partita: al level-up salti la scelta senza prendere nulla.','+1 skip per run: on a level-up, skip the choice and take nothing.'),max:5,base:400,g:1.6},
+ {id:'bn',k:'除',n:T('Ban','Ban'),d:T('+1 ban a partita: al level-up bandisci un\'arma o un potenziamento (a tua scelta) per il resto della partita.','+1 ban per run: on a level-up, ban a weapon or upgrade (your choice) for the rest of the run.'),max:5,base:700,g:1.7}
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
 /* text colour of every shop upgrade (health red, agility blue, ...) */

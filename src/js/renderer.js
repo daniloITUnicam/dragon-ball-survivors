@@ -351,14 +351,14 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
-    /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn in the arcade lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
+    /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn as sprites of a clean medium-weight lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
     ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
     const smo=ctx.imageSmoothingEnabled;
     for(const d of g.tx){
       const L=d.l||.8,u=d.t/L,a=u<.62?1:clamp(1-(u-.62)/.38,0,1),y=d.y-d.t*(L>.8?30:34);
       if(d.c===0||d.c===6){
-        const cr=d.c===6,sp=this.dmgSpr(String(d.s),cr),pop=d.t<.12?1+(.12-d.t)/.12*(cr?.7:.3):1,k=2*pop,sh=cr&&d.t<.2?Math.sin(d.t*90)*(1-d.t/.2)*2.2:0;
-        ctx.globalAlpha=a;ctx.imageSmoothingEnabled=false;
+        const cr=d.c===6,sp=this.dmgSpr(String(d.s),cr),pop=d.t<.12?1+(.12-d.t)/.12*(cr?.5:.25):1,k=pop/sp.ds,sh=cr&&d.t<.2?Math.sin(d.t*90)*(1-d.t/.2)*2.2:0;
+        ctx.globalAlpha=a;ctx.imageSmoothingEnabled=true;
         ctx.drawImage(sp.cv,d.x-sp.w*k/2+sh,y-sp.h*k*.72,sp.w*k,sp.h*k);
         continue;
       }
@@ -379,24 +379,17 @@ this.W=1;this.H=1;this.Z=1;
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     this.hud(g,dt,cx,cy);
   }
-  /* the arcade lettering of the damage numbers: heavy, slanted, Dragon Ball-logo style (gradient + dark outline + a 3-D edge), drawn small and blown up
-     with no smoothing so the edges stay crisp pixels. One sprite per (text, critical?), cached. White-yellow for a hit, red for a critical hit */
+  /* the lettering of the damage numbers: a clean, upright, medium-weight font (white for a hit, red for a critical hit) with a thin dark outline for contrast.
+     It is drawn at twice the size and shown scaled down with smoothing, so the digits stay sharp and easy to read. One sprite per (text, critical?), cached */
   dmgSpr(txt,crit){
     const m=this._dm||(this._dm=new Map()),key=(crit?'c':'n')+txt;let sp=m.get(key);if(sp)return sp;
-    const fs=crit?10:8,ff='400 '+fs+'px "Anton","Bangers","Impact","Arial Black",sans-serif',mc=this._dmc||(this._dmc=document.createElement('canvas').getContext('2d'));
-    mc.font=ff;const ext=1,pad=3,w=Math.ceil(mc.measureText(txt).width)+pad*2+ext+3,h=fs+pad*2+ext+2,cv=document.createElement('canvas');cv.width=w;cv.height=h;
-    const c=cv.getContext('2d'),base=h-pad-ext-1;c.font=ff;c.textBaseline='alphabetic';c.textAlign='left';c.lineJoin='round';
-    c.transform(1,0,-.2,1,.2*base,0);   /* slant */
-    const X=pad+1;
-    c.fillStyle=crit?'#3a0000':'#b35a00';c.fillText(txt,X+ext,base+ext);                            /* the 3-D edge */
-    c.lineWidth=3;c.strokeStyle='#000';c.strokeText(txt,X,base);c.strokeText(txt,X+ext,base+ext);   /* outline */
-    const g=c.createLinearGradient(0,base-fs*.8,0,base);
-    if(crit){g.addColorStop(0,'#ffb8a0');g.addColorStop(.4,'#ff3a28');g.addColorStop(1,'#e01018');}
-    else{g.addColorStop(0,'#ffffff');g.addColorStop(.55,'#fff4b8');g.addColorStop(1,'#ffc83a');}
-    c.fillStyle=g;c.fillText(txt,X,base);c.strokeStyle=g;c.lineWidth=.9;c.strokeText(txt,X,base);   /* the stroke makes any fallback font heavy */
-    const id=c.getImageData(0,0,w,h),d=id.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>110?255:0;c.putImageData(id,0,0);   /* hard pixel edges */
-    sp={cv,w,h};
-    let ok=true;try{ok=!document.fonts||document.fonts.check('12px "Anton"');}catch(e){}
+    const DS=2,fs=(crit?21:17)*DS,ff=(crit?'700 ':'600 ')+fs+'px "Rajdhani","Segoe UI","Trebuchet MS",Arial,sans-serif',mc=this._dmc||(this._dmc=document.createElement('canvas').getContext('2d'));
+    mc.font=ff;const ow=2.2*DS,pad=Math.ceil(ow)+2,w=Math.ceil(mc.measureText(txt).width)+pad*2,h=Math.ceil(fs*1.15)+pad*2,cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const c=cv.getContext('2d'),base=h-pad-Math.round(fs*.2);c.font=ff;c.textBaseline='alphabetic';c.textAlign='left';c.lineJoin='round';
+    c.lineWidth=ow;c.strokeStyle='rgba(8,6,20,.92)';c.strokeText(txt,pad,base);   /* thin dark outline */
+    c.fillStyle=crit?'#ff5646':'#ffffff';c.fillText(txt,pad,base);
+    sp={cv,w,h,ds:DS};
+    let ok=true;try{ok=!document.fonts||document.fonts.check('600 12px "Rajdhani"');}catch(e){}
     if(ok){if(m.size>500)m.clear();m.set(key,sp);}
     return sp;
   }

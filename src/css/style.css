@@ -483,6 +483,10 @@ canvas#c.bgblur{filter:blur(3px) saturate(1.2) brightness(.95);transform:scale(1
 .chclear:hover{background:rgba(255,120,60,.6)}
 select.chsort{flex:0 0 auto;border-radius:999px;padding:7px 14px;font:800 13px 'Rajdhani',sans-serif;letter-spacing:.03em;border:2px solid rgba(255,190,90,.3);background:linear-gradient(180deg,#2d4c86,#1c3260);color:#fff;cursor:pointer;outline:none}
 select.chsort:focus{border-color:#ffd23f}
+/* the open list of every drop-down: dark background and light text (the browser default was white on white) */
+select{color-scheme:dark}
+select option,select optgroup{background-color:#16224a;color:#fff}
+select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .btn.small.chdir{min-width:40px;padding:6px 12px 5px;font-size:16px}
 .chcount{margin-left:auto;font:800 12px 'Rajdhani',sans-serif;color:#cdbf9a;letter-spacing:.06em}
 .qsscr{align-items:center}

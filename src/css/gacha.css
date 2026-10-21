@@ -116,6 +116,16 @@
 .bagdet .stl{display:flex;flex-direction:column;gap:3px;font-weight:700}
 .bagdet .btn{align-self:stretch}
 .rchips{display:flex;gap:6px;flex-wrap:wrap}
+.bsorts{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;z-index:20}
+.bsortb{position:relative;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:rgba(8,14,30,.78);color:#fff;font:800 19px var(--body);cursor:pointer;padding:0}
+.bsortb:hover,.bsortb:focus-visible{border-color:#fff;filter:brightness(1.2)}
+.bsortb.on{border-color:var(--gold,#ffd23f);background:rgba(255,210,63,.2);box-shadow:0 0 10px rgba(255,210,63,.45)}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#0b1020;color:#fff;border:2px solid var(--gold,#ffd23f);border-radius:8px;padding:5px 10px;font:700 13px var(--body);letter-spacing:.02em;z-index:30;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.55)}
+.bagside{flex:0 1 320px;display:flex;flex-direction:column;gap:10px;position:sticky;top:0}
+.bagside .bagdet{flex:none;position:static;width:100%;box-sizing:border-box}
+.rarbox{display:flex;flex-direction:column;gap:6px;align-items:flex-end;text-align:right}
+.rarlbl{font:700 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8fa0b8}
+.rarbox .rchips{justify-content:flex-end}
 .rchip{font:700 12px var(--body);padding:5px 10px;border-radius:99px;border:2px solid var(--c);background:transparent;color:var(--c);cursor:pointer;opacity:.5}
 .rchip.on{background:color-mix(in srgb,var(--c) 22%,transparent);opacity:1}
 .bagsort{padding:7px 10px;border-radius:9px;border:2px solid rgba(255,255,255,.18);background:rgba(8,14,30,.7);color:#fff;font:600 14px var(--body)}
@@ -150,6 +160,9 @@
   .gov{--z:104px}
   .gcard .cd{min-height:0}
   .bagdet{flex:1 1 100%;position:static}
+  .bagside{flex:1 1 100%;position:static}
+  .bsorts{flex-direction:row;flex:1 1 100%;position:static}
+  [data-tip]:hover::after,[data-tip]:focus-visible::after{left:0;top:calc(100% + 6px);transform:none}
 }
 
 /* several tickets at once */
@@ -157,17 +170,27 @@
 .gpb .btn{display:flex;flex-direction:column;align-items:center;line-height:1.1;padding:6px 12px;min-width:84px}
 .gpb .btn small.gtu{font:600 10px var(--body);opacity:.75;letter-spacing:.04em;margin-top:1px}
 .gov.bulk{--z:128px}
-.gov .gtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px;width:min(1040px,96vw);max-height:56vh;overflow:auto;padding:4px}
-.gtile{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:0 8px;align-items:center;padding:6px 10px;border-radius:10px;border:2px solid var(--c);background:linear-gradient(170deg,rgba(255,255,255,.08),rgba(10,8,24,.92) 60%);opacity:0;animation:gpop .35s cubic-bezier(.2,1.5,.4,1) forwards;animation-delay:var(--d,0s)}
-.gtile .glyph{font-size:26px;width:34px;grid-row:1/3}
-.gtile .gtn{display:flex;flex-direction:column;min-width:0;line-height:1.15}
-.gtile .gtn b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gtile .gtn small{font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--c);opacity:.85}
-.gtile .gtc{font:800 16px var(--display);color:#fff;grid-column:3;grid-row:1}
-.gtile .gnew,.gtile .gdup{grid-column:3;grid-row:2;justify-self:end;font:800 10px var(--body);padding:1px 7px;border-radius:99px}
-.gtile .gnew{background:#2a8f3e;color:#eaffea}.gtile .gdup{background:#4a566e;color:#fff}
-.gtile.r3{box-shadow:0 0 14px rgba(255,176,32,.75)}.gtile.r4{box-shadow:0 0 20px rgba(255,59,138,.9)}
-@media(max-width:700px){.gov .gtiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:50vh}}
+.gov .gtiles{--cols:10;--s:64px;display:grid;grid-template-columns:repeat(var(--cols),var(--s));grid-auto-rows:var(--s);gap:6px;justify-content:center;max-width:96vw;max-height:calc(100vh - 250px);overflow:auto;padding:4px}
+.gtile{position:relative;display:flex;align-items:center;justify-content:center;border-radius:10px;border:2px solid var(--c);background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.14),rgba(10,8,24,.94) 70%);opacity:0;animation:gpop .35s cubic-bezier(.2,1.5,.4,1) forwards;animation-delay:var(--d,0s);cursor:help;outline:none}
+.gtile .glyph{font-size:calc(var(--s) * .46);width:auto;margin:0}
+.gtile .glyph.gimg,.gtile .glyph img{width:calc(var(--s) * .6);height:calc(var(--s) * .6)}
+.gtile .gtp{position:absolute;left:6px;right:6px;bottom:4px;height:4px;border-radius:3px;background:rgba(255,255,255,.16);overflow:hidden}
+.gtile .gtp i{display:block;height:100%;width:var(--p,0%);background:var(--pc,#9aa4b0)}
+.gtile .gnd{position:absolute;right:3px;top:3px;width:9px;height:9px;border-radius:50%;background:#3ddc5c;box-shadow:0 0 6px #3ddc5c}
+.gtile{transition:scale .12s}.gtile:hover,.gtile:focus-visible{scale:1.14;z-index:3;filter:brightness(1.2)}
+.gtile.r1{box-shadow:0 0 8px rgba(74,176,255,.5)}.gtile.r2{box-shadow:0 0 10px rgba(192,90,255,.6)}
+.gtile.r3{box-shadow:0 0 14px rgba(255,176,32,.8)}.gtile.r4{box-shadow:0 0 18px rgba(255,59,138,.95)}
+.gtile.perfect{outline:2px solid #fff;outline-offset:-5px}
+.gtip{position:fixed;z-index:60;left:0;top:0;width:min(280px,86vw);padding:10px 12px;border-radius:12px;border:2px solid var(--c,#fff);background:rgba(10,8,24,.97);box-shadow:0 8px 28px rgba(0,0,0,.65);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .08s;font-size:13px;line-height:1.3}
+.gtip.on{opacity:1;transform:none}
+.gtip-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.gtip-h .glyph{font-size:30px;width:auto}
+.gtip-h b{display:block;font-size:15px}.gtip-h small{font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--c);opacity:.9}
+.gtip .stl{display:flex;flex-direction:column;gap:1px;font-weight:700}
+.gtip-d{opacity:.9;margin-top:3px;white-space:pre-line}
+.gtip-t{display:inline-block;margin-top:6px;margin-right:6px;font:800 10px var(--body);letter-spacing:.06em;padding:2px 8px;border-radius:99px}
+.gtip-t.gup{background:#7a4cff;color:#fff}.gtip-t.gnew{background:#2a8f3e;color:#eaffea}.gtip-t.gdup{background:#4a566e;color:#fff}
+@media(max-width:700px){.gov .gtiles{max-height:calc(100vh - 230px)}}
 
 /* ---- v54: trinket perfection (0-100%) and the Ultra Instinct shimmer at 100% ---- */
 .perf{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:4px 0;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--pc,#9aa4b0)}

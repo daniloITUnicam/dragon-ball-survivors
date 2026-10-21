@@ -100,7 +100,7 @@ r=await ev(()=>{const R=__app.renderer||window.R||Object.values(window).find(v=>
   const red=cc.red,other=cc.lit-cc.red,red2=nn.red;
   return{same:a===a2,mid,red,other,red2,aw:a.w,ah:a.h,cw:c.w,ch:c.h};});
 ok(r.same,'the lettering of a number is drawn once and reused');
-ok(r.mid===0,'edges are hard pixels (no half-transparent pixels)');
+ok(r.mid>0,'the lettering is smooth (anti-aliased, not blocky): '+r.mid+' soft pixels');
 ok(r.red>r.other*1.5&&r.red2<r.red*.3,'critical hits are red ('+r.red+' red vs '+r.other+' other lit pixels; a normal hit has '+r.red2+' red)');
 ok(r.cw>r.aw&&r.ch>r.ah,'critical numbers are bigger ('+r.cw+'x'+r.ch+' vs '+r.aw+'x'+r.ah+')');
 /* the frame renders with all kinds of texts on screen */

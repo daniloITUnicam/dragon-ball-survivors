@@ -83,12 +83,14 @@ if _mode == 'embed' and _budget and _src and sum(f.stat().st_size for f in _src.
         tot = sum(_dur(f) for f in _src.values()) or 1
         kbps = max(40, min(128, int(_budget * 8192 / tot)))
         cache = ROOT/'dist'/'.audio'; cache.mkdir(parents=True, exist_ok=True)
+        _low = {k.strip() for k in (os.environ.get('DBS_AUDIO_LOW') or '').split(',') if k.strip()}   # DBS_AUDIO_LOW=stage3,menu: those tracks 8 kbps lower (the MP3 encoder only has steps of 8 kbps: this trims the page just under a size limit)
         for key, f in _src.items():
+            kb = max(32, kbps - 8) if key in _low else kbps
             h = hashlib.md5(f.read_bytes()).hexdigest()[:10]
-            o = cache/('%s_%d_%s.mp3' % (key, kbps, h))
+            o = cache/('%s_%d_%s.mp3' % (key, kb, h))
             if not o.exists():
-                subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(f), '-vn', '-ac', '2', '-ar', '44100' if kbps >= 80 else '32000',
-                                '-c:a', 'libmp3lame', '-b:a', '%dk' % kbps, '-joint_stereo', '1', str(o)], check=True)
+                subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(f), '-vn', '-ac', '2', '-ar', '44100' if kb >= 80 else '32000',
+                                '-c:a', 'libmp3lame', '-b:a', '%dk' % kb, '-joint_stereo', '1', str(o)], check=True)
             _enc[key] = o
         print('music: re-encoded to %d kbps (budget %.1f MB)' % (kbps, _budget))
 for key, f in _src.items():

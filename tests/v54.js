@@ -20,7 +20,7 @@ let r=await ev(()=>{const out={nom:true,disjoint:true,eff:[],bad:[]};
   return Object.assign(out,{n100,min,max,hiLuck:hiLuck/20000,loLuck:loLuck/20000});});
 ok(r.nom,'perfection 50% = the nominal stats of every trinket (nothing changes for what you already had)');
 ok(r.bad.length===0,'the stat ranges of neighbouring rarities never overlap: best Common < worst Rare ... best Legendary < worst Mythic '+(r.bad[0]||''));
-ok(r.min===0&&r.max===100&&r.n100>500&&r.n100<1300,'perfection rolls span 0-100, about 4% are a perfect 100 ('+r.n100+'/20000); Luck raises the average ('+r.loLuck.toFixed(1)+' -> '+r.hiLuck.toFixed(1)+')');
+ok(r.min===0&&r.max===100&&r.n100>25&&r.n100<110,'perfection rolls span 0-100, a perfect 100 is very rare: about 0.3% ('+r.n100+'/20000); Luck raises the average ('+r.loLuck.toFixed(1)+' -> '+r.hiLuck.toFixed(1)+')');
 ok(r.eff.every(x=>/false$/.test(x)),'effect-only trinkets have no perfection ('+r.eff.join(' ')+')');
 console.log('   Potara (might/HP) at 0 / 50 / 100%: '+r.pot);
 /* ---------- chest: 4 trinkets, luck does not add more ---------- */
@@ -99,7 +99,7 @@ ok(await ev(()=>G.perfAura===false),'no aura without a 100% trinket');
 /* bag: perfection sort */
 await ev(()=>{const A=__app,d=A.save.d;d.bag=[{id:'scouter',r:0,at:1,p:30},{id:'scouter',r:4,at:2,p:100},{id:'potara',r:1,at:3,p:55},{id:'dragonheart',r:3,at:4,p:81}];A.ui.push('bag',{});});
 await wait(400);
-r=await ev(()=>{const s=document.querySelector('.bagsort');if(!s)return null;s.value='perf';s.dispatchEvent(new Event('change'));return [...document.querySelectorAll('.baggrid .tcard .ctag')].map(x=>x.textContent);});
+r=await ev(()=>{const s=document.querySelector('[data-fid="bs_perf"]');if(!s)return null;s.click();return [...document.querySelectorAll('.baggrid .tcard .ctag')].map(x=>x.textContent);});
 ok(r&&r.length===4&&r.map(x=>+x.split('·').pop().replace('%','')).every((v,i,a)=>!i||a[i-1]>=v)&&/100%/.test(r[0]),'bag sorted by perfection: '+(r||[]).join(' | '));
 await pg.screenshot({path:'/tmp/tab/v54_bag.png'});
 ok(errs.length===0,'no page errors ('+errs.slice(0,3).join(' | ')+')');

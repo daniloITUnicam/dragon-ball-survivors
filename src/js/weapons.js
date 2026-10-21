@@ -104,6 +104,7 @@ const VFX={
   }
 };
 
+const XQ_GAP=.16;   /* seconds between a hit and the next extra hit given by Quantità */
 class Weapon{
   constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];this.xl=0;}
   get L(){return this.evo?5:Math.min(4,this.lv-1);}
@@ -127,6 +128,11 @@ class Weapon{
   get evoName(){return this.evo>=2?this.def.evo2:this.def.evo;}
   upgrade(){if(this.lv<WMAX)this.lv++;else if(this.canXl())this.xl++;}
   evolve(){this.lv=1;this.evo=(this.evo||0)+1;}
+  /* Quantità (shop, trinkets, forms: g.S.proj): the extra hits are never fired on top of the first one. Each follows the previous after a short gap and is aimed again,
+     so they read as separate hits and may even reach another enemy. extras(fn,gap) queues them, tickQ(dt) (first line of update) fires them when due */
+  get xn(){return Math.max(0,Math.round(this.g.S.proj||0));}
+  extras(fn,gap){const n=this.xn,q=this.q||(this.q=[]);for(let k=1;k<=n;k++)q.push({t:k*(gap||XQ_GAP),k,fn});}
+  tickQ(dt){const q=this.q;if(!q||!q.length)return;let due=null;for(const o of q){o.t-=dt;if(o.t<=0)(due||(due=[])).push(o);}if(!due)return;this.q=q.filter(o=>o.t>0);for(const o of due)o.fn(o.k);}
   update(dt){}
   draw(ctx){}
   static create(g,id){const C={ki:KiWeapon,kame:KameWeapon,disc:DiscWeapon,spirit:SpiritWeapon,aura:AuraWeapon,flare:FlareWeapon,slash:SlashWeapon,homing:HomingWeapon,dbeam:DeathBeamWeapon}[id]||NEWW[id];return new C(g,id);}
@@ -138,6 +144,7 @@ class KiWeapon extends Weapon{
      target and the blasts leave the hand (Pose.tip). The wind-up ends exactly when the cooldown reaches 0, so the rate of fire is the same. */
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     this.cd-=dt;
     const wu=Math.min(.24,(this.cdMax||.3)*.8);
     if(!this.wu&&this.cd>0&&this.cd<=wu){
@@ -160,6 +167,11 @@ class KiWeapon extends Weapon{
       const a=base+(i-(n-1)/2)*.17;
       g.pr.push({x:tip.x,y:tip.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});
     }
+    this.extras(()=>{   /* Quantità: one more blast per level, thrown a moment later at the nearest target */
+      const t2=g.nearest(p.x,p.y,640),a=t2?Math.atan2(t2.y-p.y,t2.x-p.x)+g.aimJit():base;
+      g.armAct('shoot',a,{w:0,h:.2,r:.18,col:this.color});const tp=Pose.tip(g,a);
+      g.pr.push({x:tp.x,y:tp.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});g.audio.sfx('shot');
+    });
     g.audio.sfx('shot');this.cd=this.cdMax=s.cd[L]*g.S.cd*this.e2c;
   }
 }
@@ -183,6 +195,7 @@ class KameWeapon extends Weapon{
   }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     if(!this.charge){
       this.cd-=dt;
       if(this.cd<=0){
@@ -194,7 +207,7 @@ class KameWeapon extends Weapon{
       const c=this.charge,t=g.nearest(p.x,p.y,700);
       if(t)c.a=Math.atan2(t.y-p.y,t.x-p.x)+c.jit;
       c.t+=dt;g.cast={a:c.a,t:c.t,dur:c.dur,color:this.color,kind:'kame'};
-      if(c.t>=c.dur){this.fire(c.a);g.audio.sfx(this.evo?'kameFireEvo':'kameFire');this.charge=null;g.cast=null;this.cd=s.cd[L]*g.S.cd*this.e2c;g.shake=Math.max(g.shake,.15);}
+      if(c.t>=c.dur){this.fire(c.a);g.audio.sfx(this.evo?'kameFireEvo':'kameFire');this.extras(k=>{const t2=g.nearest(p.x,p.y,700),a=(t2?Math.atan2(t2.y-p.y,t2.x-p.x):c.a)+(k%2?1:-1)*Math.ceil(k/2)*.4;this.fire(a);g.audio.sfx(this.evo?'kameFireEvo':'kameFire');g.shake=Math.max(g.shake,.1);},.4);this.charge=null;g.cast=null;this.cd=s.cd[L]*g.S.cd*this.e2c;g.shake=Math.max(g.shake,.15);}
     }
     for(const b of this.beams){
       b.t+=dt;b.tk-=dt;b.ext=KameWeapon.ext(b);
@@ -236,7 +249,7 @@ class DiscWeapon extends Weapon{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.a+=dt*s.spd[L];
-    const n=s.n[L]+(this.evo>=2?2:0),r=s.r[L]*(g.S.area*this.e2a);this.pos.length=0;
+    const n=s.n[L]+(this.evo>=2?2:0)+this.xn,r=s.r[L]*(g.S.area*this.e2a);this.pos.length=0;   /* Quantità: more discs around you, evenly spaced */
     for(let i=0;i<n;i++){
       const a=this.a+i*TAU/n,dx=p.x+Math.cos(a)*r,dy=p.y-14+Math.sin(a)*r;
       this.pos.push([dx,dy]);if(g.eb.length)g.cutC(dx,dy,11*(this.evo?1.5:1));
@@ -405,23 +418,30 @@ class FlareWeapon extends Weapon{
 
 class SlashWeapon extends Weapon{
   constructor(g,id){super(g,id);this.slashes=[];}
+  swing(a){
+    const g=this.g,p=g.p,s=this.st,L=this.L,rad=s.rad[L]*(g.S.area*this.e2a),half=s.arc[L];
+    for(const ang of(this.lv>=5&&!this.evo?[a,a+Math.PI]:[a])){
+      this.slashes.push({a:ang,half,rad,t:0,dur:.22});g.cutArc(p.x,p.y-14,rad,ang,half);
+      for(const e of g.en){
+        if(e.dead)continue;
+        const dx=e.x-p.x,dy=e.y-8-(p.y-14),d=Math.hypot(dx,dy)||1;
+        if(d>rad+e.r)continue;
+        if(Math.abs(angDiff(Math.atan2(dy,dx),ang))<=half)g.hit(e,s.dmg[L]*this.dm,dx/d*120,dy/d*120);
+      }
+    }
+    g.audio.sfx('slash');
+  }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     this.cd-=dt;
     if(this.cd<=0){
       const rad=s.rad[L]*(g.S.area*this.e2a),t=g.nearest(p.x,p.y,rad+20);
       if(t){
-        const a=Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),half=s.arc[L];
-        for(const ang of(this.lv>=5&&!this.evo?[a,a+Math.PI]:[a])){
-          this.slashes.push({a:ang,half,rad,t:0,dur:.22});g.cutArc(p.x,p.y-14,rad,ang,half);
-          for(const e of g.en){
-            if(e.dead)continue;
-            const dx=e.x-p.x,dy=e.y-8-(p.y-14),d=Math.hypot(dx,dy)||1;
-            if(d>rad+e.r)continue;
-            if(Math.abs(angDiff(Math.atan2(dy,dx),ang))<=half)g.hit(e,s.dmg[L]*this.dm,dx/d*120,dy/d*120);
-          }
-        }
-        g.audio.sfx('slash');this.cd=s.cd[L]*g.S.cd*this.e2c;
+        const a=Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit();
+        this.swing(a);
+        this.extras(()=>{const t2=g.nearest(p.x,p.y,rad+20);this.swing(t2?Math.atan2(t2.y-p.y,t2.x-p.x)+g.aimJit():a);},.2);   /* Quantità: one more swing after the first */
+        this.cd=s.cd[L]*g.S.cd*this.e2c;
       }else this.cd=.1;
     }
     for(const sl of this.slashes)sl.t+=dt;
@@ -448,10 +468,12 @@ class SlashWeapon extends Weapon{
 class HomingWeapon extends Weapon{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     this.cd-=dt;if(this.cd>0)return;
     if(!g.en.length){this.cd=.2;return;}
-    const n=s.n[L]+g.S.proj+this.e2n;
-    for(let i=0;i<n;i++){const a=rnd(0,TAU);g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*230,vy:Math.sin(a)*230,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi:this.evo?1:0,life:3,hit:[],c:this.color,home:true});}
+    const n=s.n[L]+this.e2n,one=()=>{const a=rnd(0,TAU);g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*230,vy:Math.sin(a)*230,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm,pi:this.evo?1:0,life:3,hit:[],c:this.color,home:true});};
+    for(let i=0;i<n;i++)one();
+    this.extras(()=>{one();g.audio.sfx('shot');});   /* Quantità: the extra seekers leave one after the other */
     g.audio.sfx('shot');this.cd=s.cd[L]*g.S.cd*this.e2c;
   }
 }
@@ -465,7 +487,7 @@ class DeathBeamWeapon extends Weapon{
       let best=null,bh=-1;
       for(const e of g.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<520*520&&e.hp>bh){bh=e.hp;best=e;}}
       if(best){
-        const ang=Math.atan2(best.y-8-(p.y-18),best.x-p.x)+g.aimJit(),n=this.evo>=2?5:this.evo?3:this.lv>=5?2:1;
+        const ang=Math.atan2(best.y-8-(p.y-18),best.x-p.x)+g.aimJit(),n=(this.evo>=2?5:this.evo?3:this.lv>=5?2:1)+this.xn;   /* Quantità: more beams in the fan */
         for(let k=0;k<n;k++){
           const a=ang+(k===0?0:(k%2?1:-1)*Math.ceil(k/2)*.3),cs=Math.cos(a),sn=Math.sin(a),ox=p.x,oy=p.y-18,wd=s.wid[L]*(g.S.area*this.e2a),len=s.len[L];
           this.lines.push({a,t:0,dur:.28,len,wid:wd});

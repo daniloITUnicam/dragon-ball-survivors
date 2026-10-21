@@ -10,7 +10,7 @@ Object.assign(WS,{
   chrono:{cd:[8,7.5,7,6.5,6,5],rad:[150,165,180,200,220,260],dmg:[10,12,14,16,19,22],hits:[3,3,3,4,4,6],stun:[1,1.1,1.2,1.3,1.4,1.6]},
   shock:{cd:[3.4,3.1,2.8,2.5,2.2,1.9],rad:[170,190,210,235,260,310],dmg:[14,17,20,24,28,34]},
   hakai:{cd:[9,8.5,8,7.5,7,6],n:[1,1,1,1,2,2],dmg:[4.5,5.5,6.5,7.5,9,10.5],rad:[56,62,68,76,86,100],life:[4,4.2,4.4,4.6,4.8,5]},
-  chain:{cd:[1.4,1.3,1.2,1.1,1,.9],jumps:[3,4,4,5,6,8],dmg:[10,12,14,16,19,22]},
+  chain:{cd:[2.2,2.05,1.9,1.75,1.6,1.45],jumps:[3,4,4,5,6,8],dmg:[5,6,7,8,9.5,11]},   /* nerfed in v59: half the damage (was 10-22) and a slower rhythm (was 1.4-0.9 s) */
   meteor:{cd:[3.2,3,2.8,2.6,2.4,2.1],n:[2,3,3,4,5,6],dmg:[14,16,18,21,24,28],rad:[50,54,58,64,70,80]},
   sweep:{cd:[7.5,7,6.5,6,5.5,4.8],dur:[2.2,2.3,2.4,2.5,2.6,2.8],dmg:[4.5,5,5.6,6.4,7.4,8.6],len:[300,320,340,360,390,440],wid:[26,28,30,32,35,40]},
   dyn:{cd:[1.2,1.1,1,.9,.8,.7],rad:[72,80,88,98,110,130],dmg:[13,16,19,23,27,32]}
@@ -30,27 +30,26 @@ const unit=(a,b)=>{const d=Math.hypot(a,b)||1;return[a/d,b/d];};
 class JavelinWeapon extends NW{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     this.cd-=dt;if(this.cd>0)return;
     const t=g.nearest(p.x,p.y,600);if(!t){this.cd=.1;return;}
-    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),n=s.n[L]+g.S.proj+this.e2n;
-    for(let i=0;i<n;i++){
-      const a=base+(i-(n-1)/2)*.15;
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*540,vy:Math.sin(a)*540,r:8*this.area(),dmg:s.dmg[L]*this.dm,pi:s.pi[L]+(this.evo?2:0),life:1.15,hit:[],c:this.color,spear:a});
-    }
+    const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),n=s.n[L]+this.e2n,spear=a=>g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*540,vy:Math.sin(a)*540,r:8*this.area(),dmg:s.dmg[L]*this.dm,pi:s.pi[L]+(this.evo?2:0),life:1.15,hit:[],c:this.color,spear:a});
+    for(let i=0;i<n;i++)spear(base+(i-(n-1)/2)*.15);
+    this.extras(()=>{const t2=g.nearest(p.x,p.y,600);spear(t2?Math.atan2(t2.y-8-(p.y-18),t2.x-p.x)+g.aimJit():base);g.audio.sfx('slash');});   /* Quantità: one more spear a moment later */
     g.audio.sfx('slash');this.cd=this.cdv();
   }
 }
 class DSundayWeapon extends NW{
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
     this.cd-=dt;if(this.cd>0)return;
-    const cands=g.en.filter(e=>this.inView(e,560)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y));
+    const near=()=>g.en.filter(e=>this.inView(e,560)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y)),cands=near();
     if(!cands.length){this.cd=.1;return;}
-    const n=s.n[L]+g.S.proj+this.e2n;
-    for(let i=0;i<n;i++){
-      const t=cands[i%cands.length],a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+(i>=cands.length?rnd(-.15,.15):0)+g.aimJit();
-      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*470,vy:Math.sin(a)*470,r:7,dmg:s.dmg[L]*this.dm,pi:0,life:1.3,hit:[],c:this.color,expl:s.rad[L]*this.area(),ex:.6});
-    }
+    const n=s.n[L]+this.e2n,shot=(t,extra)=>{const a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+(extra?rnd(-.15,.15):0)+g.aimJit();
+      g.pr.push({x:p.x,y:p.y-18,vx:Math.cos(a)*470,vy:Math.sin(a)*470,r:7,dmg:s.dmg[L]*this.dm,pi:0,life:1.3,hit:[],c:this.color,expl:s.rad[L]*this.area(),ex:.6});};
+    for(let i=0;i<n;i++)shot(cands[i%cands.length],i>=cands.length);
+    this.extras(k=>{const c2=near();if(c2.length){shot(c2[(n+k-1)%c2.length],(n+k-1)>=c2.length);g.audio.sfx('shot');}});   /* Quantità: one more blast at the next target a moment later */
     g.audio.sfx('shot');this.cd=this.cdv();
   }
 }

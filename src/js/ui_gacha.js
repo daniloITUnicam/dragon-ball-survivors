@@ -133,14 +133,44 @@ Object.assign(UI.prototype,{
       const cards=h('div',{class:bulk?'gtiles':'gcards'});reels.replaceWith(cards);
       let bestSnd=-1;
       if(bulk){
-        /* the same trinket at the same rarity is shown once with its count; the best come first, new ones before duplicates */
-        const grp=new Map();for(const x of res){const k=trinketKey(x.id,x.r),e=grp.get(k)||{x,c:0,nw:false,coins:0,p:-1,up:false};e.c++;e.coins+=x.coins||0;if(!x.dup)e.nw=true;if(x.p>e.p)e.p=x.p;if(x.up!=null)e.up=true;grp.set(k,e);}
-        [...grp.values()].sort((p,q)=>q.x.r-p.x.r||(q.nw-p.nw)||q.c-p.c).forEach((e,ix)=>{
-          const i=this.tinfo(e.x.id,e.x.r,e.p);bestSnd=Math.max(bestSnd,e.x.r);
-          cards.append(h('div',{class:'gtile r'+e.x.r,style:'--c:'+i.c+';--d:'+Math.min(ix,40)*.02+'s',title:i.name+' · '+i.rar+'\n'+i.desc},glyph(i.t.k,i.c),
-            h('div',{class:'gtn'},h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(e.up?' ↑':'')),this.perfBar(i.perf,true)),
-            h('span',{class:'gtc'},'×'+e.c),e.nw?h('span',{class:'gnew'},this.t('gNew')):h('span',{class:'gdup'},this.t('gDup'))));
+        /* every pull is shown (100 at most), one small tile each, resized to fill the screen; hover / tap a tile for its stats */
+        const tip=h('div',{class:'gtip'});ov.append(tip);
+        const showTip=(el,x,i,ev)=>{
+          const eff=i.t.x&&i.t.m?this.tr(i.t.x):'';
+          tip.replaceChildren(...[h('div',{class:'gtip-h',style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',null,h('b',{style:'color:'+i.c},i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(x.up!=null?' ↑':'')))),
+            this.perfBar(i.perf),
+            i.stats.length?h('div',{class:'stl'},i.stats.map(q=>h('span',{style:'color:#9affb0'},this.tr(q.t)))):h('div',{class:'gtip-d'},i.desc),
+            eff?h('div',{class:'gtip-d'},eff):null,
+            x.dup?h('div',{class:'gtip-t gdup'},this.t('gDup'),x.coins?[' · +',zAmt(x.coins,true)]:null):h('div',{class:'gtip-t gnew'},this.t('gNew')),
+            x.up!=null?h('div',{class:'gtip-t gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null].filter(Boolean));
+          tip.style.setProperty('--c',i.c);tip.classList.add('on');
+          const r=el.getBoundingClientRect(),tw=tip.offsetWidth,th=tip.offsetHeight,vw=innerWidth,vh=innerHeight;
+          let px=ev&&ev.clientX!=null&&ev.type!=='focus'?ev.clientX+14:r.right+8,py=ev&&ev.clientY!=null&&ev.type!=='focus'?ev.clientY+14:r.top;
+          if(px+tw>vw-8)px=Math.max(8,(ev&&ev.clientX!=null&&ev.type!=='focus'?ev.clientX:r.left)-tw-14);
+          if(py+th>vh-8)py=Math.max(8,vh-th-8);
+          tip.style.left=px+'px';tip.style.top=py+'px';
+        };
+        const hideTip=()=>tip.classList.remove('on');
+        const list=[...res].sort((p,q)=>q.r-p.r||((q.p||0)-(p.p||0))||((!q.dup)-(!p.dup)));
+        list.forEach((x,ix)=>{
+          const i=this.tinfo(x.id,x.r,x.p);bestSnd=Math.max(bestSnd,x.r);
+          const el=h('div',{class:'gtile r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':'')+(x.dup?'':' fresh'),tabindex:'0',style:'--c:'+i.c+';--d:'+Math.min(ix*.012,1.2)+'s'},glyph(i.t.k,i.c),
+            i.perf!=null?h('span',{class:'gtp',style:'--p:'+i.perf+'%;--pc:'+perfColor(i.perf)},h('i')):null,
+            x.dup?null:h('span',{class:'gnd',title:this.t('gNew')}));
+          el.addEventListener('pointerenter',ev=>showTip(el,x,i,ev));el.addEventListener('pointermove',ev=>{if(tip.classList.contains('on'))showTip(el,x,i,ev);});
+          el.addEventListener('pointerleave',hideTip);el.addEventListener('focus',ev=>showTip(el,x,i,ev));el.addEventListener('blur',hideTip);
+          cards.append(el);
         });
+        /* the grid size that fits all the tiles in the space left by the title, the summary and the buttons */
+        const fit=()=>{
+          if(gone||!cards.isConnected)return;
+          const g=6,W=Math.min(1040,innerWidth*.96-8),H=Math.max(150,innerHeight-258),nn=list.length;let bc=1,bs=0;
+          for(let c=1;c<=nn;c++){const rw=Math.ceil(nn/c),sz=Math.min((W-(c-1)*g)/c,(H-(rw-1)*g)/rw);if(sz>bs){bs=sz;bc=c;}}
+          bs=Math.max(30,Math.min(96,Math.floor(bs)));
+          cards.style.setProperty('--cols',bc);cards.style.setProperty('--s',bs+'px');
+        };
+        fit();addEventListener('resize',fit);
+        const st1=ov.__stop;ov.__stop=()=>{removeEventListener('resize',fit);st1();};
         if(!skip)snd('gPop'+best);
       }
       else for(const x of res){
@@ -211,12 +241,15 @@ Object.assign(UI.prototype,{
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
     const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;this.rebuild(true);}},this.tr(RARITY[r].n))));
     const search=h('input',{type:'text',class:'achsearch','data-fid':'bagq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
-    const sortSel=h('select',{class:'bagsort','data-fid':'bsort',onchange:e=>{st.sort=e.target.value;fill();}},['new','old','rar','perf','name'].map(k=>h('option',{value:k,selected:st.sort===k?'':null},this.t(({new:'bagSort_new',old:'bagSort_old',rar:'bagSort_rar',perf:'bagSort_perf',name:'bagSort_name'})[k]))));
-    sortSel.value=st.sort;
+    /* the sort options: a column of icons on the left, each with a tooltip */
+    const SORT_ICON={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
+    const sortBtns=['new','old','rar','perf','name'].map(k=>{const lab=this.t('bagSort_'+k);
+      return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'bs_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,'aria-pressed':st.sort===k?'true':'false',
+        onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sortBtns){const on=b.dataset.sort===k;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}fill();}},SORT_ICON[k]);});
     fill();
     return h('div',null,this.header('bagTitle'),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,
-      h('div',{class:'achtools'},search,sortSel,shown),h('div',{class:'achtools'},chips),
-      h('div',{class:'bagsplit'},grid,det));
+      h('div',{class:'achtools'},search,shown),
+      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},sortBtns),grid,h('div',{class:'bagside'},h('div',{class:'rarbox'},h('div',{class:'rarlbl'},this.t('gRarity')),chips),det)));
   },
   /* ---------- Super Shenron: the 7 Super Dragon Balls spent on a reward (opened from the stage menu) ---------- */
   screen_superWish(){

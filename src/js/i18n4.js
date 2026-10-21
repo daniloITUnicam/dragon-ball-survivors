@@ -38,6 +38,7 @@
     gClose:['Chiudi','Close','Cerrar','Fermer','Schließen','Fechar'],
     bagTitle:['Borsa dei cimeli','Trinket bag','Bolsa de reliquias','Sac à reliques','Relikt-Beutel','Bolsa de relíquias'],
     bagSearch:['Cerca per nome o effetto…','Search by name or effect…','Buscar por nombre o efecto…','Rechercher par nom ou effet…','Nach Name oder Effekt suchen…','Buscar por nome ou efeito…'],
+    bagSortBy:['Ordina per','Sort by','Ordenar por','Trier par','Sortieren nach','Ordenar por'],
     bagSort_new:['Più recenti','Newest','Más recientes','Plus récents','Neueste','Mais recentes'],
     bagSort_old:['Meno recenti','Oldest','Más antiguos','Plus anciens','Älteste','Mais antigos'],
     perfLabel:['Perfezione','Perfection','Perfección','Perfection','Perfektion','Perfeição'],
