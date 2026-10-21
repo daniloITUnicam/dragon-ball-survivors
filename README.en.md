@@ -321,6 +321,8 @@ The Tournament of Power (internal theme `void`) is fought on **one closed ellipt
 
 ![Dynamic menu](docs/screens/menu-dynamic.jpg)
 
+- **In-game structures** (`Renderer.getFeat`/`drawFeature`): the 8 structures (`shrine`, `font`, `totem`, `spring`, `altar`, `chamber`, `secret`, `zenoportal`) are crops of `assets/sprites/props/featprops.png` (source: `_sorgenti/props/strutture_ostacoli.jpg`); `ws` in `getFeat` = world px per sprite px; `secretDown` is the pressed button (no "?"). Until the sheet is decoded the old vector drawing is used.
+
 ### 📖 Grimoire and recipe-based evolutions
 - A weapon evolves when it is **at max level** *and* you own the **right upgrade** (e.g. **Zenkai + Kamehameha**); the evolution is granted by a **chest**. Every weapon has two recipes (one per evolution).
 - Level-up cards show a **tooltip with icons**: "The «Zenkai» upgrade evolves your «Kamehameha» weapon". On the HUD a maxed weapon shows the icon of the upgrade it still needs (or a **!** when ready). A maxed weapon makes its missing upgrade show up more often.

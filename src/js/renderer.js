@@ -1218,9 +1218,34 @@ this.W=1;this.H=1;this.Z=1;
     for(let i=0;i<10;i++){const q=t*.6+i*.63,rr=44+16*Math.sin(t+i);ctx.fillStyle='rgba(255,233,160,'+(.5+.4*Math.sin(t*3+i))+')';ctx.fillRect(zx+Math.cos(q)*rr*1.3-1.5,zy-50+Math.sin(q)*rr-1.5,3,3);}
     ctx.textAlign='left';
   }
+  /* the painted structures (assets/sprites/props/featprops.png): crops of the atlas, foot at the anchor; ws = world px per sprite px, gl = colour of the soft glow behind it, [dy] = height of that glow */
+  getFeat(){
+    const BP=Sprites.sheets.featprops;if(!BP||!BP.anch||!BP.rects)return null;
+    if(this.featSp)return this.featSp;
+    const WS={shrine:.26,font:.27,totem:.25,spring:.3,altar:.26,chamber:.24,secret:.21,zenoportal:.25},GL={shrine:'#ffd23f',font:'#8ad8ff',totem:'#8be07a',spring:'#8be07a',altar:'#ff5a5a',chamber:'#ffffff',secret:'#ff3b3b',zenoportal:'#c080ff'};
+    const out={};
+    ['shrine','font','totem','spring','altar','chamber','secret','zenoportal'].forEach((n,i)=>{
+      const r=BP.rects[i],a=BP.anch[i];if(!r||!a)return;
+      const c=document.createElement('canvas');c.width=r[2];c.height=r[3];c.getContext('2d').drawImage(BP.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
+      out[n]={c,ox:a[0],oy:a[1],k:(WS[n]||.25)/(BP.k||1),gl:GL[n]};
+    });
+    /* the pressed button of the secret altar: no question mark, a duller button */
+    const sc=out.secret;if(sc){const c=document.createElement('canvas');c.width=sc.c.width;c.height=sc.c.height;const x=c.getContext('2d');x.drawImage(sc.c,0,0);
+      x.clearRect(0,0,c.width,Math.round(c.height*.27));
+      const im=x.getImageData(0,0,c.width,c.height),d=im.data;for(let i=0;i<d.length;i+=4)if(d[i+3]>0&&d[i]>150&&d[i+1]<110&&d[i+2]<110){d[i]=96;d[i+1]=26;d[i+2]=26;}
+      x.putImageData(im,0,0);out.secretDown={c,ox:sc.ox,oy:sc.oy,k:sc.k,gl:'#ff3b3b'};}
+    this.featSp=out;return out;
+  }
   drawFeature(f,t,g){
     const ctx=this.ctx,x=f.x,y=f.y,pulse=.5+.5*Math.sin(t*3+x);
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
+    {const FS=this.getFeat(),sp=FS&&FS[f.kind==='secret'&&f.pressed?'secretDown':f.kind];
+     if(sp){
+       const k=sp.k,bob=f.kind==='zenoportal'?Math.sin(t*1.6)*2.5:0,br=f.kind==='chamber'||f.kind==='zenoportal'?1+.012*Math.sin(t*2.2):1;
+       GLOW.at(ctx,x,y-sp.c.height*k*.45,(26+sp.c.width*k*.28)*(1+.08*pulse),sp.gl,f.pressed?.12:.22+.1*pulse);
+       ctx.save();ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2+bob);ctx.scale(k*br,k*br);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;
+       ctx.globalAlpha=1;return;
+     }}
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+2,22,7,0,0,TAU);ctx.fill();
     switch(f.kind){
       case'shrine':GLOW.at(ctx,x,y-20,40+8*pulse,'#ffd23f',.7);ctx.fillStyle='#8a8f98';ctx.fillRect(x-9,y-34,18,34);ctx.fillStyle='#a8aeb8';ctx.fillRect(x-9,y-34,18,5);ctx.fillStyle='#ffd23f';ctx.fillRect(x-3,y-24,6,2);ctx.fillRect(x-1,y-28,2,10);break;

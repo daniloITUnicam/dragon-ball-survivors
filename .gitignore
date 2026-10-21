@@ -19,3 +19,4 @@ assets/sprite test/
 # archivi usati per trasferire le modifiche dal cloud al PC
 sync*.tar
 sync*.tar.old
+docs/PROMPT_GEMINI_TERRENI.md

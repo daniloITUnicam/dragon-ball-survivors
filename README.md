@@ -329,6 +329,8 @@ Il Torneo del Potere (tema interno `void`) si combatte su **un'arena ellittica c
 
 ![Menu dinamico](docs/screens/menu-dynamic.jpg)
 
+- **Strutture di gioco** (`Renderer.getFeat`/`drawFeature`): le 8 strutture (`shrine`, `font`, `totem`, `spring`, `altar`, `chamber`, `secret`, `zenoportal`) sono ritagli di `assets/sprites/props/featprops.png` (sorgente: `_sorgenti/props/strutture_ostacoli.jpg`), `ws` in `getFeat` = px di mondo per px di sprite; `secretDown` è il pulsante premuto (senza «?»). Finché il foglio non è decodificato resta il disegno vettoriale di prima.
+
 ### 📖 Grimorio ed evoluzioni con ricetta
 - Un'arma evolve quando è **al livello massimo** *e* hai il **potenziamento giusto** (es. **Zenkai + Kamehameha**); l'evoluzione si ottiene da un **forziere**. Ogni arma ha due ricette (una per evoluzione).
 - Nelle carte del level up compare un **tooltip con icone**: "Il potenziamento «Zenkai» evolve l'arma «Kamehameha»". Sull'HUD, un'arma al massimo mostra l'icona del potenziamento che le manca (o un **!** quando è pronta). Se un'arma è al massimo, il potenziamento che le serve compare più spesso.

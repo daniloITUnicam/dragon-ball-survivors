@@ -16,6 +16,15 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21l',date:'2026-10-21',
+    name:T("Strutture di gioco ridisegnate","Redrawn in-game structures"),
+    sum:T("Le 8 strutture che compaiono in partita hanno una grafica nuova, più grande e dettagliata.","The 8 structures that appear in a run have new, bigger and more detailed art."),
+    new:[
+      {g:T("Mappe","Maps"),l:[
+        T("Nuova grafica per Altare del Potere, Fonte dell'esperienza, Totem, Sorgente curativa, Altare del sacrificio, Stanza dello Spirito e del Tempo, Altare con il pulsante rosso e Portale di Zeno-sama. Misurano 100-165 px di larghezza (prima circa 40-45).","New art for the Power Shrine, Experience Font, Totem, Healing Spring, Sacrifice Altar, Room of Spirit and Time, red-button Altar and Zeno-sama's Portal. They are 100-165 px wide (they were about 40-45)."),
+        T("Il pulsante rosso, una volta premuto, perde il punto interrogativo e diventa più scuro; il portale di Zeno e la Stanza respirano piano; ogni struttura ha un leggero bagliore del suo colore.","Once pressed, the red button loses its question mark and turns darker; Zeno's portal and the Room breathe slowly; each structure has a soft glow in its colour."),
+      ]}
+    ]},
   {id:'2026-10-21k',date:'2026-10-21',
     name:T("Torneo del Potere: arena chiusa","Tournament of Power: a closed arena"),
     sum:T("Il Torneo del Potere si combatte ora su un'unica arena circolare con la torre al centro: niente compare fuori dal bordo.","The Tournament of Power is now fought on a single circular arena with a tower in the middle: nothing appears outside its edge."),
