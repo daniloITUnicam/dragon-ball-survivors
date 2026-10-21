@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Cuts the four weapon-target panels (Closest / HP+ / HP- / Boss) out of assets/src/tgt_src.jpg and writes assets/tgt.webp:
+"""Cuts the four weapon-target panels (Closest / HP+ / HP- / Boss) out of assets/sprites/_sorgenti/mirini/tgt_src.jpg and writes assets/tgt.webp:
 four cells of CW x CH px side by side, transparent background (flood fill of the dark navy around each panel).
 Usage: python3 tools/gen_tgt.py   (needs Pillow). The cell size goes into src/js/tgtart.js (TGT_CELL)."""
 from pathlib import Path
 from PIL import Image, ImageDraw
 import sys
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT/'assets'/'src'/'tgt_src.jpg'
+SRC = ROOT/'assets'/'sprites'/'_sorgenti'/'mirini'/'tgt_src.jpg'
 OUT = ROOT/'assets'/'tgt.webp'
 CW, CH = 232, 240          # one cell of the atlas
 # crop boxes on the 1792x2400 source, in game order: closest, most HP, least HP, boss

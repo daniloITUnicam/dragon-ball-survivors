@@ -674,7 +674,7 @@ class Game{
     const allZ=lm.options.every(o=>o.type==='z');
     if(!allZ)this.autoZ=false;   /* a real choice came back: the automatic bag pick stops */
     if(allZ){lm.maxed=true;if(this.autoZ||this.save.settings.zAuto){this.autoLevel(lm);return;}}
-    if(this.endless&&this.save.settings.endAuto){this.autoLevel(lm);return;}   /* Endless "auto-select": the card is chosen by the priority list, no menu */
+    if(this.save.settings.lvAuto){this.autoLevel(lm);return;}   /* "auto level-up" (every mode): the card is chosen by the priority list, no menu */
     if(this.xform)this.afterX=lm;else this.modal=lm;
   }
   /* XP needed for the next level: the normal curve, or in Endless a gentle curve calibrated on the XP income the player had when Endless began
@@ -692,14 +692,14 @@ class Game{
       this.ring(this.p.x,this.p.y,260,'#ffd23f',.8);this.pillar(this.p.x,this.p.y,'#ffe9a0',1.1);this.burst(this.p.x,this.p.y-20,40,'#ffd23f');
     }
   }
-  /* the owned weapons and upgrades in priority order (max 10: 5 weapons + 5 upgrades); the order is a setting that outlives the run */
+  /* the owned weapons and upgrades in priority order (max 10: 5 weapons + 5 upgrades); the order is a setting (settings.lvPrio) that outlives the run */
   enPrio(){
     const own=[...this.weapons.keys()].map(i=>'w:'+i).concat(Object.keys(this.pass).filter(k=>this.pass[k]>0).map(i=>'p:'+i));
-    const out=(this.save.settings.endPrio||[]).filter(k=>own.includes(k));
+    const out=(this.save.settings.lvPrio||[]).filter(k=>own.includes(k));
     for(const k of own)if(!out.includes(k))out.push(k);
     return out.slice(0,MAX_WEAPONS+MAX_PASSIVES);
   }
-  setPrio(list){this.save.settings.endPrio=list.slice(0,MAX_WEAPONS+MAX_PASSIVES);this.env.save.write();}
+  setPrio(list){this.save.settings.lvPrio=list.slice(0,MAX_WEAPONS+MAX_PASSIVES);this.env.save.write();}
   optKey(o){return o.type==='w'?'w:'+o.id:o.type==='p'?'p:'+o.id:null;}
   /* the card to take when nobody is choosing: the best-ranked owned item; then owned weapons/upgrades; a needed evolution passive before the rest; a Senzu when hurt */
   autoPick(opts){

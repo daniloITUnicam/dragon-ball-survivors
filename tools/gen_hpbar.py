@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds assets/hpbar.webp (an atlas of pieces) from assets/src/hpbar_src.png, the HP bar artwork.
+"""Builds assets/hpbar.webp (an atlas of pieces) from assets/sprites/_sorgenti/barre/hpbar_src.png, the HP bar artwork.
 
 The artwork is one picture on a black background with sample content baked in (a Goku portrait, "Lv. 1", "7500 / 7500", lightning arcs
 over the frame and across the bar). The game needs the parts separately and without the sample content: the left cap (the medallion with a
@@ -13,7 +13,7 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-A = np.array(Image.open(ROOT / 'assets' / 'src' / 'hpbar_src.png').convert('RGB'))
+A = np.array(Image.open(ROOT / 'assets' / 'sprites' / '_sorgenti' / 'barre' / 'hpbar_src.png').convert('RGB'))
 H, W, _ = A.shape
 work = A.copy()
 

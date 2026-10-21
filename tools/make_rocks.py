@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Builds the rock atlases of the planets (see docs/SPRITES.md, "Rocce dei pianeti"):
-  assets/sprites/rocks.png      Namek     <- assets/sprites/_archivio/rocks.png (transparent sheet of 20 rocks)
-  assets/sprites/lavarocks.png  Inferno   <- assets/sprites/_archivio/lavarocks_sheet.png (static rocks, white background, drawn at 2x)
-                                             + assets/sprites/_archivio/lavarocks_anim.png, lavarocks_anim2.png (looping animation frames, dark background, 2x)
+  assets/sprites/rocce/rocks.png      Namek     <- assets/sprites/_sorgenti/rocce/rocks.png (transparent sheet of 20 rocks)
+  assets/sprites/rocce/lavarocks.png  Inferno   <- assets/sprites/_sorgenti/rocce/lavarocks_sheet.png (static rocks, white background, drawn at 2x)
+                                                   + assets/sprites/_sorgenti/rocce/lavarocks_anim.png, lavarocks_anim2.png (looping animation frames, dark background, 2x)
 and writes their entries in assets/sprites/sprites.json:
   rects  [x,y,w,h] of every rock (the first frame of an animated one)      kinds  {name: [rock numbers]} the obstacle definitions of world.js pick from
   anim   {rock: [rect numbers of its other frames]}  (all the frames share one canvas size and one anchor)      pp  [rocks that play ping-pong]   fps  frames per second
@@ -15,7 +15,8 @@ from scipy import ndimage as ndi
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SP = ROOT / 'assets' / 'sprites'
-ARC = SP / '_archivio'
+ARC = SP / '_sorgenti' / 'rocce'      # source sheets
+OUT = SP / 'rocce'                   # the atlases the game uses
 
 
 def save_entry(sid, entry):
@@ -47,7 +48,7 @@ def namek():
     big.sort(key=lambda c: (0 if c['y0'] < 100 else 1 if c['y0'] < 180 else 2, c['x0']))
     rects = [[c['x0'], c['y0'], c['x1'] - c['x0'], c['y1'] - c['y0']] for c in big]
     assert len(rects) == 20, len(rects)
-    im.save(SP / 'rocks.png', optimize=True)
+    im.save(OUT / 'rocks.png', optimize=True)
     save_entry('rocks', {'cols': 1, 'rects': rects,
                          'kinds': {'big': [0, 1, 2, 3], 'spire': [4, 5, 9, 10, 11], 'mix': [6, 7, 8, 12, 15, 16, 17, 19, 3, 0]}})
     print('rocks.png:', len(rects), 'rocks')
@@ -168,7 +169,7 @@ def lava():
     atlas = np.zeros((y + rowh, W, 4), np.uint8)
     for sp, (px, py) in zip(allspr, place):
         atlas[py:py + sp.shape[0], px:px + sp.shape[1]] = sp
-    Image.fromarray(atlas, 'RGBA').save(SP / 'lavarocks.png', optimize=True)
+    Image.fromarray(atlas, 'RGBA').save(OUT / 'lavarocks.png', optimize=True)
     kinds = {'big': [0, 1, 2, 5] + newkinds, 'crater': [3, 4, 15, 16, 17, 19], 'spire': [6, 7, 11, 12, 13, 14], 'mix': [8, 9, 10, 18, 20, 21, 22, 23, 24, 25, 26, 27]}
     save_entry('lavarocks', {'cols': 1, 'rects': rects, 'kinds': kinds, 'anim': anim, 'pp': pingpong, 'fps': 5, 'dry': [22, 23, 24, 26, 27]})
     print('lavarocks.png:', atlas.shape[1], 'x', atlas.shape[0], '|', n, 'rocks +', len(extra), 'animation frames |', len(anim), 'animated')

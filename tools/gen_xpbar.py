@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds assets/xpbar.png (an atlas of pieces) from assets/src/xpbar_src.png, the EXP bar artwork.
+"""Builds assets/xpbar.png (an atlas of pieces) from assets/sprites/_sorgenti/barre/xpbar_src.png, the EXP bar artwork.
 
 The artwork is one picture on a black background with sample text baked in (LV 1, 12450 / 15000, 85%). The game needs the parts
 separately: the medallion + level plates (left cap), the number panel (right cap), the beam (body + head) that fills the bar, and the
@@ -13,7 +13,7 @@ import cv2
 from scipy import ndimage as ndi
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SRC = ROOT / 'assets' / 'src' / 'xpbar_src.png'
+SRC = ROOT / 'assets' / 'sprites' / '_sorgenti' / 'barre' / 'xpbar_src.png'
 im = Image.open(SRC).convert('RGB')
 A = np.array(im).astype(np.int32)
 H, W, _ = A.shape

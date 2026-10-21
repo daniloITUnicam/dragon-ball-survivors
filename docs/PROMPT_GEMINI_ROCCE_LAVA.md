@@ -1,6 +1,6 @@
 # Prompt per Gemini: rocce di lava animate (Inferno)
 
-Servono per le rocce dell'**Inferno** che ancora sono ferme. Il gioco usa già 7 rocce animate (vulcano grande, lastra che cola, doppio cratere, masso, masso medio che cola, guglia, piccolo vulcano): le immagini sono in `assets/sprites/_archivio/lavarocks_anim.png` e `lavarocks_anim2.png`, il foglio statico è `lavarocks_sheet.png`. Procedura di importazione: [`SPRITES.md`](SPRITES.md) ("Rocce dei pianeti") e `tools/make_rocks.py`.
+Servono per le rocce dell'**Inferno** che ancora sono ferme. Il gioco usa già 7 rocce animate (vulcano grande, lastra che cola, doppio cratere, masso, masso medio che cola, guglia, piccolo vulcano): le immagini sono in `assets/sprites/_sorgenti/rocce/lavarocks_anim.png` e `lavarocks_anim2.png`, il foglio statico è `lavarocks_sheet.png` (stessa cartella). Procedura di importazione: [`SPRITES.md`](SPRITES.md) ("Rocce dei pianeti") e `tools/make_rocks.py`.
 
 Regola d'oro: **allega sempre il foglio statico `lavarocks_sheet.png`** (e, per lo stile del loop, uno dei fogli animati già fatti). Se l'immagine e il testo discordano, vince l'immagine. I prompt sono in inglese perché Gemini li capisce meglio.
 
@@ -41,6 +41,6 @@ Sostituisci `[LIST]` e `[ANIMATION]` con una riga della tabella. Una richiesta p
 
 ## 4. Dopo aver generato
 
-1. Salva l'immagine in `assets/sprites/_archivio/lavarocks_anim3.png`.
+1. Salva l'immagine in `assets/sprites/_sorgenti/rocce/lavarocks_anim3.png`.
 2. In `tools/make_rocks.py` aggiungi le righe alla lista `ANIM` (riga/colonna di ogni roccia nel nuovo foglio e numero della roccia statica a cui appartiene), poi `python3 tools/make_rocks.py lava`.
 3. `DBS_AUDIO=link python3 build.py`, `node tests/shot_rocks_zoom.js hell` per guardare ogni roccia da vicino e `python3 tools/run_tests.py rocks` per il test.

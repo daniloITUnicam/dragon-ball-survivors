@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Tamagami sprite import (v53).  Sources (magenta background, AI generated) in assets/src/tama/:
+"""Tamagami sprite import (v53).  Sources (magenta background, AI generated) in assets/sprites/_sorgenti/boss/:
    sheet_normal.png / sheet_fury.png   3 rows (Tamagami 1, 2, 3) x 9 frames: 0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit
    statues.png                         the three stone statues on their pedestals
    ref_normal.png                      the three idle poses (only used to scale the statues like the monsters)
-Output (assets/sprites/): tama1 tama2 tama3 (+ f = Fury) = one-row sheets, tamas1..3 = the statues, and their entries in sprites.json.
+Output (assets/sprites/boss/, entries in assets/sprites/sprites.json): tama1 tama2 tama3 (+ f = Fury) = one-row sheets, tamas1..3 = the statues, and their entries in sprites.json.
 Frames touch each other in a few places (swords, spears, hammers), so they are cut with component labelling + a few hand-made rules.
 Usage: python3 tools/import_tama.py   (Pillow, numpy, scipy)"""
 import json
@@ -13,8 +13,9 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT/'assets'/'src'/'tama'
-OUT = ROOT/'assets'/'sprites'
+SPR = ROOT/'assets'/'sprites'
+SRC = SPR/'_sorgenti'/'boss'
+OUT = SPR/'boss'
 M = np.array([252, 0, 247])
 ROWS = [(0, 185), (185, 364), (364, 572)]
 TARGET_H = [130, 128, 130]      # on-screen height (px) of the idle body of Tamagami 1, 2, 3 (game px at scale 1)
@@ -225,7 +226,7 @@ def main():
         q = quant(im); q.save(OUT/(sid+'.png'), optimize=True)
         meta[sid] = dict(cols=1, fw=im.width, fh=im.height, ax=im.width//2, ay=im.height-2, ppu=1, has=[])
         print(sid, im.size, (OUT/(sid+'.png')).stat().st_size, 'bytes')
-    p = OUT/'sprites.json'
+    p = SPR/'sprites.json'
     d = json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
     d.update(meta)
     p.write_text(json.dumps(d, indent=1), encoding='utf8')

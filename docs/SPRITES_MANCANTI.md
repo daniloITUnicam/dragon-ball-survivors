@@ -1,7 +1,7 @@
 # Sprite che mancano
 
-> **Aggiornamento 16/10/2026 (sera): gli sprite sono sospesi, anche quelli di Goku e le rocce: il gioco usa solo la grafica disegnata dal codice; tutto è in `assets/sprites/_archivio/`.** In precedenza:
-> **Aggiornamento 16/10/2026:** per ora hanno sprite solo **Goku** (9 forme, fogli a griglia) e gli effetti (Kamehameha, rocce). Tutti gli altri personaggi, boss e nemici sono tornati alla grafica base disegnata dal codice; i vecchi fogli del pack sono in `assets/sprites/_archivio/` (non vengono incorporati nel gioco) e le loro righe in `tools/sprite_map_archivio.json`. Qui sotto la lista originale: oggi mancano tutti tranne Goku.
+> **Aggiornamento 16/10/2026 (sera): gli sprite sono sospesi, anche quelli di Goku e le rocce: il gioco usa solo la grafica disegnata dal codice; tutto è in `assets/sprites/_inutilizzati/personaggi/`.** In precedenza:
+> **Aggiornamento 16/10/2026:** per ora hanno sprite solo **Goku** (9 forme, fogli a griglia) e gli effetti (Kamehameha, rocce). Tutti gli altri personaggi, boss e nemici sono tornati alla grafica base disegnata dal codice; i vecchi fogli del pack sono in `assets/sprites/_inutilizzati/personaggi/` (non vengono incorporati nel gioco) e le loro righe in `tools/sprite_map_archivio.json`. Qui sotto la lista originale: oggi mancano tutti tranne Goku.
 
 Elenco generato il 16/10/2026 confrontando il gioco (personaggi, forme, boss, nemici, armi, animali, ostacoli) con i fogli in `assets/sprites/`. Dove manca uno sprite il gioco usa la grafica disegnata dal codice, quindi niente è rotto: ogni voce sotto è un miglioramento da caricare.
 

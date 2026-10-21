@@ -16,6 +16,24 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21d',date:'2026-10-21',
+    name:T("Level-up automatico in ogni modalità","Auto level-up in every mode"),
+    sum:T("Il level-up automatico, prima solo dell'Infinita, funziona in tutte le partite: si accende da Impostazioni > Partita > «Priorità», dove ordini anche quali armi e potenziamenti prendere per primi.","The auto level-up, which used to exist only in Endless, now works in every run: turn it on from Settings > Gameplay > «Priorities», where you also order which weapons and upgrades to take first."),
+    new:[
+      {g:T("Level-up automatico","Auto level-up"),l:[
+        T("Il level-up automatico non è più solo dell'Infinita: vale in ogni modalità e per ogni personaggio. Quando è acceso, a ogni level-up il gioco sceglie da solo la carta (appare «▲ nome Lv n» sopra il personaggio) e il menu non si apre; con meno del 45% di Salute preferisce un Senzu. Finché è acceso non puoi usare Reroll, Salta e Ban.","The auto level-up is no longer Endless-only: it works in every mode and with every character. When it is on, the game picks the card by itself on every level-up («▲ name Lv n» shows over the character) and the menu does not open; below 45% Health it prefers a Senzu. While it is on you cannot use Reroll, Skip and Ban."),
+        T("Dove si accende: solo da Impostazioni > Partita > «Priorità» (anche durante la partita, dal menu ESC > Impostazioni), con l'interruttore «Level-up automatico» che mostra una spiegazione al passaggio del mouse. Il menu ESC e la schermata di level-up non cambiano.","Where to turn it on: only from Settings > Gameplay > «Priorities» (also during a run, from the ESC menu > Settings), with the «Auto level-up» switch that explains itself on hover. The ESC menu and the level-up window do not change."),
+        T("Il menu «Priorità» (Impostazioni > Partita) mostra, durante una partita, le armi e i potenziamenti che hai (fino a 10: 5 armi + 5 potenziamenti) e con ▲ ▼ ne cambi l'ordine; quello in cima viene scelto per primo quando compare tra le carte. Poi vengono i potenziamenti che servono a un'evoluzione, le armi che hai già e le nuove.","The «Priorities» menu (Settings > Gameplay) lists, during a run, the weapons and upgrades you own (up to 10: 5 weapons + 5 upgrades) and ▲ ▼ change their order; the one on top is taken first when it shows up among the cards. Then come the upgrades an evolution needs, the weapons you already have and the new ones."),
+        T("Chi aveva acceso la «Selezione automatica» dell'Infinita la ritrova accesa, con le stesse priorità.","If you had turned on Endless «Auto-select», it is still on, with the same priorities."),
+      ]},
+    ],
+    fix:[
+      {g:T("Codice","Code"),l:[
+        T("L'impostazione si chiama ora lvAuto / lvPrio (prima endAuto / endPrio); i salvataggi vecchi vengono convertiti da soli.","The setting is now called lvAuto / lvPrio (it was endAuto / endPrio); old saves are converted automatically."),
+        T("Sprite riordinati in assets/sprites: quelli usati, le sorgenti (_sorgenti) e quelli non più usati (_inutilizzati) sono in cartelle separate; il gioco non cambia.","Sprites reorganized in assets/sprites: the ones in use, the sources (_sorgenti) and the ones no longer used (_inutilizzati) now live in separate folders; the game does not change."),
+        T("Nuovo test automatico del level-up automatico (modalità normale, priorità, menu in Impostazioni).","New automatic test for the auto level-up (normal mode, priorities, Settings menu)."),
+      ]},
+    ]},
   {id:'2026-10-21c',date:'2026-10-21',
     name:T("Rocce nuove su Namek e Inferno","New rocks on Namek and Inferno"),
     sum:T("Pianeta Namek e Inferno hanno rocce nuove disegnate a mano, appoggiate a terra, senza ombra; su Inferno sono di lava e molte si muovono in loop (vulcani che fumano, lava che cola, crateri che ribollono).","Planet Namek and Hell have new hand-drawn rocks standing on the ground, without a shadow; in Hell they are lava rocks and many loop-animate (smoking volcanoes, dripping lava, bubbling craters)."),

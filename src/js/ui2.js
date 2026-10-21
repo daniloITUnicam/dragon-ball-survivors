@@ -62,6 +62,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='gameplay'){
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
         toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
         toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
@@ -105,6 +106,25 @@ Object.assign(UI.prototype,{
       rows,h('p',{class:'sub'},this.t('rebindHint')),
       h('div',{class:'row'},h('button',{class:'btn small alt','data-fid':'rstb',onclick:()=>{this.sfx();inp.resetBinds();this.rebuild();}},this.t('resetControls')))];
   },
+  /* ---------- automatic level-up: Settings > Gameplay > "Priorities" opens its own menu with the on/off switch and the priority list ---------- */
+  /* the weapons and upgrades of the run (up to 10: 5 weapons + 5 upgrades); the top one is taken first when it shows up among the cards. ▲ ▼ move a row */
+  prioRows(g,after){
+    const list=g.enPrio(),def=k=>k[0]==='w'?WEAPONS[k.slice(2)]:PASS[k.slice(2)];
+    const mv=(i,d)=>{const l=list.slice(),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];g.setPrio(l);this.sfx();after();};
+    return list.map((k,i)=>h('div',{class:'prow endprio'},h('b',{class:'epn'},i+1),glyph(def(k).k,def(k).c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(def(k).n))),
+      h('button',{class:'btn small alt epb','data-fid':'epu'+i,title:this.t('endUp'),disabled:i===0,onclick:()=>mv(i,-1)},'▲'),
+      h('button',{class:'btn small alt epb','data-fid':'epd'+i,title:this.t('endDown'),disabled:i===list.length-1,onclick:()=>mv(i,1)},'▼')));
+  },
+  screen_priority(){
+    const g=this.app.game,st=this.save.settings,rb=()=>this.rebuild(true),on=this.t(st.lvAuto?'on':'off');
+    /* the switch carries the explanation in a tooltip (hover / keyboard focus) */
+    const sw=h('button',{class:'btn small tipabove'+(st.lvAuto?'':' alt'),'data-fid':'lvautosw','data-tip':this.t('lvAutoD'),'aria-label':this.t('lvAuto')+': '+on+'. '+this.t('lvAutoD'),
+      onclick:()=>{this.sfx();st.lvAuto=!st.lvAuto;this.app.save.write();rb();}},on);
+    return h('div',null,this.header('prioBtn'),h('div',{class:'settings'},
+      h('div',{class:'srow'},h('div',{class:'sl'},h('b',null,this.t('lvAuto'))),sw),
+      h('h3',{class:'h3s'},this.t('endPrio')),
+      g?[h('p',{class:'sub'},this.t('endPrioD')),h('div',{class:'prlist'},this.prioRows(g,rb))]:h('p',{class:'sub'},this.t('prioHint'))));
+  },
   /* ---------- pause ---------- */
   screen_pause(a){
     const tab=(a&&a.tab)||this.lastPauseTab||'run',g=this.app.game,S=g.S,p=g.p,t=k=>this.t(k);
@@ -127,16 +147,6 @@ Object.assign(UI.prototype,{
     /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
-    /* Endless only: automatic level-up choice + the priority list (up to 10: 5 weapons + 5 upgrades the player owns) */
-    const endSec=g.endless?(()=>{
-      const st=this.save.settings,list=g.enPrio(),def=k=>k[0]==='w'?WEAPONS[k.slice(2)]:PASS[k.slice(2)];
-      const mv=(i,d)=>{const l=list.slice(),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];g.setPrio(l);this.sfx();this.rebuild(true);};
-      const tog=h('button',{class:'btn small'+(st.endAuto?'':' alt'),'data-fid':'endauto',onclick:()=>{this.sfx();st.endAuto=!st.endAuto;this.app.save.write();this.rebuild(true);}},t('endAuto')+': '+t(st.endAuto?'on':'off'));
-      const rows=list.map((k,i)=>h('div',{class:'prow endprio'},h('b',{class:'epn'},i+1),glyph(def(k).k,def(k).c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(def(k).n))),
-        h('button',{class:'btn small alt epb','data-fid':'epu'+i,title:t('endUp'),disabled:i===0,onclick:()=>mv(i,-1)},'▲'),
-        h('button',{class:'btn small alt epb','data-fid':'epd'+i,title:t('endDown'),disabled:i===list.length-1,onclick:()=>mv(i,1)},'▼')));
-      return h('div',{class:'psec endsec'},h('h3',null,t('endTitle')),tog,h('p',{class:'sub'},t('endAutoD')),h('h3',{class:'h3s'},t('endPrio')),h('p',{class:'sub'},t('endPrioD')),rows);
-    })():null;
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabs=h('div',{class:'row tabs'},
       ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
@@ -148,7 +158,7 @@ Object.assign(UI.prototype,{
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
         this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
     return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
-      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},endSec,sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
+      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
   },
   /* ---------- sandbox config ---------- */
   screen_sandboxCfg(){

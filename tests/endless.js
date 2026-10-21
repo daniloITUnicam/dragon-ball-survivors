@@ -56,8 +56,8 @@ ok(wx.cdTot>=.2-1e-9&&wx.cdTot1>=.2-1e-9,'the total cooldown (stat x weapon) nev
 ok(!wx.canOff,'outside Endless the weapon stops at Lv 5');
 
 /* 6. level-up: auto-select (no menu) / the menu; XP curve of Endless */
-const au=await pg.evaluate(()=>{const g=G;g.save.settings.endAuto=true;g.modal=null;const l0=g.lvl,own0=g.weapons.size+Object.keys(g.pass).length;g.xp=g.need;g.levelUp();
-  const r={modal:!!g.modal,lvl:g.lvl-l0,prio:g.enPrio().length};g.save.settings.endAuto=false;g.modal=null;g.xform=null;g.afterX=null;g.xp=g.need;g.levelUp();r.modal2=g.modal&&g.modal.type;g.modal=null;
+const au=await pg.evaluate(()=>{const g=G;g.save.settings.lvAuto=true;g.modal=null;const l0=g.lvl,own0=g.weapons.size+Object.keys(g.pass).length;g.xp=g.need;g.levelUp();
+  const r={modal:!!g.modal,lvl:g.lvl-l0,prio:g.enPrio().length};g.save.settings.lvAuto=false;g.modal=null;g.xform=null;g.afterX=null;g.xp=g.need;g.levelUp();r.modal2=g.modal&&g.modal.type;g.modal=null;
   r.n=[g.endlessNeed(g.en0.lvl),g.endlessNeed(g.en0.lvl+10),g.endlessNeed(g.en0.lvl+40)];r.rate=g.en0.rate;return r;});
 ok(!au.modal&&au.lvl===1,'auto-select: the level-up applies a card and opens no menu');
 ok(au.modal2==='level','auto-select off: the usual menu opens');

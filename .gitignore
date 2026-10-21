@@ -4,7 +4,13 @@ dist/_bundle.js
 dist/
 _cs/
 
-# sprite di lavoro (le CARTELLE con i frame grezzi restano in locale).
-# I fogli finali assets/sprites/<id>.png + sprites.json vanno sul repo: sono quelli che build.py incorpora nel gioco.
+# Sprite: le sottocartelle di assets/sprites/ restano in locale (frame grezzi dei pack)...
+# ...tranne quelle che vanno sul repo: i fogli che build.py incorpora nel gioco, le sorgenti dei generatori e gli sprite non usati.
+# Una nuova cartella di fogli (es. personaggi/) va aggiunta qui con una riga "!assets/sprites/<nome>/".
 assets/sprites/*/
+!assets/sprites/boss/
+!assets/sprites/effetti/
+!assets/sprites/rocce/
+!assets/sprites/_sorgenti/
+!assets/sprites/_inutilizzati/
 assets/sprite test/

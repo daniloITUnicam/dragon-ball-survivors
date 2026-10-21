@@ -111,7 +111,9 @@ for f in sorted((ROOT/'assets').glob('*')):
     _sfx[k] = ('assets/' + urllib.parse.quote(f.name)) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
     print('sfx:   %-8s <- %s (%s, %.0f KB)' % (k, f.name, _mode, f.stat().st_size / 1024))
 js = js.replace('/*__SFX__*/{}', json.dumps(_sfx, separators=(',', ':')))
-# ---- optional sprite sheets: assets/sprites/<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
+# ---- optional sprite sheets: assets/sprites/[<folder>/]<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
+# The sheets the game uses live in folders with a lowercase name (boss/, effetti/, rocce/, ...; loose files in assets/sprites/ work too). NOT scanned: folders that start
+# with "_" (_sorgenti = source art of the generators, _inutilizzati = sheets the game does not use) and folders with capitals or spaces (raw frame packs, see assets/sprites/README.md).
 import struct
 _sd = pathlib.Path(os.environ.get('DBS_SPRITES') or (ROOT/'assets'/'sprites'))
 _pack = {}
@@ -119,8 +121,13 @@ if _sd.is_dir():
     _ov = {}
     if (_sd/'sprites.json').exists():
         _ov = json.loads((_sd/'sprites.json').read_text(encoding='utf8'))
-    for f in sorted(_sd.glob('*.png')):
+    _files = sorted((f for f in _sd.rglob('*.png') if all(re.fullmatch(r'[a-z][a-z0-9-]*', q) for q in f.relative_to(_sd).parts[:-1])), key=lambda f: f.name)   # sorted by file name: same order as when everything was in one folder
+    _seen = {}
+    for f in _files:
         sid = f.stem
+        if sid in _seen:
+            print('sprites: skipped', f.relative_to(_sd), '(same id as', _seen[sid], ')'); continue
+        _seen[sid] = f.relative_to(_sd)
         if not re.fullmatch(r'[a-z0-9]+(_\d+)?', sid):
             print('sprites: skipped', f.name, '(name must be <id>.png or <id>_<n>.png, lowercase)'); continue
         raw = f.read_bytes()

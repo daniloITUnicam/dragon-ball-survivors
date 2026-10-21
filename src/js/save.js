@@ -14,7 +14,7 @@ class SaveData{
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},endAuto:false,endPrio:[],weapons:5,tgt:0,zAuto:false},
+      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],target:['Tab'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],target:[10],debug:[8]}
@@ -35,6 +35,9 @@ class SaveData{
     /* saves from before the universal dash: Shift used to be a second key for the pet, it now belongs to the dash */
     if(!(obj&&obj.binds&&obj.binds.kb&&obj.binds.kb.dash)){d.binds.kb.pet=(d.binds.kb.pet||[]).filter(k=>k!=='ShiftLeft'&&k!=='ShiftRight');if(!d.binds.kb.pet.length)d.binds.kb.pet=['KeyQ'];}
     if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
+    /* the automatic level-up and its priority list used to be Endless-only settings called endAuto / endPrio: they work in every mode now, and keep what the player had */
+    {const os=obj&&obj.settings;if(os){if(os.lvAuto===undefined&&os.endAuto===true)d.settings.lvAuto=true;if(!(Array.isArray(os.lvPrio)&&os.lvPrio.length)&&Array.isArray(os.endPrio))d.settings.lvPrio=os.endPrio.filter(k=>typeof k==='string').slice(0,10);}
+      delete d.settings.endAuto;delete d.settings.endPrio;}
     if(d.shop.dash){let sum=0;for(let i=0;i<d.shop.dash;i++)sum+=Math.round(120*Math.pow(1.5,i));d.zenny+=sum;}   /* the dash upgrade left the shop: refund it */
     delete d.shop.dash;if(d.testBuys)delete d.testBuys.dash;
     for(const it of SHOP)if(d.shop[it.id]>it.max)d.shop[it.id]=it.max;
