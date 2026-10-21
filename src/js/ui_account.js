@@ -39,6 +39,21 @@ Object.assign(UI.prototype,{
     return h('button',{class:'btn small alt streamerbtn'+(on?' on':''),'data-fid':'astreamer',onclick:()=>{this.sfx();s.streamer=!on;this.app.save.write();this.rebuild(true);}},
       '🎥 '+this.t('streamerMode')+': '+this.t(on?'on':'off'));
   },
+  /* Test mode whitelist (owner only, Test mode on): a drop-down with the players who can use Test mode, a button to remove the selected one and a field to add another by e-mail (table public.testers) */
+  testerBox(){
+    const c=this.app.cloud;if(!c||!c.enabled||!c.isOwner)return null;
+    const st=this.tst||(this.tst={list:null,sel:'',email:'',busy:false}),tr=x=>this.tr(x),again=()=>{if(this.top&&this.top.name==='settings')this.rebuild(true);};
+    const fail=e=>{st.busy=false;this.toast({type:'info',msg:(e&&e.message==='email')?tr(T('Indirizzo e-mail non valido.','Invalid e-mail address.')):(this.cloudErrText(e)||tr(T('Operazione non riuscita.','The operation failed.')))});again();};
+    if(st.list===null&&!st.busy){st.busy=true;c.testers().then(l=>{st.list=l;st.busy=false;if(!l.includes(st.sel))st.sel='';again();}).catch(e=>{st.list=[];fail(e);});}
+    const list=st.list||[];
+    const sel=h('select',{'data-fid':'tsel',onchange:()=>{st.sel=sel.value;this.rebuild(true);}},
+      h('option',{value:''},tr(T('Giocatori autorizzati','Allowed players'))+' ('+list.length+')'),list.map(e=>h('option',{value:e,selected:st.sel===e},this.maskEmail(e))));
+    const del=h('button',{class:'btn small bad','data-fid':'tdel',disabled:!st.sel||st.busy,onclick:()=>{this.sfx();st.busy=true;c.delTester(st.sel).then(()=>{st.busy=false;st.sel='';st.list=null;again();}).catch(fail);}},'✕ '+tr(T('Rimuovi','Remove')));
+    const inp=h('input',{type:'email','data-fid':'tmail',placeholder:tr(T('e-mail del giocatore','player e-mail')),value:st.email||'',autocomplete:'off',autocapitalize:'off',spellcheck:'false',class:this.save.settings.streamer?'hide':null,oninput:()=>{st.email=inp.value;}});
+    const add=h('button',{class:'btn small','data-fid':'tadd',disabled:st.busy,onclick:()=>{if(!(st.email||'').trim())return;this.sfx();st.busy=true;c.addTester(st.email).then(e=>{st.busy=false;st.email='';st.sel=e;st.list=null;again();}).catch(fail);}},'＋ '+tr(T('Aggiungi','Add')));
+    return h('div',{class:'srow tbox'},h('div',{class:'sl'},h('b',null,tr(T('Giocatori autorizzati','Allowed players'))),h('small',null,tr(T('Possono usare la modalità test con il proprio account (le altre voci sono nel file tester.config.json).','They can use Test mode with their own account (the other ones are in tester.config.json).')))),
+      h('div',{class:'tctl'},h('div',{class:'row'},sel,del),h('div',{class:'row'},inp,add)));
+  },
   screen_account(){
     const c=this.app.cloud,st=this.acct||(this.acct={tab:'login',email:'',pw:'',pw2:'',code:'',step:1,msg:null,busy:false});
     const say=(k,text)=>{st.msg=text?{k,text}:null;st.busy=false;if(this.top&&this.top.name==='account')this.rebuild(true);};

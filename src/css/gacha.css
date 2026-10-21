@@ -147,6 +147,15 @@
 .tsone{display:flex;flex-direction:column;align-items:center;gap:4px}
 .tslotwrap.multi .tslot{width:70px;height:70px}
 .tslotwrap.multi .tsn{max-width:62px}
+/* Quick Start (and any card): smaller trinket slots */
+.qscard .tsrow{gap:5px;flex-wrap:wrap;justify-content:flex-start}
+.qscard .tslot,.qscard .tslotwrap.multi .tslot{width:52px;height:52px;border-width:2px;border-radius:9px}
+.qscard .tslot .glyph{font-size:22px}
+.qscard .tslot .tplus{font-size:28px}
+.qscard .tslot .tsn,.qscard .tslotwrap.multi .tsn{font-size:8px;max-width:46px}
+.qscard .tslot .perf{padding:0 4px;margin:2px 0 0}
+.qscard .tslotwrap .unq{font-size:9px;padding:1px 4px;min-width:0;min-height:0}
+.qscard .tslotwrap{align-self:flex-start;align-items:flex-start}
 
 /* ---- Super Shenron ---- */
 .card.stage.superc{background:linear-gradient(160deg,#4a2c00,#1a1000 80%);border-color:var(--gold);box-shadow:0 0 22px rgba(255,210,63,.55);animation:gpulse 2s ease-in-out infinite}

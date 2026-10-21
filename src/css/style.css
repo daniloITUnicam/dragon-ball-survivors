@@ -584,3 +584,11 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 /* the auto level-up switch: tooltip below the button, right edge aligned (the switch sits at the right of its row) */
 .tipabove{position:relative}
 .tipabove[data-tip]:hover::after,.tipabove[data-tip]:focus-visible::after{left:auto;right:0;top:calc(100% + 8px);bottom:auto;transform:none;white-space:normal;width:min(340px,78vw);text-align:left;line-height:1.35;font-style:normal}
+
+/* Test mode whitelist (Settings > General) */
+.tbox .tctl{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.tbox .tctl{flex:0 0 auto}
+.tbox .tctl .row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;justify-content:flex-end}
+.tbox select{max-width:200px}.tbox input{width:190px;box-sizing:border-box}
+.tbox .sl{min-width:0}
+@media (max-width:700px){.tbox .tctl,.tbox .tctl .row{align-items:flex-start;justify-content:flex-start}}

@@ -20,6 +20,31 @@ if not (_ok.match(_url) and _ok.match(_key)):
     sys.exit('invalid characters in SUPABASE_URL / SUPABASE_ANON_KEY')
 js = js.replace('__SUPABASE_URL__', _url).replace('__SUPABASE_KEY__', _key).replace('__SUPABASE_GOOGLE__', '1' if _goo else '').replace('__SUPABASE_RESET__', '1' if _res else '')
 print('cloud:', 'ON ('+_url+')' if _url and _key else 'off (no Supabase settings)')
+# ---- Test mode: owner + fixed whitelist from tester.config.json (git-ignored) or env TEST_OWNER / TEST_LIST; only their hashes go into the page (see testHash in config.js) ----
+def _test_hash(t):
+    M = 0xFFFFFFFF
+    t = t.strip().lower().encode('utf-16-le')
+    h1, h2 = 0xdeadbeef, 0x41c6ce57
+    for i in range(0, len(t), 2):
+        c = t[i] | (t[i+1] << 8)
+        h1 = ((h1 ^ c) * 2654435761) & M
+        h2 = ((h2 ^ c) * 1597334677) & M
+    h1 = (((h1 ^ (h1 >> 16)) * 2246822507) & M) ^ (((h2 ^ (h2 >> 13)) * 3266489909) & M)
+    h2 = (((h2 ^ (h2 >> 16)) * 2246822507) & M) ^ (((h1 ^ (h1 >> 13)) * 3266489909) & M)
+    n = 4294967296 * (2097151 & h2) + h1
+    d = '0123456789abcdefghijklmnopqrstuvwxyz'; out = ''
+    while True:
+        out = d[n % 36] + out; n //= 36
+        if n == 0: return out
+_tc = {}
+_tf = ROOT/'tester.config.json'
+if _tf.exists():
+    _tc = json.loads(_tf.read_text(encoding='utf8'))
+_to = (os.environ.get('TEST_OWNER') or _tc.get('owner') or '').strip()
+_tl = [x.strip() for x in (os.environ.get('TEST_LIST').split(',') if os.environ.get('TEST_LIST') else _tc.get('testers') or []) if x.strip()]
+_td = (os.environ.get('DBS_TEST') or '').strip().lower() in ('1','true','yes')
+js = js.replace('__TEST_OWNER__', _test_hash(_to) if _to else '').replace('__TEST_LIST__', ','.join(_test_hash(x) for x in _tl)).replace('__TEST_DEV__', '1' if _td else '')
+print('test mode:', 'for everybody (DBS_TEST)' if _td else ('owner' + (' + %d tester(s)' % len(_tl) if _tl else '') if _to else 'nobody (no tester.config.json)'))
 _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
 _wip = ROOT/'assets'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu

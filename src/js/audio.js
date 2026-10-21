@@ -300,7 +300,7 @@ class AudioSys{
       case'flare':this.toneAt(2600,.5,'sine',.06,-2000,0);this.toneAt(1300,.5,'triangle',.03,-900,0);this.noise(.35,.08,12000,3000,0);this.elec(.3,.04,0,120,0);break;
       case'slash':this.noise(.14,.06,7500,1800,0);this.toneAt(1400,.12,'sawtooth',.03,-1000,0);this.toneAt(3400,.1,'triangle',.02,-600,.02);break;
       case'fuse':T(900,.5,'square',.02,600);break;
-      case'levelup':if(this.playBuf('levelup',.9,2))break;   /* assets/level_up_sound.mp3 at x2 speed; until it is decoded the synthesized chime below plays */
+      case'levelup':if(this.playBuf('levelup',.4,2))break;   /* assets/level_up_sound.mp3 at x2 speed; until it is decoded the synthesized chime below plays */
       case'lvl':[392,523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.16,'square',.035,0,i*.06));this.toneAt(300,.5,'sawtooth',.03,900,0);this.noise(.4,.04,6000,800,.05);break;
       case'kameCharge':this.zap(110,900,1.0,.05);this.elec(1.0,.05,0,60,80);this.wind(1.0,.04,300,2600,0,1.6);for(let i=0;i<7;i++)this.toneAt(900+i*180,.07,'square',.014,500,.25+i*.1);break;
       case'kameChargeEvo':this.zap(90,1300,1.15,.06);this.elec(1.15,.07,0,50,70);this.wind(1.2,.05,250,3200,0,1.4);this.thump(.1,70,1.1,.05);for(let i=0;i<9;i++)this.toneAt(800+i*210,.07,'square',.016,600,.2+i*.1);break;

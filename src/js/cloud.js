@@ -10,7 +10,7 @@ class Cloud{
     this.sd=sd;this.notify=notify||(()=>{});this.cfg=CLOUD;this.enabled=!!CLOUD.on&&Cloud.urlOk(CLOUD.url);   /* never send a password or a token over plain http */
     this.sess=this.loadSess();this.status='idle';this.err='';this.dirty=false;this.timer=0;this.busy=false;
     this.lastSync=0;this.pending=null;this.recovery=false;this.ready=false;this.applying=false;
-    this.prov=null;this.recoverEmail='';this.recoverAt=0;this.hashCode='';
+    this.prov=null;this.recoverEmail='';this.recoverAt=0;this.hashCode='';this.tester=this.loadTester();
     if(this.enabled){
       sd.onWrite=()=>this.touch();
       if(typeof document!=='undefined'){
@@ -46,12 +46,35 @@ class Cloud{
   followTab(raw){
     let o=null;try{o=raw?safeJSON(raw):null;}catch(e){}
     if(o&&(typeof o.access_token!=='string'||typeof o.refresh_token!=='string'))o=null;   /* anything that is not a session is ignored */
-    if(!o){if(this.sess){this.sess=null;this.pending=null;this.ready=false;this.dirty=false;this.setStatus('idle');this.notify({type:'auth'});}return;}
+    if(!o){if(this.sess){this.sess=null;this.pending=null;this.ready=false;this.dirty=false;this.tester=null;this.setStatus('idle');this.notify({type:'auth'});}return;}
     const had=!!this.sess&&this.sess.user&&o.user&&this.sess.user.id===o.user.id;
     this.sess=o;
     if(had)return;   /* same account: just a fresher token */
     this.ready=false;this.afterAuth();}
   get email(){return this.sess&&this.sess.user?this.sess.user.email||'':'';}
+  /* ---------- test mode whitelist: the owner, the fixed list of the build (tester.config.json), plus the rows of public.testers (an account sees only its own row; the owner sees and edits all) ---------- */
+  get isOwner(){return !!this.email&&testHash(this.email)===TEST_OWNER;}
+  get inFile(){return !!this.email&&TEST_LIST.split(',').includes(testHash(this.email));}
+  get canTest(){return TEST_DEV||(this.signedIn&&(this.isOwner||this.inFile||this.tester===true));}   /* tester: true / false, or null while it is not known yet */
+  loadTester(){try{const o=safeJSON(localStorage.getItem(TEST_KEY)||'null'),u=this.sess&&this.sess.user?this.sess.user.id:'';return o&&u&&o.uid===u?!!o.ok:null;}catch(e){return null;}}
+  saveTester(){try{if(this.tester===null||!this.uid)localStorage.removeItem(TEST_KEY);else localStorage.setItem(TEST_KEY,JSON.stringify({uid:this.uid,ok:this.tester}));}catch(e){}}
+  async checkTester(){
+    if(!this.signedIn){this.tester=null;this.saveTester();this.notify({type:'tester'});return;}
+    if(this.isOwner||this.inFile){this.tester=true;this.saveTester();this.notify({type:'tester'});return;}
+    try{
+      const t=await this.token(),j=await this.req('/rest/v1/testers?select=email&email=eq.'+encodeURIComponent(this.email.toLowerCase()),{token:t});
+      this.tester=!!(j&&j.length);
+    }catch(e){if(e&&e.net)return;this.tester=false;}   /* offline: keep what was known; any other answer (table missing, refused) means not listed */
+    this.saveTester();this.notify({type:'tester'});
+  }
+  async testers(){const t=await this.token(),j=await this.req('/rest/v1/testers?select=email,owner&order=email',{token:t});return(j||[]).filter(x=>!x.owner).map(x=>x.email);}
+  async addTester(email){
+    email=String(email||'').trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>200)throw new Error('email');
+    const t=await this.token();await this.req('/rest/v1/testers?on_conflict=email',{method:'POST',token:t,headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},body:[{email}]});
+    return email;
+  }
+  async delTester(email){const t=await this.token();await this.req('/rest/v1/testers?email=eq.'+encodeURIComponent(String(email).toLowerCase()),{method:'DELETE',token:t});}
   get uid(){return this.sess&&this.sess.user?this.sess.user.id:'';}
   setStatus(s,err){this.status=s;this.err=err||'';this.notify({type:'status'});}
   /* ---------- session storage ---------- */
@@ -121,9 +144,9 @@ class Cloud{
     if(t){try{await this.req('/auth/v1/logout',{method:'POST',token:t});}catch(e){}}
     /* everything is in the cloud: clear this device so the next person starts fresh (settings are kept) */
     if(safe){const sd=this.sd,keep={settings:sd.d.settings,binds:sd.d.binds},nd=sd.defaults();nd.settings=keep.settings;nd.binds=keep.binds;sd.d=nd;this.silentWrite();this.notify({type:'applied'});}
-    this.sess=null;this.saveSess();this.pending=null;this.ready=false;this.dirty=false;this.lastSync=0;this.setStatus('idle');this.notify({type:'auth'});
+    this.sess=null;this.saveSess();this.pending=null;this.ready=false;this.dirty=false;this.lastSync=0;this.tester=null;this.saveTester();this.setStatus('idle');this.notify({type:'auth'});
   }
-  afterAuth(){this.notify({type:'auth'});this.sync();}
+  afterAuth(){this.tester=this.loadTester();this.notify({type:'auth'});this.checkTester();this.sync();}
   async token(){
     const s=this.sess;if(!s)throw new Error('signed-out');
     if(s.expires_at-Date.now()>60000)return s.access_token;
@@ -158,7 +181,7 @@ class Cloud{
         this.cleanHash();
       }
     }
-    if(this.sess){this.notify({type:'auth'});await this.sync();}
+    if(this.sess){this.notify({type:'auth'});this.checkTester();await this.sync();}
   }
   oauthWaiting(){try{const w=+localStorage.getItem(OAUTH_KEY)||0;return !!w&&Date.now()-w<15*60000;}catch(e){return false;}}
   popupHandover(){

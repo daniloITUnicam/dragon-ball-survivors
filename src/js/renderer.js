@@ -1169,13 +1169,17 @@ this.W=1;this.H=1;this.Z=1;
     ctx.fillStyle='#a49cc4';ctx.fillRect(x-r*.85,y-r*2.85,r*1.7,r*.34);ctx.fillStyle='#8c84a8';ctx.fillRect(x-r*.85,y-r*.55,r*1.7,r*.2);
     if(o.v===0){ctx.fillStyle='#6a64c8';ctx.fillRect(x-r*.1,y-r*1.9,r*.2,r*.9);ctx.fillRect(x-r*.3,y-r*1.6,r*.6,r*.18);}
   }
+  /* a loot chest: the colour is its rarity (Common grey, Rare blue, Epic purple, Legendary gold, Mythic pink); the rarer, the bigger and brighter, with a light pillar from Legendary up */
   drawChest(c,t){
-    const ctx=this.ctx,x=c.x,y=c.y,s=c.final?1.5:c.elite?1.2:1,pulse=.5+.5*Math.sin(t*4);
-    GLOW.at(ctx,x,y-10*s,(34+8*pulse)*s,c.final?'#ff7ad0':'#ffd23f',.9);
+    const ctx=this.ctx,x=c.x,y=c.y,rar=c.rar||0,col=RARITY[rar].c,s=(c.final?1.5:c.elite?1.2:1)*(1+.1*rar),pulse=.5+.5*Math.sin(t*4+x);
+    if(rar>=3){const g=ctx.createLinearGradient(0,y-110,0,y-10);g.addColorStop(0,hexA(col,0));g.addColorStop(1,hexA(col,.45));ctx.fillStyle=g;ctx.fillRect(x-9*s,y-110,18*s,100);}
+    GLOW.at(ctx,x,y-10*s,(30+8*pulse+6*rar)*s,col,.5+.08*rar+.25*pulse);
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+3,14*s,4*s,0,0,TAU);ctx.fill();
     ctx.fillStyle='#7a4a1e';ctx.fillRect(x-12*s,y-14*s,24*s,14*s);ctx.fillStyle='#a8682a';ctx.fillRect(x-12*s,y-20*s,24*s,7*s);
-    ctx.fillStyle='#ffd23f';ctx.fillRect(x-12*s,y-9*s,24*s,2.5*s);ctx.fillRect(x-2*s,y-18*s,4*s,10*s);ctx.fillStyle='#fff3b0';ctx.fillRect(x-1*s,y-12*s,2*s,3*s);
+    ctx.fillStyle=col;ctx.fillRect(x-12*s,y-9*s,24*s,2.5*s);ctx.fillRect(x-2*s,y-18*s,4*s,10*s);ctx.fillStyle='#fff';ctx.globalAlpha=.8;ctx.fillRect(x-1*s,y-12*s,2*s,3*s);ctx.globalAlpha=1;
+    if(rar>=2&&Ambient.on)for(let i=0;i<rar;i++){const q=(t*.7+i/rar)%1;ctx.fillStyle=hexA(col,1-q);ctx.fillRect(x+Math.sin(t*2+i*2.4)*12*s-1.2,y-18*s-q*34*s,2.4,2.4);}
   }
+
   /* ---------- Zeno's Shop dimension ---------- */
   zenoRoom(cx,cy,vw,vh,t,tr){
     const ctx=this.ctx,g=this.game||null;
@@ -1515,7 +1519,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* beacons for off-screen map items */
     const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':'#ffd23f']);
-    for(const c of g.chests)tgts.push([c.x,c.y,'#ffd23f']);
+    for(const c of g.chests)tgts.push([c.x,c.y,RARITY[c.rar||0].c]);
     for(const l of g.loot)if(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;

@@ -148,7 +148,7 @@ class Progress{
     const firstWin=!!win&&!b.cleared;
     const lines=this.rewardLines(g,win,firstWin);
     const raw=lines.reduce((s,l)=>s+l.v,0);
-    const mult=stg.zenny*g.S.gold*g.D.zenny*(win||(opts&&opts.keep)?1:.75);   /* x2 mode: no money multiplier at the end (it only makes the run twice as fast) */
+    const mult=(win||(opts&&opts.keep)?1:.75);   /* no end-of-run multiplier any more (stage, difficulty and Coin buffs used to multiply the payout): only a defeat pays 25% less */
     const total=Math.floor(raw*mult);
     const first=!b.counted;
     st.kills+=g.kills-b.kills;st.bosses+=g.run.bossKills-b.bossKills;st.chests+=g.run.chests-b.chests;

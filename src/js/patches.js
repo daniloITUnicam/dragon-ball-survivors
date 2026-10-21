@@ -16,9 +16,46 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-21o',date:'2026-10-21',
+    name:T("Modalità test riservata e Dati di gioco nascosti","Test mode restricted, Game data hidden"),
+    sum:T("La modalità test esiste solo per l'account del proprietario e per quelli autorizzati; «Dati di gioco» compare solo con la modalità test accesa, ma la registrazione continua in background.","Test mode exists only for the owner's account and the allowed ones; \"Game data\" only shows with Test mode on, but recording goes on in the background."),
+    new:[
+      T("Modalità test (Impostazioni > Generale): compare solo se hai fatto il login con l'account del proprietario o con uno autorizzato. Per gli altri non c'è, e se era accesa si spegne (gli acquisti fatti in test vengono annullati come quando la spegni a mano).","Test mode (Settings > General): it only shows if you are signed in with the owner's account or an allowed one. For anybody else it is not there, and if it was on it switches off (purchases made in test are reverted like when you turn it off by hand)."),
+      T("Giocatori autorizzati: con la modalità test accesa, il proprietario trova in Impostazioni > Generale un menu a tendina con l'elenco, il pulsante «Rimuovi» e un campo per aggiungere un giocatore dal suo indirizzo e-mail. L'indirizzo del proprietario e un elenco fisso stanno in tester.config.json, escluso dal repository (.gitignore); nella pagina ne resta solo un'impronta.","Allowed players: with Test mode on, the owner finds in Settings > General a drop-down with the list, a \"Remove\" button and a field to add a player by e-mail address. The owner's address and a fixed list live in tester.config.json, left out of the repository (.gitignore); the page only keeps a fingerprint of them."),
+      T("Dati di gioco (Impostazioni > Gameplay): la voce compare solo con la modalità test accesa. Le partite si registrano comunque in background su questo dispositivo, a meno che tu non spenga l'interruttore mentre la modalità test è accesa.","Game data (Settings > Gameplay): the entry only shows with Test mode on. Runs are recorded in the background on this device anyway, unless you turn the switch off while Test mode is on."),
+    ],
+    fix:[
+      T("Avvio rapido: i cimeli sotto il personaggio sono più piccoli (52 px invece di 70) e non escono più dalla scheda.","Quick Start: the trinkets under the character are smaller (52 px instead of 70) and no longer spill out of the card.")
+    ]},
+  {id:'2026-10-21n',date:'2026-10-21',
+    name:T("Salire di livello non allarga più la raccolta","Levelling up no longer widens your pickup range"),
+    sum:T("Lo Scouter non allarga più il raggio di raccolta: resta solo come requisito di evoluzione di alcune armi.","The Scouter no longer widens your pickup range: it stays only as an evolution requirement for some weapons."),
+    bal:[
+      T("Scouter (potenziamento al level-up): non dà più +35% di raccolta per livello. Il raggio di raccolta ora dipende solo da personaggio, Magnetismo (negozio), cimeli, Senzu, Totem e dall'oggetto Magnete. Lo Scouter resta tra i potenziamenti perché serve per far evolvere Disco Distruttore, Taiyoken, Colpi Eccentrici, Boomerang Ginyu e Fulmine Angelico.","Scouter (level-up upgrade): no longer gives +35% pickup range per level. Pickup range now depends only on the character, Magnetism (shop), trinkets, Senzu, Totems and the Magnet pickup. The Scouter stays among the upgrades because it is needed to evolve Destructo Disc, Solar Flare, Homing Orbs, Ginyu Boomerang and Angelic Bolt.")
+    ]},
+  {id:'2026-10-21m',date:'2026-10-21',
+    name:T("Forzieri di cinque rarità e premio finale senza moltiplicatore","Five-rarity chests and no end-of-run multiplier"),
+    sum:T("I forzieri di boss ed élite hanno una rarità che decide quanto contengono; il premio in zenny a fine partita non ha più moltiplicatori.","Boss and elite chests have a rarity that decides what is inside; the end-of-run zenny payout no longer has multipliers."),
+    new:[
+      {g:T("Forzieri","Chests"),l:[
+        T("Ogni forziere ha una rarità, tirata quando compare: Comune 40%, Raro 39%, Epico 15%, Leggendario 5%, Mitico 1%. Il colore del forziere, il bagliore e le scintille sono quelli della rarità; da Leggendario in su parte anche una colonna di luce. La rarità si legge anche nel titolo della finestra di apertura.","Every chest has a rarity, rolled when it appears: Common 40%, Rare 39%, Epic 15%, Legendary 5%, Mythic 1%. The chest colour, glow and sparks are the rarity's; from Legendary up a pillar of light shows too. The rarity is also in the title of the opening window."),
+        T("Contenuto, sempre lo stesso per rarità: +1 livello a un'arma (o l'evoluzione, se è pronta) e, dal Raro in su, dei cimeli. Comune: nessun cimelio. Raro: 2. Epico: 3. Leggendario: 4. Mitico: 5. Le scelte fra 4 cimeli e i potenziamenti dei forzieri non ci sono più.","Contents, always the same for a rarity: +1 level to a weapon (or the evolution, if it is ready) and, from Rare up, trinkets. Common: no trinket. Rare: 2. Epic: 3. Legendary: 4. Mythic: 5. The pick among 4 trinkets and the upgrades are no longer in chests."),
+        T("Un cimelio garantito della rarità del forziere: il forziere Raro contiene sempre 1 cimelio Raro, l'Epico 1 Epico, il Leggendario 1 Leggendario e il Mitico 1 Mitico (gli altri sono casuali). Nel forziere Mitico le probabilità di un'alta Perfezione per i cimeli Mitici sono +20%.","One guaranteed trinket of the chest's rarity: the Rare chest always holds 1 Rare trinket, the Epic one 1 Epic, the Legendary one 1 Legendary and the Mythic one 1 Mythic (the others are random). In the Mythic chest the odds of a high Perfection for Mythic trinkets are +20%."),
+        T("A fine corsa, con ogni arma al massimo e nessuna evoluzione pronta, il livello dell'arma è sostituito da un cimelio in più (prima: 40 zenny).","Once everything is maxed (every weapon at the top and no evolution ready), the weapon level is replaced by one more trinket (it was 40 zenny)."),
+        T("La Fortuna sposta le probabilità verso le rarità alte (con il 50% di Fortuna: Comune 22%, Raro 44%, Epico 22%, Leggendario 10%, Mitico 3%).","Luck shifts the odds toward the high rarities (at 50% Luck: Common 22%, Rare 44%, Epic 22%, Legendary 10%, Mythic 3%)."),
+        T("I forzieri compaiono quando sconfiggi un boss o un'élite (e restano quelli a tempo ogni 5 minuti).","Chests appear when you defeat a boss or an elite (and the timed one every 5 minutes stays)."),
+      ]},
+      {g:T("Economia","Economy"),l:[
+        T("Premio finale: tolto il moltiplicatore (prima stage × difficoltà × buff Monete). Ora si incassa la somma delle voci; solo la sconfitta paga il 25% in meno. Dalla scheda dello stage è sparita la riga «Zenny ×».","End-of-run payout: the multiplier is gone (it was stage x difficulty x Coin buffs). You now get the sum of the lines; only a defeat pays 25% less. The \"Zenny x\" line is gone from the stage card."),
+      ]}
+    ]},
   {id:'2026-10-21l',date:'2026-10-21',
     name:T("Strutture di gioco ridisegnate","Redrawn in-game structures"),
     sum:T("Le 8 strutture che compaiono in partita hanno una grafica nuova, più grande e dettagliata.","The 8 structures that appear in a run have new, bigger and more detailed art."),
+    fix:[
+      T("Suono del level up: volume abbassato (da 0,9 a 0,4).","Level-up sound: volume lowered (from 0.9 to 0.4)."),
+      T("Torneo del Potere: i cali di FPS sono risolti. Il pavimento dell'arena veniva ridisegnato a ogni fotogramma (circa 14 ms); ora è disegnato una volta in tessere e riusato (circa 0,4 ms).","Tournament of Power: the FPS drops are fixed. The arena floor was repainted every frame (about 14 ms); it is now painted once in tiles and reused (about 0.4 ms)."),
+    ],
     new:[
       {g:T("Mappe","Maps"),l:[
         T("Nuova grafica per Altare del Potere, Fonte dell'esperienza, Totem, Sorgente curativa, Altare del sacrificio, Stanza dello Spirito e del Tempo, Altare con il pulsante rosso e Portale di Zeno-sama. Misurano 100-165 px di larghezza (prima circa 40-45).","New art for the Power Shrine, Experience Font, Totem, Healing Spring, Sacrifice Altar, Room of Spirit and Time, red-button Altar and Zeno-sama's Portal. They are 100-165 px wide (they were about 40-45)."),

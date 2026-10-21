@@ -102,6 +102,18 @@ Dalla v57 **non serve più impostare `SUPABASE_GOOGLE`**: il gioco legge da Supa
 Come funziona nel gioco: si apre Google, si sceglie l'account e si torna al gioco già connessi. Se la pagina è dentro un frame (anteprima incorporata, dove Google rifiuta di aprirsi) il gioco usa una **finestra popup** e la scheda principale si connette da sola quando la finestra si chiude. Un account creato con Google e uno creato con email e password con **lo stesso indirizzo** vengono uniti da Supabase (stesso utente) se l'email è verificata.
 Limite: nell'anteprima dei messaggi/artifact l'indirizzo della pagina non è un indirizzo `https` usabile come ritorno: lì usa email e password, oppure apri il gioco dal tuo sito.
 
+## Modalità test (solo per te e per chi autorizzi)
+
+La modalità test (Impostazioni > Generale) e la voce «Dati di gioco» esistono solo per il tuo account e per quelli in lista. Il tuo indirizzo e la lista fissa **non stanno nel repository**: build.py li legge da `tester.config.json` (nella `.gitignore`; copia `tester.config.example.json`) oppure dalle variabili d'ambiente `TEST_OWNER` e `TEST_LIST` (indirizzi separati da virgola; su GitHub: Settings > Secrets, da passare al passo di build in `deploy.yml` come per `SUPABASE_URL`). Nella pagina finisce solo un'impronta degli indirizzi (`testHash`), non l'indirizzo.
+
+Per aggiungere altri giocatori dal gioco serve la tabella `public.testers` (è in `supabase/schema.sql`). Dopo aver eseguito lo script inserisci il tuo indirizzo come proprietario, una volta sola, nello SQL Editor:
+
+```sql
+insert into public.testers (email, owner) values ('la-tua-email@esempio.com', true);
+```
+
+Poi, con la modalità test accesa, in Impostazioni > Generale compare il menu a tendina «Giocatori autorizzati»: da lì aggiungi o rimuovi un giocatore per indirizzo e-mail (deve avere un account). Una build fatta con `DBS_TEST=1` ha la modalità test per tutti (solo per sviluppo locale).
+
 ## Limiti da conoscere
 - **Piano Free**: il progetto va in pausa dopo ~1 settimana senza attività (si riattiva dal pannello) e ha limiti su utenti e spazio; verifica i valori attuali su <https://supabase.com/pricing>. Un salvataggio pesa pochi KB.
 - **Anti-cheat**: il gioco gira nel browser, quindi un giocatore esperto può modificare il proprio salvataggio. Va bene per un gioco personale; classifiche competitive richiederebbero controlli lato server.

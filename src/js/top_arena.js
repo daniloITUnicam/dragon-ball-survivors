@@ -19,8 +19,19 @@ const TopArt={
   /* is a segment around angle a (ring radius rm, extent ext) anywhere near the view? */
   vis(a,rm,ext,x0,y0,x1,y1){const p=this.P(a,rm);return p[0]+ext>=x0&&p[0]-ext<=x1&&p[1]+ext>=y0&&p[1]-ext<=y1;},
   /* the whole floor: space behind, halo, side wall, top face with its rings, the tower's shadow */
+  /* the floor is painted once, in square tiles (cached; the vector painting is far too heavy to repeat every frame) and blitted each frame */
+  TS:512,
+  tiles:new Map(),
+  tile(tx,ty){
+    const k=tx*10007+ty;let c=this.tiles.get(k);if(c){this.tiles.delete(k);this.tiles.set(k,c);return c;}
+    const TS=this.TS,M=2,cv=document.createElement('canvas');cv.width=cv.height=TS+2*M;const ctx=cv.getContext('2d');
+    ctx.translate(M-tx*TS,M-ty*TS);ctx.beginPath();ctx.rect(tx*TS-M,ty*TS-M,TS+2*M,TS+2*M);ctx.clip();
+    this.floor(ctx,tx*TS-M,ty*TS-M,tx*TS+TS+M,ty*TS+TS+M,0);
+    this.tiles.set(k,cv);if(this.tiles.size>72)this.tiles.delete(this.tiles.keys().next().value);
+    return cv;
+  },
   draw(ctx,cx,cy,vw,vh,t,A){
-    const R=TOPARENA,C=this.C,x0=cx-40,y0=cy-40,x1=cx+vw+40,y1=cy+vh+40,TH=64;
+    const R=TOPARENA,TS=this.TS,M=2;
     A.back(ctx,cx,cy,vw,vh,t,'void');
     /* nebula: big soft clouds of purple, teal and magenta that drift slowly behind everything */
     ctx.save();ctx.globalCompositeOperation='lighter';
@@ -31,6 +42,19 @@ const TopArt={
       ctx.globalAlpha=.16+.05*Math.sin(t*.3+h*11);ctx.drawImage(GLOW.spr(cols[(h*40|0)%3]),x-r,y-r,r*2,r*2);
     }
     ctx.restore();
+    const ax0=Math.max(Math.floor(cx/TS),Math.floor((-R.RX-120)/TS)),ax1=Math.min(Math.floor((cx+vw)/TS),Math.floor((R.RX+120)/TS)),ay0=Math.max(Math.floor(cy/TS),Math.floor((-R.RY-120)/TS)),ay1=Math.min(Math.floor((cy+vh)/TS),Math.floor((R.RY+200)/TS));
+    ctx.save();ctx.imageSmoothingEnabled=true;
+    for(let ty=ay0;ty<=ay1;ty++)for(let tx=ax0;tx<=ax1;tx++)ctx.drawImage(this.tile(tx,ty),tx*TS-M,ty*TS-M);
+    ctx.restore();
+    /* look-ahead: one tile of the ring around the view per frame, so walking never has to paint several at once */
+    for(let ty=ay0-1;ty<=ay1+1;ty++)for(let tx=ax0-1;tx<=ax1+1;tx++){
+      if(this.tiles.has(tx*10007+ty)||Math.abs(tx*TS)>R.RX+TS||ty*TS<-R.RY-TS||ty*TS>R.RY+TS)continue;
+      this.tile(tx,ty);return;
+    }
+  },
+  /* the whole floor inside the box x0..y1: halo, side wall, top face with its rings, the tower's shadow */
+  floor(ctx,x0,y0,x1,y1,t){
+    const R=TOPARENA,C=this.C,TH=64;
     ctx.save();
     /* halo along the rim */
     ctx.globalCompositeOperation='lighter';
@@ -97,7 +121,14 @@ const TopArt={
     ctx.fillStyle='rgba(10,5,26,.5)';ctx.fill('nonzero');
   },
   /* the tower: a cylinder of coloured bands, seen from above at an angle, with a ringed top. Drawn as an entity (it hides what stands behind it); base centre at (0,0). */
+  /* painted once into a canvas at 2x, then blitted */
   tower(ctx,t){
+    if(!this.twc){
+      const K=2,W=140,H=530,c=document.createElement('canvas');c.width=W*K;c.height=H*K;const x=c.getContext('2d');x.scale(K,K);x.translate(W/2,H-52);this.towerPaint(x);this.twc=c;this.twW=W;this.twH=H;
+    }
+    ctx.save();ctx.imageSmoothingEnabled=true;ctx.drawImage(this.twc,-this.twW/2,-(this.twH-52),this.twW,this.twH);ctx.restore();
+  },
+  towerPaint(ctx){
     const rx=TOPARENA.TR-2,ry=rx*.84,H=430,nb=10,bh=H/nb,C=this.C,cols=[C.bl,C.cream,C.or,C.cream],PI=Math.PI;
     ctx.save();ctx.lineJoin='round';
     for(let k=0;k<nb;k++){

@@ -96,7 +96,7 @@ class Game{
     S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
     S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
-    S.magnet=100*(C.mag||1)*(1+.35*(P.magnet||0))*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
+    S.magnet=100*(C.mag||1)*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
     S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.18:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
@@ -315,17 +315,27 @@ class Game{
   /* boss chest trinket choice: always TRIN_PICK (4) options; Luck improves their rarity instead (rarityWeights) */
   pickCount(){return TRIN_PICK;}
   rollTrinketList(n){const out=[];for(let i=0;i<n;i++){const id=this.rollTrinket(out);if(!id)break;out.push(id);}return out;}
-  /* one reward per chest (evolution has priority, otherwise one normal upgrade); Luck can add a trinket */
-  chestRewards(isFinal,boss,elite){
-    const R=[],elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
+  /* loot chests: the rarity is rolled when the chest drops (Luck shifts the odds toward the rare ones), and decides how much is inside (CHEST_RAR in data.js) */
+  chestRarWeights(){const L=this.S.luck;return[CHEST_W[0]*Math.max(.3,1-L*.8),CHEST_W[1]*(1+L*.5),CHEST_W[2]*(1+L*1.2),CHEST_W[3]*(1+L*2.4),CHEST_W[4]*(1+L*4)];}
+  rollChestRar(){const w=this.chestRarWeights();let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;}
+  chestRewards(isFinal,boss,elite,rar){
+    const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sd))}),used=[];
+    const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:r,pf:rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1)};};   /* the Mythic chest: a better perfection roll for its Mythic trinkets */
+    /* the weapon: a ready evolution, otherwise +1 level to one of the weapons you own; once everything is maxed, one more trinket takes its place */
+    const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     if(elig.length)R.push({k:'evo',id:pick(elig).id});
-    else{const pool=shuffle(this.upgradePool());if(pool.length)R.push({k:'up',o:pool.pop()});else R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
-    if(boss){
-      {const o=this.rollTrinketList(this.pickCount());if(o.length)R.push({k:'pick',opts:o,rars:o.map(id=>this.rarOf(id)),pfs:o.map(()=>rollPf(this.S.luck))});else R.push({k:'zenny',v:Math.round(60*ZMUL*(1+this.sd))});}
-    }else{
-      const bonus=Math.min(.4,this.S.luck*.9);
-      if(elite||Math.random()<bonus){const id=this.rollTrinket();if(id)R.push({k:'trinket',id,rar:this.rarOf(id),pf:rollPf(this.S.luck)});else if(elite)R.push({k:'zenny',v:Math.round(40*ZMUL*(1+this.sd))});}
+    else{
+      const ws=shuffle(this.upgradePool().filter(o=>o.type==='w'));
+      if(ws.length)R.push({k:'up',o:ws[0]});
+      else{const id=this.rollTrinket(used);R.push(id?tr(id,this.rarOf(id)):zen(40));}
     }
+    /* the trinkets: always the same number for the rarity, all different; the first ones are guaranteed to be of the chest's own rarity (one Mythic in a Mythic chest...) */
+    const n=cf.t,fixed=r0>=1?cf.g:0;
+    for(let i=0;i<fixed&&i<n;i++){
+      const c=pickTrinket(r0,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id))||pickTrinket(r0,t=>!used.includes(t.id));   /* none left that you do not carry: a copy that upgrades yours */
+      if(c)R.push(tr(c.id,r0));else R.push(zen(40));
+    }
+    for(let i=fixed;i<n;i++){const id=this.rollTrinket(used);if(!id){R.push(zen(40));continue;}R.push(tr(id,this.rarOf(id)));}
     return R;
   }
 
@@ -852,7 +862,7 @@ class Game{
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
-      {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true});}
+      {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
       this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
@@ -1231,7 +1241,7 @@ class Game{
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
-    {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true});}
+    {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
     const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
@@ -2170,7 +2180,7 @@ class Game{
       const d=Math.hypot(p.x-c.x,p.y-c.y);
       if(d<28&&!this.modal){
         c.dead=true;this.run.chests++;this.audio.sfx('chest');this.emote('wow',1);
-        this.modal={type:'chest',rewards:this.chestRewards(c.final,c.boss,c.elite)};
+        this.modal={type:'chest',rar:c.rar||0,rewards:this.chestRewards(c.final,c.boss,c.elite,c.rar)};
       }
     }
   }
@@ -2283,7 +2293,7 @@ class Game{
   /* ---------- sandbox helpers ---------- */
   jumpTo(t){this.t=Math.max(0,t);for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
   setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
-  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y);this.chests.push({x:cx,y:cy,final:!!final,t:0});}
+  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y);this.chests.push({x:cx,y:cy,final:!!final,t:0,rar:this.rollChestRar()});}
 }
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
@@ -2302,7 +2312,7 @@ class MapDirector{
     this.lootT-=dt;this.helpT.heal-=dt;this.helpT.magnet-=dt;this.needT-=dt;if(this.needT<=0){this.needT=12;this.needHelp();}
     if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
     this.chestT-=dt;
-    if(this.chestT<=0){this.chestT=300;const[x,y]=this.pos(220,380);g.chests.push({x,y,final:false,t:0,supply:true});g.floatText(p.x,p.y-70,g.env.tr(T('Un forziere è apparso!','A chest appeared!')),5);}
+    if(this.chestT<=0){this.chestT=300;const[x,y]=this.pos(220,380);g.chests.push({x,y,final:false,t:0,supply:true,rar:g.rollChestRar()});g.floatText(p.x,p.y-70,g.env.tr(T('Un forziere è apparso!','A chest appeared!')),5);}
     if(!this.totemDone)this.totemT-=dt;
     if(!this.totemDone&&this.totemT<=0&&!g.feat.some(f=>f.kind==='totem')){this.totemDone=true;const[x,y]=this.pos(230,400);g.feat.push({kind:'totem',x,y,t:0,ttl:900,used:false,dead:false});g.say(g.env.tr(T('Un Totem è apparso sulla mappa!','A Totem appeared on the map!')),'#8be07a',2.6);g.audio.sfx('shrine');}
     this.featT-=dt;

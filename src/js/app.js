@@ -73,7 +73,7 @@ class App{
     });
     const end=e=>{if(e.pointerId===this.joy.id){this.joy.on=false;this.joy.x=this.joy.y=0;}};
     cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
-    this.applySettings();
+    this.applySettings();this.enforceTest();
     this.ui.show('main');
     Sprites.loadPack(()=>{const t=this.ui.top;if(this.state==='menu'&&t&&(t.name==='chars'||t.name==='main'))this.ui.rebuild(true);});
     this.cloud.start();
@@ -88,7 +88,16 @@ class App{
     if(ev.type==='hashError'){if(this.cloud.resetOn&&/otp_expired|access_denied/.test(this.cloud.hashCode||'')&&!this.cloud.signedIn){ui.openReset('clErrLink');return;}ui.toast({type:'info',msg:this.cloud.hashCode==='oauth_state'?ui.t('clErrState'):this.cloud.hashErr});return;}
     if(ev.type==='prov'){if(top==='main'||top==='account')ui.rebuild(true);return;}
     if(ev.type==='applied')this.applySettings();
+    if(ev.type==='auth'||ev.type==='tester'||ev.type==='applied')this.enforceTest();
     if(top==='main'||top==='account'||(ev.type==='applied'&&this.state==='menu'))ui.rebuild(true);
+  }
+  /* Test mode needs the owner's account or a whitelisted one: with anything else (signed out, another account, no cloud in this build) it is switched off and what it gave for free is taken back.
+     While the answer for a signed-in account is still unknown (first sign-in on this device, tester === null) it is left alone */
+  enforceTest(){
+    const s=this.save.d.settings,c=this.cloud;
+    if(!s.sandbox||c.canTest||(c.signedIn&&c.tester===null))return;
+    s.sandbox=false;this.progress.revertTest();this.save.write();this.applySettings();
+    if(this.ui&&this.ui.top&&this.ui.top.name!=='play')this.ui.rebuild(true);
   }
   applySettings(){
     const s=this.save.d.settings;

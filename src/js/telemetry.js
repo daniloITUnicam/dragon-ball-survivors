@@ -58,7 +58,7 @@ class Telemetry{
     this.m=this.blank();this.c=this.blank();this.nextM=60;this.next10=10;this.px=null;this.py=null;this.done=false;this.run=null;this.part=1;this.inAuto=false;this.t0=0;
   }
   /* recording is off in the test environment (sandbox) and when the player turned it off in Settings */
-  get on(){const g=this.g;return !this.done&&!g.sandbox&&!(g.save&&g.save.settings&&g.save.settings.tele===false);}
+  get on(){const g=this.g,s=g.save&&g.save.settings;return !this.done&&!g.sandbox&&!(s&&s.tele===false&&s.sandbox);}   /* always recorded in the background; the switch (Settings, Test mode only) can stop it only while Test mode is on */
   blank(){return{T:0,enS:0,enMax:0,hpS:0,hpMin:1,bossT:0,kills:0,spawned:0,dealt:0,hits:0,crits:0,taken:0,hurts:0,dodges:0,blocks:0,heal:0,regen:0,xp:0,coins:0,gems:0,loot:0,walked:0,lvUps:0};}
   eName(e){if(!this.eid){this.eid=new Map();for(const k in ENEMIES)this.eid.set(ENEMIES[k],k);}const n=this.eid.get(e.def);if(n)return n;const d=e.def||{},nm=d.n&&typeof d.n==='object'?d.n.en:d.n;return nm||d.ai||'?';}
   etab(e){const k=this.eName(e);return this.et[k]||(this.et[k]={sp:0,k:0,hp:0,life:0,dmgOut:0,hits:0});}
@@ -191,7 +191,7 @@ class Telemetry{
   hook('autoLevel',(a,T)=>{T.inAuto=true;T.lvEnd(a[0],true);},function(r,a,c,T){T.inAuto=false;});
   hook('applyOption',(a,T)=>{if(T.inAuto)T.lvPick(a[0],0,null);},null);
   hook('resolveModal',function(a,T){const m=this.modal;if(m&&m.type==='level')T.lvPick(a[0]>=0?(m.options[a[0]]||m.options[0]):null,a[0],m);},null);
-  hook('chestRewards',null,function(r,a,c,T){T.ev('chest',{fin:a[0]?1:0,boss:a[1]?1:0,elite:a[2]?1:0,rw:(r||[]).map(x=>x.k+(x.id?':'+x.id:x.o?':'+T.optKey(x.o):''))});});
+  hook('chestRewards',null,function(r,a,c,T){T.ev('chest',{rar:a[3]==null?0:a[3],fin:a[0]?1:0,boss:a[1]?1:0,elite:a[2]?1:0,rw:(r||[]).map(x=>x.k+(x.id?':'+x.id:x.o?':'+T.optKey(x.o):''))});});
   hook('unlockForm',null,function(r,a,c,T){T.ev('form',{n:this.formsUnlocked});});
   hook('startTrial',function(){return this.trial;},function(r,a,had,T){if(!had&&this.trial)T.ev('trial',{n:this.trialN});});
   hook('revive',null,function(r,a,c,T){T.ev('revive');});

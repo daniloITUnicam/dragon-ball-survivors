@@ -48,13 +48,14 @@ Object.assign(UI.prototype,{
         toggle(this.t('fullscreen'),'fullscreen'),
         toggle(this.t('showFps'),'fps'),
         toggle(this.t('streamerMode'),'streamer',this.t('streamerDesc')),
-        row(this.t('sandboxOpt'),h('button',{class:'btn small'+(s.sandbox?'':' alt'),'data-fid':'tsandbox',onclick:()=>{
+        this.app.cloud.canTest?row(this.t('sandboxOpt'),h('button',{class:'btn small'+(s.sandbox?'':' alt'),'data-fid':'tsandbox',onclick:()=>{
           if(!this.sbArm){this.sbArm=true;this.toast({type:'info',msg:this.t(s.sandbox?'sbWarnOff':'sbWarnOn')});setTimeout(()=>{if(this.sbArm){this.sbArm=false;if(this.top&&this.top.name==='settings')this.rebuild(true);}},6000);this.sfx();this.rebuild(true);return;}
           this.sbArm=false;this.sfx();
           if(s.sandbox){s.sandbox=false;const n=this.app.progress.revertTest();apply();if(!this.stageOpen(this.save.lastStage))this.save.lastStage=5;if(!this.charOpen(this.save.lastChar))this.save.lastChar='goku';this.toast({type:'info',msg:this.t('sbReverted',{n})});}
           else{s.sandbox=true;apply();}
           this.rebuild(true);}},this.sbArm?'\u26A0 '+this.t('act_confirm'):(s.sandbox?this.t('on'):this.t('off'))),
-          this.sbArm?this.t(s.sandbox?'sbWarnOff':'sbWarnOn'):this.t('sandboxOptDesc')),
+          this.sbArm?this.t(s.sandbox?'sbWarnOff':'sbWarnOn'):this.t('sandboxOptDesc')):null,
+        s.sandbox&&this.app.cloud.canTest?this.testerBox():null,
         row(this.t('resetSave'),h('button',{class:'btn small bad','data-fid':'reset',onclick:()=>{
           if(this.resetArm){this.app.save.reset();this.app.applySettings();this.resetArm=false;this.toast({type:'info',msg:this.t('resetDone')});this.show('main');}
           else{this.resetArm=true;this.toast({type:'info',msg:this.t('resetConfirm')});setTimeout(()=>{this.resetArm=false;},4000);}
@@ -63,7 +64,7 @@ Object.assign(UI.prototype,{
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
         row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
-        row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')),
+        s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */
         toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
         toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
@@ -268,8 +269,8 @@ Object.assign(UI.prototype,{
           return c;})),
         tools.length?h('div',{class:'row lvtools'},tools):null);
     }else if(m.type==='chest'){
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('chestTitle')),
-        h('div',{class:'cards'},m.rewards.map((r,i)=>this.card(this.describeReward(r),i,null,' reveal'))),
+      el=h('div',{class:'screen modal'},h('h2',null,this.t('chestTitle'),' ',h('span',{style:'color:'+RARITY[m.rar||0].c+';text-shadow:0 0 14px '+RARITY[m.rar||0].c},this.tr(RARITY[m.rar||0].n))),
+        h('div',{class:'cards'+(m.rewards.length>4?' many':'')},m.rewards.map((r,i)=>this.card(this.describeReward(r),i,null,' reveal'+(m.rewards.length>6?' tiny':'')))),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,style:'animation-delay:1.4s',onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.t('collect'))));
     }else if(m.type==='pick'){
       const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id,rar:(m.rars||[])[i],pf:(m.pfs||[])[i]}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
@@ -398,7 +399,7 @@ Object.assign(UI.prototype,{
           res.sandbox?h('p',{class:'sub'},this.t('sbNoReward')):
           h('div',{class:'rewards compact'},
             res.lines.filter(l=>l.v>0||l.k==='coins').map(l=>h('div',{class:'rline'},h('span',null,this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
-            h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))),
+            res.mult!==1?h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))):null,
             h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
           !res.sandbox&&res.kept&&res.kept.length?h('div',{class:'echips kept'},res.kept.map(k=>{const i=this.tinfo(k.id,k.r,k.p);return h('span',{class:'tchip tkept',style:'--c:'+i.c,title:this.t(k.up?'trinketsUp':'trinketsKept')+'\n'+i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')},glyph(i.t.k,i.c),i.name+(k.up?' ↑':''));})):null,
           tk.length||(!res.sandbox&&res.sold)?h('div',{class:'echips'},

@@ -144,11 +144,11 @@ class UI{
         this.btn('unl',()=>this.push('unl')),
         this.btn('ach',()=>this.push('ach')),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
-        s.sandbox?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
+        this.testAll()?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
         h('span',{class:'hint'},this.app.input.mode==='pad'?('🎮 '+(this.app.input.padName||'').slice(0,40)):this.t('kbHint'))));
   }
-  testAll(){return !!this.save.settings.sandbox;}
+  testAll(){return !!this.save.settings.sandbox&&this.app.cloud.canTest;}   /* Test mode: switched on in Settings, and only for the owner's account and the whitelist */
   charOpen(id){return this.testAll()||this.save.unlocked.includes(id);}
   stageOpen(i){const st=STAGES[i];return this.testAll()||st.pos===0||this.save.clears[i]>0||this.save.clears[STAGE_ORDER[st.pos-1]]>0;}
   maxStage(){return this.stageOpen(this.sel.stage)?this.sel.stage:STAGE_ORDER[0];}
@@ -164,7 +164,6 @@ class UI{
         h('canvas',{class:'stprev',width:240,height:96,'data-theme':s.theme,'data-seed':String(i)}),
         h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
         h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+bossPlan(s,DIFF[sel.diff].dur,sel.diff).length),
-        h('div',{class:'cd'},this.t('rewardMult')+' x'+s.zenny),
         this.stageStats(i),
         locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:STAGES[STAGE_ORDER[s.pos-1]].no})):
           h('div',{class:'cl'},(d.clears[i]?'★ '+this.t('clears')+': '+d.clears[i]:this.t('notCleared'))+(b?' · '+this.t('best')+': '+b.kills+' '+this.t('kills'):'')));

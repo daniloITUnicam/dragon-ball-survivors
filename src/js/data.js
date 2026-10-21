@@ -53,7 +53,7 @@ const PASS={
   might:{n:T('Zenkai','Zenkai'),d:T('+10% danno.','+10% damage.'),k:'力',c:'#ff7b4a'},
   vit:{n:T('Vigore','Vigor'),d:T('+20 salute massima.','+20 max HP.'),k:'命',c:'#ff6b8a'},
   speed:{n:T('Volo veloce','Swift Flight'),d:T('+6% velocità.','+6% speed.'),k:'速',c:'#7ae0ff'},
-  magnet:{n:T('Scouter','Scouter'),d:T('Raccolta più ampia.','Wider pickup range.'),k:'引',c:'#7dff9a'},
+  magnet:{n:T('Scouter','Scouter'),d:T('Nessun effetto diretto: serve per evolvere alcune armi.','No direct effect: needed to evolve some weapons.'),k:'引',c:'#7dff9a'},
   haste:{n:T('Camera Gravitazionale','Gravity Chamber'),d:T('-5% ricarica.','-5% cooldown.'),k:'修',c:'#c9a0ff'},
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
@@ -589,6 +589,11 @@ STAGE_ORDER.forEach((si,p)=>{const st=STAGES[si];st.pos=p;st.no=p+1;st.dif=STAGE
 const ZENO_PRICE=[80,180,400,800,1600];
 const ZMUL=.8;   /* every zenny a run earns (coins, bags, bosses, elites, chests, the end-of-run payout) is 20% less than before */
 const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0ff'},{n:T('Epico','Epic'),c:'#c05aff'},{n:T('Leggendario','Legendary'),c:'#ffb020'},{n:T('Mitico','Mythic'),c:'#ff3b8a'}];
+/* Loot chests (dropped by bosses and elites; also the timed supply chest). Five rarities, same names and colours as the trinkets: CHEST_W = base spawn weights (40/39/15/5/1 %), Luck pushes the odds toward the rare ones
+   (Game.chestRarWeights). CHEST_RAR = what is inside, always the same: w = weapon levels (+1; a ready evolution takes its place; with nothing left to level, one more trinket), t = trinkets (2 / 3 / 4 / 5 from Rare to Mythic; Common has none),
+   g = how many of them are guaranteed to be of the chest's own rarity (a Mythic chest always holds a Mythic trinket...), pb = Mythic only: the odds of a high perfection roll on a trinket of that rarity are multiplied by it (+20%). */
+const CHEST_W=[40,39,15,5,1];
+const CHEST_RAR=[{w:1,t:0,g:0},{w:1,t:2,g:1},{w:1,t:3,g:1},{w:1,t:4,g:1},{w:1,t:5,g:1,pb:1.2}];
 const TRINKETS=[
  {id:'scouter',r:0,k:'眼',n:T('Scouter Rotto','Broken Scouter'),d:T('+8% probabilità di critico.','+8% crit chance.'),m:{crit:.08}},
  {id:'senzubag',r:0,k:'袋',n:T('Sacchetto di Senzu','Senzu Pouch'),d:T('+0,6 salute al secondo.','+0.6 HP/s.'),m:{regen:.6}},
@@ -634,8 +639,8 @@ const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
 /* Perfection roll (0-100). PF_CURVE = [perfection X, chance of rolling X or more]: the typical roll is about 25, 50 or more is 1 in 30, 80 or more 1 in 330, 90 or more 1 in 600
    and a perfect 100 is 1 in 1000. Between two points the chance falls in a straight line on a log scale. Luck multiplies the roll by 1 + 0.25 Luck (at the maximum Luck a perfect 100 is about 1 in 340). */
 const PF_CURVE=[[0,1],[10,.85],[25,.5],[35,.2],[42,.1],[50,1/30],[65,.008],[80,1/330],[90,1/600],[99.5,.001]];
-function rollPf(luck){
-  const L=luck>0?luck:0,u=Math.max(1e-9,1-Math.random()),C=PF_CURVE;let x=C[C.length-1][0];
+function rollPf(luck,boost){   /* boost: multiplies the odds of every 'X or more' (1.2 = +20%): the Mythic chest uses it */
+  const L=luck>0?luck:0,u=Math.max(1e-9,(1-Math.random())/(boost>1?boost:1)),C=PF_CURVE;let x=C[C.length-1][0];
   for(let i=1;i<C.length;i++)if(u>=C[i][1]){const a=C[i-1],b=C[i],f=(Math.log(a[1])-Math.log(u))/(Math.log(a[1])-Math.log(b[1]));x=a[0]+(b[0]-a[0])*f;break;}
   return Math.max(0,Math.min(100,Math.round(x*(1+L*.25))));}
 const hasPf=t=>!!(t&&t.m);
