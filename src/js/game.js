@@ -2,7 +2,7 @@
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
-const FEAT_FADE=1.2,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+const FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
@@ -2313,7 +2313,7 @@ class Game{
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
 class MapDirector{
-  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.needT=12;this.lootT=rnd(45,70);this.featT=rnd(120,170);this.chestT=200;this.totemT=rnd(120,170);
+  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.needT=12;this.lootT=rnd(45,70);this.altT=rnd(20,40);this.chestT=200;
     const bq=g.bossQ;this.trials=[];
     if(bq.length){this.trials.push({t:Math.max(60,bq[0].t-50),done:false});const fin=bq[bq.length-1];if(fin.t-70>bq[0].t+60)this.trials.push({t:fin.t-70,done:false});}
   }
@@ -2328,14 +2328,14 @@ class MapDirector{
     if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
     this.chestT-=dt;
     if(this.chestT<=0){this.chestT=300;const[x,y]=this.pos(220,380);g.chests.push({x,y,final:false,t:0,supply:true,rar:g.rollChestRar()});g.floatText(p.x,p.y-70,g.env.tr(T('Un forziere è apparso!','A chest appeared!')),5);}
-    if(!this.totemDone)this.totemT-=dt;
-    if(!this.totemDone&&this.totemT<=0&&!g.feat.some(f=>f.kind==='totem')){this.totemDone=true;const[x,y]=this.pos(230,400);g.feat.push({kind:'totem',x,y,t:0,ttl:900,used:false,dead:false});g.say(g.env.tr(T('Un Totem è apparso sulla mappa!','A Totem appeared on the map!')),'#8be07a',2.6);g.audio.sfx('shrine');}
-    this.featT-=dt;
-    if(this.featT<=0){this.featT=rnd(130,200);this.spawnFeature();}
+    /* altars and totems are rolled independently every ALT_EVERY s: each altar ALT_P (4%), the Totem TOTEM_P (1.5%, so about 0.3 per 10 minutes and two in ten minutes is a rare find) */
+    this.altT-=dt;
+    if(this.altT<=0){this.altT=ALT_EVERY;this.rollAltars();}
     for(const f of g.feat){
       f.t+=dt;
       const d=Math.hypot(p.x-f.x,p.y-f.y);
       f.near=d<90;
+      if(f.pressed)f.pt=(f.pt||0)+dt;
       if(f.fade!==undefined){f.fade+=dt;if(f.fade>=FEAT_FADE)f.dead=true;continue;}   /* used: flash, then dissolve */
       if(f.used)continue;
       if(f.t>f.ttl){f.dead=true;continue;}
@@ -2378,18 +2378,33 @@ class MapDirector{
     g.floatText(x,y-30,g.env.tr(k==='heal'?T('Salute!','Health!'):T('Magnete!','Magnet!')),1.8);
   }
   nextFormGap(){const g=this.g;if(g.formsUnlocked>=g.formMax)return 99;return FORM_TIERS[g.formsUnlocked].lvl-g.lvl;}
-  spawnFeature(){
+  spawnFeature(){   /* kept for the sandbox/tests: one altar that fits the situation, as before */
     const g=this.g;if(g.feat.filter(f=>!f.used&&f.kind!=='secret'&&f.kind!=='zenoportal').length>=2)return;
-    const hpR=g.p.hp/g.p.maxHp,ws=[...g.weapons.values()],near=ws.some(w=>w.lv>=3&&w.lv<WMAX),gap=this.nextFormGap();
-    const c=[];
+    const c=this.altarCands();if(!c.length)return;
+    this.placeFeature(wpick(c,x=>x[1])[0]);
+  }
+  /* which altars make sense right now (the same conditions as always) */
+  altarCands(){
+    const g=this.g,hpR=g.p.hp/g.p.maxHp,ws=[...g.weapons.values()],near=ws.some(w=>w.lv>=3&&w.lv<WMAX),gap=this.nextFormGap(),c=[];
     if(g.nt>=80&&g.tempBuffs.length<3)c.push(['shrine',2]);
     if(g.nt>=100&&hpR<.4)c.push(['spring',6]);
     if(g.nt>=170&&near&&hpR>.45)c.push(['altar',7]);
     if(g.nt>=100&&gap>0&&gap<=3)c.push(['font',8]);
-    if(!c.length)return;
-    const kind=wpick(c,x=>x[1])[0],[x,y]=this.pos(260,460);
+    return c;
+  }
+  placeFeature(kind){
+    const g=this.g,[x,y]=this.pos(260,460);
     g.feat.push({kind,x,y,t:0,ttl:100,used:false,dead:false});
     g.floatText(g.p.x,g.p.y-70,g.env.tr(T('Qualcosa è apparso sulla mappa','Something appeared on the map')),5);
+  }
+  rollAltars(){
+    const g=this.g;if(g.trial||g.bossAlive>0&&Math.random()<.5)return;
+    const live=g.feat.filter(f=>!f.used&&f.fade===undefined&&f.kind!=='secret'&&f.kind!=='zenoportal'&&f.kind!=='chamber');
+    for(const [kind] of this.altarCands())if(live.length<2&&!live.some(f=>f.kind===kind)&&Math.random()<ALT_P){this.placeFeature(kind);live.push({kind});}
+    if(g.nt>=60&&!g.feat.some(f=>f.kind==='totem')&&Math.random()<TOTEM_P){
+      const[x,y]=this.pos(230,400);g.feat.push({kind:'totem',x,y,t:0,ttl:900,used:false,dead:false});
+      g.say(g.env.tr(T('Un Totem è apparso sulla mappa!','A Totem appeared on the map!')),'#8be07a',2.6);g.audio.sfx('shrine');
+    }
   }
   /* the level's secret: a portal to Zeno's Shop somewhere on the map, shown by an arrow with the distance */
   spawnSecret(ttl){
@@ -2423,7 +2438,7 @@ class MapDirector{
       const cand=[...g.weapons.values()].filter(w=>w.lv<WMAX).sort((a,b)=>b.lv-a.lv);
       if(!cand.length){f.dead=true;return;}
       p.hp=Math.max(1,Math.floor(p.hp*.5));g.upgradeWeapon(cand[0]);
-      g.say(g.env.tr(T('Sacrificio: ','Sacrifice: '))+g.env.tr(cand[0].def.n)+' +1','#ff5a5a',2.4);g.audio.sfx('evolve');g.ring(f.x,f.y,120,'#ff5a5a',.5);
+      g.say(g.env.tr(T('Sacrificio: ','Sacrifice: '))+g.env.tr(cand[0].def.n)+' +1','#ff5a5a',2.4);g.audio.sfx('crystal');g.ring(f.x,f.y,120,'#ff5a5a',.5);
     }else if(f.kind==='font'){
       g.addXp(g.need*.4/g.S.xp);g.say(g.env.tr(T('Fonte dell\'esperienza','Experience font')),'#8ad8ff',2);g.audio.sfx('pickup');g.ring(f.x,f.y,100,'#8ad8ff',.5);
     }

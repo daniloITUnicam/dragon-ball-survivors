@@ -1114,7 +1114,12 @@ this.W=1;this.H=1;this.Z=1;
           if(st===2)GLOW.at(this.ctx,z.x,z.y-6,z.r*1.2,'#ff4a30',.3);
         }
         const rc=zs.rects[i],an=zs.anch[i],c2=this.ctx;
-        c2.save();c2.imageSmoothingEnabled=true;c2.translate(z.x,z.y);c2.scale(k,k);c2.drawImage(zs.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);c2.restore();c2.imageSmoothingEnabled=false;
+        c2.save();c2.imageSmoothingEnabled=true;c2.translate(z.x,z.y);c2.scale(k,k);
+        {   /* traps and pools are SUNK into the floor: only the top face shows (the sprite's thick side wall is clipped away; spikes, flames and healing sparks may rise above it) */
+          const heal=z.kind==='heal',cyl=heal?-5:-11,rx=rc[2]/2-(heal?3:i<8?5:8),ry=rx*(heal?.68:.62);
+          c2.beginPath();c2.ellipse(0,cyl,rx,ry,0,0,TAU);if(heal?(i===19||i===20):i>=8)c2.rect(-rx,cyl-300,2*rx,300);c2.clip();
+        }
+        c2.drawImage(zs.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);c2.restore();c2.imageSmoothingEnabled=false;
         continue;
       }
       if(z.kind==='heal'){
@@ -1280,11 +1285,30 @@ this.W=1;this.H=1;this.Z=1;
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
     /* used (E pressed): a bright flash with a little shake and swell, then it rises a bit and dissolves in sparkles (FEAT_FADE s) */
     const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis;
+    /* painted vanishing animation (assets/sprites/props/featfade.png) for the kinds that have one: frame = progress through FEAT_FADE; same world size as the resting sprite */
+    if(fq>=0){
+      const FF=Sprites.sheets.featfade,fs=FF&&FF.rects&&{shrine:[0,5],font:[5,6],totem:[11,5],spring:[16,5],altar:[21,6]}[f.kind],FS0=fs&&this.getFeat(),sp0=FS0&&FS0[f.kind];
+      if(fs&&sp0){
+        const i=fs[0]+Math.min(fs[1]-1,Math.floor(fq*fs[1])),rc=FF.rects[i],an=FF.anch[i],k=sp0.c.width*sp0.k/FF.rects[fs[0]][2];
+        ctx.save();ctx.globalAlpha=1;ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2);ctx.scale(k,k);ctx.drawImage(FF.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);ctx.restore();ctx.imageSmoothingEnabled=false;
+        return;
+      }
+    }
     if(fq>=0){
       ctx.save();ctx.globalAlpha=1-dis;ctx.translate(fq<.4?Math.sin(f.fade*70)*1.6:0,-dis*dis*26);
       const gc=f.kind==='totem'?'#8be07a':f.kind==='shrine'?'#ffd23f':f.kind==='altar'?'#ff5a5a':f.kind==='font'?'#8ad8ff':f.kind==='spring'?'#8be07a':'#ffffff';
       GLOW.at(ctx,x,y-26,(44+50*flash)*(1-dis*.4),'#ffffff',.55*flash);GLOW.at(ctx,x,y-26,(60+40*flash),gc,.5*(1-dis));
       if(Ambient.on)for(let i=0;i<14;i++){const q=(f.fade*.9+i/14)%1,an=i*2.4,rr=10+q*46;ctx.fillStyle=hexA(i%2?gc:'#ffffff',(1-q)*(1-dis*.6));ctx.fillRect(x+Math.cos(an)*rr-1.5,y-20-q*54+Math.sin(an)*rr*.3,3,3);}
+    }
+    /* the red button (featfade.png frames 27-30): resting, pushed halfway, pressed with a flash, stays pressed without the question mark */
+    if(f.kind==='secret'){
+      const FF=Sprites.sheets.featfade,FS1=FF&&FF.rects&&FF.rects.length>=31&&this.getFeat(),sp1=FS1&&FS1.secret;
+      if(sp1){
+        const pt=f.pressed?(f.pt||0):-1,i=27+(pt<0?0:pt<.14?1:pt<.3?2:3),rc=FF.rects[i],an=FF.anch[i],k=sp1.c.width*sp1.k/FF.rects[27][2];
+        if(!f.pressed)GLOW.at(ctx,x,y-sp1.c.height*sp1.k*.35,(26+sp1.c.width*sp1.k*.28)*(1+.08*pulse),'#ff3b3b',.22+.1*pulse);
+        ctx.save();ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2);ctx.scale(k,k);ctx.drawImage(FF.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);ctx.restore();ctx.imageSmoothingEnabled=false;
+        ctx.globalAlpha=1;return;
+      }
     }
     {const FS=this.getFeat(),sp=FS&&FS[f.kind==='secret'&&f.pressed?'secretDown':f.kind];
      if(sp){

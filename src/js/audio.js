@@ -350,6 +350,10 @@ class AudioSys{
       case'warn':this.toneAt(880,.1,'square',.03,0,0);this.toneAt(880,.1,'square',.03,0,.16);break;
       case'trinket':[784,988,1175,1568].forEach((f,i)=>this.toneAt(f,.2,'sine',.05,0,i*.07));this.noise(.2,.03,9000,4000,.05);break;
       case'shrine':T(440,.3,'sine',.05,440);break;
+      case'crystal':   /* the sacrifice altar's crystal shatters (8-bit): a sharp crack, a glassy burst, then falling shards */
+        this.toneAt(1200,.05,'square',.05,2400,0);this.toneAt(3100,.04,'square',.045,-1500,.04);this.noise(.16,.1,9000,2500,.03);
+        [3520,2960,2637,2217,1865,1568,1319,1109].forEach((f,i)=>this.toneAt(f*(i%2?1:1.06),.07+.01*i,'square',.032-.002*i,-f*.25,.1+i*.055));
+        this.toneAt(220,.18,'square',.04,-120,.02);break;
       /* ---- arcade menu sounds: bright square-wave chip blips, deliberately loud so they cut through the music ---- */
       case'uiMove':this.toneAt(1568,.045,'square',.085,0,0);this.toneAt(2349,.05,'square',.06,0,.035);this.toneAt(784,.05,'triangle',.05,0,0);break;
       case'click':case'uiClick':

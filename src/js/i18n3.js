@@ -115,6 +115,7 @@
     petPassive:['Passivo: va a prendere le gemme di esperienza fuori portata e te le porta (fino a 3); se sei circondato rilascia un\'onda d\'urto ogni 5 s.','Passive: fetches XP gems out of your reach and brings them to you (up to 3); when you are surrounded it releases a shockwave every 5 s.','Pasivo: recoge las gemas de experiencia fuera de tu alcance y te las trae (hasta 3); si te rodean libera una onda de choque cada 5 s.','Passif : va chercher les gemmes d\'expérience hors de portée et te les apporte (jusqu\'à 3) ; si tu es encerclé il lance une onde de choc toutes les 5 s.','Passiv: holt Erfahrungskristalle außerhalb deiner Reichweite und bringt sie dir (bis zu 3); wenn du umzingelt bist, löst es alle 5 s eine Schockwelle aus.','Passivo: busca as gemas de experiência fora do seu alcance e as leva até você (até 3); se você estiver cercado, libera uma onda de choque a cada 5 s.'],
     petCd:['Ricarica {n}s.','Cooldown {n}s.','Recarga {n}s.','Recharge {n}s.','Abklingzeit {n}s.','Recarga {n}s.'],
     act_kaioken:['Abilità del personaggio','Character ability','Habilidad del personaje','Capacité du personnage','Charakter-Fähigkeit','Habilidade do personagem'],
+    mapTab:['Mappa','Map','Mapa','Carte','Karte','Mapa'],
     runTab:['Partita','Run','Partida','Partie','Durchgang','Partida'],
     grimWeapon:['Arma','Weapon','Arma','Arme','Waffe','Arma'],
     grimoire:['Grimorio','Grimoire','Grimorio','Grimoire','Grimoire','Grimório'],

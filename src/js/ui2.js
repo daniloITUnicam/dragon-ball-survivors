@@ -63,6 +63,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='gameplay'){
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        select(this.tr(T('Scheda iniziale della pausa','Pause menu opens on')),'pauseTab',[['map',this.t('mapTab')],['run',this.t('runTab')],['last',this.tr(T('Ultima usata','Last used'))]]),
         row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
         s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */
         toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
@@ -158,7 +159,7 @@ Object.assign(UI.prototype,{
   },
   /* ---------- pause ---------- */
   screen_pause(a){
-    const tab=(a&&a.tab)||this.lastPauseTab||'run',g=this.app.game,S=g.S,p=g.p,t=k=>this.t(k);
+    const pt0=this.app.save.settings.pauseTab||'map',tab=(a&&a.tab)||(pt0==='last'?(this.lastPauseTab||'map'):pt0),g=this.app.game,S=g.S,p=g.p,t=k=>this.t(k);
     const none=()=>h('div',{class:'cd'},t('none'));
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
@@ -179,17 +180,57 @@ Object.assign(UI.prototype,{
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
-    const tabs=h('div',{class:'row tabs'},
-      ['run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='run'?this.t('runTab'):'📖 '+this.t('grimoire'))));
-    const btns=h('div',{class:'row'},
+    const tabBtns=(
+      ['map','run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='map'?'🗺 '+this.t('mapTab'):k==='run'?this.t('runTab'):'📖 '+this.t('grimoire')))),
+      tabs=h('div',{class:'row tabs'},tabBtns);
+    const actBtns=[
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
         this.btn('glossary',()=>this.push('glossary'),'alt'),
         this.btn('unl',()=>this.push('unl'),'alt'),
         this.btn('ach',()=>this.push('ach'),'alt'),
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
-        this.btn('quitMenu',()=>this.app.endRunManually(),'alt'));
-    return h('div',{class:'pausescr'},h('h2',null,this.t(tab==='grim'?'grimoire':'pause')),btns,tabs,
-      tab==='grim'?this.grimBody():h('div',{class:'pgrid'},sec('pauseWeapons',weapons),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist),sec('pauseStats',stats),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseTrinkets',trins),sec('pauseWishes',wishes)));
+        this.btn('quitMenu',()=>this.app.endRunManually(),'alt')],
+      btns=h('div',{class:'row'},actBtns);
+    /* Map tab: the map is the main thing, at the very top, with only a small stats panel beside it. Run tab: the full character column (stats, abilities, upgrades) on the left and weapons, trinkets and wishes on the right */
+    if(tab==='map'){
+      return h('div',{class:'pausescr pmapmode'},h('div',{class:'row ptop'},...tabBtns,h('span',{class:'ptsp'}),...actBtns),
+        h('div',{class:'pbody'},h('div',{class:'pleft mini'},sec('pauseStats',stats)),h('div',{class:'pmain'},this.pauseMap(g))));
+    }
+    if(tab==='run'){
+      /* everything on one screen: the sections flow into as many columns as fit and the whole block is scaled down (fitPause) until it fits above the HUD, so more or fewer weapons / trinkets just reshape it */
+      const el=h('div',{class:'pausescr pmapmode prunmode'},h('div',{class:'row ptop'},...tabBtns,h('span',{class:'ptsp'}),...actBtns),
+        h('div',{class:'pfitwrap'},h('div',{class:'pfit'},sec('pauseStats',stats),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist.length?ablist:none()),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseWeapons',weapons),sec('pauseTrinkets',trins),sec('pauseWishes',wishes))));
+      this.fitPause(el);
+      return el;
+    }
+    return h('div',{class:'pausescr'},h('h2',null,this.t('grimoire')),btns,tabs,this.grimBody());
+  },
+  /* scales the Run tab down just enough to fit between the top row and the HUD; the inner block is made wider as it shrinks, so more columns appear */
+  fitPause(root){
+    const run=(n)=>{
+      const wrap=root.querySelector('.pfitwrap'),fit=root.querySelector('.pfit');
+      if(!wrap||!fit)return;
+      if(!root.isConnected){if(n<20)requestAnimationFrame(()=>run(n+1));return;}
+      const avail=innerHeight-wrap.getBoundingClientRect().top-118-8;let z=1;
+      for(let i=0;i<8;i++){
+        fit.style.width=(100/z)+'%';fit.style.transform=z<1?'scale('+z+')':'';
+        const need=fit.offsetHeight*z;wrap.style.height=Math.ceil(need)+'px';
+        if(need<=avail+1||z<=.4)break;
+        z=Math.max(.4,z*avail/need*.99);
+      }
+    };
+    requestAnimationFrame(()=>run(0));
+    if(!this._fitRs){this._fitRs=true;addEventListener('resize',()=>{const r=document.querySelector('.prunmode');if(r&&r.isConnected)this.fitPause(r);});}
+  },
+  /* the map tab: a big canvas centred on the hero with the pickups, and the zoom buttons over its bottom-left corner */
+  pauseMap(g){
+    if(this.mapZ===undefined)this.mapZ=MAP_ZOOM0;
+    const mw=Math.max(420,Math.min(1600,innerWidth<=900?innerWidth-40:innerWidth-290)),mh=Math.max(260,Math.min(900,innerHeight-190)),cv=h('canvas',{class:'pmapcv',width:Math.round(mw),height:Math.round(mh)}),redraw=()=>this.app.renderer.drawPauseMap(cv,g,this.mapZ);
+    const zb=(txt,d,fid)=>h('button',{class:'btn small pmz '+(d>0?'plus':'minus'),'data-fid':fid,'aria-label':d>0?'+':'-',onclick:()=>{const n=Math.max(0,Math.min(MAP_ZOOMS.length-1,this.mapZ+d));if(n!==this.mapZ){this.sfx('uiTab');this.mapZ=n;redraw();}}},h('i',{class:'pzh'}),d>0?h('i',{class:'pzv'}):null);
+    const el=h('div',{class:'pmap'},cv,h('div',{class:'pmzoom'},zb('',1,'mapin'),zb('',-1,'mapout')));
+    setTimeout(redraw,0);   /* after the sprites are in the page */
+    redraw();
+    return el;
   },
   /* ---------- sandbox config ---------- */
   screen_sandboxCfg(){

@@ -47,12 +47,20 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 22, 2026 update, part 3 (pause map)
+
+- **Traps** and **healing pools** are now sunk into the floor (only the top face shows, no shadow): they no longer look like they sit on the ground.
+
+New file `src/js/pausemap.js` (in `build.py` after `ui_account`): `Renderer.drawPauseMap(cv,g,zi)` draws the map on a canvas (zoom `MAP_ZOOMS`, 7 levels, default index 3) reusing `drawLoot`, `drawChest`, `drawFeature` and the pool sprite, with `this.ctx` pointed at the map canvas. `UI.pauseMap(g)` (in `ui2.js`) builds the panel with the +/− buttons (`data-fid` `mapin`/`mapout`, `.pmzoom`). `screen_pause`: tab `map` = `.pausescr.pmapmode` with one `.ptop` row (tabs + buttons), a `.pleft.mini` panel with just the stats and the map at full width/height (canvas sized from `innerWidth/innerHeight`); `run` tab = `.prunmode`: the sections (Stats, Abilities, Upgrades, Weapons, Trinkets, Wishes) in a `.pfit` block with CSS columns (`column-width:270px`), shrunk by `UI.fitPause` with `transform:scale` (inner width = 100/z %, container height adjusted, minimum 0.4, recomputed on resize) until it sits above the 118 px reserved for the HUD; the `grim` tab stays as it was. The zoom +/− signs are two centred `<i>` elements. Setting `settings.pauseTab` (`map` | `run` | `last`, default `map`) in the Gameplay tab.
+
 ### 🆕 October 22, 2026 update, part 2 (streak, hordes, totems and altars with [E])
 
 - **Streak** (`Game.streakWin(n)`): window = 4 s · (0.3/4)^(min(n,1500)/1500) (`STREAK_MIN`, `STREAK_CAP`); `streakW` keeps the length of the last kill's window for the HUD bar.
 - **Hordes**: `spawnHorde` sets `hordeBoost = HORDE_BOOST_T` (20 s), during which `spAcc` grows ×`HORDE_BOOST` (2.5). No message.
 - **Totem of Wealth**: `wealthT = TOTEM_WEALTH_T` (150 s) in `updateTotemFx`; at the end `totemFx.gold/magnet = 0` and `recalc()`.
 - **Map features** (`MapDirector.update/use`): all are used with [E] inside `f.near` (90 px); after use `f.fade` runs 0 to `FEAT_FADE` (1.2 s) and then `dead` (the Room and Zeno's portal have none: they enter at once). `Renderer.drawFeature`: flash, shake, rise and dissolve with sparkles; the prompts are per kind. Room of Spirit and Time: sprite ×1.5 (`WS.chamber` .24 → .36). Inside the Room the 1-9 keys click the card `data-fid="o<i>"` (`App` keydown, type `trial`).
+- **Painted vanishing** (`assets/sprites/props/featfade.png`, sheet `featfade`: Altar of Power 5 frames, Font 6, Totem 5, Spring 5; map in `Renderer.drawFeature`): the frame follows the `FEAT_FADE` progress, same size as the resting sprite. The other kinds still use the code effect.
+- **Altars and Totem** (`MapDirector.rollAltars`, `ALT_EVERY`=30 s, `ALT_P`=.04, `TOTEM_P`=.015): independent roll for each altar (conditions in `altarCands`, max 2 on the map) and for the Totem. **Sprites**: sacrifice altar (`featfade` frames 21-26) and red button (27-30, `f.pt` = seconds since pressed); 8-bit `crystal` sound (`audio.js`) when the sacrifice altar is used.
 - **Ground** (`world.js`): `ZONE_P` .2 → .045, `ZONE_HEAL` .06 → .008. **Trap and pool sprites** (`assets/sprites/props/zonesprites.png`, sheet `zonesprites`: 12 trap frames = 4 resting, 4 warning, 4 spikes; then 12 pool frames = 6 resting, 6 healing/fading): `Renderer.drawZones` picks the frame from `World.trapState` and the phase `(rt+ph)%TRAP_PERIOD`; the pool uses the healing frames while you stand in it and heal. Without the sheet the code-drawn version remains.
 
 ### 🆕 October 22, 2026 update (illustrated chests)

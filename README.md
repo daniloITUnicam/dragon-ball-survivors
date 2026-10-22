@@ -55,12 +55,20 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 22 ottobre 2026, parte 3 (mappa in pausa)
+
+- Le **trappole** e le **pozze di cura** sono incassate nel terreno (si vede solo il piano superiore, senza ombra): non sembrano più appoggiate sopra.
+
+Nuovo file `src/js/pausemap.js` (in `build.py` dopo `ui_account`): `Renderer.drawPauseMap(cv,g,zi)` disegna la mappa su un canvas (zoom `MAP_ZOOMS`, 7 livelli, default indice 3) riusando `drawLoot`, `drawChest`, `drawFeature` e lo sprite della pozza con `this.ctx` puntato al canvas della mappa. `UI.pauseMap(g)` (in `ui2.js`) costruisce il pannello con i bottoni +/− (`data-fid` `mapin`/`mapout`, `.pmzoom`). `screen_pause`: scheda `map` = `.pausescr.pmapmode` con una riga `.ptop` (schede + pulsanti), pannello `.pleft.mini` con le sole statistiche e la mappa a tutta larghezza/altezza (canvas dimensionato su `innerWidth/innerHeight`); scheda `run` = `.prunmode`: le sezioni (Statistiche, Abilità, Potenziamenti, Armi, Cimeli, Desideri) in un blocco `.pfit` a colonne CSS (`column-width:270px`), rimpicciolito da `UI.fitPause` con `transform:scale` (larghezza interna = 100/z %, altezza del contenitore adeguata, minimo 0,4, ricalcolato al ridimensionamento) finché sta sopra i 118 px riservati all'HUD; la scheda `grim` resta com'era. I segni +/− dello zoom sono due elementi `<i>` centrati. Impostazione `settings.pauseTab` (`map` | `run` | `last`, default `map`) nella scheda Gioco.
+
 ### 🆕 Aggiornamento del 22 ottobre 2026, parte 2 (serie, orde, totem e altari con [E])
 
 - **Serie** (`Game.streakWin(n)`): finestra = 4 s · (0,3/4)^(min(n,1500)/1500) (`STREAK_MIN`, `STREAK_CAP`); `streakW` tiene la durata dell'ultima uccisione per la barra HUD.
 - **Orde**: `spawnHorde` imposta `hordeBoost = HORDE_BOOST_T` (20 s), durante cui `spAcc` cresce ×`HORDE_BOOST` (2,5). Nessun messaggio.
 - **Totem della Ricchezza**: `wealthT = TOTEM_WEALTH_T` (150 s) in `updateTotemFx`; alla fine `totemFx.gold/magnet = 0` e `recalc()`.
 - **Elementi della mappa** (`MapDirector.update/use`): tutti si usano con [E] dentro `f.near` (90 px); dopo l'uso `f.fade` va da 0 a `FEAT_FADE` (1,2 s) e poi `dead` (la Stanza e il portale di Zeno non ne hanno: entrano subito). `Renderer.drawFeature`: lampo, scossa, salita e dissolvenza con scintille; le scritte di richiamo sono per tipo. La Stanza dello Spirito e del Tempo: sprite ×1,5 (`WS.chamber` .24 → .36). Nella Stanza i tasti 1-9 cliccano la card `data-fid="o<i>"` (`App` keydown, tipo `trial`).
+- **Sparizione disegnata** (`assets/sprites/props/featfade.png`, foglio `featfade`: Altare del Potere 5 fotogrammi, Fonte 6, Totem 5, Sorgente 5; mappa in `Renderer.drawFeature`): il fotogramma segue l'avanzamento di `FEAT_FADE`, stessa dimensione dello sprite a riposo. Gli altri tipi usano ancora l'effetto a codice.
+- **Altari e Totem** (`MapDirector.rollAltars`, `ALT_EVERY`=30 s, `ALT_P`=.04, `TOTEM_P`=.015): tiro indipendente per ogni altare (condizioni di `altarCands`, max 2 sulla mappa) e per il Totem. **Sprite**: altare del sacrificio (fotogrammi 21-26 di `featfade`) e bottone rosso (27-30, `f.pt` = secondi dalla pressione); suono 8-bit `crystal` (`audio.js`) al consumo dell'altare del sacrificio.
 - **Terreno** (`world.js`): `ZONE_P` .2 → .045, `ZONE_HEAL` .06 → .008. **Sprite di trappole e pozze** (`assets/sprites/props/zonesprites.png`, foglio `zonesprites`: 12 fotogrammi di trappola = 4 quiete, 4 avviso, 4 punte; poi 12 della pozza = 6 quiete, 6 cura/dissolvenza): `Renderer.drawZones` sceglie il fotogramma da `World.trapState` e dalla fase `(rt+ph)%TRAP_PERIOD`; la pozza usa i fotogrammi di cura mentre ci sei dentro e ti curi. Senza il foglio resta il disegno a codice.
 
 ### 🆕 Aggiornamento del 22 ottobre 2026 (forzieri illustrati)
