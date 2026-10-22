@@ -95,12 +95,12 @@ class Game{
     const S={};
     S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
-    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.04*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
-    S.magnet=100*(C.mag||1)*(1+.20*sl('magnet')+tm.magnet+sh.magnet);
+    S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.05*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
+    S.magnet=100*(C.mag||1)*(1+.05*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
-    S.regen=C.regen+.5*(P.regen||0)+.6*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
+    S.regen=C.regen+.5*(P.regen||0)+.5*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
     S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.30:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
-    S.gold=1+.18*sl('gold')+tm.gold;
+    S.gold=1+.15*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
@@ -115,7 +115,7 @@ class Game{
     {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(this.cdMin(.3),S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
     this.abPassive(S);
     this.S=S;
-    const mh=Math.round((C.hp+20*(P.vit||0)+15*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
+    const mh=Math.round((C.hp+20*(P.vit||0)+20*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
     if(mh>this.p.maxHp)this.p.hp+=mh-this.p.maxHp;else if(this.p.hp>mh)this.p.hp=mh;
     this.p.maxHp=mh;
     const e=this.formEntry;this.formColor=e?e.aura:null;
