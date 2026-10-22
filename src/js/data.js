@@ -9,8 +9,8 @@ const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
 const DIFF={
   easy:{n:T('Facile','Easy'),hp:.72,dmg:.7,spawn:.7,zenny:.7,dur:300},
   normal:{n:T('Normale','Normal'),hp:1.0,dmg:1,spawn:1,zenny:1,dur:600},
-  hard:{n:T('Difficile','Hard'),hp:2,dmg:1.5,spawn:1.4,zenny:1.35,dur:900},
-  extreme:{n:T('Estremo','Extreme'),hp:4,dmg:1.8,spawn:1.5,zenny:2.4,dur:1800}
+  hard:{n:T('Difficile','Hard'),hp:2,dmg:1.05,spawn:1.4,zenny:1.35,dur:900},
+  extreme:{n:T('Estremo','Extreme'),hp:4,dmg:1.26,spawn:1.5,zenny:2.4,dur:1800}
 };
 
 /* ---------- Weapons ---------- */
@@ -541,6 +541,7 @@ const STAGES=[
   roster:[['gel',0,6],['majinsol',0,7,300],['rubber',30,5],['fus',70,3],['majinshot',100,3],['orbm',140,3],['majinfury',200,4],['candygolem',280,2.4],['cake',360,1.8]],
   bosses:[['dabura',230],['superbu',380],['kidbu',580],['bu',840,1]]},
  {id:5,n:T('Torneo del Potere','Tournament of Power'),theme:'void',time:1200,hp:2.1,spawn:1.25,xp:3.6,zenny:4.2,music:5,
+  late:{from:.35,dmg:.42,hp:.6,spawn:.55},   /* Extreme late game: from 35% of the run the enemies ease down linearly to these factors at the end (damage, health, spawn rate and crowd size) */
   roster:[['fighter',0,8,300],['war',20,6],['archer',40,3],['unibomb',60,3],['phantom',90,4],['messenger',120,3],['cosmberserk',150,4],['champ',260,2.4],['col',320,2.2],['silvercol',420,1.8]],
   bosses:[['dyspo',200],['bergamo',300],['basil',390],['lavender',470],['ribrianne',560],['cabba',650],['caulifla',745],['kale',840],['frost',940],['hit',1030],['toppo',1110],['jiren',1200,1]]},
  {id:6,n:T('Isola di Muten','Roshi\'s Island'),theme:'beach',time:480,dif:.4,req:0,hp:1.05,spawn:1,xp:1.3,zenny:1.2,music:6,

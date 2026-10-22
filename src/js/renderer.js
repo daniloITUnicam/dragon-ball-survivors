@@ -257,8 +257,8 @@ this.W=1;this.H=1;this.Z=1;
     const cx=p.x-g.vw/2+sx,cy=p.y-14-g.vh/2+sy;
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
     const theme=g.stage.theme;
-    Ambient.setCfg(s);if(g.trial){Ambient.on=false;Ambient.wxOn=false;Ambient.dnOn=false;Ambient.nt=0;Ambient.evI=0;}else Ambient.update(g,dt,t,cx,cy,g.vw,g.vh,theme,p);
-    if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else{this.terrain(cx,cy,g.vw,g.vh,t,theme);this.groundProps(theme,cx,cy,g.vw,g.vh);}
+    Ambient.setCfg(s);if(g.trial||g.tun){Ambient.on=false;Ambient.wxOn=false;Ambient.dnOn=false;Ambient.nt=0;Ambient.evI=0;}else Ambient.update(g,dt,t,cx,cy,g.vw,g.vh,theme,p);
+    if(g.tun)this.tunnelRoom(cx,cy,g.vw,g.vh,t,g.tun);else if(g.trial){this.gameRef=g;this.zenoCoins=g.run.coins;this.zenoPl=g.p;this.trialRoom(cx,cy,g.vw,g.vh,t,g.trial);}else{this.terrain(cx,cy,g.vw,g.vh,t,theme);this.groundProps(theme,cx,cy,g.vw,g.vh);}
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
     if(theme==='snake'&&Ambient.on&&Ambient.lod>=.5)Ambient.flockShadows(ctx,cx,cy,g.vw,g.vh,t,3,1,0);   /* shadows of the bird flocks gliding over the cloud sea */
@@ -281,15 +281,15 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='#ff5a3d';ctx.beginPath();ctx.moveTo(r.x,r.y-R*.78);ctx.lineTo(r.x+R*.62,r.y);ctx.lineTo(r.x,r.y+R*.78);ctx.lineTo(r.x-R*.62,r.y);ctx.closePath();ctx.fill();
       ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(r.x-R*.14,r.y-R*.55,R*.28,R*.5);
     }
-    if(!g.trial)this.drawZones(g,cx,cy,t);
-    if(!g.trial)this.drawEvents(g,t);
+    if(!g.trial&&!g.tun)this.drawZones(g,cx,cy,t);
+    if(!g.trial&&!g.tun)this.drawEvents(g,t);
     this.drawDanger(g,t);this.drawBeams(g,t);
     for(const l of (g.trial?[]:g.loot))this.drawLoot(l,t);
     for(const f of (g.trial?[]:g.feat))this.drawFeature(f,t,g);
     for(const c of (g.trial?[]:g.chests))this.drawChest(c,t);
     /* entities, depth sorted */
     const list=g.en.slice();
-    if(!g.trial){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
+    if(!g.trial&&!g.tun){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
     if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
     if(theme==='void'&&!g.trial&&vx1>-70&&vx0<70&&vy1>-440&&vy0<70)list.push({tw:1,y:TOPARENA.TR*.4});   /* the tower in the middle of the ring */
     if(g.pet)list.push({pet:g.pet,y:g.pet.y});
@@ -375,6 +375,8 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
+    /* Tournament of Power: behind the tower the hero is hidden by it (the tower is painted again over him, clipped to his box so nothing else is touched) */
+    if(theme==='void'&&!g.trial&&p.y<TOPARENA.TR*.4&&p.x>-130&&p.x<130&&p.y>-470){ctx.save();ctx.beginPath();ctx.rect(p.x-80,p.y-150,160,176);ctx.clip();TopArt.tower(ctx,t);ctx.restore();}
     /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn as sprites of a clean medium-weight lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
     ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
     const smo=ctx.imageSmoothingEnabled;
@@ -396,8 +398,8 @@ this.W=1;this.H=1;this.Z=1;
     ctx.globalAlpha=1;
     ctx.setTransform(1,0,0,1,0,0);
     this.vignette(g.dying?Math.min(.9,.5+.5*g.dying.t/.6):.5);if(g.dying){const dk=Math.min(.45,g.dying.t*.6);ctx.fillStyle='rgba(40,0,0,'+dk+')';ctx.fillRect(0,0,this.W,this.H);}
-    if(!g.trial)Ambient.screen(ctx,this.W,this.H,this.U,t);
-    if(!g.trial)this.eventOverlay(g,t);
+    if(!g.trial&&!g.tun)Ambient.screen(ctx,this.W,this.H,this.U,t);
+    if(!g.trial&&!g.tun)this.eventOverlay(g,t);
     if(g.tsT>0){ctx.fillStyle='rgba(215,225,255,'+Math.min(.3,g.tsT*.3)+')';ctx.fillRect(0,0,this.W,this.H);}
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
@@ -1296,6 +1298,7 @@ this.W=1;this.H=1;this.Z=1;
   }
   drawFeature(f,t,g){
     const ctx=this.ctx,x=f.x,y=f.y,pulse=.5+.5*Math.sin(t*3+x);
+    if(f.kind==='tunnel'){this.drawTunnelEntrance(f,t,g);return;}   /* tunnel.js */
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
     /* used (E pressed): a bright flash with a little shake and swell, then it rises a bit and dissolves in sparkles (FEAT_FADE s) */
     const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis;
@@ -1547,12 +1550,18 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* timer + progress */
     const stg=g.stage;
-    txt(fmtT(g.t),W/2,42*U,'#ffd23f','center',F(30,400).replace('"Rajdhani"','"Bangers"'));
+    const clkF=F(30,400).replace('"Rajdhani"','"Bangers"');
+    txt(fmtT(Math.min(g.t,g.dur)),W/2,42*U,'#ffd23f','center',clkF);
+    if(g.t>=g.dur){                                       /* overtime: time past the stage length (keeps counting in Endless too) */
+      ctx.font=clkF;const cw=ctx.measureText(fmtT(Math.min(g.t,g.dur))).width;
+      txt('+'+fmtT(g.t-g.dur),W/2+cw/2+8*U,42*U,'#ff6a4a','left',F(20,400).replace('"Rajdhani"','"Bangers"'));
+    }
     const pw=Math.min(300*U,W*.34),px=W/2-pw/2,py=52*U;
     ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(px,py,pw,6*U);ctx.fillStyle='#ffd23f';ctx.fillRect(px,py,pw*clamp(g.t/g.dur,0,1),6*U);
     /* milestones: small white skull = horde, big red skull = boss, Shenron = final boss (past ones fade; the next boss pulses when it is close) */
     {const cy=py+3*U;let nextB=null;for(const b of g.bossQ)if(!b.done&&b.t>=g.t&&(!nextB||b.t<nextB.t))nextB=b;
       for(const ht of (g.hordePlan||[])){const past=ht<g.t;drawSkull(ctx,px+pw*clamp(ht/g.dur,0,1),cy+7*U,3.6*U,'#f4f4f4',past?.3:.95);}
+      for(const m of (g.miniPlan||[])){const x=px+pw*clamp(m.t/g.dur,0,1);drawSkull(ctx,x,cy-3*U,4.2*U,'#ff8a3a',m.done||m.t<g.t?.3:.95);}   /* minibosses: small orange skulls */
       for(const e of (g.elitePlan||[])){const x=px+pw*clamp(e.t/g.dur,0,1),y=cy+14*U,r=3.8*U;ctx.save();ctx.globalAlpha=e.done||e.t<g.t?.3:.95;ctx.fillStyle='#ffd23f';ctx.strokeStyle='#0a0f1c';ctx.lineWidth=Math.max(1,U);ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();}   /* gold star = elite enemy */
       for(const b of g.bossQ){const x=px+pw*clamp(b.t/g.dur,0,1),past=b.done||b.t<g.t,soon=b===nextB&&b.t-g.t<30,pulse=soon?1+.18*Math.sin(g.rt*8):1,a=past?.35:1;
         if(b.final)drawShenron(ctx,x,cy-1*U,1.25*U*pulse,a);else drawSkull(ctx,x,cy-3*U,6.2*U*pulse,'#ff3b3b',a);}}
@@ -1603,7 +1612,8 @@ this.W=1;this.H=1;this.Z=1;
       yb+=bh+22*U;
     }
     /* beacons for off-screen map items */
-    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':'#ffd23f']);
+    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f']);
+    if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a']);
     for(const c of g.chests)if(c.op===undefined)tgts.push([c.x,c.y,RARITY[c.rar||0].c]);
     for(const l of g.loot)if(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
@@ -1621,9 +1631,9 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* altar prompt */
     for(const f of g.feat)if(f.near&&!f.used&&f.fade===undefined){
-      const P={secret:['Premi il bottone misterioso','Press the mysterious button'],shrine:["Usa l'Altare del Potere",'Use the Altar of Power'],spring:['Bevi alla sorgente curativa','Drink from the healing spring'],font:["Attingi alla fonte dell'esperienza",'Draw from the experience font'],zenoportal:["Entra nel portale di Zeno-sama",'Enter Zeno-sama\'s portal']};
+      const P={secret:['Premi il bottone misterioso','Press the mysterious button'],shrine:["Usa l'Altare del Potere",'Use the Altar of Power'],spring:['Bevi alla sorgente curativa','Drink from the healing spring'],font:["Attingi alla fonte dell'esperienza",'Draw from the experience font'],zenoportal:["Entra nel portale di Zeno-sama",'Enter Zeno-sama\'s portal'],tunnel:['Entra nel tunnel (senso unico, si sale)','Enter the tunnel (one way, upwards)']};
       const s=P[f.kind]?tr2(P[f.kind][0],P[f.kind][1]):tt(f.kind==='altar'?'altarPrompt':f.kind==='totem'?'totemPrompt':'chamberPrompt');
-      txt('['+(this.keyHints.interact||'E')+'] '+s,W/2,H*.7,f.kind==='secret'?'#ff8a8a':'#ff8a8a','center',F(16));
+      txt('['+(this.keyHints.interact||'E')+'] '+s,W/2,H*.7,f.kind==='secret'?'#ff8a8a':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ff8a8a','center',F(16));
     }
     if(g.trial&&g.trial.zeno){
       const zt=g.trial,rem=Math.max(0,Math.ceil(zt.dur-zt.t)),bw=Math.min(360*U,W*.5);
@@ -1670,6 +1680,7 @@ this.W=1;this.H=1;this.Z=1;
       txt(tt('trialHint'),W/2,H*.18+38*U,'#cfd8ff','center',F(13));
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(W/2-bw/2,H*.18+10*U,bw,8*U);ctx.fillStyle='#aab4ff';ctx.fillRect(W/2-bw/2,H*.18+10*U,bw*clamp(1-tr.t/tr.dur,0,1),8*U);
     }
+    if(g.tun)this.tunnelHud(g,W,H,U,txt,F,tr,tr2);
     /* banner */
     if(g.banner){
       const b=g.banner,k=b.t/b.dur,a=k<.1?k/.1:k>.8?(1-k)/.2:1;

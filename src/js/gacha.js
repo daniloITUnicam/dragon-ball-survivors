@@ -30,7 +30,8 @@ function gachaRoll(lucky,rnd){
   return{id:pickTrinket(r,null,rnd).id,r};
 }
 /* the zenny a trinket found in a run is sold for: its market value in Zeno-sama's shop (grows with the stage like his prices) plus a bonus (Mythic: +1000) */
-const trinketSale=(r,sd)=>Math.round((ZENO_PRICE[r]*(1+.3*(sd||0))+GACHA.sell[r])*ZMUL);   /* market value + bonus, like every other income 20% lower (ZMUL) */
+const TSELL_MUL=.24;   /* v104: trinket sales -70% (too much money); v107: another -20% (0.3 -> 0.24) */
+const trinketSale=(r,sd)=>Math.round((ZENO_PRICE[r]*(1+.3*(sd||0))+GACHA.sell[r])*ZMUL*TSELL_MUL);   /* market value + bonus, like every other income 20% lower (ZMUL) */
 const dupPayout=r=>Math.round(ZENO_PRICE[r]*ZMUL);
 
 Object.assign(Progress.prototype,{

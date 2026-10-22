@@ -55,7 +55,25 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 22 ottobre 2026, parte 6 (ritmo della partita e late game)
+
+- **Torneo del Potere, Estremo:** nuovo campo `late:{from,dmg,hp,spawn}` nello stage (`data.js`) e `Game.lateK(k)`: dal 35% della partita i fattori scendono in modo lineare fino a fine partita (danni ×0,42, salute dei nemici ×0,6, frequenza di comparsa e tetto di nemici ×0,55). Applicato in `dmgMul()` (nemici e boss, anche Jiren), `hpMul()`, `spawnRate()` e `spawnCap()`; solo in Estremo. Misurato sulla telemetria di 30 minuti (Zeno, 550 PV, armatura 26,55): a 1800 s i colpi dei boss passano da 220 (tetto del 40% dei PV) a 95, i nemici normali da 112–143 a 31–56, la comparsa da 43,8 a 24,1 al secondo, il tetto da 580 a 319; a 1500 s i colpi dei boss da 220 a 125.
+- **Miniboss** (`planMinis`, `updateMinis`, `spawnBoss(..., mini)`): uno ogni `MINI_EVERY = 300` s dove i boss lasciano un buco (≥70 s da ogni boss, ≥40 s da un élite, ≥150 s dal miniboss precedente; spostamento fino a ±80 s dall'orario ideale 3:00, 8:00...; non nelle partite sotto i 600 s, non dopo il boss finale, non in Infinito). Boss del tema scelto tra i 3 più vicini nel tempo (non quello in arrivo, non lo stesso due volte), `MINI_HP = 0,4`, `MINI_DMG = 0,8`, senza trasformazioni (`p2/morph = 0`, `e.mini`). Alla morte: scrigno da élite, biglietto 1x, zenny ridotti, 5 gemme; non conta tra i `bossKills`. Sulla barra del tempo è un teschio arancione (`miniPlan`).
+- **Élite:** nelle partite da 1200 s o più uno ogni `ELITE_EVERY = 240` s dal secondo 150 (prima 6 tra il 14% e l'80%). Le partite più corte restano come prima.
+- **Tempo extra:** da `g.t >= g.dur` il timer si ferma e accanto compare in rosso `+M:SS` (`Renderer.hud`); continua anche in Infinito.
+- **Bilanciamento:** vendita dei cimeli ancora −20% (`TSELL_MUL = 0,24`).
+- **Correzioni:** la sfera Genkidama è spenta nel Negozio di Zeno (`SpiritWeapon.update`); ostacoli e ciò che compare nello stage non si sovrappongono (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, zone di trappole/pozze).
+
+### 🆕 Aggiornamento del 22 ottobre 2026, parte 5 (tunnel sotterranei)
+
+- **Tunnel** (`src/js/tunnel.js`): il bunker di Pianeta Vegeta, il portale di Inferno e il cancello del Regno degli Dei non sono più ostacoli casuali (peso 0 in `OBSTACLES`, `world.js`): `MapDirector` ne apre uno ogni `TUN_EVERY = 900` s di partita (`TUN_EVERY_END = 600` in Infinito) come feature `tunnel`, con lo sprite dell'ostacolo (`TUNNELS[tema].def`). Con [E] si entra (non con un boss vivo): `startTunnel` mette da parte nemici, gemme, oggetti, forzieri e feature della mappa e ferma il tempo di gioco, il direttore e il mondo (`frozen` in `Game.update`).
+- Il tunnel è un corridoio largo 260 px (`TUN_HW`), lungo `TUN_LEN = 4400` px, a senso unico verso l'alto: il pavimento (`tun.fl`) sale con te e non puoi tornare indietro di più di `TUN_BACK = 240` px. I nemici nascono solo qui, davanti a te (`TUN_CAP = 48`), e danno l'esperienza subito. In fondo la stanza del boss (600 px): un boss non finale della mappa (`bossQ`, più avanti nella lista più sei avanti nella partita) con `e.tun`: non lascia niente (`killEnemy`); alla sua caduta compaiono 3 forzieri sui vertici di un triangolo di raggio `TUN_TRI = 150` al centro della stanza e il portello d'uscita (`endTunnel`).
+- Stanza dello Spirito e del Tempo e Negozio di Zeno invariati. Per dare un ingresso a un'altra mappa basta aggiungere una voce a `TUNNELS` (tema, indice dello sprite, colore) e i colori in `TUNART`.
+- **Torneo del Potere:** la torre ora copre il personaggio quando è dietro di essa (`Renderer.draw`: dopo `drawPlayer` la torre viene ridisegnata, ritagliata sul riquadro del personaggio).
+
 ### 🆕 Aggiornamento del 22 ottobre 2026, parte 4 (compagni illustrati)
+
+- **Bilanciamento:** vendita dei cimeli −70% (`TSELL_MUL = 0,3` in `gacha.js`); danni dei nemici in Difficile 1,5 → 1,05 e in Estremo 1,8 → 1,26 (`DIFF` in `data.js`, −30%).
 
 - **Dende, Mini Shenron, Mini Droid, Bubbles e Mini Bu** hanno nuovi sprite dipinti (`assets/sprites/props/pet<id>.png`, 6 colonne × 5 righe): riposo con battito di ciglia, camminata a 6 frame, presa del cristallo XP, consegna a te, abilità e onda d'urto. Il Saibaman resta con lo sprite generato dal codice finché non ha il suo foglio. Le card di scelta del compagno usano gli stessi sprite.
 - Righe del foglio: 0 riposo, 1 camminata, 2 presa XP (frame 3-5 con il cristallo in mano), 3 consegna (frame 3 = spinge i cristalli verso di te), 4 abilità (0-4) con l'onda d'urto nei frame 3-4. Il gioco legge i riquadri e gli ancoraggi da `sprites.json` (`pet<id>`, campo `k` = scala).

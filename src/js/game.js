@@ -18,7 +18,7 @@ const GEM_CAP=90,GEM_KEEP=55;
 /* companion (v54): XP gems it can fetch (px from the player), carried at once, run speed; shockwave when surrounded: enemies needed / radius they count in / radius hit / damage / cooldown (s) */
 const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
-const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35;
+const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
@@ -53,14 +53,14 @@ class Game{
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
-    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.scanK=1+.05*(this.save.shop.scan||0);   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
+    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.miniPlan=this.planMinis();this.scanK=1+.05*(this.save.shop.scan||0);   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
     this.ballEvery=clamp(this.dur*.28,100,270)/this.scanK;this.ballAt=this.ballEvery*.75;
     /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 3 are owned), later and farther away, and a Tamagami statue guards it */
     this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<Math.min(1,SUP_CHANCE*this.scanK)?{at:this.dur*rnd(.28,.55),done:false}:null;
     this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
     this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
-    this.bossAlive=0;this.trial=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
+    this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     for(const id of this.C.start.slice(0,this.maxW))this.addWeapon(id);
     this.revives=(this.save.shop.revive||0);
@@ -855,15 +855,25 @@ class Game{
   killEnemy(e){
     if(e.sparring){e.dead=true;this.burst(e.x,e.y-8,30,'#aab4ff');this.audio.sfx('boom');if(this.trial)this.trial.killed=true;return;}
     e.dead=true;this.kills++;this.bumpStreak();this.addCorpse(e);   /* it stays and dissolves (corpse.js) */
+    if(e.tun){this.burst(e.x,e.y-8,45,e.bd.c);this.audio.sfx('boom');this.bossAlive--;this.bossShock(e);this.tunBossDown(e);return;}   /* the tunnel's boss drops nothing: its prize is the three chests */
     if(e.bd&&e.bd.sig==='rain')this.rain=[];
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
+    if(e.boss&&e.mini){   /* miniboss: like an elite (chest, ticket, a little zenny); it does not count as a boss */
+      this.bossAlive--;this.addTicket('t1',1,e);
+      {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
+      const pay=Math.round(40*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);this.burst(e.x,e.y-10,22,'#ffd23f');this.audio.sfx('coin');
+      for(let i=0;i<5;i++)this.dropGem(e.x+rnd(-50,50),e.y+rnd(-50,50),18*this.stage.xp*XP_MUL);
+      this.shake=.5;this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.2);
+      this.bossShock(e);
+      return;
+    }
     if(e.boss){
       this.run.bossKills++;this.bossAlive--;
       if(e.tama){e.tama.lock=false;e.tama.beaten=true;this.ring(e.tama.x,e.tama.y-30,140,'#ffd23f',.8);this.say(this.env.tr(T('Il Tamagami cede la Super Sfera: prendila!','The Tamagami yields the Super Dragon Ball: take it!')),'#ffd23f',3.2);}
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
-      {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
+      {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
       this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
@@ -890,7 +900,8 @@ class Game{
     this.ring(p.x,p.y,70+Math.min(110,t*14),col,.5);this.burst(p.x,p.y-16,10+t*3,col);
     if(t>=3){this.flash=Math.max(this.flash||0,.14);this.flashC=col;}
   }
-  dropGem(x,y,v){[x,y]=this.dryPos(x,y);if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
+  dropGem(x,y,v){if(this.tun){this.addXp(v);return;}   /* tunnel: the experience goes straight to you */
+    [x,y]=this.dryPos(x,y);if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
   /* distance from the player to the screen edge along an angle (just off screen = this + a small margin) */
   edgeDist(a){const hw=this.vw/2+30,hh=this.vh/2+30,c=Math.abs(Math.cos(a))||1e-6,s=Math.abs(Math.sin(a))||1e-6;return Math.min(hw/c,hh/s);}
   /* accumulate XP into the red gem (created just outside the screen, towards where the gems were) */
@@ -994,9 +1005,19 @@ class Game{
   waterAt(x,y){const th=this.stage.theme;return Sea.has(th)&&Sea.wet(th,x,y)>.012;}
   /* nothing may lie on the water (the hero cannot walk there): the nearest dry spot around (x,y), looking outwards in rings and keeping a little margin from the shore.
      Stages without sea, lava stages and trials return the point unchanged; with no dry spot within 720 px (open sea) the object is put next to the hero */
-  dryPos(x,y){
+  /* the spot for something that lies on the ground (pick-ups, gems, chests, features): dry, and clear of every obstacle's picture (rad = its own size); otherwise the nearest such spot, looking outwards in rings */
+  dryPos(x,y,rad){
+    const th=this.stage.theme;[x,y]=this.dryPos0(x,y);
+    if(this.trial||this.tun||th==='snake')return[x,y];
+    rad=rad===undefined?8:rad;
+    if(World.clearAt(th,x,y,rad))return[x,y];
+    for(let r=20;r<=360;r+=20){const n=Math.max(8,Math.round(r/16)),a0=Math.random()*TAU;for(let i=0;i<n;i++){const a=a0+i/n*TAU,xx=x+Math.cos(a)*r,yy=y+Math.sin(a)*r*.85;
+      if(!World.clearAt(th,xx,yy,rad))continue;const q=this.dryPos0(xx,yy);if(q[0]===xx&&q[1]===yy)return q;}}
+    return[x,y];
+  }
+  dryPos0(x,y){
     if(this.stage.theme==='void'&&!this.trial){const o={x,y};TOPARENA.clamp(o,14);return[o.x,o.y];}   /* nothing lies outside the ring (nor inside the tower) */
-    if(this.trial||!Sea.has(this.stage.theme)||this.lavaMap())return[x,y];
+    if(this.trial||this.tun||!Sea.has(this.stage.theme)||this.lavaMap())return[x,y];
     const ok=(a,b)=>!this.waterAt(a,b)&&!this.waterAt(a+16,b)&&!this.waterAt(a-16,b)&&!this.waterAt(a,b+12)&&!this.waterAt(a,b-12);
     if(ok(x,y))return[x,y];
     for(let r=24;r<=720;r+=24){const n=Math.max(8,Math.round(r/14)),a0=Math.random()*TAU;for(let i=0;i<n;i++){const a=a0+i/n*TAU,xx=x+Math.cos(a)*r,yy=y+Math.sin(a)*r;if(ok(xx,yy))return[xx,yy];}}
@@ -1107,7 +1128,7 @@ class Game{
     this.en0={t:this.t,lvl:this.lvl,steps:Math.floor(this.t/this.escEvery),mile:Math.floor(this.lvl/ENDLESS_MILE),rate:Math.max(this.xpRate,xpNeed(this.lvl)/45)};
     this.enMile=this.en0.mile;
     this.need=this.needFor(this.lvl);
-    this.map.zenoNext=this.t+ENDLESS_ZENO;
+    this.map.zenoNext=this.t+ENDLESS_ZENO;this.map.tunNext=this.t+TUN_EVERY_END;
     if(this.stage.abs){   /* Android Ruins: one android every 5 minutes, then 19 and 21, then the list starts over a little stronger */
       const m0=Math.floor(this.t/ANDROID_STEP)+1;
       for(let m=m0;m<m0+36;m++){const id=ANDROID_SEQ[(m-1)%ANDROID_SEQ.length],lap=Math.floor((m-1)/ANDROID_SEQ.length);this.bossQ.push({id,t:m*ANDROID_STEP,final:false,done:false,k:(ANDROID_K[id]||1)*(1+.35*lap)});}
@@ -1129,12 +1150,13 @@ class Game{
   escSteps(){return this.endless?this.en0.steps+(this.enMile-this.en0.mile)*ENDLESS_W:Math.floor(this.t/this.escEvery);}
   /* Extreme: 2% more enemies every 30 s (60 steps at most) */
   xSteps(){return this.diffId==='extreme'?Math.min(60,Math.floor(this.t/X_SPAWN_STEP)):0;}
-  hpMul(){return ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
-  dmgMul(){return ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
+  lateK(k){const L=this.stage.late;if(!L||this.diffId!=='extreme')return 1;return 1+(L[k]-1)*clamp((this.prog()-L.from)/(1-L.from),0,1);}   /* stage late-game ease (Tournament of Power, Extreme): 1 until L.from, then down to L[k] at the end of the run */
+  hpMul(){return this.lateK('hp')*ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
+  dmgMul(){return this.lateK('dmg')*ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk);}
-  spawnRate(){return(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*(this.save.shop.broly||0));}   /* shop "Urlo di Broly!": +5% enemies per level */
+  spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
+  spawnRate(){return this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*(this.save.shop.broly||0));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -1182,12 +1204,13 @@ class Game{
     if(this.stage.theme==='void'){   /* Tournament of Power: the arena is closed, so aim at the first direction (turning either way) that lands inside it, away from the tower */
       for(let k=0;k<16;k++){
         const aa=a+(k%2?1:-1)*Math.ceil(k/2)*.42,dd=k>10?d*.6:d,dy=Math.sin(aa)*dd,x=p.x+Math.cos(aa)*dd,y=p.y+(dy<0?dy*TOP_K:dy);
-        if(TOPARENA.inside(x,y,70)&&Math.hypot(x,y)>TOPARENA.TR+40)return[x,y];
+        if(TOPARENA.inside(x,y,70)&&Math.hypot(x,y)>TOPARENA.TR+40&&World.clearAt('void',x,y,16))return[x,y];
       }
       const o={x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d};TOPARENA.clamp(o,40);return[o.x,o.y];
     }
-    const dy=Math.sin(a)*d;
-    return[p.x+Math.cos(a)*d,p.y+(dy<0?dy*TOP_K:dy)];   /* above the player: 50% farther away */
+    const dy=Math.sin(a)*d;let x=p.x+Math.cos(a)*d,y=p.y+(dy<0?dy*TOP_K:dy);   /* above the player: 50% farther away */
+    for(let k=0;k<8&&!this.trial&&!this.tun&&!World.clearAt(this.stage.theme,x,y,16);k++){x+=Math.cos(a)*34;y+=Math.sin(a)*34;}   /* never on top of an obstacle: a little farther out */
+    return[x,y];
   }
   snakeTier(){return this.stage.capT?Math.min(this.stage.capT.length-1,(this.nt/150)|0):0;}
   spawnOne(){
@@ -1223,9 +1246,9 @@ class Game{
   }
   /* ---- elite enemies: a few per run, spread between the bosses; each one is a big, tough version of a regular enemy and always drops a chest ---- */
   planElites(){
-    const dur=this.dur,n=clamp(Math.round(dur/210),2,6),out=[],fin=this.bossQ.find(b=>b.final),lim=fin?fin.t-32:dur-60;
+    const dur=this.dur,long=dur>=1200,n=long?Math.floor((dur-210)/ELITE_EVERY)+1:clamp(Math.round(dur/210),2,6),out=[],fin=this.bossQ.find(b=>b.final),lim=fin?fin.t-32:dur-60;
     for(let i=0;i<n;i++){
-      let t=dur*(.14+.66*(i+.5)/n);
+      let t=long?150+ELITE_EVERY*i:dur*(.14+.66*(i+.5)/n);   /* long runs (30 min): one elite every 4 minutes, from 2:30 on */
       for(let k=0;k<3;k++){const b=this.bossQ.find(b=>Math.abs(b.t-t)<28);if(!b)break;t=b.t+32;}   /* step aside from a boss (a fight in progress also holds the elite back) */
       if(t>lim||this.bossQ.some(b=>Math.abs(b.t-t)<28)||(out.length&&t-out[out.length-1].t<60))continue;
       out.push({t,i:out.length,done:false});
@@ -1235,6 +1258,33 @@ class Game{
   updateElites(){
     if(this.bossAlive>0||this.finalSpawned||this.wave.ph==='surge')return;
     for(const e of this.elitePlan)if(!e.done&&this.t>=e.t){e.done=true;this.spawnElite(e.i);break;}
+  }
+  /* ---- minibosses: one every 5 minutes wherever the real bosses leave a gap (they never replace a boss); a smaller version of a stage boss, no transformations ---- */
+  planMinis(){
+    const out=[];if(this.dur<600)return out;
+    const fin=this.bossQ.find(b=>b.final),lim=(fin?fin.t:this.dur)-70,bq=this.bossQ.filter(b=>!b.final),el=this.elitePlan||[];
+    for(let k=0;;k++){
+      const ideal=180+MINI_EVERY*k;if(ideal>lim+80)break;
+      for(const o of [0,20,-20,40,-40,60,-60,80,-80]){
+        const t=ideal+o;
+        if(t<90||t>lim||bq.some(b=>Math.abs(b.t-t)<70)||el.some(e=>Math.abs(e.t-t)<40)||(out.length&&t-out[out.length-1].t<150))continue;
+        let pool=bq.slice().sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t)).slice(0,3);   /* the bosses closest in time... */
+        if(pool.length>1&&pool[0].t>t&&pool[0].t-t<200)pool=pool.slice(1);           /* ...but not the one that is about to arrive */
+        const last=out.length&&out[out.length-1].id;if(pool.length>1)pool=pool.filter(b=>b.id!==last);   /* nor the same one twice in a row */
+        if(!pool.length)break;
+        out.push({t,id:pick(pool).id,done:false});break;
+      }
+    }
+    return out;
+  }
+  updateMinis(){
+    if(this.endless||this.finalSpawned||this.trial||this.tun)return;
+    for(const m of this.miniPlan){
+      if(m.done||this.t<m.t)continue;
+      if(this.t>m.t+50){m.done=true;continue;}   /* the moment passed during a fight: skip it */
+      if(this.bossAlive>0||this.wave.ph==='surge'||this.bossQ.some(b=>!b.done&&b.t-this.t<35))return;
+      m.done=true;this.spawnBoss(m.id,false,undefined,MINI_HP,true);return;
+    }
   }
   spawnElite(n){
     const t=this.nt,ok=[];
@@ -1250,7 +1300,7 @@ class Game{
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
-    {const[cx,cy]=this.dryPos(e.x,e.y);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
+    {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
     const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
@@ -1280,14 +1330,15 @@ class Game{
   }
   spawnPack(){this.spawnRing(Math.round(5+this.sd+Math.min(1,this.prog())*(8+this.sd*2)),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
-  spawnBoss(id,final,at,hk){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k */
-    const bd=BOSSES[id],p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
+  spawnBoss(id,final,at,hk,mini){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k; mini: a miniboss (small, no transformations) */
+    let bd=BOSSES[id];if(mini)bd=Object.assign({},bd,{n:T(bd.n.it+' (Mini)',bd.n.en+' (Mini)'),p2:0,morph:0});
+    const p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
     const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
-    Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0});
+    Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;
-    this.say(this.env.tr(bd.n)+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
+    this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
   }
   bossAttack(e){
@@ -1655,8 +1706,8 @@ class Game{
     const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}dt*=this.timeScale;
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
-    const inTrial=!!this.trial;
-    this.rt+=dt;if(!inTrial){const e0=Math.floor(this.t/this.escEvery);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/this.escEvery)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
+    const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
+    this.rt+=dt;if(!frozen){const e0=Math.floor(this.t/this.escEvery);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/this.escEvery)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
     if(dt>0)this.xpRate+=(this.xpAcc/dt-this.xpRate)*(1-Math.exp(-dt/45));this.xpAcc=0;   /* XP income per second, smoothed over ~45 s (calibrates the Endless level curve) */
     if(p.inv>0)p.inv-=dt;
     if(this.shake>0)this.shake-=dt;
@@ -1672,10 +1723,10 @@ class Game{
 
     let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
-    if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!inTrial){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
+    if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!frozen){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
     if(!(this.trial&&this.trial.zeno))p.hp=Math.min(p.maxHp,p.hp+S.regen*dt);   /* no passive regeneration inside Zeno's Shop */
-    if(!inTrial)this.updateZones(dt);
+    if(!frozen)this.updateZones(dt);
     if(this.kai>0)this.updateKaioken(dt);
     if(this.rain.length)this.updateRain(dt);if(this.held)this.updateHeld(dt);
     this.updateTotemFx(dt);this.updateDanger(dt);this.updateBeams(dt);this.updateBossShock(dt);this.updateAbility(dt);
@@ -1686,10 +1737,10 @@ class Game{
     if(this.shocks.length)this.updateShocks(dt);
 
     /* director */
-    if(!this.sb.nospawn&&!inTrial){
+    if(!this.sb.nospawn&&!frozen){
       /* boss fights: slightly fewer enemies; the final boss brings a bigger crowd instead */
       const fin=this.finalOn?1.5:this.bossAlive>0?.7:1;
-      this.updateWave();this.updateElites();this.updateBallPlan();this.updateSuperPlan();
+      this.updateWave();this.updateElites();this.updateMinis();this.updateBallPlan();this.updateSuperPlan();
       const wv=this.waveMul();
       if(this.hordeBoost>0)this.hordeBoost-=dt;
       this.spAcc+=this.spawnRate()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
@@ -1698,7 +1749,7 @@ class Game{
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
     }
-    for(const b of this.bossQ)if(!inTrial&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final,undefined,b.k);}
+    for(const b of this.bossQ)if(!frozen&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final,undefined,b.k);}
 
     /* trinket specials */
     if(this.trinkets.length){
@@ -1711,9 +1762,9 @@ class Game{
     if(this.streak>0){this.streakT-=dt;if(this.streakT<=0)this.streak=0;}if(this.streakPop>0)this.streakPop-=dt;
     if(this.cstk>0){this.cstkT-=dt*CK_DRAIN;if(this.cstkT<=0){this.cstk=0;this.cstkT=0;}}
     /* the stage's own Dragon Ball event (see events.js): every few minutes, 30-45 seconds */
-    if(!inTrial)this.evUpdate(dt);
+    if(!frozen)this.evUpdate(dt);
     /* ranged-enemy wave: 60 seconds (first stage: 30), then they leave */
-    if(!inTrial){
+    if(!frozen){
       if(this.shootOn){this.shootQT-=dt;if(this.shootQT<=0){this.shootQT+=8;this.shootQ=4;}}   /* 4 shooters per 8 s (first stage) */
       if(!this.shootOn){this.shootT-=dt;if(this.shootT<=0){if(this.stage.roster.some(r=>(ENEMIES[r[0]].ai==='ranged'||ENEMIES[r[0]].ai==='hover')&&this.t>=r[1])&&!this.bossAlive){this.shootOn=true;this.shootEnd=this.t+(this.stage.no===1?30:60);this.shootQ=4;this.shootQT=8;}else this.shootT=20;}}
       else if(this.t>=this.shootEnd){this.shootOn=false;this.shootT=rnd(240,340)*this.evK;for(const e of this.en)if(!e.boss&&(e.ai==='ranged'||e.ai==='hover')){e.dead=true;this.burst(e.x,e.y-8,5,'#6ad0ff');}}
@@ -1735,7 +1786,8 @@ class Game{
     this.updateProjectiles(dt);
     this.updateEnemies(dt);
     this.updateBullets(dt);
-    if(!inTrial){this.updatePickups(dt);this.map.update(dt);}
+    if(!inTrial){this.updatePickups(dt);if(!inTun)this.map.update(dt);}
+    if(inTun&&this.tun)this.updateTunnel(dt);
 
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
@@ -2074,7 +2126,7 @@ class Game{
             if(e.sgT<=0&&dist<640){this.startBossMove(e);break;}
           }
           /* too slow? the boss powers up: heals, gets stronger and learns new attacks */
-          if(e.tf<2&&e.hp>e.max*.1&&!this.trial){e.tfT-=dt;if(e.tfT<=0)this.startBossXform(e);}
+          if(e.tf<2&&e.hp>e.max*.1&&!this.trial&&!e.mini){e.tfT-=dt;if(e.tfT<=0)this.startBossXform(e);}
           if(e.dashT>0){e.dashT-=dt;sp*=3;}
           if(dist>e.r+30){mx=ux;my=uy;}
           if(e.bd.p2&&!e.p2&&e.hp<=e.max*(e.bd.p2at||.5)){if(e.bd.morph){this.startBossMorph(e);break;}this.bossTransform(e);}
@@ -2087,7 +2139,7 @@ class Game{
       e.x+=mx*sp*dt;e.y+=my*sp*dt;e.mvs=(mx||my)&&!(e.stun>0)?1:0;
       if(Math.abs(mx)>.1)e.face=mx>0?1:-1;
       e.x+=e.kx*dt;e.y+=e.ky*dt;e.kx*=.88;e.ky*=.88;
-      if(!e.boss&&!e.def.fly&&e.ai!=='hover'&&!this.trial)World.resolve(this.stage.theme,e,e.r*.55);
+      if(!e.boss&&!e.def.fly&&e.ai!=='hover'&&!this.trial&&!this.tun)World.resolve(this.stage.theme,e,e.r*.55);
       else if(e.boss&&this.stage.theme==='snake')Snake.clamp(e,e.r*.3);
       if(!e.boss&&e.ai!=='hover'){
         const cx=Math.floor(e.x/40)+5000,cy=Math.floor(e.y/40)+5000;
@@ -2306,14 +2358,14 @@ class Game{
   }
 
   /* ---------- sandbox helpers ---------- */
-  jumpTo(t){this.t=Math.max(0,t);for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
+  jumpTo(t){this.t=Math.max(0,t);for(const m of (this.miniPlan||[]))m.done=m.done||m.t<t-1;for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
   setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
-  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y);this.chests.push({x:cx,y:cy,final:!!final,t:0,rar:this.rollChestRar()});}
+  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y,30);this.chests.push({x:cx,y:cy,final:!!final,t:0,rar:this.rollChestRar()});}
 }
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
 class MapDirector{
-  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.needT=12;this.lootT=rnd(45,70);this.altT=rnd(20,40);this.chestT=200;
+  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.tunNext=TUN_EVERY;this.needT=12;this.lootT=rnd(45,70);this.altT=rnd(20,40);this.chestT=200;
     const bq=g.bossQ;this.trials=[];
     if(bq.length){this.trials.push({t:Math.max(60,bq[0].t-50),done:false});const fin=bq[bq.length-1];if(fin.t-70>bq[0].t+60)this.trials.push({t:fin.t-70,done:false});}
   }
@@ -2321,6 +2373,8 @@ class MapDirector{
     const g=this.g,p=g.p;
     for(const tr of this.trials)if(!tr.done&&g.t>=tr.t){tr.done=true;this.spawnChamber();}
     if(!this.secretDone&&g.t>=this.secretAt&&!g.cleared){this.secretDone=true;this.spawnSecret();}
+    /* the tunnel entrance (bunker / demon portal / heavenly gate, only on the maps that have one): every TUN_EVERY s of play, TUN_EVERY_END in Endless; it never appears at random any more */
+    if(g.t>=this.tunNext&&TUNNELS[g.stage.theme]&&(g.endless||!g.finalSpawned)){this.tunNext=g.t+(g.endless?TUN_EVERY_END:TUN_EVERY);if(!g.feat.some(f=>f.kind==='tunnel'&&!f.dead))this.spawnTunnel();}
     /* Endless: the red button (and so Zeno's Shop) comes back every 5 minutes, for 4 minutes */
     if(g.endless&&g.t>=this.zenoNext&&!g.trial){this.zenoNext=g.t+ENDLESS_ZENO;if(!g.feat.some(f=>!f.dead&&(f.kind==='secret'||f.kind==='zenoportal')))this.spawnSecret(240);}
     this.islands(dt);
@@ -2344,7 +2398,7 @@ class MapDirector{
     g.input.interact=false;
     g.feat=g.feat.filter(f=>!f.dead);
   }
-  pos(rmin,rmax){const a=rnd(0,TAU),d=rnd(rmin,rmax),[x,y]=this.g.spawnSpot(a,d,0);return this.g.dryPos(x,y);}
+  pos(rmin,rmax,rad){const a=rnd(0,TAU),d=rnd(rmin,rmax),[x,y]=this.g.spawnSpot(a,d,0);return this.g.dryPos(x,y,rad===undefined?44:rad);}   /* rad: how much room the thing needs around it */
   /* Snake Way: every island beside the body holds three power-ups, laid on it the first time you come within ~1000 px (once per island, no cooldowns), and its name is announced */
   islands(dt){
     const g=this.g,p=g.p;if(g.stage.theme!=='snake'||g.trial)return;
@@ -2379,7 +2433,7 @@ class MapDirector{
   }
   nextFormGap(){const g=this.g;if(g.formsUnlocked>=g.formMax)return 99;return FORM_TIERS[g.formsUnlocked].lvl-g.lvl;}
   spawnFeature(){   /* kept for the sandbox/tests: one altar that fits the situation, as before */
-    const g=this.g;if(g.feat.filter(f=>!f.used&&f.kind!=='secret'&&f.kind!=='zenoportal').length>=2)return;
+    const g=this.g;if(g.feat.filter(f=>!f.used&&f.kind!=='secret'&&f.kind!=='zenoportal'&&f.kind!=='tunnel').length>=2)return;
     const c=this.altarCands();if(!c.length)return;
     this.placeFeature(wpick(c,x=>x[1])[0]);
   }
@@ -2399,7 +2453,7 @@ class MapDirector{
   }
   rollAltars(){
     const g=this.g;if(g.trial||g.bossAlive>0&&Math.random()<.5)return;
-    const live=g.feat.filter(f=>!f.used&&f.fade===undefined&&f.kind!=='secret'&&f.kind!=='zenoportal'&&f.kind!=='chamber');
+    const live=g.feat.filter(f=>!f.used&&f.fade===undefined&&f.kind!=='secret'&&f.kind!=='zenoportal'&&f.kind!=='chamber'&&f.kind!=='tunnel');
     for(const [kind] of this.altarCands())if(live.length<2&&!live.some(f=>f.kind===kind)&&Math.random()<ALT_P){this.placeFeature(kind);live.push({kind});}
     if(g.nt>=60&&!g.feat.some(f=>f.kind==='totem')&&Math.random()<TOTEM_P){
       const[x,y]=this.pos(230,400);g.feat.push({kind:'totem',x,y,t:0,ttl:900,used:false,dead:false});
@@ -2417,11 +2471,17 @@ class MapDirector{
     g.feat.push({kind:'chamber',x,y,t:0,ttl:95,used:false,dead:false});
     g.say(g.env.tr(T('Una Stanza dello Spirito e del Tempo è apparsa!','A Room of Spirit and Time has appeared!')),'#cfd8ff',3);g.audio.sfx('shrine');
   }
+  spawnTunnel(){
+    const g=this.g,D=TUNNELS[g.stage.theme],[x,y]=this.pos(240,380,70);
+    g.feat.push({kind:'tunnel',x,y,t:0,ttl:1e9,used:false,dead:false});
+    g.say(g.env.tr(T('Si è aperto un accesso: ','An entrance has opened: '))+g.env.tr(D.n),D.gl,3);g.audio.sfx('shrine');
+  }
   use(f){
     const g=this.g,p=g.p;
+    if(f.kind==='tunnel'){if(g.startTunnel(f)){f.used=true;f.dead=true;}return;}
     if(f.kind==='chamber'){g.startTrial();f.used=true;f.dead=true;return;}
     if(f.kind==='secret'){          /* the mysterious red button opens the portal to Zeno's Shop */
-      f.used=true;f.pressed=true;{const[zx,zy]=g.dryPos(f.x+95,f.y+14);g.feat.push({kind:'zenoportal',x:zx,y:zy,t:0,ttl:1e9,used:false,dead:false});}
+      f.used=true;f.pressed=true;{const[zx,zy]=g.dryPos(f.x+95,f.y+14,44);g.feat.push({kind:'zenoportal',x:zx,y:zy,t:0,ttl:1e9,used:false,dead:false});}
       g.ring(f.x,f.y,120,'#ff3b3b',.6);g.ring(f.x+95,f.y+14,90,'#c080ff',.8);g.flash=Math.max(g.flash,.25);g.flashC='#e0b8ff';g.shake=Math.max(g.shake,.3);g.audio.sfx('transform');
       g.say(g.env.tr(T('Si è aperto un portale misterioso...','A mysterious portal has opened...')),'#e0b8ff',3);return;}
     if(f.kind==='zenoportal'){g.startZeno();f.used=true;f.dead=true;return;}

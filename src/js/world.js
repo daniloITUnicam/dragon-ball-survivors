@@ -96,7 +96,7 @@ const OBSTACLES={
     IM(OB(4,23,26,18,R=>{R(-10,-7,20,7,'#8a3a22');R(-7,-12,14,6,'#a8482a');R(-3,-14,7,3,'#c85a34');R(2,-8,6,3,'#6a2a18');}),0,.499,{ww:113}),
     IM(OB(3,11,16,36,R=>{tri(R,0,0,32,6,'#7a2a18','#a8482a');}),1,.5,{ww:84}),
     IM(OB(.4,22,30,22,(R,C)=>{C(R,0,-10,10,'#d8d8e8');R(-10,-3,20,3,'#8a8a9a');R(-4,-14,8,6,'#6ad0ff');R(-3,-13,2,1,'#fff');R(-12,-2,24,2,'#4a4a5a');}),2,.501,{ww:127}),
-    IM(OB(.35,32,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),3,.5,{ww:173}),
+    IM(OB(0,32,22,22,R=>{R(-6,-16,12,16,'#6a2a18');R(-4,-20,8,5,'#8a3a22');R(-1,-10,2,10,'#3a1208');}),3,.5,{ww:173}),
     IM(OB(.8,23,26,18,R=>{R(-12,-8,24,8,'#8a3a22');R(-9,-14,18,7,'#a8482a');}),4,.5,{ww:115}),
     IM(OBS(2.2,11,20,26,MA.cactus,1.5),5,.501,{ww:106}),
     IM(OBS(1,28,24,16,MA.skullpile,1.9),6,.5,{ww:149,lu:6.5}),
@@ -120,7 +120,7 @@ const OBSTACLES={
     IM(OB(3,15,16,34,R=>{R(-4,-30,8,30,'#f4f1ea');R(-5,-32,10,3,'#fff');R(-5,-3,10,3,'#c8c0d8');R(-1,-28,1,24,'#d8d0e0');}),0,0.5,{ww:129}),
     IM(OB(3,33,26,20,(R,C)=>{C(R,-6,-6,6,'#fff');C(R,3,-8,8,'#eaf4ff');C(R,10,-5,5,'#fff');R(-10,-1,22,1,'#bcd8f4');}),1,0.5,{ww:164}),
     IM(OB(2,13,20,32,R=>{R(-6,-4,12,4,'#c8c0d8');R(-3,-20,6,16,'#e8e0f0');R(-5,-27,10,8,'#f4f1ea');R(-2,-30,4,3,'#ffd23f');}),2,0.5,{ww:98}),
-    IM(OB(0.5,42,34,30,R=>{R(-14,-24,28,4,'#e8503a');R(-12,-20,3,20,'#f4f1ea');R(9,-20,3,20,'#f4f1ea');R(-14,-3,28,3,'#c8c0d8');R(-8,-27,16,4,'#d8402a');}),3,0.5,{ww:223}),
+    IM(OB(0,42,34,30,R=>{R(-14,-24,28,4,'#e8503a');R(-12,-20,3,20,'#f4f1ea');R(9,-20,3,20,'#f4f1ea');R(-14,-3,28,3,'#c8c0d8');R(-8,-27,16,4,'#d8402a');}),3,0.5,{ww:223}),
     IM(OB(1.5,9,14,21,R=>{R(-4,-12,8,12,'#3a3a44');R(-3,-17,6,5,'#ffd23f');}),4,0.5,{ww:64}),
     IM(OB(1.5,4,16,34,R=>{}),5,0.5,{ww:79}),
     IM(OB(0.6,27,26,20,R=>{}),6,0.5,{ww:133}),
@@ -133,7 +133,7 @@ const OBSTACLES={
     IM(OBS(2,27,20,16,MA.spikes,1.9),2,0.5,{ww:135,lu:6.5}),
     IM(OBS(1.4,26,24,16,MA.skullpile,1.9),3,0.5,{ww:129,lu:6.9}),
     IM(OBS(1,18,16,20,MA.tomb2,2.0),4,0.5,{ww:103,lu:5.7}),
-    IM(OB(0.4,40,26,18,R=>{}),5,0.5,{ww:213}),
+    IM(OB(0,40,26,18,R=>{}),5,0.5,{ww:213}),
     IM(OB(1.5,7,12,22,R=>{}),6,0.5,{ww:85}),
     IM(OB(1.5,14,26,18,R=>{}),7,0.5,{ww:108}),
     IM(OB(0.8,21,20,28,R=>{}),8,0.5,{ww:124}),
@@ -219,7 +219,7 @@ const World={
           if(!kind||!kind.length)c=null;   /* a rock whose sprites are not there (yet) is not placed */
           else{
             const v=kind[Math.floor(mhash(cx+19,cy+23)*kind.length)],R=S.rects[v],sc=Math.min(ROCK_S,ROCK_MAXW/R[2]),wd=R[2]*sc,ht=R[3]*sc;
-            c.v=v;c.s=sc;c.r=Math.max(6,Math.min(.36*wd,.55*ht));
+            c.v=v;c.s=sc;c.r=Math.max(6,Math.min(.36*wd,.55*ht));c.fw=wd;c.fh=ht;
             for(const k of[-.4,.4])if(Sea.wet(theme,x+k*wd,y)>-.05){c=null;break;}   /* the whole base stands on dry land, never half in the water */
           }
         }
@@ -242,7 +242,7 @@ const World={
     if(q<ZONE_P){
       const x=(cx+.2+mhash(cx+3,cy+7)*.6)*ZONE_CELL,y=(cy+.2+mhash(cx+9,cy+1)*.6)*ZONE_CELL;
       const dry=!Sea.has(theme)||[[0,0],[100,0],[-100,0],[0,100],[0,-100]].every(o=>Sea.wet(theme,x+o[0],y+o[1])<-.03);   /* no pool or trap in a lake */
-      if(x*x+y*y>340*340&&dry&&(theme!=='void'||TOPARENA.inside(x,y,200))){
+      if(x*x+y*y>340*340&&dry&&(theme!=='void'||TOPARENA.inside(x,y,200))&&this.clearAt(theme,x,y,q<ZONE_HEAL?78:56)){   /* and never under an obstacle's picture */
         if(q<ZONE_HEAL)c={kind:'heal',x,y,r:82,ph:0,id:k};
         else c={kind:'trap',x,y,r:46+mhash(cx+4,cy+4)*16,ph:mhash(cx+8,cy+2)*TRAP_PERIOD,id:k,theme};
       }
@@ -257,6 +257,28 @@ const World={
   },
   /* 0 = safe, 1 = about to fire, 2 = active */
   trapState(z,t){const m=(t+z.ph)%TRAP_PERIOD;return m<TRAP_PERIOD-1.4?0:m<TRAP_PERIOD-.8?1:2;},
+  /* the ground an obstacle's picture covers: half its drawn width and its drawn height (rocks: the rock; sheet art: the width ww and the crop's height; painted art: its size) */
+  foot(theme,b){
+    if(b._f)return b._f;
+    const d=OBSTACLES[theme][b.t];let hw,ht,ok=true;
+    if(b.fw)hw=b.fw/2,ht=b.fh;
+    else if(d.ww){
+      hw=d.ww/2;const id=PROP_SHEET[theme],BP=id&&typeof Sprites!=='undefined'&&Sprites.sheets[id],R=BP&&BP.rects&&BP.rects[d.im];
+      if(R)ht=R[3]*d.ws/(BP.k||1);else{ht=hw*1.5;ok=false;}   /* sheet not decoded yet: a guess, not remembered */
+    }else hw=d.W*1.55*(d.sc||1),ht=d.H*3.1*(d.sc||1);
+    const F={hw,ht};if(ok)b._f=F;return F;
+  },
+  /* is the circle of radius rad at (x,y) clear of every obstacle's picture (and of what stands behind it)? Spawned things use it so they never overlap a prop */
+  clearAt(theme,x,y,rad){
+    if(theme==='snake'||!OBSTACLES[theme])return true;
+    const cx=Math.floor(x/OB_CELL),cy=Math.floor(y/OB_CELL);
+    for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+2;gy++){
+      const b=this.cell(theme,gx,gy);if(!b||b.gd)continue;
+      const F=this.foot(theme,b);
+      if(Math.abs(x-b.x)<F.hw+rad&&y>b.y-F.ht-rad&&y<b.y+rad+6)return false;
+    }
+    return true;
+  },
   /* push a ground circle out of nearby obstacles */
   resolve(theme,o,rad){
     if(theme==='snake'){Snake.clamp(o,rad);return;}

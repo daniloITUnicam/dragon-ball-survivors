@@ -507,7 +507,7 @@ Object.assign(UI.prototype,{
     const esel=sel(Object.keys(ENEMIES).map(id=>[id,this.tr(ENEMIES[id].n)]));
     const bsel=sel(Object.keys(BOSSES).filter(id=>BOSSES[id].hp>0).map(id=>[id,this.tr(BOSSES[id].n)]));
     const lsel=sel(['coin','bag','heal','magnet','dmg','haste','xp','capsule','ball','sball'].map(k=>[k,k]));
-    const fsel=sel(['shrine','spring','altar','font'].map(k=>[k,k]));
+    const fsel=sel(['shrine','spring','altar','font','tunnel'].map(k=>[k,k]));
     const frm=sel([[-1,this.t('baseForm')],...LINES[g.C.line||'saiyan'].map((f,i)=>[i,(i+1)+'. '+this.tr(f.n)])],g.formIdx);
     const spd=sel([[0,'0x'],[.5,'0.5x'],[1,'1x'],[2,'2x'],[4,'4x']],g.timeScale);
     const close=h('button',{class:'btn tiny alt',onclick:()=>this.hideSandbox()},'✕');

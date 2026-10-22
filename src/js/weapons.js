@@ -289,6 +289,7 @@ class SpiritWeapon extends Weapon{
   get sizeK(){return(this.evo>=2?1.3:this.evo?1.15:1)*(1+.04*this.lvB);}
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
+    if(g.trial&&g.trial.zeno){this.bombs=[];this.burns=[];return;}   /* switched off inside Zeno's Shop: no sphere falls on the shop (its cooldown waits) */
     this.cd-=dt;
     if(this.cd<=0){
       const k=this.evo>=2?5:this.evo?3:this.lv>=5?2:1;

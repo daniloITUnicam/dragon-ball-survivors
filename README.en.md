@@ -47,7 +47,25 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 22, 2026 update, part 6 (run pacing and late game)
+
+- **Tournament of Power, Extreme:** new stage field `late:{from,dmg,hp,spawn}` (`data.js`) and `Game.lateK(k)`: from 35% of the run the factors fall linearly down to their value at the end of the run (damage ×0.42, enemy health ×0.6, spawn rate and enemy cap ×0.55). Applied in `dmgMul()` (enemies and bosses, Jiren included), `hpMul()`, `spawnRate()` and `spawnCap()`; Extreme only. Measured against the 30-minute telemetry (Zeno, 550 HP, armor 26.55): at 1800 s boss shots go from 220 (the 40% HP cap) to 95, regular enemies from 112–143 to 31–56, spawn rate from 43.8 to 24.1 per second, the cap from 580 to 319; at 1500 s boss shots go from 220 to 125.
+- **Minibosses** (`planMinis`, `updateMinis`, `spawnBoss(..., mini)`): one every `MINI_EVERY = 300` s wherever the bosses leave a gap (≥70 s from any boss, ≥40 s from an elite, ≥150 s from the previous miniboss; shifted up to ±80 s from the ideal 3:00, 8:00...; not on runs shorter than 600 s, not after the final boss, not in Endless). The boss is picked from the 3 closest in time (not the one about to arrive, never the same twice), `MINI_HP = 0.4`, `MINI_DMG = 0.8`, no transformations (`p2/morph = 0`, `e.mini`). On death: an elite-style chest, a 1x ticket, reduced zenny, 5 gems; it does not count towards `bossKills`. On the time bar it is an orange skull (`miniPlan`).
+- **Elites:** on runs of 1200 s or more, one every `ELITE_EVERY = 240` s from second 150 (before: 6 between 14% and 80%). Shorter runs are unchanged.
+- **Overtime:** from `g.t >= g.dur` the timer stops and `+M:SS` appears next to it in red (`Renderer.hud`); it keeps counting in Endless too.
+- **Balance:** trinket sales another −20% (`TSELL_MUL = 0.24`).
+- **Fixes:** the Genkidama sphere is off inside Zeno's Shop (`SpiritWeapon.update`); obstacles and everything that appears on the stage no longer overlap (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, trap/pool zones).
+
+### 🆕 October 22, 2026 update, part 5 (underground tunnels)
+
+- **Tunnels** (`src/js/tunnel.js`): the Planet Vegeta bunker, the Hell portal and the Realm of the Gods gate are no longer random obstacles (weight 0 in `OBSTACLES`, `world.js`): `MapDirector` opens one every `TUN_EVERY = 900` s of play (`TUN_EVERY_END = 600` in Endless) as a `tunnel` feature drawn with the obstacle's sprite (`TUNNELS[theme].def`). [E] enters it (not while a boss is alive): `startTunnel` stashes the map's enemies, gems, pick-ups, chests and features and pauses the game clock, the director and the world (`frozen` in `Game.update`).
+- The tunnel is a corridor 260 px wide (`TUN_HW`), `TUN_LEN = 4400` px long, one way upwards: the floor (`tun.fl`) rises with you and you cannot go back more than `TUN_BACK = 240` px. Enemies spawn only here, ahead of you (`TUN_CAP = 48`), and give their experience at once. At the end is the boss room (600 px): a non-final boss of the map (`bossQ`; the further you are in the run, the later in the list) tagged `e.tun`: it drops nothing (`killEnemy`); when it falls, 3 chests appear on the vertices of a triangle of radius `TUN_TRI = 150` in the middle of the room, plus the exit hatch (`endTunnel`).
+- Room of Spirit and Time and Zeno's Shop unchanged. To give another map an entrance, add an entry to `TUNNELS` (theme, sprite index, colour) and its colours to `TUNART`.
+- **Tournament of Power:** the tower now covers the character when he is behind it (`Renderer.draw`: after `drawPlayer` the tower is painted again, clipped to the character's box).
+
 ### 🆕 October 22, 2026 update, part 4 (illustrated companions)
+
+- **Balance:** trinket sales −70% (`TSELL_MUL = 0.3` in `gacha.js`); enemy damage on Hard 1.5 → 1.05 and on Extreme 1.8 → 1.26 (`DIFF` in `data.js`, −30%).
 
 - **Dende, Mini Shenron, Mini Droid, Bubbles and Mini Bu** have new painted sprites (`assets/sprites/props/pet<id>.png`, 6 columns × 5 rows): idle with blinking, a 6-frame walk, grabbing the XP gem, handing it over to you, the ability and the shockwave. The Saibaman keeps its code-generated sprite until it gets its own sheet. The companion cards in the selection screen use the same sprites.
 - Sheet rows: 0 idle, 1 walk, 2 XP grab (frames 3-5 with the gem in hand), 3 hand-over (frame 3 = pushes the gems toward you), 4 ability (0-4) with the shockwave in frames 3-4. The game reads the rects and anchors from `sprites.json` (`pet<id>`, field `k` = scale).
