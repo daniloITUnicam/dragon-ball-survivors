@@ -53,7 +53,8 @@ All keys can be rebound in **Settings → Controls**.
 - **Minibosses** (`planMinis`, `updateMinis`, `spawnBoss(..., mini)`): one every `MINI_EVERY = 300` s wherever the bosses leave a gap (≥70 s from any boss, ≥40 s from an elite, ≥150 s from the previous miniboss; shifted up to ±80 s from the ideal 3:00, 8:00...; not on runs shorter than 600 s, not after the final boss, not in Endless). The boss is picked from the 3 closest in time (not the one about to arrive, never the same twice), `MINI_HP = 0.4`, `MINI_DMG = 0.8`, no transformations (`p2/morph = 0`, `e.mini`). On death: an elite-style chest, a 1x ticket, reduced zenny, 5 gems; it does not count towards `bossKills`. On the time bar it is an orange skull (`miniPlan`).
 - **Elites:** on runs of 1200 s or more, one every `ELITE_EVERY = 240` s from second 150 (before: 6 between 14% and 80%). Shorter runs are unchanged.
 - **Overtime:** from `g.t >= g.dur` the timer stops and `+M:SS` appears next to it in red (`Renderer.hud`); it keeps counting in Endless too.
-- **Balance:** trinket sales another −20% (`TSELL_MUL = 0.24`).
+- **Balance:** trinket sales another −20% (`TSELL_MUL = 0.24`); shop prices (`SHOP` in `data.js`, `base` field): Broly's Roar! 666 → 500, Dragon Ball Scanner 3000 → 10000, Amount 2000 → 3000 (same growth); Luck +9% → +5% per level (`S.luck` in `game.js`).
+- **Shop:** removed the lines at the top (description and total / still-to-buy cost, `ui.js`).
 - **Fixes:** the Genkidama sphere is off inside Zeno's Shop (`SpiritWeapon.update`); obstacles and everything that appears on the stage no longer overlap (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, trap/pool zones).
 
 ### 🆕 October 22, 2026 update, part 5 (underground tunnels)

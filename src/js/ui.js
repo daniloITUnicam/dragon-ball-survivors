@@ -349,10 +349,7 @@ class UI{
         h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},
           maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost))));
     });
-    /* what is left to buy: every remaining level of every upgrade at its current price */
-    const rest=SHOP.reduce((s,it)=>{let t=0;for(let l=d.shop[it.id]||0;l<it.max;l++)t+=shopCost(it,l);return s+t;},0),all=SHOP.reduce((s,it)=>{let t=0;for(let l=0;l<it.max;l++)t+=shopCost(it,l);return s+t;},0);
-    return h('div',null,this.header('shopTitle'),h('p',{class:'sub'},this.t('shopDesc')),
-      h('p',{class:'sub shoptot','data-fid':'shtot'},this.tr(T('Costo per comprare tutto: ','Cost to buy everything: ')),zAmt(all,true),' · ',this.tr(T('ancora da comprare: ','still to buy: ')),zAmt(rest,true)),
+    return h('div',null,this.header('shopTitle'),
       h('div',{class:'grid shop'},cards),
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));
   }

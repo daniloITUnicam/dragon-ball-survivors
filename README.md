@@ -61,7 +61,8 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 - **Miniboss** (`planMinis`, `updateMinis`, `spawnBoss(..., mini)`): uno ogni `MINI_EVERY = 300` s dove i boss lasciano un buco (≥70 s da ogni boss, ≥40 s da un élite, ≥150 s dal miniboss precedente; spostamento fino a ±80 s dall'orario ideale 3:00, 8:00...; non nelle partite sotto i 600 s, non dopo il boss finale, non in Infinito). Boss del tema scelto tra i 3 più vicini nel tempo (non quello in arrivo, non lo stesso due volte), `MINI_HP = 0,4`, `MINI_DMG = 0,8`, senza trasformazioni (`p2/morph = 0`, `e.mini`). Alla morte: scrigno da élite, biglietto 1x, zenny ridotti, 5 gemme; non conta tra i `bossKills`. Sulla barra del tempo è un teschio arancione (`miniPlan`).
 - **Élite:** nelle partite da 1200 s o più uno ogni `ELITE_EVERY = 240` s dal secondo 150 (prima 6 tra il 14% e l'80%). Le partite più corte restano come prima.
 - **Tempo extra:** da `g.t >= g.dur` il timer si ferma e accanto compare in rosso `+M:SS` (`Renderer.hud`); continua anche in Infinito.
-- **Bilanciamento:** vendita dei cimeli ancora −20% (`TSELL_MUL = 0,24`).
+- **Bilanciamento:** vendita dei cimeli ancora −20% (`TSELL_MUL = 0,24`); prezzi del negozio (`SHOP` in `data.js`, campo `base`): Urlo di Broly! 666 → 500, Scanner Sfere del Drago 3000 → 10000, Quantità 2000 → 3000 (crescita invariata); Fortuna +9% → +5% per livello (`S.luck` in `game.js`).
+- **Negozio:** tolte le righe in cima (descrizione e costo totale / ancora da comprare, `ui.js`).
 - **Correzioni:** la sfera Genkidama è spenta nel Negozio di Zeno (`SpiritWeapon.update`); ostacoli e ciò che compare nello stage non si sovrappongono (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, zone di trappole/pozze).
 
 ### 🆕 Aggiornamento del 22 ottobre 2026, parte 5 (tunnel sotterranei)

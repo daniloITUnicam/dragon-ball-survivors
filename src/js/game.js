@@ -105,7 +105,7 @@ class Game{
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(tm.proj||0);   /* forms + shop "Quantità" + trinkets */
-    S.luck=Math.min(.9,.09*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
