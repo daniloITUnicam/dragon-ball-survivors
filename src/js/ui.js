@@ -285,6 +285,8 @@ class UI{
         const dy=Math.round(Math.sin(t*3+a.seed*9)*1.5),fr=hot?1+((t*8)|0)%4:0,key=fr+':'+dy;
         if(key===a.key)continue;a.key=key;
         const g=a.cv.getContext('2d');g.imageSmoothingEnabled=true;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);
+        const PS=Sprites.sheets['pet'+a.pet.id];
+        if(PS&&PS.rects&&PS.rects.length>=30){const fi=hot?6+((t*10)|0)%6:0,rc=PS.rects[fi],an=PS.anch[fi],kk=PS.k*.95;g.translate(a.w/2,a.base+dy);g.scale(kk,kk);g.drawImage(PS.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);continue;}
         const sp=Sprites.forSp(a.pet.sp,fr,false),kk=a.k*Sprites.S/(sp.s||Sprites.S);g.translate(a.w/2,a.base+dy);g.scale(kk,kk);g.drawImage(sp.c,-sp.ox,-sp.oy);continue;
       }
       if(a.emo){

@@ -1879,10 +1879,10 @@ class Game{
     }
     return b;
   }
-  petRelease(q){for(const g of q.hold){g.held=false;g.att=true;}q.hold.length=0;q.tg=null;}
+  petRelease(q){if(q.hold.length)q.give=.4;for(const g of q.hold){g.held=false;g.att=true;}q.hold.length=0;q.tg=null;}
   updatePet(dt){
     const q=this.pet;if(!q)return;
-    const p=this.p;q.t+=dt;if(q.cd>0)q.cd-=dt;if(q.fl>0)q.fl-=dt;if(q.act>0)q.act-=dt;if(q.sw>0)q.sw-=dt;if(q.seekT>0)q.seekT-=dt;
+    const p=this.p;q.t+=dt;if(q.cd>0)q.cd-=dt;if(q.fl>0)q.fl-=dt;if(q.act>0)q.act-=dt;if(q.sw>0)q.sw-=dt;if(q.seekT>0)q.seekT-=dt;if(q.grab>0)q.grab-=dt;if(q.give>0)q.give-=dt;
     q.hold=(q.hold||[]).filter(g=>!g.dead);
     if(this.trial){if(q.hold.length)this.petRelease(q);}
     const tx=p.x-p.face*34+Math.sin(q.t*1.7)*8,ty=p.y+8+Math.cos(q.t*2.3)*5;
@@ -1896,7 +1896,7 @@ class Game{
     if(chase){
       const gx=chase.x-q.x,gy=chase.y-q.y,gd=Math.hypot(gx,gy)||1,st=Math.min(gd,PET_SPD*dt);
       q.x+=gx/gd*st;q.y+=gy/gd*st;if(Math.abs(gx)>3)q.face=gx>0?1:-1;
-      if(gd<14){chase.held=true;q.hold.push(chase);q.tg=null;if(this.fx.length<380)this.fx.push({x:q.x,y:q.y-14,vx:0,vy:-30,l:.35,m:.35,c:'#9adfff',s:3});}
+      if(gd<14){chase.held=true;q.hold.push(chase);q.tg=null;q.grab=.5;if(this.fx.length<380)this.fx.push({x:q.x,y:q.y-14,vx:0,vy:-30,l:.35,m:.35,c:'#9adfff',s:3});}
     }else{
       if(d>420){q.x=tx;q.y=ty;}else{const k=Math.min(1,dt*(d>60?5:3));q.x+=dx*k;q.y+=dy*k;}
       if(Math.abs(dx)>3)q.face=dx>0?1:-1;
@@ -1911,7 +1911,7 @@ class Game{
       for(const e of this.en){if(e.dead)continue;const ex=e.x-p.x,ey=e.y-p.y;if(ex*ex+ey*ey<(PET_SW_NEAR+e.r)**2){n++;qm|=1<<((ex>=0?1:0)+(ey>=0?2:0));}}
       const quad=(qm&1)+((qm>>1)&1)+((qm>>2)&1)+((qm>>3)&1);
       if(n>=PET_SW_N&&quad>=3){
-        q.sw=PET_SW_CD;q.act=.5;q.fl=.4;const c=q.d.c,R=PET_SW_R;
+        q.sw=PET_SW_CD;q.act=.5;q.fl=.4;q.sk=1;const c=q.d.c,R=PET_SW_R;
         this.ring(p.x,p.y,R,c,.55);this.ring(p.x,p.y,R*.6,'#ffffff',.35);this.burst(q.x,q.y-12,12,c);this.audio.sfx('shrine');this.shake=Math.max(this.shake,.18);
         for(const e of this.en){if(e.dead)continue;const ex=e.x-p.x,ey=e.y-p.y;if(ex*ex+ey*ey<(R+e.r)**2){this.hit(e,PET_SW_DMG+this.lvl*1.1,ex*.6,ey*.6);e.stun=Math.max(e.stun||0,e.boss?.25:.6);}}
         this.floatText(p.x,p.y-56,this.env.tr(T('Onda d\'urto!','Shockwave!')),1);
@@ -1921,7 +1921,7 @@ class Game{
   usePet(){
     if(this.abBlocked())return false;
     const q=this.pet;if(!q||q.cd>0||this.modal||this.ended)return false;
-    const p=this.p,id=q.d.id,c=q.d.c;q.cd=q.d.cd;q.fl=.5;q.act=.6;
+    const p=this.p,id=q.d.id,c=q.d.c;q.cd=q.d.cd;q.fl=.5;q.act=.6;q.sk=0;
     this.ring(p.x,p.y,90,c,.5);this.burst(q.x,q.y-12,16,c);this.audio.sfx('shrine');
     const tr=o=>this.env.tr(o);
     if(id==='dende'){this.heal(p.maxHp*.30);this.floatText(p.x,p.y-56,tr(T('Guarigione!','Healed!')),2);this.pillar(p.x,p.y,'#8be07a',.6);}

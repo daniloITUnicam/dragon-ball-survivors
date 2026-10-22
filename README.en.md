@@ -47,6 +47,11 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 22, 2026 update, part 4 (illustrated companions)
+
+- **Dende, Mini Shenron, Mini Droid, Bubbles and Mini Bu** have new painted sprites (`assets/sprites/props/pet<id>.png`, 6 columns × 5 rows): idle with blinking, a 6-frame walk, grabbing the XP gem, handing it over to you, the ability and the shockwave. The Saibaman keeps its code-generated sprite until it gets its own sheet. The companion cards in the selection screen use the same sprites.
+- Sheet rows: 0 idle, 1 walk, 2 XP grab (frames 3-5 with the gem in hand), 3 hand-over (frame 3 = pushes the gems toward you), 4 ability (0-4) with the shockwave in frames 3-4. The game reads the rects and anchors from `sprites.json` (`pet<id>`, field `k` = scale).
+
 ### 🆕 October 22, 2026 update, part 3 (pause map)
 
 - **Traps** and **healing pools** are now sunk into the floor (only the top face shows, no shadow): they no longer look like they sit on the ground.

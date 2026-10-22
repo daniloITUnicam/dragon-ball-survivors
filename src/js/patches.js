@@ -16,6 +16,12 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-22d',date:'2026-10-22',
+    name:T("Compagni illustrati","Illustrated companions"),
+    sum:T("Dende, Mini Shenron, Mini Droid, Bubbles e Mini Bu hanno nuovi sprite dipinti, con animazioni per riposo, camminata, raccolta degli XP, consegna, abilità e onda d'urto.","Dende, Mini Shenron, Mini Droid, Bubbles and Mini Bu have new painted sprites, with animations for idle, walking, XP pickup, hand-over, ability and shockwave."),
+    new:[
+      T("Nuovi sprite per 5 compagni (il Saibaman resta quello di prima): fermo con battito di ciglia, camminata a 6 frame, presa del cristallo XP, consegna a te, abilità e onda d'urto (quando 5 nemici ti circondano). Anche le card di scelta del compagno usano i nuovi sprite.","New sprites for 5 companions (the Saibaman stays as before): idle with blinking, a 6-frame walk, grabbing the XP gem, handing it over to you, the ability and the shockwave (when 5 enemies surround you). The companion cards in the selection screen use the new sprites too.")
+    ]},
   {id:'2026-10-22c',date:'2026-10-22',
     name:T("Mappa nel menu di pausa","Map in the pause menu"),
     sum:T("Premendo ESC trovi una scheda Mappa, grande e con zoom, che mostra dove sono i pickup; le statistiche del personaggio restano a sinistra.","Pressing ESC now has a big Map tab with zoom that shows where the pickups are; the character's stats stay on the left."),

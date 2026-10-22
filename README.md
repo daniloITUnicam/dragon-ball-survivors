@@ -55,6 +55,11 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 22 ottobre 2026, parte 4 (compagni illustrati)
+
+- **Dende, Mini Shenron, Mini Droid, Bubbles e Mini Bu** hanno nuovi sprite dipinti (`assets/sprites/props/pet<id>.png`, 6 colonne × 5 righe): riposo con battito di ciglia, camminata a 6 frame, presa del cristallo XP, consegna a te, abilità e onda d'urto. Il Saibaman resta con lo sprite generato dal codice finché non ha il suo foglio. Le card di scelta del compagno usano gli stessi sprite.
+- Righe del foglio: 0 riposo, 1 camminata, 2 presa XP (frame 3-5 con il cristallo in mano), 3 consegna (frame 3 = spinge i cristalli verso di te), 4 abilità (0-4) con l'onda d'urto nei frame 3-4. Il gioco legge i riquadri e gli ancoraggi da `sprites.json` (`pet<id>`, campo `k` = scala).
+
 ### 🆕 Aggiornamento del 22 ottobre 2026, parte 3 (mappa in pausa)
 
 - Le **trappole** e le **pozze di cura** sono incassate nel terreno (si vede solo il piano superiore, senza ombra): non sembrano più appoggiate sopra.

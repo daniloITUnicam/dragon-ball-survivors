@@ -1150,16 +1150,30 @@ this.W=1;this.H=1;this.Z=1;
     if(sym){ctx.strokeText(sym[0],x,y);ctx.fillStyle=sym[1];ctx.fillText(sym[0],x,y);}
     ctx.restore();
   }
+  /* Painted pet sheets (assets/sprites/props/pet<id>.png, 6 columns x 5 rows = frame index row*6+col): row 0 idle (6, with blinks), 1 walk (6), 2 seek and grab XP (3-5 = gem in hand),
+     3 carry / hand-over (3 = pushes the gems toward you), 4 ability (0-4) with the shockwave in frames 3-4. Any pet without a sheet keeps its generated sprite. */
+  petFrame(q,t,mv){
+    if(q.act>0){if(q.sk)return 27+(q.act<.25?1:0);return 24+Math.min(4,Math.floor((1-q.act/.6)*5));}
+    if(q.grab>0)return 15+Math.min(2,Math.floor((1-q.grab/.5)*3));
+    if(q.give>0)return 21;
+    if(mv)return 6+((t*12)|0)%6;
+    const D=[.45,.3,.18,.18,.18,.45];let u=q.t%1.74;for(let i=0;i<6;i++){if(u<D[i])return i;u-=D[i];}return 0;
+  }
   drawPet(q,t,g){
     const ctx=this.ctx,d=q.d,sd=d.sp,mv=Math.abs(q.x-(q.px===undefined?q.x:q.px))>.2;
     q.px=q.x;
-    const fr=q.act>0?6:mv?1+((t*9)|0)%4:0,sp=Sprites.forSp(sd,fr,q.fl>0&&((t*20)|0)%2===0),k=(sd.u||1.4)/(sp.s||Sprites.S);
-    const fly=d.id==='shenron'||d.id==='droid'||d.id==='buu',bob=fly?Math.sin(t*4+q.t)*3-8:Math.abs(Math.sin(q.t*(mv?9:2)))*(mv?-2:-.8);
+    const PS=Sprites.sheets['pet'+d.id],ps=PS&&PS.rects&&PS.rects.length>=30?PS:null;
+    let sp,k;
+    if(!ps){const fr=q.act>0?6:mv?1+((t*9)|0)%4:0;sp=Sprites.forSp(sd,fr,q.fl>0&&((t*20)|0)%2===0);k=(sd.u||1.4)/(sp.s||Sprites.S);}
+    const fly=ps?d.id==='droid':(d.id==='shenron'||d.id==='droid'||d.id==='buu'),bob=fly?Math.sin(t*4+q.t)*3-8:Math.abs(Math.sin(q.t*(mv?9:2)))*(mv?-2:-.8);
     ctx.fillStyle='rgba(0,0,0,.26)';ctx.beginPath();ctx.ellipse(q.x,q.y,7,2.4,0,0,TAU);ctx.fill();
     if(q.cd<=0)GLOW.at(ctx,q.x,q.y-12+bob,20+3*Math.sin(t*5),d.c,.45);
-    ctx.save();ctx.translate(q.x,q.y+bob);ctx.scale(q.face*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();
-    /* the XP gems it is carrying float above its head */
-    if(q.hold&&q.hold.length&&!g.trial)for(let i=0;i<q.hold.length;i++){const gm=q.hold[i],col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9,gy=gm.y+bob*.5+Math.sin(t*6+i*2)*1.2;
+    if(ps){
+      const fi=this.petFrame(q,t,mv),rc=ps.rects[fi],an=ps.anch[fi];
+      ctx.save();ctx.translate(q.x,q.y+bob);ctx.scale(q.face*ps.k,ps.k);ctx.imageSmoothingEnabled=true;ctx.drawImage(ps.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);ctx.restore();ctx.imageSmoothingEnabled=false;
+    }else{ctx.save();ctx.translate(q.x,q.y+bob);ctx.scale(q.face*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}
+    /* the XP gems it is carrying float above its head (the newest one is already in the hands of the grab frame) */
+    if(q.hold&&q.hold.length&&!g.trial)for(let i=0;i<q.hold.length;i++){if(ps&&q.grab>0&&i===q.hold.length-1)continue;const gm=q.hold[i],col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9,gy=gm.y+bob*.5+Math.sin(t*6+i*2)*1.2;
       GLOW.at(ctx,gm.x,gy,r*3,col,.45);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gy-r);ctx.lineTo(gm.x+r*.8,gy);ctx.lineTo(gm.x,gy+r);ctx.lineTo(gm.x-r*.8,gy);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gy-r*.5,2,r*.5);}
   }
   /* A rock of the Namek / Inferno atlas (World.cell gives it b.v = rock number, b.s = scale, b.f = mirror). It stands ON the ground point (b.x,b.y): the base is drawn there, set a
