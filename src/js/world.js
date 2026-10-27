@@ -142,20 +142,35 @@ const OBSTACLES={
 };
 /* ====== Snake Way: the only walkable ground is the snake's body, a winding corridor along the x axis ====== */
 const ISLE_KINDS=['kingkai','kami','kame','korin','capsule','grandkai','shrine','nimbus','temple'];
+/* v110: the islands are painted sprites (assets/sprites/props/isle<kind>.png). Per kind, in sprite px: the centre and the two radii of the walkable top (an ellipse seen
+   in perspective) - [ax, ay, rx, ry]. The island's ground in the world is that same ellipse, scaled so that rx = I.r */
+const ISLE_GEO={kingkai:[299.5,213.1,279.6,197],kami:[373,252.1,363.6,192.4],kame:[332,225,297,187.3],korin:[397,200.4,379.2,172.3],capsule:[382,239.2,372.4,216.1],
+  grandkai:[383.5,237,358.6,218.9],shrine:[379.5,255.9,369.9,227.5],nimbus:[368,243.5,336.7,202.9],temple:[381,259.1,363.8,229.7]};
+const ISLE_K=6,ISLE_RMAX=150*ISLE_K,ISLE_RW=78;   /* islands 6x bigger than before (radius 600-900), each joined to the body by a road ISLE_RW px wide on each side */
 const Snake={
   HW:150,XMAX:22000,IS:3800,
   f(x){return 230*Math.sin(x*.0042+MAP.p1)+60*Math.sin(x*.0113+1.1+MAP.p2);},
   df(x){return 230*.0042*Math.cos(x*.0042+MAP.p1)+60*.0113*Math.cos(x*.0113+1.1+MAP.p2);},
   cx(x){return Math.max(-this.XMAX,Math.min(this.XMAX,x));},
-  /* floating islands beside the body (walkable, they hold power-ups): one about every IS px on both sides of the start, none near it */
+  /* floating islands beside the body (walkable, they hold power-ups): one about every IS px on both sides of the start, none near it.
+     v110: the island stands clear of the body (its ellipse never touches it, whatever the curve of the snake under it) and a winding road joins them (I.road, a polyline) */
   _is:new Map(),
   island(i){
     let o=this._is.get(i);if(o!==undefined)return o;
-    const n=Math.abs(i),sg=i<0?-1:1,x=sg*(1050+(n-1)*this.IS+(mhash(n*3+(i<0?50:0),7)-.5)*400);
-    if(n<1||Math.abs(x)>this.XMAX-500)o=null;
+    const n=Math.abs(i),sg=i<0?-1:1,x=sg*(1900+(n-1)*this.IS+(mhash(n*3+(i<0?50:0),7)-.5)*400);
+    const r=(100+mhash(i*7+2,11)*50)*ISLE_K;
+    if(n<1||Math.abs(x)>this.XMAX-r-300)o=null;
     else{
-      const side=mhash(i*5+1,3)<.5?-1:1,r=100+mhash(i*7+2,11)*50,k=Math.sqrt(1+this.df(x)**2);
-      o={id:i,x,y:this.f(x)+side*(this.HW*k+r*.45),r,side,kind:ISLE_KINDS[(((n-1)*2+(i<0?1:0))*4)%ISLE_KINDS.length]};   /* 4 is coprime with 9: any 9 neighbours in a row show every kind once */
+      const side=mhash(i*5+1,3)<.5?-1:1,kind=ISLE_KINDS[(((n-1)*2+(i<0?1:0))*4)%ISLE_KINDS.length],G=ISLE_GEO[kind],ry=r*G[3]/G[2];   /* 4 is coprime with 9: any 9 neighbours in a row show every kind once */
+      const gap=260+mhash(i*11+4,5)*260;
+      let y=side>0?-1e9:1e9;   /* the centre: far enough that no point of the ellipse comes within gap px of the body's edge */
+      for(let k=-10;k<=10;k++){const u=k/10,xx=x+u*r,s=this.df(xx),e=this.f(xx)+side*(this.HW*Math.sqrt(1+s*s)+gap+ry*Math.sqrt(1-u*u));y=side>0?Math.max(y,e):Math.min(y,e);}
+      o={id:i,x,y,r,ry,side,kind};
+      /* the road: from the body (a little to one side) to the near edge of the island, an S curve (cubic Bezier sampled into ROAD_N points) */
+      const lat=(mhash(i*13+6,9)-.5)*r*.9,bx=x+lat,by=this.f(bx),ex=x+(mhash(i*17+3,2)-.5)*r*.4,ey=y-side*ry*.82,L=Math.abs(ey-by);
+      const P=[[bx,by],[bx,by+side*L*.45],[ex,ey-side*L*.45],[ex,ey]],pts=[];
+      for(let j=0;j<=24;j++){const t=j/24,u=1-t;pts.push([u*u*u*P[0][0]+3*u*u*t*P[1][0]+3*u*t*t*P[2][0]+t*t*t*P[3][0],u*u*u*P[0][1]+3*u*u*t*P[1][1]+3*u*t*t*P[2][1]+t*t*t*P[3][1]]);}
+      o.road=pts;
     }
     this._is.set(i,o);return o;
   },
@@ -164,20 +179,33 @@ const Snake={
     const out=[];
     for(const sg of[-1,1]){
       const lo=Math.max(0,sg>0?x0:-x1),hi=sg>0?x1:-x0;if(hi<0)continue;
-      for(let n=Math.max(1,Math.floor((lo-1050)/this.IS)+1);n<=Math.ceil((hi-1050)/this.IS)+2;n++){const o=this.island(sg*n);if(o&&o.x>=x0&&o.x<=x1)out.push(o);}
+      for(let n=Math.max(1,Math.floor((lo-1900)/this.IS)+1);n<=Math.ceil((hi-1900)/this.IS)+2;n++){const o=this.island(sg*n);if(o&&o.x>=x0&&o.x<=x1)out.push(o);}
     }
     return out;
   },
-  /* push a point back onto the walkable ground: the body, or an island attached to it (rad = how much of the ground width the object itself takes) */
+  /* the islands (and their roads) that may hold the point x */
+  isleNear(x){return this.islandsIn(x-ISLE_RMAX-260,x+ISLE_RMAX+260);},
+  /* inside the island's ellipse (rad = room the object needs)? returns the normalised distance (<= 1 inside) */
+  inIsle(I,x,y,rad){const rx=Math.max(8,I.r-rad),ry=Math.max(8,I.ry-rad*I.ry/I.r),nx=(x-I.x)/rx,ny=(y-I.y)/ry;return Math.hypot(nx,ny);},
+  /* nearest point of the island's road to (x,y) and its distance */
+  roadNear(I,x,y){
+    let bd=1e18,bx=0,by=0;const R=I.road;
+    for(let j=1;j<R.length;j++){const ax=R[j-1][0],ay=R[j-1][1],dx=R[j][0]-ax,dy=R[j][1]-ay,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)),px=ax+dx*t,py=ay+dy*t,d=(x-px)**2+(y-py)**2;if(d<bd){bd=d;bx=px;by=py;}}
+    return[bx,by,Math.sqrt(bd)];
+  },
+  /* push a point back onto the walkable ground: the body, an island or an island's road (rad = how much of the ground width the object itself takes) */
   clamp(o,rad){
     o.x=this.cx(o.x);rad=rad||0;
     const s=this.df(o.x),k=Math.sqrt(1+s*s),lim=Math.max(8,this.HW-rad)*k,c=this.f(o.x),dy=o.y-c;
     if(Math.abs(dy)<=lim)return;
     let bx=o.x,by=dy>lim?c+lim:c-lim,bd=Math.abs(o.y-by);
-    for(const I of this.islandsIn(o.x-260,o.x+260)){
-      const dx=o.x-I.x,ey=o.y-I.y,d=Math.hypot(dx,ey),L=Math.max(8,I.r-rad);
-      if(d<=L)return;
-      if(d-L<bd){bd=d-L;bx=I.x+dx/d*L;by=I.y+ey/d*L;}
+    const rw=Math.max(6,ISLE_RW-rad);
+    for(const I of this.isleNear(o.x)){
+      const d=this.inIsle(I,o.x,o.y,rad);
+      if(d<=1)return;
+      const px=I.x+(o.x-I.x)/d,py=I.y+(o.y-I.y)/d,dd=Math.hypot(o.x-px,o.y-py);
+      if(dd<bd){bd=dd;bx=px;by=py;}
+      if(I.road){const [qx,qy,dr]=this.roadNear(I,o.x,o.y);if(dr<=rw)return;const e=dr-rw;if(e<bd){bd=e;bx=qx+(o.x-qx)/dr*rw;by=qy+(o.y-qy)/dr*rw;}}
     }
     o.x=bx;o.y=by;
   },

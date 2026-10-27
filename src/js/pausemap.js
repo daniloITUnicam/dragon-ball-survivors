@@ -18,6 +18,12 @@ Object.assign(Renderer.prototype,{
         for(let x=x0;x<=x1;x+=st){const yy=sy(Snake.f(x)-Snake.HW);if(first){c2.moveTo(sx(x),yy);first=false;}else c2.lineTo(sx(x),yy);}
         for(let x=x1;x>=x0;x-=st)c2.lineTo(sx(x),sy(Snake.f(x)+Snake.HW));
         c2.closePath();c2.fill();c2.stroke();
+        /* v110: the islands and their roads */
+        for(const I of Snake.islandsIn(x0-ISLE_RMAX,x1+ISLE_RMAX)){
+          if(I.road){c2.lineWidth=Math.max(2,ISLE_RW*2*k);c2.strokeStyle='rgba(150,230,150,.32)';c2.lineCap='round';c2.beginPath();I.road.forEach(([x,y],j)=>j?c2.lineTo(sx(x),sy(y)):c2.moveTo(sx(x),sy(y)));c2.stroke();c2.lineWidth=1.5;}
+          c2.fillStyle=(SnakeArt.col[I.kind]||['#ffe9a0'])[0]+'55';c2.strokeStyle='rgba(255,233,160,.7)';c2.beginPath();c2.ellipse(sx(I.x),sy(I.y),Math.max(3,I.r*k),Math.max(2,I.ry*k),0,0,TAU);c2.fill();c2.stroke();
+          if(I.r*k>26){c2.fillStyle='rgba(255,240,200,.85)';c2.font='700 11px sans-serif';c2.textAlign='center';c2.fillText(this.tr(SnakeArt.names[I.kind]),sx(I.x),sy(I.y)+4);c2.textAlign='left';}
+        }
       }
       /* grid every 25 / 50 / 100 / 200 / 500 m (1 m = 10 world px) */
       const steps=[250,500,1000,2000,5000],stp=steps.find(s=>s*k>=80)||5000;

@@ -2522,13 +2522,13 @@ class MapDirector{
     const g=this.g,p=g.p;if(g.stage.theme!=='snake'||g.trial)return;
     this.isT=(this.isT||0)-dt;if(this.isT>0)return;
     this.isT=.5;const seen=this.isSeen||(this.isSeen=new Set());
-    for(const I of Snake.islandsIn(p.x-1100,p.x+1100)){
-      if(seen.has(I.id)||Math.hypot(I.x-p.x,I.y-p.y)>1000)continue;
+    for(const I of Snake.isleNear(p.x)){
+      if(seen.has(I.id)||Math.hypot(I.x-p.x,I.y-p.y)>1000+I.r)continue;
       seen.add(I.id);
-      const ks=SnakeArt.loot[I.kind],a0=I.side>0?-Math.PI/2:Math.PI/2;   /* the items sit on the side facing the body, away from the landmark */
+      const ks=SnakeArt.loot[I.kind],a0=I.side>0?-Math.PI/2:Math.PI/2;   /* the items sit on the side facing the body (where the road arrives), away from the landmark */
       ks.forEach((k,i)=>{
-        const a=a0+(i-1)*.95,d=I.r*(i===1?.3:.4);
-        g.loot.push({k,x:I.x+Math.cos(a)*d,y:I.y+Math.sin(a)*d*.8,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id});
+        const a=a0+(i-1)*.95,d=(i===1?.55:.62);
+        g.loot.push({k,x:I.x+Math.cos(a)*d*I.r,y:I.y+Math.sin(a)*d*I.ry,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id});
       });
       g.say(g.env.tr(SnakeArt.names[I.kind]),'#ffe9a0',2.4);
     }

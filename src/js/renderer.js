@@ -626,12 +626,14 @@ this.W=1;this.H=1;this.Z=1;
     const x0=Math.max(-Snake.XMAX,cx-80),x1=Math.min(Snake.XMAX,cx+vw+80);if(x1<x0)return;
     const path=(dy)=>{ctx.beginPath();ctx.moveTo(x0,Snake.f(x0)+dy);for(let x=x0+20;x<x1+20;x+=20){const xx=Math.min(x,x1);ctx.lineTo(xx,Snake.f(xx)+dy);}};
     ctx.lineCap='round';ctx.lineJoin='round';
-    path(18);ctx.strokeStyle='rgba(150,60,0,.32)';ctx.lineWidth=Snake.HW*2+12;ctx.stroke();                 /* shadow on the clouds */
-    path(0);ctx.strokeStyle='#17356c';ctx.lineWidth=Snake.HW*2+10;ctx.stroke();                              /* outline */
-    path(0);ctx.strokeStyle='#3b78c4';ctx.lineWidth=Snake.HW*2;ctx.stroke();                                 /* body */
-    path(0);ctx.strokeStyle='#5a9ae0';ctx.lineWidth=Snake.HW*1.5;ctx.stroke();
-    path(0);ctx.strokeStyle='#8cc4f0';ctx.lineWidth=Snake.HW*.72;ctx.stroke();                               /* belly */
-    /* scales and dorsal spikes, drawn along the path */
+    /* v110: the body and the roads to the islands are painted one layer at a time, so a road merges into the body like a fork (its outline never crosses the body) */
+    const RD=Snake.islandsIn(cx-ISLE_RMAX-800,cx+vw+ISLE_RMAX+800).filter(I=>I.road);
+    for(const [hw,col,dy,ex] of [[Snake.HW,'rgba(150,60,0,.32)',18,6],[Snake.HW,'#17356c',0,5],[Snake.HW,'#3b78c4',0,0],[Snake.HW*.75,'#5a9ae0',0,0],[Snake.HW*.36,'#8cc4f0',0,0]]){
+      path(dy);ctx.strokeStyle=col;ctx.lineWidth=hw*2+ex*2;ctx.stroke();   /* shadow on the clouds, outline, body, side, belly */
+      for(const I of RD)SnakeArt.roadLayer(ctx,I,hw+ex,col,dy);
+    }
+    /* scales and dorsal spikes, drawn along the path (no spike where a road leaves the body) */
+    const JN=RD.map(I=>[I.road[0][0],I.side]),gap=ISLE_RW+SnakeArt.RE*1.4+12;
     const st=34,i0=Math.ceil(x0/st),i1=Math.floor(x1/st);
     ctx.lineWidth=2;
     for(let i=i0;i<=i1;i++){
@@ -642,13 +644,18 @@ this.W=1;this.H=1;this.Z=1;
         ctx.beginPath();ctx.arc(px-tx*6,py-ty*6,11,-.9,.9);ctx.stroke();
       }
       for(const sd of[-1,1]){
+        if(JN.some(([jx,js])=>js===sd&&Math.abs(jx-x)<gap))continue;
         const ex=x+nx*sd*(Snake.HW+3),ey=y+ny*sd*(Snake.HW+3),ox=nx*sd,oy=ny*sd,h=11+6*hash(i,sd+3);
         ctx.fillStyle='#17356c';ctx.beginPath();ctx.moveTo(ex-tx*8,ey-ty*8);ctx.lineTo(ex+ox*h,ey+oy*h);ctx.lineTo(ex+tx*8,ey+ty*8);ctx.closePath();ctx.fill();
         ctx.fillStyle='#4a86d0';ctx.beginPath();ctx.moveTo(ex-tx*5,ey-ty*5);ctx.lineTo(ex+ox*(h-4),ey+oy*(h-4));ctx.lineTo(ex+tx*5,ey+ty*5);ctx.closePath();ctx.fill();
       }
     }
+    for(const I of RD)SnakeArt.roadDeco(ctx,I);
     SnakeArt.body(ctx,x0,x1,t);   /* light running down the body, sparkles on the scales */
-    for(const I of Snake.islandsIn(cx-260,cx+vw+260)){if(I.y+I.r*1.6<cy-60||I.y-I.r-140>cy+vh)continue;SnakeArt.isle(ctx,I,t);}   /* the islands you can walk onto */
+    for(const I of RD)SnakeArt.roadLight(ctx,I,t);   /* ...and on along the roads */
+    {const IS=Snake.islandsIn(cx-ISLE_RMAX-300,cx+vw+ISLE_RMAX+300).filter(I=>{const e=SnakeArt.ext(I);return I.y+e[1]>cy-60&&I.y-e[0]<cy+vh+60&&I.x+I.r*1.25>cx&&I.x-I.r*1.25<cx+vw;}),bi=this.ballSheet();
+     for(const I of IS)SnakeArt.puffs(ctx,I,t,false);
+     for(const I of IS){SnakeArt.isle(ctx,I,t,bi);SnakeArt.puffs(ctx,I,t,true);}}   /* the islands you can walk onto */
     ctx.lineCap='butt';ctx.lineJoin='miter';
   }
   /* Janemba's beam: thin warning line while charging, then a thick crimson beam */

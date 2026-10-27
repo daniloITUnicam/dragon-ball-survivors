@@ -18,8 +18,110 @@ const SnakeArt={
     c.strokeStyle='#2f9a4a';c.lineWidth=2.2*s;const sw=Math.sin(t*1.6+x)*.14;
     for(let i=0;i<5;i++){const a=-Math.PI/2+(i-2)*.62+sw;c.beginPath();c.moveTo(x+s,y-24*s);c.quadraticCurveTo(x+s+Math.cos(a)*9*s,y-24*s+Math.sin(a)*9*s-3*s,x+s+Math.cos(a)*15*s,y-24*s+Math.sin(a)*13*s+5*s);c.stroke();}
   },
-  /* a small island: shadow on the clouds, rock underside, the top with a lighter rim, then its landmark (drawn outward, away from the body) */
-  isle(c,I,t){
+  /* v110: the island's painted sprite (isle<kind>.png) with its walkable top on the island's ellipse; until the sheet is decoded (or headless) the old drawn island */
+  /* the painting ends with a straight cut where the source picture ended (bottom of Capsule Corp, Grand Kai, the altar and the temple, the top of two of them):
+     there the sprite fades out (share of its height) and the cloud puffs drawn in front cover it */
+  FADE:{capsule:[0,.16],grandkai:[.06,.16],shrine:[0,.16],temple:[.05,.16],korin:[0,0]},
+  spr(I){
+    const S=typeof Sprites!=='undefined'&&Sprites.sheets&&Sprites.sheets['isle'+I.kind];if(!(S&&S.img))return null;
+    if(!S.fc){const F=this.FADE[I.kind];
+      if(F&&(F[0]||F[1])&&typeof document!=='undefined'){const im=S.img,c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation='destination-out';
+        if(F[1]){const h=im.height,y0=h*(1-F[1]),g=x.createLinearGradient(0,y0,0,h);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=g;x.fillRect(0,y0,im.width,h-y0);}
+        if(F[0]){const y1=im.height*F[0],g=x.createLinearGradient(0,0,0,y1);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,im.width,y1);}
+        S.fc=c;}else S.fc=S.img;}
+    return{img:S.fc};
+  },
+  /* how far the drawn island reaches above / below its centre (for culling): [top, bottom] in world px */
+  ext(I){const S=this.spr(I),G=ISLE_GEO[I.kind];if(!S)return[I.r*1.1,I.r*1.6];const k=I.r/G[2];return[G[1]*k+60,(S.img.height-G[1])*k+90];},
+  /* ---- roads (v110): a smaller copy of the snake's body along I.road. The renderer paints the body and every road one layer at a time (shadow, outline, body,
+     side, belly), so the layers of a road merge into the same layers of the body like a fork, and near the body each road widens into a smooth fillet ---- */
+  RF:110,RE:64,   /* fillet: length along the road after the body's edge, and how much wider (each side) it starts */
+  rl(I){   /* cumulative length of the road polyline */
+    if(I._cl)return I._cl;const R=I.road,L=[0];for(let j=1;j<R.length;j++)L.push(L[j-1]+Math.hypot(R[j][0]-R[j-1][0],R[j][1]-R[j-1][1]));return I._cl=L;},
+  at(I,s){const R=I.road,L=this.rl(I);s=Math.max(0,Math.min(L[L.length-1],s));let j=1;while(j<L.length-1&&L[j]<s)j++;
+    const a=R[j-1],b=R[j],l=(L[j]-L[j-1])||1,u=(s-L[j-1])/l,tx=(b[0]-a[0])/l,ty=(b[1]-a[1])/l;return[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,tx,ty];},
+  sub(c,I,s0,s1,dy){const L=this.rl(I),R=I.road;const p=this.at(I,s0);c.moveTo(p[0],p[1]+dy);for(let j=1;j<R.length;j++)if(L[j]>s0&&L[j]<s1)c.lineTo(R[j][0],R[j][1]+dy);const q=this.at(I,s1);c.lineTo(q[0],q[1]+dy);},
+  /* where the road leaves the body's edge (arc length) */
+  edge(I){if(I._se!=null)return I._se;const L=this.rl(I);let s=0;for(;s<L[L.length-1];s+=6){const p=this.at(I,s);if(Math.abs(p[1]-Snake.f(p[0]))>Snake.HW*Math.sqrt(1+Snake.df(p[0])**2))break;}return I._se=s;},
+  /* one layer of a road: hw = half width of the layer on the body's scale (HW = 150), col, dy = offset (shadow) */
+  roadLayer(c,I,hw,col,dy){
+    if(!I.road)return;const k=ISLE_RW/Snake.HW,w=hw*k,L=this.rl(I),se=this.edge(I);
+    c.strokeStyle=col;c.fillStyle=col;c.lineWidth=w*2;c.beginPath();this.sub(c,I,0,L[L.length-1],dy);c.stroke();
+    /* the fillet: RF px past the body's edge the road is wider and eases into its own width - nested strokes of the road's first stretch, each a bit
+       longer and thinner (round caps make the curve smooth); concentric for every layer, so the bands stay parallel */
+    const E=this.RE*(hw/Snake.HW+.35);
+    for(let n=10,q=1;q<=n;q++){const u=q/n,ww=w+E*Math.pow(1-u+.08,2)/1.17;c.lineWidth=ww*2;c.beginPath();this.sub(c,I,0,se+this.RF*u,dy);c.stroke();}
+  },
+  /* scales and dorsal spikes of a road (not inside the body, nor on the fillet) */
+  roadDeco(c,I){
+    if(!I.road)return;const W=ISLE_RW,L=this.rl(I),se=this.edge(I);c.lineWidth=1.8;
+    for(let s=se+this.RF*.35;s<L[L.length-1];s+=30){
+      const [px,py,tx,ty]=this.at(I,s),nx=-ty,ny=tx,i=Math.round(s/30)+I.id*7,a=Math.atan2(ty,tx);
+      for(let r=-2;r<=2;r++){const off=r*W*.3;c.strokeStyle=r%2?'rgba(23,53,108,.38)':'rgba(255,255,255,.22)';c.beginPath();c.arc(px+nx*off-tx*5,py+ny*off-ty*5,9,a-.9,a+.9);c.stroke();}
+      if(s<se+this.RF*.8)continue;
+      for(const sd of[-1,1]){const ex=px+nx*sd*(W+3),ey=py+ny*sd*(W+3),h=9+5*hash(i,sd+3);
+        c.fillStyle='#17356c';c.beginPath();c.moveTo(ex-tx*7,ey-ty*7);c.lineTo(ex+nx*sd*h,ey+ny*sd*h);c.lineTo(ex+tx*7,ey+ty*7);c.closePath();c.fill();
+        c.fillStyle='#4a86d0';c.beginPath();c.moveTo(ex-tx*4,ey-ty*4);c.lineTo(ex+nx*sd*(h-4),ey+ny*sd*(h-4));c.lineTo(ex+tx*4,ey+ty*4);c.closePath();c.fill();}
+    }
+  },
+  /* the body's animation carried on along the road: the soft bands of light (same speed, they set off from the body towards the island) and the sparkles */
+  roadLight(c,I,t){
+    if(!I.road)return;const L=this.rl(I),Lt=L[L.length-1],k=ISLE_RW/Snake.HW,per=1300,len=480;
+    c.save();c.lineCap='round';c.lineJoin='round';
+    const off=((t*210+I.id*173)%per+per)%per;
+    for(let b=off-per;b<Lt;b+=per){const s0=Math.max(0,b),s1=Math.min(Lt,b+len);if(s1<=s0)continue;
+      for(const [w,a] of[[1.2,.05],[.9,.07],[.6,.09],[.34,.12]]){c.strokeStyle='rgba(255,255,255,'+a+')';c.lineWidth=Snake.HW*w*k;c.beginPath();this.sub(c,I,s0,s1,0);c.stroke();}}
+    c.fillStyle='#fff';
+    for(let s=40,i=0;s<Lt;s+=70,i++){const h=hash(i+I.id*31,47);if(h>.3)continue;const ph=(t*.8+h*9)%1,a=Math.sin(ph*Math.PI);if(a<.05)continue;
+      const [px,py,tx,ty]=this.at(I,s+h*40),o=(hash(i,9+I.id)-.5)*ISLE_RW*1.2,x=px-ty*o,y=py+tx*o,r=2+3*a;c.globalAlpha=a*.9;c.fillRect(x-r,y-.8,r*2,1.6);c.fillRect(x-.8,y-r,1.6,r*2);}
+    c.restore();
+  },
+  /* puffs of the cloud sea around the foot of the island: behind it (front=false), and a row over the bottom of the painting (front=true) that hides where it ends */
+  puffs(c,I,t,front){
+    const S=this.spr(I);if(!S)return;const G=ISLE_GEO[I.kind],k=I.r/G[2],bot=(S.img.height-G[1])*k,ph=I.x*.011,cut=(this.FADE[I.kind]||[0,0])[1]>0;
+    c.save();
+    const n=front?(cut?11:7):12;
+    for(let i=0;i<n;i++){
+      const u=(i+.5)/n,h=hash(i,I.id),bob=Math.sin(t*.6+i*1.7+ph)*6;let x,y,rr;
+      if(front){const sp=cut?.98:.7;x=I.x+(u*2-1)*I.r*sp;y=I.y+bot*(cut?.86:.97)-Math.abs(u*2-1)*(cut?bot*.12:bot*.25);rr=I.r*(cut?.2:.13)*(.8+.45*h);}
+      else{const a=Math.PI*(-.08+1.16*u);x=I.x+Math.cos(a)*I.r*1.02;y=I.y+Math.sin(a)*I.ry*1.02+bot*.35*Math.max(0,Math.sin(a));rr=.22*I.r*(.75+.5*h);}
+      c.globalAlpha=1;c.fillStyle='#e8861c';this.ell(c,x,y+bob+rr*.12,rr*1.02,rr*.5);
+      c.fillStyle='#f7b23a';this.ell(c,x,y+bob,rr,rr*.48);
+      c.fillStyle='#ffd25c';this.ell(c,x-rr*.15,y+bob-rr*.12,rr*.7,rr*.33);
+      c.fillStyle='#fff0a8';this.ell(c,x-rr*.3,y+bob-rr*.2,rr*.32,rr*.14);
+    }
+    c.restore();
+  },
+  /* Shenron's Altar: the seven Dragon Balls on the altar (sprite px of the altar top: centre 379,225, radii 70 x 42), lit and gently floating */
+  balls(c,I,t,img){
+    const G=ISLE_GEO.shrine,k=I.r/G[2],cx=I.x+(379-G[0])*k,cy=I.y+(225-G[1])*k,rx=70*k*.6,ry=42*k*.6,S=26*k,L=[];
+    for(let i=0;i<7;i++){const a=-Math.PI/2+i/7*TAU+t*.12;L.push({x:cx+Math.cos(a)*rx,y:cy+Math.sin(a)*ry,n:i+1,ph:i*.9});}
+    L.sort((p,q)=>p.y-q.y);
+    for(const b of L){
+      const h=6*k+Math.sin(t*2+b.ph)*3*k;
+      c.fillStyle='rgba(40,20,60,.35)';this.ell(c,b.x,b.y,S*.38,S*.14);
+      GLOW.at(c,b.x,b.y-h-S*.5,S*1.25,'#ffaa28',.55+.15*Math.sin(t*3+b.ph));
+      if(img){c.save();c.imageSmoothingEnabled=true;c.drawImage(img,(b.n-1)*64,0,64,64,b.x-S/2,b.y-h-S,S,S);c.restore();}
+      else{c.fillStyle='#ff9d1c';this.cir(c,b.x,b.y-h-S*.5,S*.45);c.fillStyle='#d22';this.cir(c,b.x,b.y-h-S*.5,S*.12);}
+    }
+  },
+  isle(c,I,t,ballImg){
+    const S=this.spr(I);
+    if(S){
+      const G=ISLE_GEO[I.kind],k=I.r/G[2],bob=Math.sin(t*.9+I.x*.01)*4,ph=I.x*.013;
+      c.save();c.translate(0,bob);
+      const bot=(S.img.height-G[1])*k;c.fillStyle='rgba(150,60,0,.22)';this.ell(c,I.x,I.y+bot*.75+30,I.r*.9,I.ry*.45);   /* shadow on the clouds */
+      c.imageSmoothingEnabled=true;c.drawImage(S.img,I.x-G[0]*k,I.y-G[1]*k,S.img.width*k,S.img.height*k);c.imageSmoothingEnabled=false;
+      if(I.kind==='shrine')this.balls(c,I,t,ballImg);
+      c.globalCompositeOperation='lighter';   /* spirit lights rising from the island */
+      for(let i=0;i<4;i++){const r=(t*.3+i/4+ph)%1;GLOW.at(c,I.x+Math.sin(r*6+i*2)*I.r*.55,I.y-I.ry*.1-r*I.ry*1.3,10+6*(1-r),'#fff0b0',.6*(1-r));}
+      c.restore();
+      return;
+    }
+    this.isle0(c,I,t);
+  },
+  /* the old drawn island (before v110), kept as the fallback */
+  isle0(c,I,t){
     const R=I.r,[c1,c2]=this.col[I.kind],bob=Math.sin(t*.9+I.x*.01)*3,o=I.side,u=R/120,ph=I.x*.013;
     c.save();c.translate(I.x,I.y+bob);
     c.fillStyle='rgba(150,60,0,.3)';this.ell(c,0,R*.42+20,R*1.02,R*.6);
@@ -107,7 +209,7 @@ const SnakeArt={
       const h=hash(gx*13+5,gy*7+3);if(h>.34)continue;
       const x=(gx+.15+hash(gx+2,gy+9)*.7)*C,y=(gy+.15+hash(gx+8,gy+1)*.7)*C;
       if(Math.abs(x)>Snake.XMAX||Math.abs(y-Snake.f(x))<Snake.HW+120)continue;
-      let near=false;for(const I of Snake.islandsIn(x-400,x+400))if(Math.hypot(I.x-x,I.y-y)<I.r+160){near=true;break;}if(near)continue;
+      let near=false;for(const I of Snake.isleNear(x)){if(Snake.inIsle(I,x,y,-260)<1.25||(I.road&&Snake.roadNear(I,x,y)[2]<ISLE_RW+120)){near=true;break;}}if(near)continue;
       const k=Math.floor(h*3/.34),bob=Math.sin(t*.8+h*40)*3;
       c.save();c.translate(x,y+bob);c.fillStyle='rgba(150,60,0,.25)';this.ell(c,0,26,26,9);
       c.fillStyle='#6a4a30';c.beginPath();c.moveTo(-22,0);c.lineTo(-10,24);c.lineTo(0,16);c.lineTo(11,26);c.lineTo(22,0);c.closePath();c.fill();

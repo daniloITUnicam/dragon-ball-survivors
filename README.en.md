@@ -47,6 +47,13 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 27, 2026 update, part 3 (Snake Way islands)
+
+- **Painted islands:** `assets/sprites/props/isle<kind>.png` (9 one-frame sheets, `isle<kind>` entries in `sprites.json`, 255 colours). `ISLE_GEO` (`world.js`) gives for each kind the centre and the two radii of the walkable top in the sprite; in the game the island is that ellipse (`I.r` × `I.ry`), `ISLE_K = 6` times bigger than before (radius 600-900). Drawn in `SnakeArt.isle` (the old drawing stays in `isle0` until the sprite is decoded); where the painting ended with a straight cut the sprite fades out (`SnakeArt.FADE`) and a row of clouds (`SnakeArt.puffs`) covers it.
+- **Distance and roads:** the island's centre is chosen so that the ellipse stays at least 260-520 px from the body's edge along its whole width; `I.road` is an S curve (cubic Bézier, 25 points) from the body to the near edge of the island, `ISLE_RW = 78` px wide on each side, drawn like the snake: the body and the roads are painted one layer at a time (`SnakeArt.roadLayer`), so the edges merge like a fork and the start of the road widens (a `RF = 110` px fillet, concentric strokes); no spikes where the road branches off, the body's light and sparkles carry on along the roads (`SnakeArt.roadLight`). `Snake.clamp` accepts the body, the ellipses and the roads (`inIsle`, `roadNear`, `isleNear`).
+- **Shenron's Altar:** the 5 painted balls were removed from the sprite (pedestal repainted); `SnakeArt.balls` puts the game's 7 Dragon Balls (`dragonballs.webp`) in a circle on the altar.
+- **Pause map:** Snake Way islands (with names) and roads.
+
 ### 🆕 October 27, 2026 update, part 2 (Amount, chests and event history)
 
 - **Amount on level-up:** new `proj` entry in `PASS` (`data.js`) with `max:2` (`passMax(id)`; the other upgrades stay at 5); `S.proj` also adds `P.proj` (`recalc`). Double Sunday evolves with Amount (`EVO_RECIPE.dsunday = ['proj','might']`, was `haste`).

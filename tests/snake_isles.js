@@ -24,7 +24,9 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
  g.p.x=I.x-300;g.p.y=Snake.f(g.p.x);md.isT=0;md.update(.6);
  const here=g.loot.filter(l=>l.isle===I.id);
  ok(here.length===3,'3 power-ups on the island ('+here.map(l=>l.k).join(',')+')');
- ok(here.every(l=>Math.hypot(l.x-I.x,l.y-I.y)<=I.r*.5),'they lie inside the island');
+ ok(here.every(l=>Snake.inIsle(I,l.x,l.y,0)<=.8),'they lie inside the island');   /* v110: the island is an ellipse (I.r x I.ry) */
+ ok(I.road&&I.road.length>2&&I.road.every(([x,y])=>{const q={x,y};Snake.clamp(q,6);return Math.hypot(q.x-x,q.y-y)<1;}),'v110: the road from the body to the island is walkable all the way');
+ ok(L.every(J=>{for(let k=-10;k<=10;k++){const xx=J.x+k/10*J.r;if(Math.abs(Snake.f(xx)-J.y)<Snake.HW+J.ry*Math.sqrt(1-(k/10)**2))return false;}return true;}),'v110: no island overlaps the body');
  const n0=g.loot.length;md.isT=0;md.update(.6);ok(g.loot.length===n0,'they are laid only once');
  /* walk onto it and pick everything up */
  const kinds=here.map(l=>l.k).join(',');

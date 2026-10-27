@@ -55,6 +55,13 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 27 ottobre 2026, parte 3 (isole della Via del Serpente)
+
+- **Isole dipinte:** `assets/sprites/props/isle<tipo>.png` (9 fogli da 1 fotogramma, voci `isle<tipo>` in `sprites.json`, 255 colori). `ISLE_GEO` (`world.js`) dà per ogni tipo il centro e i due raggi della superficie calpestabile nello sprite; in gioco l'isola è quell'ellisse (`I.r` × `I.ry`), `ISLE_K = 6` volte più grande di prima (raggio 600-900). Disegno in `SnakeArt.isle` (il vecchio disegno resta in `isle0` finché lo sprite non è caricato); dove la pittura finiva con un taglio netto lo sprite sfuma (`SnakeArt.FADE`) e una fila di nuvole (`SnakeArt.puffs`) lo copre.
+- **Distanza e strade:** il centro dell'isola è scelto in modo che l'ellisse resti ad almeno 260-520 px dal bordo del corpo lungo tutta la sua larghezza; `I.road` è una curva a S (Bézier cubica, 25 punti) dal corpo al bordo vicino dell'isola, larga `ISLE_RW = 78` px per lato, disegnata come il serpente: il corpo e le strade sono dipinti uno strato alla volta (`SnakeArt.roadLayer`), così i bordi si fondono come un bivio e l'inizio della strada si allarga (raccordo di `RF = 110` px, tratti concentrici); niente spine dove la strada si stacca, la luce e i brillii del corpo proseguono sulle strade (`SnakeArt.roadLight`). `Snake.clamp` accetta corpo, ellissi e strade (`inIsle`, `roadNear`, `isleNear`).
+- **Altare di Shenron:** tolte le 5 sfere dipinte dallo sprite (piedistallo ridipinto); `SnakeArt.balls` mette le 7 Sfere del Drago del gioco (`dragonballs.webp`) in cerchio sull'altare.
+- **Mappa in pausa:** isole (con nome) e strade della Via del Serpente.
+
 ### 🆕 Aggiornamento del 27 ottobre 2026, parte 2 (Quantità, scrigni e cronologia)
 
 - **Quantità al level-up:** nuova voce `proj` in `PASS` (`data.js`) con `max:2` (`passMax(id)`, gli altri potenziamenti restano a 5); `S.proj` somma anche `P.proj` (`recalc`). Doppio Sunday evolve con Quantità (`EVO_RECIPE.dsunday = ['proj','might']`, prima `haste`).
