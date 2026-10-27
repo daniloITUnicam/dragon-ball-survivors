@@ -13,7 +13,8 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
       const L0=g.loot.length,C0=g.chests.length,G0=g.gm.length;
       for(const [x,y] of wet.slice(0,60)){g.spawnLoot(['ball','sball','heal','haste','dmg','magnet','bag','coin'][(Math.random()*8)|0],x,y);g.dropGem(x,y,1);}
       const pts=[];for(let k=0;k<40;k++){const [x,y]=g.map.pos(120,600);pts.push([x,y]);}
-      const lootW=g.loot.slice(L0).filter(l=>g.waterAt(l.x,l.y)).length,gemW=g.gm.slice(G0).filter(q=>g.waterAt(q.x,q.y)).length,posW=pts.filter(([x,y])=>g.waterAt(x,y)).length;
+      const LN=g.loot.slice(L0);for(let k=0;k<1200&&LN.some(l=>l.sx!=null);k++)for(const l of LN)g.drift(l,1/30);   /* v109: loot on the water floats to the shore */
+      const lootW=LN.filter(l=>g.waterAt(l.x,l.y)).length,gemW=g.gm.slice(G0).filter(q=>g.waterAt(q.x,q.y)).length,posW=pts.filter(([x,y])=>g.waterAt(x,y)).length;
       /* boss / elite chest spawned over water, features, red gem */
       const [cx,cy]=g.dryPos(wet[0][0],wet[0][1]);
       const moved=wet.slice(0,60).every(([x,y])=>{const [a,b]=g.dryPos(x,y);return !g.waterAt(a,b);});

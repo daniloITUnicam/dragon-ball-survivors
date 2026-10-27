@@ -17,7 +17,7 @@ const MAP={
   }
 };
 const mhash=(a,b)=>hash(a+MAP.ix,b+MAP.iy);
-const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4,ZONE_P=.045,ZONE_HEAL=.008;   /* share of ground cells holding a trap or a pool: 4.5% (it was 20%), of which healing pools 0.8% (it was 6%) */
+const OB_CELL=230,ZONE_CELL=460,TRAP_PERIOD=4,TRAP_WARN=.22,TRAP_ON=.38,TRAP_CD=1.1,ZONE_P=.045,ZONE_HEAL=.008;   /* share of ground cells holding a trap or a pool: 4.5% (it was 20%), of which healing pools 0.8% (it was 6%) */
 const OB_DENS={beach:.14,waste:.12,redrock:.12,plains:.12,arena:.10,other:.10,hell:.12,sky:.10,namek:.12};   /* share of the 230 px cells that hold a prop (default .15) */
 /* each def: w=spawn weight, r=ground collision radius, art(R,C)=painter, W,H=sprite size in art units (origin bottom centre) */
 const OB=(w,r,W,H,art,rk)=>({w,r,W,H,art,rk});
@@ -255,8 +255,15 @@ const World={
     for(let gx=c0;gx<=c1;gx++)for(let gy=r0;gy<=r1;gy++){const z=this.zone(theme,gx,gy);if(z)out.push(z);}
     return out;
   },
-  /* 0 = safe, 1 = about to fire, 2 = active */
-  trapState(z,t){const m=(t+z.ph)%TRAP_PERIOD;return m<TRAP_PERIOD-1.4?0:m<TRAP_PERIOD-.8?1:2;},
+  /* v109: a trap sleeps until something walks on it (z.trig = the moment, set by Game.updateZones), then TRAP_WARN s of warning, TRAP_ON s of spikes and TRAP_CD s to re-arm.
+     0 = safe, 1 = about to fire, 2 = active; trapPh also gives how far into that phase it is (0..1) for the sprite frames */
+  trapPh(z,t){
+    if(z.trig==null)return[0,0];const m=t-z.trig;
+    if(m<0||m>=TRAP_WARN+TRAP_ON+TRAP_CD){z.trig=null;return[0,0];}
+    return m<TRAP_WARN?[1,m/TRAP_WARN]:m<TRAP_WARN+TRAP_ON?[2,(m-TRAP_WARN)/TRAP_ON]:[0,1];
+  },
+  trapState(z,t){return this.trapPh(z,t)[0];},
+  trapReady(z,t){return z.trig==null||t-z.trig>=TRAP_WARN+TRAP_ON+TRAP_CD;},
   /* the ground an obstacle's picture covers: half its drawn width and its drawn height (rocks: the rock; sheet art: the width ww and the crop's height; painted art: its size) */
   foot(theme,b){
     if(b._f)return b._f;

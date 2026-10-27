@@ -32,7 +32,7 @@ const fx=await pg.evaluate(()=>{const g=G,out={};
   const fi0=g.formIdx;g.formIdx=4;FXL.on=true;out.elecOn=ELEC.lvl(g);FXL.on=false;out.elecOff=ELEC.lvl(g);g.formIdx=fi0;
   /* glows: the alpha reaching the canvas */
   const al=[];const st={save(){},restore(){},drawImage(){},set globalAlpha(v){al.push(v);},set globalCompositeOperation(v){}};
-  FXL.on=false;GLOW.at(st,0,0,10,'#ff0000',.8);FXL.on=true;GLOW.at(st,0,0,10,'#ff0000',.8);out.glow=al;
+  FXL.on=false;GLOW.at(st,0,0,10,'#ff0000',.8);FXL.on=true;GLOW.at(st,0,0,10,"#ff0000",.8);out.glow=al.filter((v,i)=>i%2===0);   /* v109: GLOW.at puts the alpha back by hand (every other value) */
   FXL.on=true;return out;});
 ok(fx.burstOn<=fx.burstOff*.5&&fx.burstOn>0,'bursts use far fewer particles ('+fx.burstOn+' vs '+fx.burstOff+')');
 ok(fx.boltOn<fx.boltOff&&fx.boltOn>0,'fewer lightning bolts ('+fx.boltOn+' vs '+fx.boltOff+')');

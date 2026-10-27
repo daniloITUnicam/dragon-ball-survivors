@@ -24,7 +24,7 @@ const SI={
 /* weapon level-up stat keys -> icon */
 const WS_ICON={dmg:'dmg',n:'shots',cd:'cd',pi:'pierce',rad:'area',r:'area',wid:'area',len:'range',stun:'stun'};
 /* passive id -> icon */
-const PASS_ICON={might:'dmg',vit:'hp',speed:'spd',magnet:'magnet',haste:'cd',armor:'armor',regen:'regen',growth:'xp'};
+const PASS_ICON={might:'dmg',vit:'hp',speed:'spd',magnet:'magnet',haste:'cd',armor:'armor',regen:'regen',growth:'xp',proj:'shots'};
 /* effect category -> card colour (red = damage, blue = speed, green = healing ...) */
 const CAT_COL={dmg:'#ff5a4a',hp:'#5fd35f',regen:'#5fd35f',spd:'#4aa8ff',range:'#4aa8ff',cd:'#ffc233',armor:'#9db4c8',magnet:'#b980ff',xp:'#2fdcc4',area:'#ff9a3d',shots:'#ff7ac8',pierce:'#ff7ac8',stun:'#ffe14a',wpn:'#ff8a2a',coin:'#ffd23f',star:'#ffd23f',up:'#9db4c8'};
 function siIcon(name,color,cls){

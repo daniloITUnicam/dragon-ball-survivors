@@ -12,7 +12,7 @@ class SaveData{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
-      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
+      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
       settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
@@ -142,13 +142,13 @@ class Progress{
     d.bag.push({id,r,at:Date.now(),p:pf});return{up:0};
   }
   finishRun(g,win,opts){
-    if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),coins:g.run.coins,ws:this.weaponLevels(g)};
+    if(this.blocked(g))return{sandbox:true,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines:[],total:0,unlocked:[],ach:[],dmg:Object.assign({},g.dmgBy),taken:JSON.parse(JSON.stringify(g.takenBy||{})),coins:g.run.coins,ws:this.weaponLevels(g)};
     const d=this.d,st=d.stats,idx=g.stageIdx,stg=STAGES[idx],b=g.bank;
     if(g.formsUnlocked>(d.maxForm[g.C.id]||0))d.maxForm[g.C.id]=g.formsUnlocked;
     const firstWin=!!win&&!b.cleared;
     const lines=this.rewardLines(g,win,firstWin);
     const raw=lines.reduce((s,l)=>s+l.v,0);
-    const mult=(win||(opts&&opts.keep)?1:.75);   /* no end-of-run multiplier any more (stage, difficulty and Coin buffs used to multiply the payout): only a defeat pays 25% less */
+    const mult=1;   /* v109: no end-of-run multiplier at all (stage, difficulty and Coin buffs went earlier; the -25% of a defeat goes now too) */
     const total=Math.floor(raw*mult);
     const first=!b.counted;
     st.kills+=g.kills-b.kills;st.bosses+=g.run.bossKills-b.bossKills;st.chests+=g.run.chests-b.chests;
@@ -177,7 +177,7 @@ class Progress{
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,kept:(g.run.tkept||[]).slice(),xc:!!d.xc[idx],ws:this.weaponLevels(g)};
+    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),taken:JSON.parse(JSON.stringify(g.takenBy||{})),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,kept:(g.run.tkept||[]).slice(),xc:!!d.xc[idx],ws:this.weaponLevels(g)};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);

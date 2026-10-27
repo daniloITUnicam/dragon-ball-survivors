@@ -77,11 +77,11 @@ const py=await pg.evaluate(()=>{const A=__app,g=G,d=A.save.d,out={};
   g.continueAfterWin();const t0=g.en0.t;g.t=t0+30;g.addZenny(100);   /* 81 */
   g.spendCoins(500);                                    /* Zeno: eats the old coins first */
   g.t=t0+60;g.addZenny(100);                            /* 100 x 0.9^4 = 65.61 -> 66 */
-  g.ended=false;const res2=A.progress.finishRun(g,false);out.p2=res2.total;out.exp2=Math.floor(Math.round(100*Math.pow(.9,4))*mult*.75);
+  g.ended=false;const res2=A.progress.finishRun(g,false);out.p2=res2.total;out.exp2=Math.floor(Math.round(100*Math.pow(.9,4))*mult);   /* v109: no defeat penalty any more */
   /* a second Endless death without earning: nothing */
   g.ended=false;const res3=A.progress.finishRun(g,false);out.p3=res3.total;return out;});
 ok(py.bank===1000&&py.p1===py.exp1,'the win pays the coins of the run ('+py.p1+')');
-ok(py.p2===py.exp2&&py.p2>=0,'after "Continue" only the coins earned afterwards are paid, with the 25% penalty of a defeat ('+py.p2+' = '+py.exp2+')');
+ok(py.p2===py.exp2&&py.p2>=0,'after "Continue" only the coins earned afterwards are paid (v109: no defeat penalty) ('+py.p2+' = '+py.exp2+')');
 ok(py.p3===0,'a second end without new coins pays nothing (no double payout)');
 
 /* 9. outside Endless: escalation per difficulty (every 10 minutes, Easy every 60 s), Extreme spawn steps */

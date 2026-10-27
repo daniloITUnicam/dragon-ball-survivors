@@ -167,12 +167,19 @@ Object.assign(UI.prototype,{
       h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)+(w.xl>0?' · Lv '+w.lvShow:''),this.weaponInfo(w,g)),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
     const kr=(k,v)=>h('div',{class:'krow'},h('span',null,k===null?t('passSlots').replace(/\s*[:(]?\s*\{a\}\s*\/\s*\{b\}\)?/,''):t(k)),h('b',null,v));
-    const stats=[kr('stHp',Math.round(p.hp)+' / '+p.maxHp),kr('stPower','x'+S.might.toFixed(2)),kr('stSpeed','x'+S.spd.toFixed(2)),kr('stCooldown','x'+S.cd.toFixed(2)),
-      kr('stArmor',S.armor.toFixed(1)),kr('stRegen',S.regen.toFixed(1)+'/s'),kr('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')'),kr('stDodge',Math.round(S.dodge*100)+'%'),
-      kr('stArea','x'+S.area.toFixed(2)),kr('stLuck',Math.round(S.luck*100)+'%'),kr('stXp','x'+S.xp.toFixed(2)),kr('stGold','x'+S.gold.toFixed(2)),kr('stMagnet',Math.round(S.magnet))];
+    /* v109: hovering (or focusing) a stat shows what makes it up: base + every upgrade, form, trinket... (Game.statBreak) */
+    const SB=g.statBreak?g.statBreak():{};
+    const krt=(k,v,sk)=>{const rows=SB[sk];if(!rows||!rows.length)return kr(k,v);
+      return h('div',{class:'krow sbk',tabindex:'0','data-fid':'sb'+sk},h('span',null,t(k)),h('b',null,v),
+        h('div',{class:'wtip sbtip'},h('div',{class:'wth'},h('b',null,t(k)),h('i',null,v)),
+          h('div',{class:'wtr'},rows.map(r=>h('div',{class:'wtrow'},h('span',null,(typeof r.l==='object'?this.tr(r.l):r.l)+(r.x||'')),h('b',null,r.v)))),
+          rows.some(r=>r.o)?h('small',null,this.t('statBreakNote')):null));};
+    const stats=[krt('stHp',Math.round(p.hp)+' / '+p.maxHp,'hp'),krt('stPower','x'+S.might.toFixed(2),'might'),krt('stSpeed','x'+S.spd.toFixed(2),'spd'),krt('stCooldown','x'+S.cd.toFixed(2),'cd'),
+      krt('stArmor',S.armor.toFixed(1),'armor'),krt('stRegen',S.regen.toFixed(1)+'/s','regen'),krt('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')','crit'),krt('stDodge',Math.round(S.dodge*100)+'%','dodge'),
+      krt('stArea','x'+S.area.toFixed(2),'area'),krt('stProj','+'+(S.proj|0),'proj'),krt('stLuck',Math.round(S.luck*100)+'%','luck'),krt('stXp','x'+S.xp.toFixed(2),'xp'),krt('stGold','x'+S.gold.toFixed(2),'gold'),krt('stMagnet',Math.round(S.magnet),'magnet')];
     const fe=g.formEntry;
     const ups=[kr(null,g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
-      ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],5),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
+      ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],passMax(id)),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
     const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf))),this.perfBar(pf)));});
@@ -181,7 +188,7 @@ Object.assign(UI.prototype,{
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabBtns=(
-      ['map','run','grim'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='map'?'🗺 '+this.t('mapTab'):k==='run'?this.t('runTab'):'📖 '+this.t('grimoire')))),
+      ['map','run','grim','log'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='map'?'🗺 '+this.t('mapTab'):k==='run'?this.t('runTab'):k==='log'?'📜 '+this.t('evLog'):'📖 '+this.t('grimoire')))),
       tabs=h('div',{class:'row tabs'},tabBtns);
     const actBtns=[
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
@@ -202,6 +209,12 @@ Object.assign(UI.prototype,{
         h('div',{class:'pfitwrap'},h('div',{class:'pfit'},sec('pauseStats',stats),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist.length?ablist:none()),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseWeapons',weapons),sec('pauseTrinkets',trins),sec('pauseWishes',wishes))));
       this.fitPause(el);
       return el;
+    }
+    if(tab==='log'){   /* v109: every message of the run (banners and notices) with the run clock, newest first */
+      const L=(g.evLog||[]).slice().reverse();
+      return h('div',{class:'pausescr'},h('h2',null,'📜 '+this.t('evLog')),btns,tabs,
+        h('div',{class:'evlog psec'},L.length?L.map(e=>h('div',{class:'evrow'},h('b',{class:'evt'},fmtT(e.t)),
+          h('span',{class:'evx',style:'color:'+e.col},e.txt+(e.n>1?' ×'+e.n:''),e.sub?h('small',null,e.sub):null))):h('p',{class:'sub'},this.t('evLogEmpty'))));
     }
     return h('div',{class:'pausescr'},h('h2',null,this.t('grimoire')),btns,tabs,this.grimBody());
   },
@@ -389,7 +402,7 @@ Object.assign(UI.prototype,{
       return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
         w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
-      return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/5'),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
+      return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
     if(z.k==='trinket'){const t=TRINKETS.find(x=>x.id===z.id);if(!t)return null;const rr=g.trR(z.id),pf=hasPf(t)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('p',null,this.tr(trinDesc(t,rr,pf))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
     if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
       ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
@@ -408,17 +421,29 @@ Object.assign(UI.prototype,{
   },
   /* ---------- end of run ---------- */
   /* damage dealt by each weapon (icon, name, level, bar, damage, share) */
+  /* end screen, right column: damage dealt by weapon / damage taken by enemy (v109: two buttons switch between them) */
   dmgSummary(res){
-    const dm=res.dmg||{},ids=Object.keys(dm).filter(k=>dm[k]>0).sort((a,b)=>dm[b]-dm[a]),tot=ids.reduce((s,k)=>s+dm[k],0)||1,top=dm[ids[0]]||1,ws=res.ws||{};
-    const nm=k=>k==='other'?this.t('dmgOther'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='other'?'#9aa4b8':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
-    const fmt=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':String(Math.round(v));
-    const row=k=>{const w=ws[k],lv=w?(w.evo?'★'+(w.evo>1?'★':''):'Lv'+w.lv)+(w.xl?' Lv'+(w.lv+w.xl):''):'';
-      return h('div',{class:'wrow',style:'--c:'+cl(k)},h('span',{class:'wic',style:'--c:'+cl(k)},k==='other'?'気':(WEAPONS[k]?WEAPONS[k].k:'?')),
-        h('div',{class:'wmid'},h('div',{class:'wtop'},h('span',{class:'wn'},nm(k)),lv?h('small',{class:'wlv'},lv):null),
-          h('span',{class:'dbar'},h('i',{style:'width:'+Math.max(3,Math.round(dm[k]/top*100))+'%;background:'+cl(k)}))),
-        h('b',{class:'wv'},fmt(dm[k]),h('small',null,Math.round(dm[k]/tot*100)+'%')));};
-    return h('div',{class:'dmgsum'},h('h3',null,this.t('dmgSummary')),
-      ids.length?ids.slice(0,10).map(row):h('p',{class:'sub'},'—'));
+    const tab=this.endTab==='taken'?'taken':'dealt',fmt=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':String(Math.round(v));
+    const tabs=h('div',{class:'row tabs dtabs'},['dealt','taken'].map(k=>h('button',{class:'btn small'+(tab===k?' primary':' alt'),'data-fid':'dt'+k,'aria-pressed':tab===k?'true':'false',
+      onclick:ev=>{if(this.endTab===k)return;this.sfx('uiTab');this.endTab=k;const el=ev.currentTarget.closest('.dmgsum');if(el)el.replaceWith(this.dmgSummary(res));}},this.t(k==='dealt'?'dmgDealtT':'dmgTakenT'))));
+    const bar=(c,v,top,tot,ic,name,lv)=>h('div',{class:'wrow',style:'--c:'+c},h('span',{class:'wic',style:'--c:'+c},ic),
+      h('div',{class:'wmid'},h('div',{class:'wtop'},h('span',{class:'wn'},name),lv?h('small',{class:'wlv'},lv):null),
+        h('span',{class:'dbar'},h('i',{style:'width:'+Math.max(3,Math.round(v/top*100))+'%;background:'+c}))),
+      h('b',{class:'wv'},fmt(v),h('small',null,Math.round(v/tot*100)+'%')));
+    let rows,tot;
+    if(tab==='dealt'){
+      const dm=res.dmg||{},ids=Object.keys(dm).filter(k=>dm[k]>0).sort((a,b)=>dm[b]-dm[a]),top=dm[ids[0]]||1,ws=res.ws||{};tot=ids.reduce((s,k)=>s+dm[k],0);
+      const nm=k=>k==='other'?this.t('dmgOther'):k==='trap'?this.t('dmgTrap'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='other'?'#9aa4b8':k==='trap'?'#ff7a3a':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
+      rows=ids.slice(0,10).map(k=>{const w=ws[k],lv=w?(w.evo?'★'+(w.evo>1?'★':''):'Lv'+w.lv)+(w.xl?' Lv'+(w.lv+w.xl):''):'';
+        return bar(cl(k),dm[k],top,tot||1,k==='other'?'気':k==='trap'?'罠':(WEAPONS[k]?WEAPONS[k].k:'?'),nm(k),lv);});
+    }else{
+      const tk=res.taken||{},ids=Object.keys(tk).filter(k=>tk[k]&&tk[k].v>0).sort((a,b)=>tk[b].v-tk[a].v),top=ids.length?tk[ids[0]].v:1;tot=ids.reduce((s,k)=>s+tk[k].v,0);
+      const FIX={trap:['dmgTrap','罠','#ff7a3a'],lava:['dmgLava','炎','#ff5a1a'],boss:['dmgBossAtk','王','#ff3b5a'],other:['dmgEnv','?','#9aa4b8']};
+      rows=ids.slice(0,12).map(k=>{const r=tk[k],f=FIX[k];
+        return f?bar(f[2],r.v,top,tot||1,f[1],this.t(f[0]),null):bar(r.c||'#ff6b6b',r.v,top,tot||1,r.boss?'王':'敵',r.n?this.tr(r.n):k.slice(2),r.boss?'BOSS':null);});
+    }
+    return h('div',{class:'dmgsum'},tabs,
+      rows.length?[rows,h('div',{class:'rline total dtot'},h('span',null,this.t('total')),h('b',null,fmt(tot)))]:h('p',{class:'sub'},'—'));
   },
   screen_end(res){
     const g=this.app.game,labels={coins:'rw_coins',kills:'rw_kills',time:'rw_time',bosses:'rw_bosses',clear:'rw_clear'};

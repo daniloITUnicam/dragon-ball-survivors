@@ -3,7 +3,12 @@ const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Pro
 (async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1100,height:700}});
 const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+/* v109: a run carries any number of trinkets (Game.runCap = TRIN_RUN_CAP); these checks exercise the swap window, so they put the old cap (the bag slots) back */
+const capFree=await pg.evaluate(()=>{__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;g.trinkets=[];for(const id of ['boots','cape','scouter','armor','potara'])g.addTrinket(id,1);return g.trinkets.length===5&&!g.modal;});
+await pg.evaluate(()=>{Object.defineProperty(Game.prototype,'runCap',{get(){return this.tcap;},configurable:true});});
+
 const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
+ok(capFree,'v109: five found trinkets are all carried, no swap window');
 const go=(lv)=>pg.evaluate((lv)=>{const A=__app,d=A.save.d;d.shop.tslot=lv;d.settings.trinRefuse=false;d.settings.sandbox=false;d.equip=null;
   A.startGame({stage:5,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.sb.nospawn=true;g.sb.god=true;g.modal=null;window.G=g;return g.tcap;},lv);
 /* ---------- capacity follows the shop upgrade ---------- */

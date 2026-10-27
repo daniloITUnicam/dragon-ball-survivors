@@ -15,16 +15,18 @@ const WS={
 
 /* ====== shared VFX helpers (additive glow, comet trails, wavy beams) ====== */
 const VFX={
-  star(ctx,x,y,r,c,rot){ /* 4-point sparkle */
-    ctx.save();ctx.translate(x,y);ctx.rotate(rot||0);ctx.globalCompositeOperation='lighter';ctx.fillStyle=c;
-    ctx.beginPath();ctx.moveTo(0,-r);ctx.lineTo(r*.14,-r*.14);ctx.lineTo(r,0);ctx.lineTo(r*.14,r*.14);ctx.lineTo(0,r);ctx.lineTo(-r*.14,r*.14);ctx.lineTo(-r,0);ctx.lineTo(-r*.14,-r*.14);ctx.closePath();ctx.fill();ctx.restore();
+  star(ctx,x,y,r,c,rot){ /* 4-point sparkle (v109: rotated by hand, no save/restore) */
+    const cs=Math.cos(rot||0)*r,sn=Math.sin(rot||0)*r,k=.14,c0=ctx.globalCompositeOperation;ctx.globalCompositeOperation='lighter';ctx.fillStyle=c;ctx.beginPath();
+    for(let j=0;j<8;j++){const P=VFX.SP[j],px=x+(P[0]*cs-P[1]*sn),py=y+(P[0]*sn+P[1]*cs);if(j)ctx.lineTo(px,py);else ctx.moveTo(px,py);}
+    ctx.closePath();ctx.fill();ctx.globalCompositeOperation=c0;
   },
+  SP:[[0,-1],[.14,-.14],[1,0],[.14,.14],[0,1],[-.14,.14],[-1,0],[-.14,-.14]],
   orb(ctx,x,y,r,c,t){ /* layered energy orb */
     GLOW.at(ctx,x,y,r*3.2,c,.75);GLOW.at(ctx,x,y,r*1.9,c,.9);
-    ctx.save();ctx.globalCompositeOperation='lighter';
+    const c0=ctx.globalCompositeOperation,a0=ctx.globalAlpha;ctx.globalCompositeOperation='lighter';
     ctx.fillStyle=c;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();
     ctx.fillStyle='#fff';ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,r*.58,0,TAU);ctx.fill();
-    ctx.restore();VFX.star(ctx,x,y,r*2.1,'rgba(255,255,255,.8)',t*3);
+    ctx.globalCompositeOperation=c0;ctx.globalAlpha=a0;VFX.star(ctx,x,y,r*2.1,'rgba(255,255,255,.8)',t*3);
   },
   trail(ctx,pts,r,c){ /* tapered additive comet tail */
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';

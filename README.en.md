@@ -47,6 +47,27 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 27, 2026 update, part 2 (Amount, chests and event history)
+
+- **Amount on level-up:** new `proj` entry in `PASS` (`data.js`) with `max:2` (`passMax(id)`; the other upgrades stay at 5); `S.proj` also adds `P.proj` (`recalc`). Double Sunday evolves with Amount (`EVO_RECIPE.dsunday = ['proj','might']`, was `haste`).
+- **Shop** (`screen_shop`, `ui.js`): an ON / OFF switch on every upgrade you bought and "Switch all off / on" at the top (`save.shopOff`); runs read `Game.shopLv(id)` (an upgrade switched off counts as 0, Weapon Blacklist too). Shift + click buys as many levels as you can afford; the button's tooltip says how many and how much.
+- **Chests** (`CHEST_W`, `CHEST_RAR`, `Game.chestRewards`, `chestUps`, `allMaxed`): weights 52 / 40 / 6 / 1.6 / 0.4 (were 40 / 39 / 15 / 5 / 1), Luck unchanged. Inside: 1 / 3 / 4 / 5 / 6 character upgrades (weapon and upgrade levels, new ones too; never past the max). Trinkets only once nothing is left to upgrade: `tn` = 1 / 2 / 3 / 3 / 3, Perfection squeezed into `pf..100` (`pfFloor`: Epic 35, Legendary 50, Mythic 75). Capsules give an upgrade too while there is one.
+- **Trinkets in a run:** no limit (`TRIN_RUN_CAP = Infinity`, `Game.runCap`; the slots before a run stay `tcap` 1-3); the HUD row wraps every 8. Timed effects halved: `TR_SHOCK_CD = 16`, `TR_SLOW_CD = 40`, `TR_BARRIER_CD = 30`.
+- **Water:** chests and pick-ups that land on the water (`Game.landAt`) stay where they fell and float to the shore (`drift`, at least `SHORE_V = 34` px/s), with ripples; the pick-up range grabs them on the way.
+- **Companions:** they walk back (they used to jump to you beyond 420 px; now only beyond 1800 px, after a teleport of yours).
+- **End of run:** `dmgSummary` with two buttons, "Damage dealt" (by weapon, `trap` too) and "Damage taken" (`Game.takenBy` / `logTaken`: by enemy and boss, traps, lava, boss attacks with no owner, other). Bullets, ground circles and rain remember who fired them (`.o`, set in `updateEnemies`). Removed the ×0.75 defeat multiplier (`finishRun`: `mult = 1`).
+- **Traps** (`World.trapPh`, `trapReady`, `Game.updateZones`): they fire when something walks on them (`TRAP_WARN = 0.22` s warning, `TRAP_ON = 0.38` s of spikes, `TRAP_CD = 1.1` s to re-arm) and hit once per activation: `TRAP_P = 30%` of the player's max HP (armor ignored), `TRAP_E = 40%` of an enemy's, `TRAP_B = 10%` of a boss's.
+- **Shadows of painted obstacles:** `footShadow` (`renderer.js`) measures the base of the sprite and puts the shadow there, as wide as the base (it was an ellipse of the collision radius centred on the anchor, sticking out under low props). Planet Vegeta's bone pile: anchor `[153.2, 149]` in `sprites.json` (was 169.1), it sits on the ground.
+- **Tunnels / performance** (`weapon_elec.js`, `sprites.js`, `weapons.js`): the drop came from the transformations' electric overlay (`ELEC.pt` / `seg` / `ring`), which stays after the tunnel because you level up into new forms fast in there. Arcs are gathered into `Path2D` per colour and stroked once per group, the dashed ring is plain arcs (no `setLineDash`), `GLOW.at`, `VFX.star` and `VFX.orb` no longer use `save/restore`. `ELEC.q` (0.25..1) follows the real frame time (`Renderer.draw`): under ~42 FPS the arcs thin out. Measured headless (1600×900, 5 maxed weapons, form 4): drawing in the tunnel from ~51 to ~26 ms, after the tunnel from ~95 to ~50 ms.
+- **Transformations:** `FORM_TIERS` at levels 5 / 10 / 20 / 30 / 50 / 70 / 90 / 120 for everyone (were 14 / 24 / 36 / 50 / 66 / 84 / 104 / 128); first form +15% (damage 0.22 → 0.253, speed 0.14 → 0.161).
+- **Messages:** `Game.say` queues (`bq`): an announcement stays at least `BANNER_MIN = 2` s and fades in `BANNER_FADE = 0.45` s before the next one; no duplicates. Labels above the hero stack without overlapping (`Renderer.draw`). Everything goes into `Game.evLog`, shown in the new "📜 Event History" pause tab (next to the Grimoire) with the run clock.
+- **Pause, stats:** hovering a stat (Map and Run tabs) shows a tooltip of what it is made of (`Game.statBreak`: base, upgrades, shop, form, trinkets, Senzu, totems; the last "Other" row closes the sum with abilities, Kaioken and so on). New Amount row.
+
+### 🆕 October 27, 2026 update (loot time)
+
+- **After the final boss:** when the victory scene ends (`updateVictory`), `g.post = POST_T = 30` s starts: no spawns (`sb.nospawn` stays on), events, shooter waves and `MapDirector` paused, the player still invulnerable; chests, gems and loot can be collected (`updatePickups`). It ends when time runs out or nothing is left to collect, then `finish(true)`. The countdown sits under the timer (`Renderer.hud`). `continueAfterWin` turns spawning back on and sets `p.inv = 2` (before, the 999 s victory invulnerability carried over).
+- **Hellzone Grenade:** `HellzoneWeapon.targets` = 1 + evolutions (max 2) + Amount (`xn`); Amount no longer adds spheres.
+
 ### 🆕 October 22, 2026 update, part 6 (run pacing and late game)
 
 - **Tournament of Power, Extreme:** new stage field `late:{from,dmg,hp,spawn}` (`data.js`) and `Game.lateK(k)`: from 35% of the run the factors fall linearly down to their value at the end of the run (damage ×0.42, enemy health ×0.6, spawn rate and enemy cap ×0.55). Applied in `dmgMul()` (enemies and bosses, Jiren included), `hpMul()`, `spawnRate()` and `spawnCap()`; Extreme only. Measured against the 30-minute telemetry (Zeno, 550 HP, armor 26.55): at 1800 s boss shots go from 220 (the 40% HP cap) to 95, regular enemies from 112–143 to 31–56, spawn rate from 43.8 to 24.1 per second, the cap from 580 to 319; at 1500 s boss shots go from 220 to 125.
@@ -54,6 +75,7 @@ All keys can be rebound in **Settings → Controls**.
 - **Elites:** on runs of 1200 s or more, one every `ELITE_EVERY = 240` s from second 150 (before: 6 between 14% and 80%). Shorter runs are unchanged.
 - **Overtime:** from `g.t >= g.dur` the timer stops and `+M:SS` appears next to it in red (`Renderer.hud`); it keeps counting in Endless too.
 - **Balance:** trinket sales another −20% (`TSELL_MUL = 0.24`); shop prices (`SHOP` in `data.js`, `base` field): Broly's Roar! 666 → 500, Dragon Ball Scanner 3000 → 10000, Amount 2000 → 3000 (same growth); Luck +9% → +5% per level; Greed +18% → +15%, Vitality +15 → +20, Regeneration +0.6 → +0.5, Tempo −4% → −5%, Magnetism +20% → +5% (`recalc` in `game.js`).
+- **Saibaman (companion):** new painted sheet `assets/sprites/props/petsaibaman.png` (6 × 5, same rows as the other companions; row 4 = Self-Destruct: charge, red-hot, explosion, ring), entry `petsaibaman` in `sprites.json`.
 - **Shop:** removed the lines at the top (description and total / still-to-buy cost, `ui.js`).
 - **Fixes:** the Genkidama sphere is off inside Zeno's Shop (`SpiritWeapon.update`); obstacles and everything that appears on the stage no longer overlap (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, trap/pool zones).
 
@@ -687,6 +709,7 @@ node tests/pose.js            # weapon animations: armless frames, IK, Kamehameh
 node tests/hpbar.js           # Health bar with the live portrait (puppeteer); screenshots: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot of a map (also shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: balance, TAB, weapons per run, zenny bags, Senzu, totems, Tamagami, water and lava (puppeteer)
+node tests/v109.js            # v109 Amount on level-up, shop (switches, Shift), chests and trinkets, traps, message queue, stat breakdown (puppeteer)
 node tests/v56.js             # v56 spiders, bird shadows, arcade damage numbers and red criticals (puppeteer)
 node tests/v54.js             # v54 trinkets and companions: Perfection, 4-trinket chest, skip-lower, companion (XP + shockwave), gacha, swap window, aura (puppeteer)
 node tests/eco52.js           # v52 economy: Reroll/Skip/Ban, Zeno, tickets, coin streak, Achievements, Objectives, quests (puppeteer)

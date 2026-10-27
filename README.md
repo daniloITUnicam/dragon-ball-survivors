@@ -55,6 +55,27 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 27 ottobre 2026, parte 2 (Quantità, scrigni e cronologia)
+
+- **Quantità al level-up:** nuova voce `proj` in `PASS` (`data.js`) con `max:2` (`passMax(id)`, gli altri potenziamenti restano a 5); `S.proj` somma anche `P.proj` (`recalc`). Doppio Sunday evolve con Quantità (`EVO_RECIPE.dsunday = ['proj','might']`, prima `haste`).
+- **Negozio** (`screen_shop`, `ui.js`): interruttore ATTIVO / SPENTO per ogni potenziamento comprato e "Disattiva tutti / Attiva tutti" in alto (`save.shopOff`); in partita si legge `Game.shopLv(id)` (uno spento vale 0, anche Lista Nera Armi). Maiusc + clic compra il massimo dei livelli che ti puoi permettere; il tooltip del pulsante dice quanti e quanto.
+- **Forzieri** (`CHEST_W`, `CHEST_RAR`, `Game.chestRewards`, `chestUps`, `allMaxed`): pesi 52 / 40 / 6 / 1,6 / 0,4 (prima 40 / 39 / 15 / 5 / 1), Fortuna invariata. Dentro: 1 / 3 / 4 / 5 / 6 potenziamenti del personaggio (livelli di armi e potenziamenti, anche nuovi; mai oltre il massimo). I cimeli solo quando non resta niente da potenziare: `tn` = 1 / 2 / 3 / 3 / 3, Perfezione schiacciata in `pf..100` (`pfFloor`: Epico 35, Leggendario 50, Mitico 75). Anche la Capsula dà un potenziamento finché c'è.
+- **Cimeli in partita:** nessun limite (`TRIN_RUN_CAP = Infinity`, `Game.runCap`; gli slot prima della partita restano `tcap` 1-3); la riga del HUD va a capo ogni 8. Effetti a tempo dimezzati: `TR_SHOCK_CD = 16`, `TR_SLOW_CD = 40`, `TR_BARRIER_CD = 30`.
+- **Acqua:** scrigni e oggetti che cadono in acqua (`Game.landAt`) restano dove cadono e galleggiano fino alla riva (`drift`, almeno `SHORE_V = 34` px/s), con le increspature; il raggio di raccolta li prende al volo.
+- **Compagni:** tornano camminando (prima saltavano da te oltre 420 px; ora solo oltre 1800 px, dopo un tuo teletrasporto).
+- **Fine partita:** `dmgSummary` con due pulsanti, "Danni inflitti" (per arma, anche `trap`) e "Danni subiti" (`Game.takenBy` / `logTaken`: per nemico e boss, trappole, lava, attacchi dei boss senza autore, altro). Proiettili, cerchi a terra e pioggia ricordano chi li ha lanciati (`.o`, assegnato in `updateEnemies`). Tolto il moltiplicatore ×0,75 della sconfitta (`finishRun`: `mult = 1`).
+- **Trappole** (`World.trapPh`, `trapReady`, `Game.updateZones`): scattano quando qualcuno ci cammina sopra (`TRAP_WARN = 0,22` s di avviso, `TRAP_ON = 0,38` s di spuntoni, `TRAP_CD = 1,1` s per riarmarsi) e colpiscono una volta per attivazione: `TRAP_P = 30%` della Salute massima del giocatore (ignora l'armatura), `TRAP_E = 40%` di un nemico, `TRAP_B = 10%` di un boss.
+- **Ombre degli ostacoli dipinti:** `footShadow` (`renderer.js`) misura la base dello sprite e mette l'ombra lì, larga quanto la base (prima un'ellisse del raggio di collisione centrata sull'ancora, che sporgeva sotto gli oggetti bassi). Cumulo di ossa di Pianeta Vegeta: ancora `[153.2, 149]` in `sprites.json` (prima 169,1), poggia sul terreno.
+- **Tunnel / prestazioni** (`weapon_elec.js`, `sprites.js`, `weapons.js`): la causa del calo era l'overlay elettrico delle trasformazioni (`ELEC.pt` / `seg` / `ring`), che resta anche dopo il tunnel perché nel tunnel si sale di forma in fretta. Gli archi sono raccolti in `Path2D` per colore e tracciati una volta per gruppo, l'anello tratteggiato è fatto di archi semplici (niente `setLineDash`), `GLOW.at`, `VFX.star` e `VFX.orb` non usano più `save/restore`. `ELEC.q` (0,25..1) segue il tempo reale dei frame (`Renderer.draw`): sotto ~42 FPS gli archi si diradano. Misurato in headless (1600×900, 5 armi al massimo, forma 4): disegno nel tunnel da ~51 a ~26 ms, dopo il tunnel da ~95 a ~50 ms.
+- **Trasformazioni:** `FORM_TIERS` ai livelli 5 / 10 / 20 / 30 / 50 / 70 / 90 / 120 per tutti (prima 14 / 24 / 36 / 50 / 66 / 84 / 104 / 128); prima forma +15% (danno 0,22 → 0,253, velocità 0,14 → 0,161).
+- **Messaggi:** `Game.say` mette in coda (`bq`): un annuncio resta almeno `BANNER_MIN = 2` s e sfuma in `BANNER_FADE = 0,45` s prima del successivo; niente doppioni. Le scritte sopra il personaggio si impilano senza sovrapporsi (`Renderer.draw`). Tutto finisce in `Game.evLog`, mostrato nella nuova scheda "📜 Cronologia Eventi" della pausa (accanto al Grimorio) con il tempo della partita.
+- **Pausa, statistiche:** passando sopra una statistica (scheda Mappa e Partita) un tooltip mostra da cosa è fatta (`Game.statBreak`: base, potenziamenti, negozio, trasformazione, cimeli, Senzu, totem; l'ultima riga "Altro" chiude il conto con abilità, Kaioken ecc.). Nuova riga Quantità.
+
+### 🆕 Aggiornamento del 27 ottobre 2026 (tempo per il bottino)
+
+- **Dopo il boss finale:** finita la scena di vittoria (`updateVictory`) parte `g.post = POST_T = 30` s: niente spawn (`sb.nospawn` resta attivo), eventi, ondate di tiratori e `MapDirector` fermi, giocatore ancora invulnerabile; si raccolgono scrigni, gemme e loot (`updatePickups`). Finisce allo scadere o quando non resta niente da raccogliere, poi `finish(true)`. Il conto alla rovescia è sotto il timer (`Renderer.hud`). `continueAfterWin` riattiva gli spawn e mette `p.inv = 2` (prima restava l'invulnerabilità di 999 s della vittoria).
+- **Granata Infernale:** `HellzoneWeapon.targets` = 1 + evoluzioni (max 2) + Quantità (`xn`); la Quantità non aggiunge più sfere.
+
 ### 🆕 Aggiornamento del 22 ottobre 2026, parte 6 (ritmo della partita e late game)
 
 - **Torneo del Potere, Estremo:** nuovo campo `late:{from,dmg,hp,spawn}` nello stage (`data.js`) e `Game.lateK(k)`: dal 35% della partita i fattori scendono in modo lineare fino a fine partita (danni ×0,42, salute dei nemici ×0,6, frequenza di comparsa e tetto di nemici ×0,55). Applicato in `dmgMul()` (nemici e boss, anche Jiren), `hpMul()`, `spawnRate()` e `spawnCap()`; solo in Estremo. Misurato sulla telemetria di 30 minuti (Zeno, 550 PV, armatura 26,55): a 1800 s i colpi dei boss passano da 220 (tetto del 40% dei PV) a 95, i nemici normali da 112–143 a 31–56, la comparsa da 43,8 a 24,1 al secondo, il tetto da 580 a 319; a 1500 s i colpi dei boss da 220 a 125.
@@ -62,6 +83,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 - **Élite:** nelle partite da 1200 s o più uno ogni `ELITE_EVERY = 240` s dal secondo 150 (prima 6 tra il 14% e l'80%). Le partite più corte restano come prima.
 - **Tempo extra:** da `g.t >= g.dur` il timer si ferma e accanto compare in rosso `+M:SS` (`Renderer.hud`); continua anche in Infinito.
 - **Bilanciamento:** vendita dei cimeli ancora −20% (`TSELL_MUL = 0,24`); prezzi del negozio (`SHOP` in `data.js`, campo `base`): Urlo di Broly! 666 → 500, Scanner Sfere del Drago 3000 → 10000, Quantità 2000 → 3000 (crescita invariata); Fortuna +9% → +5% per livello; Avidità +18% → +15%, Vitalità +15 → +20, Rigenerazione +0,6 → +0,5, Ritmo −4% → −5%, Magnetismo +20% → +5% (`recalc` in `game.js`).
+- **Saibaman (compagno):** nuovo foglio dipinto `assets/sprites/props/petsaibaman.png` (6 × 5, stesse righe degli altri compagni; riga 4 = Autodistruzione: carica, arroventato, esplosione, anello), voce `petsaibaman` in `sprites.json`.
 - **Negozio:** tolte le righe in cima (descrizione e costo totale / ancora da comprare, `ui.js`).
 - **Correzioni:** la sfera Genkidama è spenta nel Negozio di Zeno (`SpiritWeapon.update`); ostacoli e ciò che compare nello stage non si sovrappongono (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, zone di trappole/pozze).
 
@@ -720,6 +742,7 @@ node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, 
 node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
 node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
 node tests/v53.js             # v53 gameplay: bilanciamento, TAB, armi per partita, sacchi di zenny, Senzu, totem, Tamagami, acqua e lava (puppeteer)
+node tests/v109.js            # v109 Quantità al level-up, negozio (interruttori, Maiusc), forzieri e cimeli, trappole, coda dei messaggi, statistiche (puppeteer)
 node tests/v56.js             # v56 ragni, ombre degli uccelli, numeri di danno arcade e critici rossi (puppeteer)
 node tests/v54.js             # v54 cimeli e compagni: Perfezione, forziere a 4, salta-inferiori, compagno (XP + onda d'urto), gacha, scambio, aura (puppeteer)
 node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)

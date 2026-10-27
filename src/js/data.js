@@ -39,6 +39,10 @@ const WEAPONS={
   dyn:{n:T('Calcio Dinamite','Dynamite Kick'),d:T('Esplosione ravvicinata che spinge via.','Close blast that knocks back.'),evo:T('Calcio Dinamite Super','Super Dynamite Kick'),evoD:T('Doppia esplosione.','Double blast.'),evo2:T('Calcio Campione','Champion Kick'),evo2D:T('Esplosioni più ampie e potenti.','Wider, stronger blasts.'),k:'蹴',c:'#ffe24d',lv50:1}
 };
 const MAX_WEAPONS=5;
+const SHORE_V=34;
+const TR_SHOCK_CD=16,TR_SLOW_CD=40,TR_BARRIER_CD=30;   /* v109: the timed trinket effects come half as often (shockwave 8 -> 16 s, slow time 20 -> 40 s, barrier 15 -> 30 s) */
+const BANNER_MIN=2,BANNER_FADE=.45;   /* v109: a message banner stays at least 2 s before the next one, then fades out */
+const TRAP_P=.30,TRAP_E=.40,TRAP_B=.10;   /* v109: a floor trap takes 30% of your max HP, 40% of an enemy's, 10% of a boss's (once per activation) */   /* px/s: a chest or pick-up that fell on the water floats to the shore at least this fast */
 /* seconds a kind of floor item stays away after one appeared (rarity scale: coin common, heal/xp uncommon, haste/dmg rare, magnet/luck very rare, capsule epic) */
 const LOOT_CD={heal:14,xp:25,haste:50,dmg:50,magnet:85,luck:100,capsule:140};
 const WMAX=5;    /* every tier (base, evolution 1, evolution 2) has 5 levels; the evolution needs the current tier at level 5 */
@@ -57,14 +61,16 @@ const PASS={
   haste:{n:T('Camera Gravitazionale','Gravity Chamber'),d:T('-5% ricarica.','-5% cooldown.'),k:'修',c:'#c9a0ff'},
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
-  growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'}
+  growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'},
+  proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più.','+1 amount: every weapon fires one more projectile.'),k:'弾',c:'#ff7ac8',max:2}
 };
+const passMax=id=>(PASS[id]&&PASS[id].max)||5;   /* max level of a secondary upgrade (Quantità stops at 2) */
 
 /* Evolution recipes: a weapon at max level + the listed passive (any level) -> next evolution (opened from a chest).
    [first evolution passive, second evolution passive] */
 const EVO_RECIPE={
   ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','might'],flare:['magnet','growth'],
-  slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['haste','might'],breaker:['armor','might'],
+  slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['proj','might'],breaker:['armor','might'],
   spiral:['speed','regen'],boomer:['magnet','haste'],hellzone:['regen','armor'],chrono:['haste','growth'],shock:['armor','vit'],hakai:['growth','might'],
   chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen']
 };
@@ -72,14 +78,15 @@ const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
 /* ---------- Transformations: a line of up to 8 steps per character (thresholds by step number) ---------- */
 const FORM_TIERS=[
-  {lvl:14, might:.22,spd:.14,cd:0,  armor:0,regen:0,  dodge:0,  taken:.10},
-  {lvl:24, might:.40,spd:.10,cd:.04,armor:0,regen:.3, dodge:0,  taken:0},
-  {lvl:36, might:.58,spd:.12,cd:.06,armor:1,regen:.4, dodge:0,  taken:0},
-  {lvl:50, might:.80,spd:-.02,cd:.08,armor:2,regen:.5,dodge:0,  taken:0},
-  {lvl:66, might:.95,spd:.18,cd:.12,armor:3,regen:1.0,dodge:.04,taken:0},
-  {lvl:84, might:1.15,spd:.22,cd:.16,armor:4,regen:1.3,dodge:.08,taken:0},
-  {lvl:104,might:1.4,spd:.30,cd:.20,armor:5,regen:1.8,dodge:.15,taken:0},
-  {lvl:128,might:1.7,spd:.38,cd:.25,armor:6,regen:2.5,dodge:.30,taken:0}
+  /* v109: levels 5 / 10 / 20 / 30 / 50 / 70 / 90 / 120 for every character (they were 14 / 24 / 36 / 50 / 66 / 84 / 104 / 128); the first form's bonuses +15% (damage .22 -> .253, speed .14 -> .161) */
+  {lvl:5,  might:.253,spd:.161,cd:0,armor:0,regen:0,  dodge:0,  taken:.10},
+  {lvl:10, might:.40,spd:.10,cd:.04,armor:0,regen:.3, dodge:0,  taken:0},
+  {lvl:20, might:.58,spd:.12,cd:.06,armor:1,regen:.4, dodge:0,  taken:0},
+  {lvl:30, might:.80,spd:-.02,cd:.08,armor:2,regen:.5,dodge:0,  taken:0},
+  {lvl:50, might:.95,spd:.18,cd:.12,armor:3,regen:1.0,dodge:.04,taken:0},
+  {lvl:70, might:1.15,spd:.22,cd:.16,armor:4,regen:1.3,dodge:.08,taken:0},
+  {lvl:90, might:1.4,spd:.30,cd:.20,armor:5,regen:1.8,dodge:.15,taken:0},
+  {lvl:120,might:1.7,spd:.38,cd:.25,armor:6,regen:2.5,dodge:.30,taken:0}
 ];
 const F=(it,en,aura,hair,eye,x)=>({n:T(it,en),aura,hair:hair||null,eye:eye||null,x:x||null});
 function cfgForForm(C,idx){
@@ -593,8 +600,11 @@ const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0f
 /* Loot chests (dropped by bosses and elites; also the timed supply chest). Five rarities, same names and colours as the trinkets: CHEST_W = base spawn weights (40/39/15/5/1 %), Luck pushes the odds toward the rare ones
    (Game.chestRarWeights). CHEST_RAR = what is inside, always the same: w = weapon levels (+1; a ready evolution takes its place; with nothing left to level, one more trinket), t = trinkets (2 / 3 / 4 / 5 from Rare to Mythic; Common has none),
    g = how many of them are guaranteed to be of the chest's own rarity (a Mythic chest always holds a Mythic trinket...), pb = Mythic only: the odds of a high perfection roll on a trinket of that rarity are multiplied by it (+20%). */
-const CHEST_W=[40,39,15,5,1];
-const CHEST_RAR=[{w:1,t:0,g:0},{w:1,t:2,g:1},{w:1,t:3,g:1},{w:1,t:4,g:1},{w:1,t:5,g:1,pb:1.2}];
+/* v109: Epic and up are much rarer (15/5/1 % -> 6/1.6/0.4 %); Luck still pushes the odds up (Game.chestRarWeights).
+   v109: a chest gives character upgrades (t = weapon / upgrade levels besides the weapon slot); trinkets only come out once everything is maxed:
+   tn = trinkets then (1 / 2 / 3 / 3 / 3), the first g of the chest's own rarity, pf = their perfection starts from this value (the roll is squeezed into pf..100) */
+const CHEST_W=[52,40,6,1.6,.4];
+const CHEST_RAR=[{w:1,t:0,tn:1,g:0,pf:0},{w:1,t:2,tn:2,g:1,pf:0},{w:1,t:3,tn:3,g:1,pf:35},{w:1,t:4,tn:3,g:1,pf:50},{w:1,t:5,tn:3,g:1,pf:75,pb:1.2}];
 const TRINKETS=[
  {id:'scouter',r:0,k:'眼',n:T('Scouter Rotto','Broken Scouter'),d:T('+8% probabilità di critico.','+8% crit chance.'),m:{crit:.08}},
  {id:'senzubag',r:0,k:'袋',n:T('Sacchetto di Senzu','Senzu Pouch'),d:T('+0,6 salute al secondo.','+0.6 HP/s.'),m:{regen:.6}},
@@ -610,12 +620,12 @@ const TRINKETS=[
  {id:'kaioh',r:2,k:'心',n:T('Cuore di Kaioh','Kaioh\'s Heart'),d:T('Ogni uccisione cura 0,4 salute.','Each kill heals 0.4 HP.'),sp:'vamp'},
  {id:'halo',r:2,k:'輪',n:T('Aureola dell\'Angelo','Angel Halo'),d:T('Rinasci una volta con il 50% di salute.','Revive once with 50% HP.'),sp:'revive'},
  {id:'timeroom',r:2,k:'時',n:T('Orologio dello Spirito','Spirit Room Clock'),d:T('-10% ricarica, +4% danno.','-10% cooldown, +4% damage.'),m:{cd:.10,might:.04}},
- {id:'dball4',r:2,k:'星',n:T('Sfera a 4 Stelle','Four-Star Ball'),d:T('Ogni 8s un\'onda d\'urto colpisce i vicini.','Every 8s a shockwave hits nearby foes.'),sp:'shock'},
+ {id:'dball4',r:2,k:'星',n:T('Sfera a 4 Stelle','Four-Star Ball'),d:T('Ogni 16s un\'onda d\'urto colpisce i vicini.','Every 16s a shockwave hits nearby foes.'),sp:'shock'},
  {id:'crystal',r:2,k:'鏡',n:T('Cristallo Divino','Divine Crystal'),d:T('+6% critico. I critici esplodono.','+6% crit. Crits explode.'),m:{crit:.06},sp:'critboom',x:T('I critici esplodono.','Crits explode.')},
  {id:'armor',r:3,k:'盾',n:T('Armatura Saiyan Reale','Royal Saiyan Armor'),d:T('+3 armatura, +30% salute.','+3 armor, +30% HP.'),m:{armor:3,hpPct:.30}},
- {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 20s i nemici rallentano per 4s.','Every 20s enemies slow for 4s.'),sp:'slowtime'},
+ {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 40s i nemici rallentano per 4s.','Every 40s enemies slow for 4s.'),sp:'slowtime'},
  {id:'dragonheart',r:3,k:'龍',n:T('Cuore del Drago','Dragon Heart'),d:T('+12% danno, +8% esperienza, +25% zenny.','+12% damage, +8% XP, +25% zenny.'),m:{might:.12,xp:.08,gold:.25}},
- {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 15s.','A barrier blocks one hit every 15s.'),sp:'barrier'},
+ {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 30s.','A barrier blocks one hit every 30s.'),sp:'barrier'},
  {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.')},
  /* more trinkets with plain stats, so the gacha pool is wider: they exist at every rarity (common .. mythic) like the other stat trinkets */
  {id:'shell',r:0,k:'亀',n:T('Guscio di Muten Roshi','Master Roshi\'s Shell'),d:T('',''),m:{armor:.7,regen:.3}},
@@ -645,6 +655,8 @@ function rollPf(luck,boost){   /* boost: multiplies the odds of every 'X or more
   for(let i=1;i<C.length;i++)if(u>=C[i][1]){const a=C[i-1],b=C[i],f=(Math.log(a[1])-Math.log(u))/(Math.log(a[1])-Math.log(b[1]));x=a[0]+(b[0]-a[0])*f;break;}
   return Math.max(0,Math.min(100,Math.round(x*(1+L*.25))));}
 const hasPf=t=>!!(t&&t.m);
+const pfFloor=(p,min)=>min>0?Math.round(min+(100-min)*p/100):p;   /* a perfection roll squeezed into min..100 (chests from Epic up) */
+const TRIN_RUN_CAP=Infinity;   /* v109: no limit to the trinkets carried during a run, all of them count (the bag slots before a run stay 1-3) */
 const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
 /* Quantità (key proj): +1 projectile for every weapon. Only Legendary and Mythic trinkets carry it: Legendary 2 (3 with a perfect 100 roll), Mythic 3 (4 from a 50 roll, 5 with a perfect 100 roll) */
 const trinProj=(r,pf)=>{const p=pf==null?PF_NOM:pf;return r<3?0:r===3?2+(p>=100?1:0):3+(p>=50?1:0)+(p>=100?1:0);};

@@ -339,17 +339,29 @@ class UI{
         h('div',{class:'detail'},h('div',{class:'row'},big),h('h3',null,isSeen?this.tr(def.n):'???'),info)));
   }
   screen_shop(){
-    const d=this.save;
+    const d=this.save;d.shopOff=d.shopOff||{};
+    const owned=SHOP.filter(it=>(d.shop[it.id]||0)>0),allOff=owned.length>0&&owned.every(it=>d.shopOff[it.id]);
+    /* how many levels Shift + click would buy right now, and what they cost */
+    const maxBuy=it=>{let lv=d.shop[it.id]||0,z=d.zenny,n=0,c=0;while(lv<it.max){const k=this.testAll()?0:shopCost(it,lv);if(k>z)break;z-=k;c+=k;lv++;n++;}return{n,c};};
+    const buy=(it,all)=>{let n=0;while(this.app.progress.buy(it.id)){n++;if(!all)break;}
+      if(n){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el)el.closest('.card').classList.add('bought');}};
+    const toggle=id=>{if(d.shopOff[id])delete d.shopOff[id];else d.shopOff[id]=1;this.app.save.write();this.sfx('uiTab');this.rebuild(true);};
     const cards=SHOP.map(it=>{
-      const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost);
-      return h('div',{class:'card shopi',style:'--c:'+it.c},
+      const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost),off=lv>0&&!!d.shopOff[it.id],mb=maxed?null:maxBuy(it);
+      return h('div',{class:'card shopi'+(off?' shoff':''),style:'--c:'+it.c},
         SHOP_IMG[it.id]?imgGlyph(SHOP_IMG[it.id],it.c):glyph(it.k,it.c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+it.c},this.tr(it.n)),h('div',{class:'cd'},this.tr(it.d)),
           h('div',{class:'pips'},Array.from({length:it.max},(_,i)=>h('i',{class:i<lv?'on':''}))),
           it.id==='ban'&&lv>0?h('button',{class:'btn small primary banman','data-fid':'shbanm',onclick:()=>{this.sfx();this.push('bans');}},this.t('banManage',{a:d.banned.length,b:lv})):null),
-        h('button',{class:'btn small'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,onclick:()=>{if(this.app.progress.buy(it.id)){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el&&el.parentElement)el.parentElement.classList.add('bought');}}},
-          maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost))));
+        h('div',{class:'shbtns'},
+          lv>0?h('button',{class:'btn small shtog tipabove'+(off?' alt':''),'data-fid':'sht'+it.id,'data-tip':this.t(off?'shopTogOn':'shopTogOff'),'aria-pressed':off?'false':'true',onclick:()=>toggle(it.id)},this.t(off?'shopOffL':'shopOnL')):null,
+          h('button',{class:'btn small tipabove'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,
+            'data-tip':maxed?null:this.t('shopShiftTip',{n:mb.n,z:mb.c}),onclick:e=>buy(it,!!(e&&e.shiftKey))},
+            maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost)))));
     });
     return h('div',null,this.header('shopTitle'),
+      h('div',{class:'row shoptop'},h('button',{class:'btn small'+(allOff?' primary':' alt'),'data-fid':'shalloff',disabled:!owned.length,
+        onclick:()=>{if(allOff)d.shopOff={};else for(const it of owned)d.shopOff[it.id]=1;this.app.save.write();this.sfx('uiTab');this.rebuild(true);}},this.t(allOff?'shopAllOn':'shopAllOff')),
+        h('span',{class:'sub'},this.t('shopShiftHint'))),
       h('div',{class:'grid shop'},cards),
       h('div',{class:'row'},this.btn('refund',()=>{const v=this.app.progress.refundAll();this.toast({type:'info',msg:this.t('refundDone',{n:v})});this.rebuild();},'small alt')));
   }

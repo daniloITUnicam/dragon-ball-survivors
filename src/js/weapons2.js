@@ -122,8 +122,8 @@ const HZ_FORM=1.5,HZ_HOLD=.45,HZ_CONV=.3,HZ_END=HZ_FORM+HZ_HOLD+HZ_CONV;
 class HellzoneWeapon extends NW{
   constructor(g,id){super(g,id);this.gs=[];}
   get e2n(){return this.evo>=2?8:0;}
-  get targets(){return 1+Math.min(2,this.evo|0);}
-  spheres(){return this.st.n[this.L]+this.e2n+Math.max(0,Math.round(this.g.S.proj||0));}
+  get targets(){return 1+Math.min(2,this.evo|0)+this.xn;}   /* Quantità: +1 enemy surrounded per point */
+  spheres(){return this.st.n[this.L]+this.e2n;}
   /* the densest knots of enemies on screen (a boss always counts as one), kept apart from each other */
   pickTargets(R){
     const g=this.g,live=g.en.filter(e=>this.inView(e,430));

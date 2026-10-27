@@ -233,7 +233,7 @@ Object.assign(Game.prototype,{
         e.oa=(e.oa||0)+dt*2.8;e.ocd=(e.ocd||0)-dt;
         if(dist<e.r+60&&e.ocd<=0){
           for(let k=0;k<(s.n||3);k++){const a=e.oa+k/(s.n||3)*TAU,ox=e.x+Math.cos(a)*(e.r+24),oy=e.y-e.r*.8+Math.sin(a)*(e.r+16)*.8;
-            if(Math.hypot(this.p.x-ox,this.p.y-14-oy)<14){e.ocd=.7;this.hurt(e.dmg*.55,{bs:1});break;}}
+            if(Math.hypot(this.p.x-ox,this.p.y-14-oy)<14){e.ocd=.7;this.hurt(e.dmg*.55,{bs:1,o:e});break;}}
         }
       }
     }

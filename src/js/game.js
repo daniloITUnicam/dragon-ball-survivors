@@ -3,7 +3,7 @@
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
 const FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
-const SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
+const POST_T=30,SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
@@ -41,7 +41,7 @@ class Game{
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
-    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.save.shop.rr||0),sk:Math.min(5,this.save.shop.sk||0),bn:Math.min(5,this.save.shop.bn||0)};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
+    this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.shopLv('rr')),sk:Math.min(5,this.shopLv('sk')),bn:Math.min(5,this.shopLv('bn'))};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
@@ -53,17 +53,17 @@ class Game{
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
-    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.miniPlan=this.planMinis();this.scanK=1+.05*(this.save.shop.scan||0);   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
+    this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.miniPlan=this.planMinis();this.scanK=1+.05*this.shopLv('scan');   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
     this.ballEvery=clamp(this.dur*.28,100,270)/this.scanK;this.ballAt=this.ballEvery*.75;
     /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 3 are owned), later and farther away, and a Tamagami statue guards it */
     this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<Math.min(1,SUP_CHANCE*this.scanK)?{at:this.dur*rnd(.28,.55),done:false}:null;
-    this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;
-    this.slowT=0;this.slowCd=12;this.shockCd=8;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
+    this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;this.post=0;
+    this.slowT=0;this.slowCd=TR_SLOW_CD*.6;this.shockCd=TR_SHOCK_CD;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
-    this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
+    this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.takenBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     for(const id of this.C.start.slice(0,this.maxW))this.addWeapon(id);
-    this.revives=(this.save.shop.revive||0);
+    this.revives=this.shopLv('revive');
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
     {const T0=[],R0={},P0={},S0={};   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
@@ -79,8 +79,30 @@ class Game{
   get form(){return this.formIdx>=0?Object.assign({idx:this.formIdx},FORM_TIERS[this.formIdx]):null;}
   get formEntry(){return this.formIdx>=0?LINES[this.C.line||'saiyan'][this.formIdx]:null;}
   has(sp){return this.trinkets.some(id=>{const t=TRINKETS.find(x=>x.id===id);return t&&t.sp===sp;});}
-  say(txt,col,dur,sub){this.banner={txt,col:col||'#ffd23f',t:0,dur:dur||2.6,sub:sub||null};}   /* sub: an optional smaller second line */
-  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
+  /* v109: the banner never covers another one: a new message waits in a queue (bq) until the one on screen has been shown BANNER_MIN s, which then fades out in BANNER_FADE s;
+     the same text already on screen or waiting is not repeated. Every message also goes into the run's event history (evLog, pause screen) */
+  say(txt,col,dur,sub){
+    const b={txt,col:col||'#ffd23f',t:0,dur:Math.max(BANNER_MIN+BANNER_FADE,dur||2.6),sub:sub||null},q=this.bq||(this.bq=[]),cur=this.banner;
+    this.logEv(txt,b.col,sub);
+    if(cur&&cur.txt===txt&&cur.t<cur.dur-BANNER_FADE)return;
+    if(q.some(o=>o.txt===txt))return;
+    if(cur&&cur.t<cur.dur){q.push(b);if(q.length>8)q.shift();return;}
+    this.banner=b;
+  }
+  tickBanner(dt){
+    const b=this.banner,q=this.bq||(this.bq=[]);
+    if(!b){if(q.length)this.banner=q.shift();return;}
+    b.t+=dt;
+    if(q.length&&b.t>=BANNER_MIN&&b.dur-b.t>BANNER_FADE)b.dur=b.t+BANNER_FADE;   /* someone is waiting: start fading now */
+    if(b.t>=b.dur)this.banner=q.shift()||null;
+  }
+  /* event history: {t: run clock, txt, col, sub}; a repeat of the last line within 3 s is merged (count n) */
+  logEv(txt,col,sub){
+    if(txt==null||txt==='')return;const L=this.evLog||(this.evLog=[]),last=L[L.length-1],t=this.t||0;txt=String(txt);
+    if(last&&last.txt===txt&&t-last.t<3){last.n=(last.n||1)+1;return;}
+    L.push({t,txt,col:col||'#ffffff',sub:sub||null});if(L.length>400)L.splice(0,L.length-400);
+  }
+  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(!dm&&c!==4&&typeof s==='string')this.logEv(s,c===1?'#ffd23f':c===2?'#ffb0b0':c===3?'#9fe8ff':'#ffffff');if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
 
   /* ---------- stats ---------- */
   tMods(){
@@ -89,7 +111,7 @@ class Game{
     return m;
   }
   recalc(){
-    const C=this.C,P=this.pass,sl=id=>this.save.shop[id]||0,tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
+    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
     const S={};
@@ -104,7 +126,7 @@ class Game{
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
-    S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(tm.proj||0);   /* forms + shop "Quantità" + trinkets */
+    S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
     S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
@@ -121,6 +143,43 @@ class Game{
     const e=this.formEntry;this.formColor=e?e.aura:null;
     const cfg=cfgForForm(C,this.formIdx);
     this.pc=cfg;this.pcKey=C.id+':'+this.formIdx;
+  }
+
+  /* v109: where each stat of the pause screen comes from (its tooltip): rows {l: label (T or text), x: suffix, v: value text}; the last row ("other") closes the gap
+     to the real value - abilities, Kaioken, Berserk, totems, the swap, temporary effects - so the rows always add up to what the stat shows */
+  statBreak(){
+    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,S=this.S,tf=this.totemFx||{},sz=this.szStat||{},tb={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
+    for(const b of this.tempBuffs)tb[b.k]+=b.v;
+    const shopN=id=>{const it=SHOP.find(x=>x.id===id);return it?it.n:T(id,id);},fe=this.formEntry;
+    const OTH=T('Altro (abilità, Kaioken, totem, effetti attivi)','Other (abilities, Kaioken, totems, active effects)');
+    const pc=v=>(v>=0?'+':'−')+(Math.round(Math.abs(v)*1000)/10).toString().replace('.',',')+'%',nm=(v,d)=>(+v.toFixed(d==null?2:d)).toString().replace('.',','),ad=(v,d)=>(v>=0?'+':'−')+nm(Math.abs(v),d),mx=v=>'×'+nm(v,2);
+    const out={};
+    /* additive stat: [label, amount] parts, residual -> other */
+    const addS=(key,fin,parts,fmt)=>{const rows=[];let sum=0;for(const [l,v,x] of parts){if(Math.abs(v)<1e-6)continue;sum+=v;rows.push({l,x:x||'',v:rows.length?fmt(v,true):fmt(v,false)});}
+      const r=fin-sum;if(Math.abs(r)>1e-3*Math.max(1,Math.abs(fin)))rows.push({l:OTH,x:'',v:fmt(r,true),o:1});out[key]=rows;};
+    /* multiplicative stat: base, then factors; residual factor -> other */
+    const mulS=(key,fin,base,bl,parts)=>{const rows=[{l:bl,x:'',v:nm(base)}];let pr=base;for(const [l,k,x] of parts){if(Math.abs(k-1)<1e-6)continue;pr*=k;rows.push({l,x:x||'',v:mx(k)+' ('+pc(k-1)+')'});}
+      const r=pr?fin/pr:1;if(Math.abs(r-1)>.004)rows.push({l:OTH,x:'',v:mx(r)+' ('+pc(r-1)+')',o:1});out[key]=rows;};
+    const FORM=fe?fe.n:T('Trasformazione','Form'),TRIN=T('Cimeli','Trinkets'),SZ=T('Fagioli Senzu mangiati','Senzu beans eaten'),TMP=T('Potenziamenti a tempo','Timed boosts'),BASE=T('Base del personaggio','Character base');
+    const lvP=id=>' Lv '+(P[id]||0),lvS=id=>' Lv '+sl(id);
+    /* health */
+    {const add=C.hp+20*(P.vit||0)+20*sl('hp')+(sz.hp||0)+tb.hp,k1=1+tm.hpPct+(tf.hp||0),k2=1+this.swap.hp;
+     addS('hp',this.p.maxHp,[[BASE,C.hp],[PASS.vit.n,20*(P.vit||0),lvP('vit')],[shopN('hp'),20*sl('hp'),lvS('hp')],[SZ,sz.hp||0],[TMP,tb.hp],[TRIN,add*tm.hpPct],[T('Totem','Totem'),add*(tf.hp||0)],[T('Scambio','Swap'),add*k1*(k2-1)]],(v,s)=>(s?ad(v,0):nm(v,0)));}
+    mulS('might',S.might,BASE_POWER*C.might,BASE,[[PASS.might.n,1+.10*(P.might||0),lvP('might')],[T('Crescita per livello','Level growth'),1+(C.lvMight||0)*(this.lvl-1)],[shopN('might'),1+.06*sl('might'),lvS('might')],
+      [FORM,1+(fm?fm.might:0)],[TRIN,1+tm.might],[SZ,1+(sz.might||0)+tb.might],[T('Potenziamento Danno','Damage power-up'),this.buffs.dmg>0?1.15:1]]);
+    mulS('spd',S.spd,C.spd,BASE,[[PASS.speed.n,1+.06*(P.speed||0),lvP('speed')],[shopN('speed'),1+.04*sl('speed'),lvS('speed')],[FORM,1+(fm?fm.spd:0)],[TRIN,1+tm.spd],[SZ,1+(sz.spd||0)+tb.spd]]);
+    addS('cd',S.cd,[[BASE,C.cd||1],[PASS.haste.n,-.05*(P.haste||0),lvP('haste')],[shopN('cd'),-.05*sl('cd'),lvS('cd')],[FORM,-(fm?fm.cd:0)],[TRIN,-tm.cd],[SZ,-((sz.cd||0)+tb.cd)],[T('Fuoco rapido','Rapid fire'),this.buffs.haste>0?-.12:0]],(v,s)=>s?ad(v,2):'x'+nm(v,2));
+    addS('armor',S.armor,[[BASE,C.armor||0],[PASS.armor.n,P.armor||0,lvP('armor')],[shopN('armor'),2*sl('armor'),lvS('armor')],[FORM,fm?fm.armor:0],[TRIN,tm.armor]],(v,s)=>s?ad(v,1):nm(v,1));
+    addS('regen',S.regen,[[BASE,C.regen],[PASS.regen.n,.5*(P.regen||0),lvP('regen')],[shopN('regen'),.5*sl('regen'),lvS('regen')],[FORM,fm?fm.regen:0],[TRIN,tm.regen],[SZ,(sz.regen||0)+tb.regen],[T('Totem','Totem'),tf.regen||0]],(v,s)=>(s?ad(v,2):nm(v,2))+'/s');
+    addS('crit',S.crit,[[T('Base','Base'),.05],[shopN('crit'),.04*sl('crit'),lvS('crit')],[TRIN,tm.crit]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
+    addS('dodge',S.dodge,[[FORM,fm?fm.dodge:0],[TRIN,tm.dodge]],(v,s)=>s?pc(v):Math.round(v*1000)/10+'%');
+    addS('area',S.area,[[T('Base','Base'),1],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
+    addS('luck',S.luck,[[shopN('luck'),.05*sl('luck'),lvS('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.03:0],[T('Compagno','Companion'),this.petLuckT>0?.05:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
+    mulS('xp',S.xp,C.xpm/this.TS,BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
+    addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
+    mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[T('Totem','Totem'),1+(tf.magnet||0)]]);
+    addS('proj',S.proj,[[FORM,fm?(fm.idx>=6?2:fm.idx>=3?1:0):0],[shopN('proj'),sl('proj'),lvS('proj')],[PASS.proj.n,P.proj||0,lvP('proj')],[TRIN,tm.proj||0]],(v,s)=>s?ad(v,0):nm(v,0));
+    return out;
   }
 
   /* ---------- weapons / upgrades ---------- */
@@ -144,12 +203,12 @@ class Game{
     const pool=[];
     for(const [id,w] of this.weapons){if(w.lv<WMAX)pool.push({type:'w',id,lv:w.lv});else if(w.canXl())pool.push({type:'w',id,lv:w.lv,xl:w.xl});}   /* Endless: a finished weapon keeps levelling (xl) */
     const slots=this.passCount();
-    for(const id in PASS){const lv=this.pass[id]||0;if(lv<5&&(lv>0||slots<MAX_PASSIVES))pool.push({type:'p',id,lv});}
+    for(const id in PASS){const lv=this.pass[id]||0;if(lv<passMax(id)&&(lv>0||slots<MAX_PASSIVES))pool.push({type:'p',id,lv});}
     return this.banRun&&this.banRun.size?pool.filter(o=>!this.banRun.has(this.optKey(o))):pool;
   }
   levelOptions(){
     const pool=this.upgradePool();
-    if(this.weapons.size<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!this.save.banned.includes(id)&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
+    if(this.weapons.size<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!(this.shopLv('ban')>0&&this.save.banned.includes(id))&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
     const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
@@ -183,7 +242,7 @@ class Game{
   }
   applyOption(o){
     if(o.type==='w'){const w=this.addWeapon(o.id);if(o.lv>0)w.upgrade();}
-    else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<5&&(cur>0||this.passCount()<MAX_PASSIVES))this.pass[o.id]=cur+1;else this.heal(this.p.maxHp*.2);}
+    else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<passMax(o.id)&&(cur>0||this.passCount()<MAX_PASSIVES))this.pass[o.id]=cur+1;else this.heal(this.p.maxHp*.2);}
     else if(o.type==='h'){if(this.senzu<SENZU_MAX){this.senzu++;this.floatText(this.p.x,this.p.y-48,this.env.tr(T('Senzu in borsa ','Senzu bagged '))+this.senzu+'/'+SENZU_MAX,2);}else this.eatSenzu();}
     else if(o.type==='z')this.addZenny(o.v);
     this.recalc();
@@ -218,7 +277,10 @@ class Game{
 
   /* ---------- trinkets ---------- */
   /* one trinket can be carried; the shop's "Trinket slot" upgrade adds up to two more. When every slot is taken a new one opens a comparison window (replace one / keep them) */
-  get tcap(){return Math.min(3,1+(this.save.shop.tslot||0));}
+  get tcap(){return Math.min(3,1+this.shopLv('tslot'));}   /* trinkets equipped from the bag before the run */
+  get runCap(){return TRIN_RUN_CAP;}   /* trinkets carried during the run (v109: no limit) */
+  /* shop level used by the run: an upgrade switched off in the shop (save.shopOff) counts as level 0 */
+  shopLv(id){const d=this.save;return d.shopOff&&d.shopOff[id]?0:(d.shop[id]||0);}
   trP(id){const p=this.tPf[id];return p!=null?p:PF_NOM;}   /* perfection (0-100) of a carried trinket */
   get perfAura(){return this.trinkets.some(id=>hasPf(TRINKETS.find(x=>x.id===id))&&this.trP(id)>=100);}   /* a carried trinket at 100% perfection: Ultra Instinct aura */
   trR(id){const r=this.tRar[id];if(r!=null)return r;const t=TRINKETS.find(x=>x.id===id);return t?t.r:0;}
@@ -262,7 +324,7 @@ class Game{
     let at=-1;
     if(replaceId&&this.trinkets.includes(replaceId))at=this.dropTrinket(replaceId);
     else if(this.trinkets.includes(id))at=this.dropTrinket(id);
-    if(this.trinkets.length>=this.tcap)at=this.dropTrinket(this.weakestTrinket());
+    if(this.trinkets.length>=this.runCap)at=this.dropTrinket(this.weakestTrinket());
     if(at<0||at>this.trinkets.length)at=this.trinkets.length;
     this.trinkets.splice(at,0,id);this.tRar[id]=rar;this.tPf[id]=pf!=null?pf:rollPf(this.S.luck);this.tSrc[id]='run';
     this.save.trin[id]=1;this.run.tpicks=(this.run.tpicks||0)+1;if(rar>=3)this.run.legendary++;if(rar>=4)this.run.mythic=(this.run.mythic||0)+1;
@@ -273,7 +335,7 @@ class Game{
      the comparison window only opens for one that beats at least one of your trinkets */
   trinScore(id,rar,pf){const t=TRINKETS.find(x=>x.id===id);return rar*1000+(hasPf(t)?(pf!=null?pf:PF_NOM):PF_NOM);}
   autoRefuse(id,rar,pf,buy){
-    if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.tcap)return false;
+    if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.runCap)return false;
     return this.trinScore(id,rar,pf)<Math.min(...this.trinkets.map(x=>this.trinScore(x,this.trR(x),this.trP(x))));
   }
   addTrinket(id,rar,cb){
@@ -286,14 +348,14 @@ class Game{
       if(!buy)this.sellTrinket(id,rar);
       no();return false;
     }
-    if(this.trinkets.length<this.tcap){const ok=this.equipTrinket(id,rar,null,pf);if(ok)yes();return ok;}
+    if(this.trinkets.length<this.runCap){const ok=this.equipTrinket(id,rar,null,pf);if(ok)yes();return ok;}
     if(this.autoRefuse(id,rar,pf,buy)){this.sellTrinket(id,rar,'auto');this.run.trefused=(this.run.trefused||0)+1;no();return false;}
     this.tq.push({id,rar,pf,onYes:cb&&cb.onYes,onNo:cb&&cb.onNo,buy});this.drainTQ();return false;
   }
   drainTQ(){
     if(this.modal||!this.tq.length||this.ended)return;
     const n=this.tq.shift();
-    if(this.trinkets.includes(n.id)||this.trinkets.length<this.tcap||this.autoRefuse(n.id,n.rar,n.pf,n.buy)){   /* the situation changed while it was waiting: decide again */
+    if(this.trinkets.includes(n.id)||this.trinkets.length<this.runCap||this.autoRefuse(n.id,n.rar,n.pf,n.buy)){   /* the situation changed while it was waiting: decide again */
       this.addTrinket(n.id,n.rar,{pf:n.pf,onYes:n.onYes,onNo:n.onNo,buy:n.buy});return this.drainTQ();
     }
     this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),pf:this.trP(id),src:this.tSrc[id]})),nw:{id:n.id,rar:n.rar,pf:n.pf},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
@@ -318,24 +380,42 @@ class Game{
   /* loot chests: the rarity is rolled when the chest drops (Luck shifts the odds toward the rare ones), and decides how much is inside (CHEST_RAR in data.js) */
   chestRarWeights(){const L=this.S.luck;return[CHEST_W[0]*Math.max(.3,1-L*.8),CHEST_W[1]*(1+L*.5),CHEST_W[2]*(1+L*1.2),CHEST_W[3]*(1+L*2.4),CHEST_W[4]*(1+L*4)];}
   rollChestRar(){const w=this.chestRarWeights();let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;}
+  /* n character upgrades (weapon levels and secondary upgrades, also new ones while a slot is free) for a chest: the same one can come up more than once, never past its max.
+     Weapons first (60%), owned upgrades before new ones, and an upgrade a maxed weapon waits for jumps the queue. */
+  chestUps(n,evoId){   /* evoId: the weapon this chest evolves - it restarts at Lv 1 of its new tier, so its levels count again */
+    const out=[],add={},ban=k=>this.banRun&&this.banRun.has(k),need=this.neededPass();let newP=0;
+    for(let i=0;i<n;i++){
+      const ws=[],ps=[];
+      for(const [id,w] of this.weapons){const lv=(id===evoId?1:w.lv)+(add['w:'+id]||0);if(lv<WMAX&&!ban('w:'+id))ws.push({type:'w',id,lv});}
+      for(const id in PASS){const lv=(this.pass[id]||0)+(add['p:'+id]||0);if(lv<passMax(id)&&(lv>0||this.passCount()+newP<MAX_PASSIVES)&&!ban('p:'+id))ps.push({type:'p',id,lv});}
+      if(!ws.length&&!ps.length)break;
+      const nd=ps.filter(o=>need.includes(o.id)&&!(add['p:'+o.id]>0)),own=ps.filter(o=>o.lv>0);
+      const o=nd.length?pick(nd):ws.length&&(!ps.length||Math.random()<.6)?pick(ws):pick(own.length&&Math.random()<.7?own:ps);
+      const k=o.type+':'+o.id;if(o.type==='p'&&o.lv===0&&!(this.pass[o.id]>0))newP++;add[k]=(add[k]||0)+1;out.push(o);
+    }
+    return out;
+  }
+  /* nothing left to give a chest: no evolution ready, no weapon level, no secondary upgrade (Endless levels past 5 do not count) */
+  allMaxed(){return ![...this.weapons.values()].some(w=>this.evoReady(w))&&!this.chestUps(1).length;}
   chestRewards(isFinal,boss,elite,rar){
     const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sd))}),used=[];
-    const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:r,pf:rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1)};};   /* the Mythic chest: a better perfection roll for its Mythic trinkets */
-    /* the weapon: a ready evolution, otherwise +1 level to one of the weapons you own; once everything is maxed, one more trinket takes its place */
+    const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:r,pf:pfFloor(rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1),cf.pf)};};   /* Epic+: the perfection starts from cf.pf; Mythic: a better roll for its Mythic trinkets */
+    /* the weapon slot: a ready evolution, otherwise a character upgrade; then cf.t more character upgrades */
     const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
-    if(elig.length)R.push({k:'evo',id:pick(elig).id});
-    else{
-      const ws=shuffle(this.upgradePool().filter(o=>o.type==='w'));
-      if(ws.length)R.push({k:'up',o:ws[0]});
-      else{const id=this.rollTrinket(used);R.push(id?tr(id,this.rarOf(id)):zen(40));}
+    const ev=elig.length?pick(elig).id:null;if(ev)R.push({k:'evo',id:ev});
+    const ups=this.chestUps(cf.t+(ev?0:1),ev);
+    for(const o of ups)R.push({k:'up',o});
+    /* trinkets only once everything is maxed: what the upgrades could not fill (all of it when nothing was left), at most cf.tn, the first ones of the chest's own rarity */
+    const slots=cf.t+1-R.length;
+    if(slots>0){
+      const n=Math.min(cf.tn,R.length?slots:cf.tn),fixed=r0>=1?Math.min(cf.g,n):0;
+      for(let i=0;i<fixed;i++){
+        const c=pickTrinket(r0,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id))||pickTrinket(r0,t=>!used.includes(t.id));   /* none left that you do not carry: a copy that upgrades yours */
+        if(c)R.push(tr(c.id,r0));else R.push(zen(40));
+      }
+      for(let i=fixed;i<n;i++){const id=this.rollTrinket(used);if(!id){R.push(zen(40));continue;}R.push(tr(id,this.rarOf(id)));}
     }
-    /* the trinkets: always the same number for the rarity, all different; the first ones are guaranteed to be of the chest's own rarity (one Mythic in a Mythic chest...) */
-    const n=cf.t,fixed=r0>=1?cf.g:0;
-    for(let i=0;i<fixed&&i<n;i++){
-      const c=pickTrinket(r0,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id))||pickTrinket(r0,t=>!used.includes(t.id));   /* none left that you do not carry: a copy that upgrades yours */
-      if(c)R.push(tr(c.id,r0));else R.push(zen(40));
-    }
-    for(let i=fixed;i<n;i++){const id=this.rollTrinket(used);if(!id){R.push(zen(40));continue;}R.push(tr(id,this.rarOf(id)));}
+    if(!R.length)R.push(zen(40));
     return R;
   }
 
@@ -860,7 +940,7 @@ class Game{
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
     if(e.boss&&e.mini){   /* miniboss: like an elite (chest, ticket, a little zenny); it does not count as a boss */
       this.bossAlive--;this.addTicket('t1',1,e);
-      {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
+      {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
       const pay=Math.round(40*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);this.burst(e.x,e.y-10,22,'#ffd23f');this.audio.sfx('coin');
       for(let i=0;i<5;i++)this.dropGem(e.x+rnd(-50,50),e.y+rnd(-50,50),18*this.stage.xp*XP_MUL);
       this.shake=.5;this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.2);
@@ -873,7 +953,7 @@ class Game{
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
-      {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
+      {this.chests.push({...this.landAt(e.x,e.y,30),final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
       this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
@@ -951,9 +1031,9 @@ class Game{
   coinValue(t){return clamp(Math.round(ZMUL*(5+35*(t===undefined?this.t:t)/1800)),4,32);}   /* a loose coin: 4 zenny at the start, 32 at minute 30 and never more (it was 5 -> 40, then -20% on every zenny) */
   bagValue(t){return clamp(Math.round(ZMUL*1000*(t===undefined?this.t:t)/1800/5)*5,20,1040);}
   spawnLoot(k,x,y){
-    [x,y]=this.dryPos(x,y);
+    const at=this.landAt(x,y);
     const v=k==='coin'?this.coinValue():k==='bag'?this.bagValue():k==='xp'?Math.round(this.need*.3):0;
-    this.loot.push({k,x,y,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0,tama:k==='sball'?1:0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
+    this.loot.push({k,...at,v,t:0,star:k==='ball'?this.nextBallStar():k==='sball'?this.nextSuperStar():0,tama:k==='sball'?1:0});if(LOOT_CD[k])this.lootCd[k]=LOOT_CD[k];
   }
   /* the Tamagami statue cracks open: a boss of that star number appears on the spot, with health scaled to the minute of the run; the ball stays locked until it falls */
   wakeTamagami(l){
@@ -984,7 +1064,9 @@ class Game{
       case'haste':this.buffs.haste=10;this.recalc();this.audio.sfx('pkhaste');this.floatText(p.x,p.y-50,this.env.tr(T('Fuoco rapido (10s)','Rapid fire (10s)')),2);break;
       case'xp':this.addXp(l.v*.7);this.audio.sfx('pkxp');break;
       case'luck':this.luckBonus=Math.min(.4,this.luckBonus+.03);this.recalc();this.audio.sfx('pkluck');this.burst(p.x,p.y-20,14,'#8be07a');this.floatText(p.x,p.y-50,this.env.tr(T('Fortuna +3%','Luck +3%')),2);break;
-      case'capsule':{this.audio.sfx('pkcapsule');const id=this.rollTrinket();if(id){const rr=this.rarOf(id),t=TRINKETS.find(x=>x.id===id);this.addTrinket(id,rr);this.say(this.env.tr(t.n),RARITY[rr].c,2.4);}else this.addZenny(30);break;}
+      case'capsule':{this.audio.sfx('pkcapsule');   /* v109: a character upgrade until everything is maxed, then a trinket */
+        {const up=this.chestUps(1)[0];if(up){this.applyOption(up);this.say(this.env.tr(up.type==='w'?WEAPONS[up.id].n:PASS[up.id].n)+' Lv '+(up.lv+1),up.type==='w'?WEAPONS[up.id].c:PASS[up.id].c,2.4);break;}}
+        const id=this.rollTrinket();if(id){const rr=this.rarOf(id),t=TRINKETS.find(x=>x.id===id);this.addTrinket(id,rr);this.say(this.env.tr(t.n),RARITY[rr].c,2.4);}else this.addZenny(30);break;}
       case'sball':{
         const got=this.sandbox?0:this.progress.addSuperBall(l.star),n=this.sandbox?1:this.save.sball.length;this.run.sballs=(this.run.sballs||0)+(got?1:0);
         this.audio.sfx('sphere');this.audio.sfx('ticket');
@@ -1015,6 +1097,14 @@ class Game{
       if(!World.clearAt(th,xx,yy,rad))continue;const q=this.dryPos0(xx,yy);if(q[0]===xx&&q[1]===yy)return q;}}
     return[x,y];
   }
+  /* v109: a chest or pick-up that lands on the water appears there and floats slowly to the shore (sx, sy = the dry spot; drift() moves it); elsewhere = dryPos */
+  landAt(x,y,rad){const q=this.dryPos(x,y,rad);return(q[0]!==x||q[1]!==y)&&this.waterAt(x,y)?{x,y,sx:q[0],sy:q[1]}:{x:q[0],y:q[1]};}
+  drift(o,dt){
+    if(o.sx==null)return;
+    const dx=o.sx-o.x,dy=o.sy-o.y,d=Math.hypot(dx,dy);
+    if(d<1.5){o.x=o.sx;o.y=o.sy;o.sx=o.sy=undefined;return;}
+    const v=Math.min(d,Math.max(SHORE_V,d*.35)*dt);o.x+=dx/d*v;o.y+=dy/d*v;   /* slow, a bit faster when far out */
+  }
   dryPos0(x,y){
     if(this.stage.theme==='void'&&!this.trial){const o={x,y};TOPARENA.clamp(o,14);return[o.x,o.y];}   /* nothing lies outside the ring (nor inside the tower) */
     if(this.trial||this.tun||!Sea.has(this.stage.theme)||this.lavaMap())return[x,y];
@@ -1034,7 +1124,7 @@ class Game{
     if(!this.waterAt(p.x,p.y)){this.lavaT=0;return;}
     if(p.inv>0)return;
     this.lavaT+=dt;this.lavaF-=dt;
-    p.hp-=p.maxHp*.10*dt;
+    p.hp-=p.maxHp*.10*dt;this.logTaken(p.maxHp*.10*dt,'lava');
     if(this.lavaF<=0){this.lavaF=.5;this.floatText(p.x,p.y-40,Math.max(1,Math.round(p.maxHp*.05)),4);this.burst(p.x,p.y-6,6,'#ff7a2a');this.audio.sfx('hurt');}
     if(p.hp<=0)this.lethal();
   }
@@ -1049,14 +1139,22 @@ class Game{
     const p=this.p;
     if(p.inv>0||this.sb.god)return;
     if(this.trial){const dd=Math.max(1,Math.round((d-this.S.armor)*this.S.taken));p.hp=Math.max(1,p.hp-dd);p.inv=.5;this.floatText(p.x,p.y-40,dd,4);this.audio.sfx('hurt');return;}
-    if(this.barrierReady){this.barrierReady=false;this.barrierT=this.has('barrier')?15:25;this.floatText(p.x,p.y-50,this.env.tr(T('Bloccato!','Blocked!')),2);this.ring(p.x,p.y,50,'#8ad8ff',.4);p.inv=.4;return;}
+    if(this.barrierReady){this.barrierReady=false;this.barrierT=this.has('barrier')?TR_BARRIER_CD:25;this.floatText(p.x,p.y-50,this.env.tr(T('Bloccato!','Blocked!')),2);this.ring(p.x,p.y,50,'#8ad8ff',.4);p.inv=.4;return;}
     if(Math.random()<this.S.dodge){this.floatText(p.x,p.y-50,this.env.tr(T('Schivata!','Dodge!')),3);p.inv=.25;return;}
     d=Math.max(1,Math.round((src&&src.pct?d:d-this.S.armor)*this.S.taken));   /* a percentage hit (Super Buu's rain) ignores armor */
-    d=Math.min(d,Math.ceil(p.maxHp*(src&&src.trap?.16:src&&(src.boss||src.bs)?.4:.26)));
+    d=Math.min(d,Math.ceil(p.maxHp*(src&&src.trap?TRAP_P:src&&(src.boss||src.bs)?.4:.26)));
     this.emote(p.hp-d<p.maxHp*.3?'pain':'hurt',.8);
-    p.hp-=d;p.inv=.5;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);
+    p.hp-=d;p.inv=.5;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);this.logTaken(d,src);
     if(this.bossAlive>0)this.bossHit=true;
     if(p.hp<=0)this.lethal();
+  }
+  /* v109: damage taken, by source (end screen "Danni subiti"): an enemy or boss (bullets, ground circles and rain carry their owner in .o), traps, lava, other */
+  logTaken(d,src){
+    if(this.trial||!(d>0))return;
+    const o=src&&typeof src==='object'?(src.o||src):null;let k,n=null,c=null;
+    if(o&&o.def){const bd=o.bd;k=(o.boss?'b:'+(bd&&bd.id||o.def.n.it)+(o.mini?':m':''):'e:'+o.def.n.it);n=bd?bd.n:o.def.n;c=(bd&&bd.c)||o.def.c||null;}
+    else k=src==='lava'?'lava':src&&src.trap?'trap':src&&(src.bs||src.boss)?'boss':'other';
+    const r=this.takenBy[k]||(this.takenBy[k]={n,c,v:0,boss:!!(o&&o.boss)});r.v+=d;
   }
   revive(){
     const p=this.p;p.hp=p.maxHp*.5;p.inv=2.5;this.flash=.8;this.flashC='#ffffff';this.ring(p.x,p.y,320,'#ffffff',.8);
@@ -1113,8 +1211,11 @@ class Game{
     }
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}this.fx=this.fx.filter(f=>f.l>0);
     for(const t of this.tx)t.t+=dt;this.tx=this.tx.filter(t=>t.t<t.l);
-    if(this.banner){this.banner.t+=dt;if(this.banner.t>this.banner.dur)this.banner=null;}
-    if(v.t>=v.dur){this.vic=null;this.sb.nospawn=false;if(this.audio.slowMusic)this.audio.slowMusic(1);this.finish(true);}
+    this.tickBanner(dt);
+    if(v.t>=v.dur){   /* then POST_T seconds to pick up the loot (no enemies, still invulnerable) before the stage-complete menu */
+      this.vic=null;if(this.audio.slowMusic)this.audio.slowMusic(1);this.post=POST_T;
+      this.say(this.env.tr(T('RACCOGLI IL BOTTINO!','COLLECT THE LOOT!')),'#ffd23f',3,this.env.tr(T('30 secondi prima della fine dello stage','30 seconds before the end of the stage')));
+    }
   }
   /* tickets for the Gacha shop: kept in the run and added to the save when the run ends (like the zenny) */
   addTicket(kind,n,at){
@@ -1124,7 +1225,7 @@ class Game{
   }
   /* Endless: from here on the enemies grow every ENDLESS_MILE levels (not every minute), coins dry up, weapons can reach Lv 100, Zeno's Shop opens every 5 minutes */
   continueAfterWin(){
-    this.ended=false;this.endless=true;
+    this.ended=false;this.endless=true;this.post=0;this.sb.nospawn=false;this.p.inv=2;   /* enemies come back only now (and the victory invulnerability ends) */
     this.en0={t:this.t,lvl:this.lvl,steps:Math.floor(this.t/this.escEvery),mile:Math.floor(this.lvl/ENDLESS_MILE),rate:Math.max(this.xpRate,xpNeed(this.lvl)/45)};
     this.enMile=this.en0.mile;
     this.need=this.needFor(this.lvl);
@@ -1156,7 +1257,7 @@ class Game{
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
-  spawnRate(){return this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*(this.save.shop.broly||0));}   /* shop "Urlo di Broly!": +5% enemies per level */
+  spawnRate(){return this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -1300,7 +1401,7 @@ class Game{
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
-    {const[cx,cy]=this.dryPos(e.x,e.y,30);this.chests.push({x:cx,y:cy,final:false,t:0,elite:true,rar:this.rollChestRar()});}
+    {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
     const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
@@ -1568,7 +1669,7 @@ class Game{
         r.done=true;const R=38;
         this.ring(r.lx,r.ly,R*1.2,'#ff7ac0',.3);this.burst(r.lx,r.ly-4,5,'#ffffff');this.burst(r.lx,r.ly-4,4,'#ff7ac0');
         if(this.rainSfx<=0){this.rainSfx=.12;this.audio.sfx('boom');}
-        if(Math.hypot(p.x-r.lx,(p.y-r.ly)/.85)<R+10)this.hurt(p.maxHp*.02,{boss:1,pct:1});
+        if(Math.hypot(p.x-r.lx,(p.y-r.ly)/.85)<R+10)this.hurt(p.maxHp*.02,{boss:1,pct:1,o:r.o});
         if(this.eb.length)this.cutC(r.lx,r.ly,R);
       }
     }
@@ -1586,7 +1687,7 @@ class Game{
     const pct=BM_GERO_DRAIN[Math.max(0,['easy','normal','hard','extreme'].indexOf(this.diffId))]||.15,N=6;
     while(h.ticks<N&&h.t>=(h.ticks+1)*(3/N)){
       h.ticks++;
-      if(p.inv<=0&&!this.sb.god){const d=p.maxHp*pct/N;p.hp-=d;this.floatText(p.x,p.y-44,Math.round(d),4);e.hp=Math.min(e.max,e.hp+e.max*.004);this.emote('pain',.6);if(p.hp<=0){this.held=null;this.endBossMove(e);this.lethal();return;}}
+      if(p.inv<=0&&!this.sb.god){const d=p.maxHp*pct/N;p.hp-=d;this.logTaken(d,e);this.floatText(p.x,p.y-44,Math.round(d),4);e.hp=Math.min(e.max,e.hp+e.max*.004);this.emote('pain',.6);if(p.hp<=0){this.held=null;this.endBossMove(e);this.lethal();return;}}
       this.audio.sfx('abAbsorb');this.shake=Math.max(this.shake,.15);
       this.fx.push({bolt:true,pts:[[p.x,p.y-14],[(p.x+e.x)/2+rnd(-10,10),(p.y+e.y)/2-18+rnd(-8,8)],[e.x,e.y-e.r]],l:.4,m:.4,c:'#9cff7a'});
       for(let i=0;i<4&&this.fx.length<440;i++)this.fx.push({x:p.x+rnd(-8,8),y:p.y-rnd(0,24),vx:(e.x-p.x)*2.4,vy:(e.y-e.r-p.y)*2.4,l:.4,m:.4,c:'#9cff7a',s:3});
@@ -1635,7 +1736,7 @@ class Game{
         if(!b.shot){b.shot=true;this.shake=Math.max(this.shake,.5);this.flash=.25;this.flashC=b.col;this.audio.sfx('boom');this.burst(b.x+Math.cos(b.a)*30,b.y+Math.sin(b.a)*30,18,b.col);}
         b.hcd=(b.hcd||0)-dt;
         const dx=p.x-b.x,dy=p.y-14-b.y,c=Math.cos(b.a),s2=Math.sin(b.a),al=dx*c+dy*s2,pe=Math.abs(-dx*s2+dy*c);
-        if(al>0&&al<b.len&&pe<b.w+8&&b.hcd<=0){b.hcd=.3;this.hurt(b.dmg,{bs:1});}
+        if(al>0&&al<b.len&&pe<b.w+8&&b.hcd<=0){b.hcd=.3;this.hurt(b.dmg,{bs:1,o:b.e});}
       }
     }
     this.jbeams=this.jbeams.filter(b=>b.t<b.charge+b.fire);
@@ -1651,7 +1752,7 @@ class Game{
         x.released=true;e.tf++;
         const R=560+120*e.tf;
         this.fx.push({shock:true,x:e.x,y:e.y-e.r*.5,max:R,l:1.1,m:1.1,c:col});this.fx.push({shock:true,x:e.x,y:e.y-e.r*.5,max:R*.6,l:.8,m:.8,c:'#ffffff'});
-        this.bshock={x:e.x,y:e.y,max:R,t:0,dur:1.1,dmg:e.dmg*.6,hit:false};
+        this.bshock={x:e.x,y:e.y,max:R,t:0,dur:1.1,dmg:e.dmg*.6,hit:false,o:e};
         this.flash=.9;this.flashC=col;this.shake=1;this.pillar(e.x,e.y,col,1.7);this.pillar(e.x,e.y,'#ffffff',.9);
         this.bolt(e.x,e.y-e.r,320,col,14);this.burst(e.x,e.y-e.r,70,col);this.burst(e.x,e.y-e.r,34,'#ffffff');this.ring(e.x,e.y,360,col,.9);this.ring(e.x,e.y,200,'#ffffff',.6);
         e.hp=Math.min(e.max,e.hp+e.max*(e.tf===1?.3:.22));
@@ -1665,7 +1766,7 @@ class Game{
   updateBossShock(dt){
     const s=this.bshock;if(!s)return;
     s.t+=dt;const k=Math.min(1,s.t/s.dur),R=s.max*(1-Math.pow(1-k,2.2)),p=this.p;
-    if(!s.hit){const dx=p.x-s.x,dy=p.y-s.y,d=Math.hypot(dx,dy)||1;if(d<=R+10){s.hit=true;this.hurt(s.dmg,{bs:1});p.x+=dx/d*70;p.y+=dy/d*70;}}
+    if(!s.hit){const dx=p.x-s.x,dy=p.y-s.y,d=Math.hypot(dx,dy)||1;if(d<=R+10){s.hit=true;this.hurt(s.dmg,{bs:1,o:s.o});p.x+=dx/d*70;p.y+=dy/d*70;}}
     if(s.t>=s.dur)this.bshock=null;
   }
   /* ground circles that explode after a short warning (boss slam, stomping enemies) */
@@ -1675,7 +1776,7 @@ class Game{
       z.t+=dt;
       if(z.t>=z.dur){
         z.done=true;this.ring(z.x,z.y,z.r*1.2,z.c,.4);this.burst(z.x,z.y,14,z.c);this.burst(z.x,z.y,8,'#ffffff');this.audio.sfx('boom');this.shake=Math.max(this.shake,.3);
-        if(Math.hypot(p.x-z.x,p.y-z.y)<z.r+8)this.hurt(z.dmg,{bs:1});
+        if(Math.hypot(p.x-z.x,p.y-z.y)<z.r+8)this.hurt(z.dmg,{bs:1,o:z.o});
       }
     }
     this.bz=this.bz.filter(z=>!z.done);
@@ -1696,14 +1797,16 @@ class Game{
     const p=this.p,rad=e.def.rad;
     e.dead=true;this.ring(e.x,e.y,rad,'#ff9d3a',.4);this.burst(e.x,e.y-6,26,'#ffb13b');this.burst(e.x,e.y-6,14,'#ffffff');
     this.audio.sfx('boom');this.shake=Math.max(this.shake,.25);
-    if(Math.hypot(p.x-e.x,p.y-e.y)<rad+8)this.hurt(e.dmg,'explosion');
+    if(Math.hypot(p.x-e.x,p.y-e.y)<rad+8)this.hurt(e.dmg,{o:e});
     this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL*.5*this.earlyXp());
   }
 
   /* ---------- main update ---------- */
   update(dt){
     if(this.modal||this.ended)return;
-    const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}dt*=this.timeScale;
+    const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}
+    if(this.post>0){this.post-=rdt;if(this.post<=0||(!this.chests.length&&!this.loot.length&&!this.gm.length&&!this.trial&&!this.tun)){this.post=0;this.finish(true);return;}}   /* loot time after the final boss: ends early once everything is picked up */
+    dt*=this.timeScale;
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
@@ -1712,7 +1815,7 @@ class Game{
     if(p.inv>0)p.inv-=dt;
     if(this.shake>0)this.shake-=dt;
     if(this.flash>0)this.flash-=dt;
-    if(this.banner){this.banner.t+=dt;if(this.banner.t>this.banner.dur)this.banner=null;}
+    this.tickBanner(dt);
     if(this.tempBuffs.length){let ch=false;for(const b of this.tempBuffs){b.t-=dt;if(b.t<=0)ch=true;}if(ch){this.tempBuffs=this.tempBuffs.filter(b=>b.t>0);this.recalc();}}
     if(this.riskT>0){this.riskT-=dt;if(this.riskT<=0)this.recalc();}
     if(this.luckT>0){this.luckT-=dt;if(this.luckT<=0)this.recalc();}
@@ -1753,8 +1856,8 @@ class Game{
 
     /* trinket specials */
     if(this.trinkets.length){
-      if(this.has('shock')){this.shockCd-=dt;if(this.shockCd<=0){this.shockCd=8;this.ring(p.x,p.y,230,'#c05aff',.5);for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(230+e.r)**2)this.hit(e,12+this.lvl*1.4,dx*.5,dy*.5);}}}
-      if(this.has('slowtime')){this.slowCd-=dt;if(this.slowCd<=0){this.slowCd=20;this.slowT=4;this.floatText(p.x,p.y-60,this.env.tr(T('Tempo rallentato','Time slowed')),2);}}
+      if(this.has('shock')){this.shockCd-=dt;if(this.shockCd<=0){this.shockCd=TR_SHOCK_CD;this.ring(p.x,p.y,230,'#c05aff',.5);for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(230+e.r)**2)this.hit(e,12+this.lvl*1.4,dx*.5,dy*.5);}}}
+      if(this.has('slowtime')){this.slowCd-=dt;if(this.slowCd<=0){this.slowCd=TR_SLOW_CD;this.slowT=4;this.floatText(p.x,p.y-60,this.env.tr(T('Tempo rallentato','Time slowed')),2);}}
       if((this.has('barrier')||this.totemFx.guard)&&!this.barrierReady){this.barrierT-=dt;if(this.barrierT<=0)this.barrierReady=true;}
     }
     if(this.slowT>0)this.slowT-=dt;
@@ -1762,9 +1865,9 @@ class Game{
     if(this.streak>0){this.streakT-=dt;if(this.streakT<=0)this.streak=0;}if(this.streakPop>0)this.streakPop-=dt;
     if(this.cstk>0){this.cstkT-=dt*CK_DRAIN;if(this.cstkT<=0){this.cstk=0;this.cstkT=0;}}
     /* the stage's own Dragon Ball event (see events.js): every few minutes, 30-45 seconds */
-    if(!frozen)this.evUpdate(dt);
+    if(!frozen&&!this.post)this.evUpdate(dt);
     /* ranged-enemy wave: 60 seconds (first stage: 30), then they leave */
-    if(!frozen){
+    if(!frozen&&!this.post){
       if(this.shootOn){this.shootQT-=dt;if(this.shootQT<=0){this.shootQT+=8;this.shootQ=4;}}   /* 4 shooters per 8 s (first stage) */
       if(!this.shootOn){this.shootT-=dt;if(this.shootT<=0){if(this.stage.roster.some(r=>(ENEMIES[r[0]].ai==='ranged'||ENEMIES[r[0]].ai==='hover')&&this.t>=r[1])&&!this.bossAlive){this.shootOn=true;this.shootEnd=this.t+(this.stage.no===1?30:60);this.shootQ=4;this.shootQT=8;}else this.shootT=20;}}
       else if(this.t>=this.shootEnd){this.shootOn=false;this.shootT=rnd(240,340)*this.evK;for(const e of this.en)if(!e.boss&&(e.ai==='ranged'||e.ai==='hover')){e.dead=true;this.burst(e.x,e.y-8,5,'#6ad0ff');}}
@@ -1786,7 +1889,7 @@ class Game{
     this.updateProjectiles(dt);
     this.updateEnemies(dt);
     this.updateBullets(dt);
-    if(!inTrial){this.updatePickups(dt);if(!inTun)this.map.update(dt);}
+    if(!inTrial){this.updatePickups(dt);if(!inTun&&!this.post)this.map.update(dt);}
     if(inTun&&this.tun)this.updateTunnel(dt);
 
     /* aura particles */
@@ -1950,7 +2053,8 @@ class Game{
       q.x+=gx/gd*st;q.y+=gy/gd*st;if(Math.abs(gx)>3)q.face=gx>0?1:-1;
       if(gd<14){chase.held=true;q.hold.push(chase);q.tg=null;q.grab=.5;if(this.fx.length<380)this.fx.push({x:q.x,y:q.y-14,vx:0,vy:-30,l:.35,m:.35,c:'#9adfff',s:3});}
     }else{
-      if(d>420){q.x=tx;q.y=ty;}else{const k=Math.min(1,dt*(d>60?5:3));q.x+=dx*k;q.y+=dy*k;}
+      /* v109: it walks back to you (it used to jump to your side from 420 px); faster when far behind, a jump only after a teleport of yours (1800 px+) */
+      if(d>1800){q.x=tx;q.y=ty;}else if(d>0){const st=Math.min(d*Math.min(1,dt*(d>60?5:3)),Math.max(PET_SPD,125*this.S.spd*1.3)*(d>420?1.8:1)*dt);q.x+=dx/d*st;q.y+=dy/d*st;}
       if(Math.abs(dx)>3)q.face=dx>0?1:-1;
       /* back at your side: hand the gems over */
       if(q.hold.length&&Math.hypot(p.x-q.x,p.y-q.y)<58)this.petRelease(q);
@@ -2000,12 +2104,19 @@ class Game{
           this.inHeal=true;
           if(p.hp<p.maxHp){this.heal(Math.max(1.5,p.maxHp*.03)*dt);if(Math.random()<dt*5&&this.fx.length<380)this.fx.push({x:z.x+rnd(-z.r*.7,z.r*.7),y:z.y+rnd(-z.r*.3,z.r*.3),vx:0,vy:-rnd(30,60),l:.7,m:.7,c:'#8be07a',s:3});}
         }
-      }else if(World.trapState(z,this.rt)===2){
-        if(d2<(z.r+6)*(z.r+6))this.hurt(Math.max(6,p.maxHp*.07)+this.sd*1.5,{trap:true});
-        for(const e of this.en){
-          if(e.dead||e.boss||e.def.fly||e.ai==='hover'||e.trapT>0)continue;
-          const ex=e.x-z.x,ey=e.y-z.y;
-          if(ex*ex+ey*ey<(z.r+e.r)*(z.r+e.r)){e.trapT=.9;this.damageEnemy(e,14+this.lvl*1.5+this.sd*4);}
+      }else{
+        /* v109: traps fire when stepped on (you or a walking enemy) and hit once per activation: 30% of your max HP, 40% of an enemy's, 10% of a boss's */
+        const grounded=e=>!e.dead&&!e.def.fly&&e.ai!=='hover'&&!e.under,inT=(e,pad)=>{const ex=e.x-z.x,ey=e.y-z.y;return ex*ex+ey*ey<(z.r+pad)*(z.r+pad);};
+        if(World.trapReady(z,this.rt)&&(d2<z.r*z.r||this.en.some(e=>grounded(e)&&inT(e,e.r*.4)))){z.trig=this.rt;z.hitP=false;z.hitE=new WeakSet();if(d2<520*520&&!(this.trapSfx>this.rt)){this.trapSfx=this.rt+.15;this.audio.sfx('click');}}
+        if(World.trapState(z,this.rt)===2){
+          if(!z.hitP&&d2<(z.r+6)*(z.r+6)&&p.inv<=0){z.hitP=true;this.hurt(p.maxHp*TRAP_P,{trap:true,pct:1});}
+          const cw=this.curW;this.curW='trap';
+          for(const e of this.en){
+            if(!grounded(e)||z.hitE.has(e)||!inT(e,e.r))continue;
+            z.hitE.add(e);e.trapT=.5;this.damageEnemy(e,e.max*(e.boss?TRAP_B:TRAP_E)+(e.armor||0));   /* a share of its health: + armor so that armor does not soften it */
+            if(!e.boss){e.stun=Math.max(e.stun||0,.35);}
+          }
+          this.curW=cw;
         }
       }
     }
@@ -2052,7 +2163,12 @@ class Game{
       let c=grid.get(k);if(!c){c=[];grid.set(k,c);}c.push(e);
     }
     const vr=this.viewR*1.3,tslow=this.slowT>0;
+    /* v109: what an enemy fires during its turn (bullets, ground circles, rain) remembers who fired it (.o), for the "damage taken" summary */
+    let ow=null,nb=this.eb.length,nz=this.bz.length,nr=(this.rain||[]).length;
+    const tag=()=>{if(ow){for(let i=Math.min(nb,this.eb.length);i<this.eb.length;i++)if(!this.eb[i].o)this.eb[i].o=ow;for(let i=Math.min(nz,this.bz.length);i<this.bz.length;i++)if(!this.bz[i].o)this.bz[i].o=ow;
+      const R=this.rain||[];for(let i=Math.min(nr,R.length);i<R.length;i++)if(!R[i].o)R[i].o=ow;}nb=this.eb.length;nz=this.bz.length;nr=(this.rain||[]).length;};
     for(const e of this.en){
+      tag();ow=e;
       if(e.atk>0)e.atk-=dt;
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
@@ -2155,6 +2271,7 @@ class Game{
       if(this.stage.theme==='void'&&!this.trial)TOPARENA.clamp(e,e.r*.3);   /* flyers, hoverers and bosses too */
       if(e.ai!=='explode'&&!e.under&&dist<e.r+8)this.hurt(e.dmg,e);
     }
+    tag();
   }
   /* ---- enemy fire budget (see SHOT_* above) ---- */
   shotN(n){return Math.max(1,Math.round(n*SHOT_N_K));}
@@ -2222,8 +2339,9 @@ class Game{
     }
     for(const l of this.loot){
       if(l.dead)continue;
-      l.t+=dt;
+      l.t+=dt;this.drift(l,dt);
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
+      if(l.sx!=null&&d<S.magnet&&l.k!=='ball'&&l.k!=='sball')l.sx=l.sy=undefined;   /* drawn in by the pick-up range: it stops floating to the shore */
       /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
       /* every other pick-up on the ground (zenny, bags, hearts, Fortune, Magnet, capsules, the timed power-ups...) is drawn in by the whole pick-up range at the speed of the experience gems */
       if(l.k!=='ball'&&l.k!=='sball'&&d<S.magnet){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
@@ -2238,7 +2356,7 @@ class Game{
       if(d<(l.k==='sball'?SUP_PICK_R:l.k==='ball'?BALL_PICK_R:20)&&!l.lock){l.dead=true;this.collectLoot(l);}
     }
     for(const c of this.chests){
-      c.t+=dt;
+      c.t+=dt;this.drift(c,dt);
       const d=Math.hypot(p.x-c.x,p.y-c.y);
       if(c.op===undefined&&d<28&&!this.modal){c.op=0;this.audio.sfx('chest');}   /* touched: the lid pops open first (renderer), then the reward window */
       if(c.op!==undefined){
@@ -2360,7 +2478,7 @@ class Game{
   /* ---------- sandbox helpers ---------- */
   jumpTo(t){this.t=Math.max(0,t);for(const m of (this.miniPlan||[]))m.done=m.done||m.t<t-1;for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
   setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
-  spawnChestHere(final){const[cx,cy]=this.dryPos(this.p.x+60,this.p.y,30);this.chests.push({x:cx,y:cy,final:!!final,t:0,rar:this.rollChestRar()});}
+  spawnChestHere(final){this.chests.push({...this.landAt(this.p.x+60,this.p.y,30),final:!!final,t:0,rar:this.rollChestRar()});}
 }
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */

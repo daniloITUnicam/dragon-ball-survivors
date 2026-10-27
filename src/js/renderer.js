@@ -57,6 +57,21 @@ function drawShenron(ctx,x,y,s,a){
 const DBALLS_URL=('__DBALLS__'?'data:image/webp;base64,__DBALLS__':'');
 /* Tamagami patterns that are a weapon strike (frames 5 wind-up and 6 strike of their art); every other pattern uses the special pose (frame 7) */
 const TAMA_WEAPON={hammer:1,slam:1,swordwave:1,rush:1,lance:1,jsword:1};
+/* v109: the ground shadow of a sheet obstacle, measured on its own picture (sprite px, from the anchor): under the lowest band of the art (the part that stands on the ground),
+   as wide as that band (stray pebbles at the sides ignored) and never reaching below the art - it used to be a circle of the collision radius centred on the anchor, which stuck out under flat props */
+function footShadow(c,ox,oy){
+  try{
+    const w=c.width,h=c.height,A=c.getContext('2d').getImageData(0,0,w,h).data,op=(x,y)=>A[(y*w+x)*4+3]>40;
+    let top=-1,bot=-1;for(let y=0;y<h&&top<0;y++)for(let x=0;x<w;x++)if(op(x,y)){top=y;break;}
+    for(let y=h-1;y>=0&&bot<0;y--)for(let x=0;x<w;x++)if(op(x,y)){bot=y;break;}
+    if(top<0)return null;
+    const y0=Math.max(top,Math.round(bot-(bot-top)*.22)),cols=[];
+    for(let x=0;x<w;x++){let n=0;for(let y=y0;y<=bot;y++)if(op(x,y))n++;if(n>=2)cols.push(x);}
+    if(cols.length<2)return null;
+    const a=cols[Math.floor(cols.length*.1)],b=cols[Math.ceil(cols.length*.9)-1],rx=Math.max(6,(b-a)/2*.62),ry=rx*.3;
+    return{cx:(a+b)/2-ox,cy:Math.min(bot-oy,0)+Math.max(0,bot-oy)*.5-ry*.55,rx,ry};
+  }catch(e){return null;}   /* a tainted canvas (file:// without the sheet inlined): the old round shadow */
+}
 class Renderer{
   constructor(canvas,save){
     this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;
@@ -177,7 +192,7 @@ this.W=1;this.H=1;this.Z=1;
       if(rdy&&d.im!==undefined&&BP.rects[d.im]){   /* sheet art: a crop of the atlas, foot at the anchor, drawn smoothed at d.ws world px per sprite px */
         const r=BP.rects[d.im],a=BP.anch[d.im],c=document.createElement('canvas');c.width=r[2];c.height=r[3];
         c.getContext('2d').drawImage(BP.img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
-        return{c,ox:a[0],oy:a[1],sc:d.ws/(BP.k||1)/(3.1/Sprites.S),kind,lu:d.lu,sm:1};
+        return{c,ox:a[0],oy:a[1],sc:d.ws/(BP.k||1)/(3.1/Sprites.S),kind,lu:d.lu,sm:1,sh:footShadow(c,a[0],a[1])};
       }
       const sp=Sprites.paint(d.W,d.H,d.W/2,d.H-1,R=>d.art(R,C));sp.sc=d.sc||1;sp.kind=kind;return sp;
     });
@@ -262,6 +277,9 @@ this.W=1;this.H=1;this.Z=1;
     const vx0=cx-90,vx1=cx+g.vw+90,vy0=cy-130,vy1=cy+g.vh+90;
     if(Ambient.on)Ambient.ground(ctx,t);
     if(theme==='snake'&&Ambient.on&&Ambient.lod>=.5)Ambient.flockShadows(ctx,cx,cy,g.vw,g.vh,t,3,1,0);   /* shadows of the bird flocks gliding over the cloud sea */
+    /* v109: effect quality follows the real frame time - when the game runs under ~42 fps the electric overlay (the costliest effect of the late forms) thins out, and comes back above ~55 fps */
+    {const now=performance.now(),fd=this._lastD?Math.min(.25,(now-this._lastD)/1000):1/60;this._lastD=now;const sm=this._sm=(this._sm||1/60)+(fd-(this._sm||1/60))*.05;
+     if(sm>1/42)ELEC.q=Math.max(.25,ELEC.q-fd*.5);else if(sm<1/55)ELEC.q=Math.min(1,ELEC.q+fd*.1);}
     ELEC.n=0;this.fxBegin();
     for(const e of g.en)if(e.bm&&!e.dead)this.drawBmGround(e,t);
     if(g.rain.length)this.drawRainGround(g,t);
@@ -284,6 +302,9 @@ this.W=1;this.H=1;this.Z=1;
     if(!g.trial&&!g.tun)this.drawZones(g,cx,cy,t);
     if(!g.trial&&!g.tun)this.drawEvents(g,t);
     this.drawDanger(g,t);this.drawBeams(g,t);
+    if(!g.trial){   /* v109: ripples under what floats to the shore */
+      const rip=o=>{if(o.sx==null||o.dead)return;for(let i=0;i<2;i++){const k=(t*.9+i*.5+(o.x*.003))%1;ctx.strokeStyle='rgba(225,245,255,'+(.5*(1-k)).toFixed(3)+')';ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(o.x,o.y+3,12+20*k,4+7*k,0,0,TAU);ctx.stroke();}};
+      for(const l of g.loot)rip(l);for(const c of g.chests)rip(c);}
     for(const l of (g.trial?[]:g.loot))this.drawLoot(l,t);
     for(const f of (g.trial?[]:g.feat))this.drawFeature(f,t,g);
     for(const c of (g.trial?[]:g.chests))this.drawChest(c,t);
@@ -302,7 +323,7 @@ this.W=1;this.H=1;this.Z=1;
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,t,g);continue;}
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
-      if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1);ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
+      if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,t);
     }
@@ -380,8 +401,16 @@ this.W=1;this.H=1;this.Z=1;
     /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn as sprites of a clean medium-weight lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
     ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
     const smo=ctx.imageSmoothingEnabled;
+    /* v109: text labels (not damage numbers) never overlap: newest first, each older one goes up above whatever it would cover; it slides back down when room frees up */
+    {const placed=[],dtR=clamp(g.rt-(this._lbT||g.rt),0,.1);this._lbT=g.rt;
+     const free=(x,hw,y,fs)=>{for(const q of placed)if(Math.abs(q.x-x)<q.hw+hw&&y>q.y-q.h-1&&y-fs<q.y+1)return q;return null;};
+     for(let i=g.tx.length-1;i>=0;i--){const d=g.tx[i];if(d.c===0||d.c===6||d.c===4||typeof d.s!=='string'){d.oy=0;continue;}
+       const L=d.l||.8,y0=d.y-d.t*(L>.8?30:34),fs=d.c===1?17:14,hw=d.s.length*fs*.27+6;
+       let ty=y0;for(let k=0;k<16;k++){const q=free(d.x,hw,ty,fs);if(!q)break;ty=q.y-q.h-2;}
+       const off=ty-y0,cur=d.oy||0;let o=off<cur?off:cur+(off-cur)*Math.min(1,dtR*12);
+       if(free(d.x,hw,y0+o,fs))o=off;d.oy=o;placed.push({x:d.x,y:y0+o,hw,h:fs+2});}}
     for(const d of g.tx){
-      const L=d.l||.8,u=d.t/L,a=u<.62?1:clamp(1-(u-.62)/.38,0,1),y=d.y-d.t*(L>.8?30:34);
+      const L=d.l||.8,u=d.t/L,a=u<.62?1:clamp(1-(u-.62)/.38,0,1),y=d.y-d.t*(L>.8?30:34)+(d.oy||0);
       if(d.c===0||d.c===6){
         const cr=d.c===6,sp=this.dmgSpr(String(d.s),cr),pop=d.t<.12?1+(.12-d.t)/.12*(cr?.5:.25):1,k=pop/sp.ds,sh=cr&&d.t<.2?Math.sin(d.t*90)*(1-d.t/.2)*2.2:0;
         ctx.globalAlpha=a;ctx.imageSmoothingEnabled=true;
@@ -1110,8 +1139,8 @@ this.W=1;this.H=1;this.Z=1;
           i=inside?12+6+((t*7)|0)%3:12+((t*6+z.x*.01)|0)%6;k=2*z.r*.85/zs.rects[12][2];
           GLOW.at(this.ctx,z.x,z.y-4,z.r*.9,'#8bffc8',inside?.32:.18);
         }else{
-          const st=World.trapState(z,g.rt),m=(g.rt+z.ph)%TRAP_PERIOD;
-          i=st===0?((.5+.5*Math.sin(t*1.5+z.x))>.62?1:0):st===1?4+Math.min(3,Math.floor((m-(TRAP_PERIOD-1.4))/.6*4)):8+Math.min(3,Math.floor((m-(TRAP_PERIOD-.8))/.8*4));
+          const[st,f]=World.trapPh(z,g.rt);   /* v109: stepped on -> warning frames 4-7, spikes 8-11 (faster than the old timed cycle) */
+          i=st===0?((.5+.5*Math.sin(t*1.5+z.x))>.62?1:0):st===1?4+Math.min(3,Math.floor(f*4)):8+Math.min(3,Math.floor(f*4));
           k=2*z.r*1.02/zs.rects[0][2];
           if(st===2)GLOW.at(this.ctx,z.x,z.y-6,z.r*1.2,'#ff4a30',.3);
         }
@@ -1443,12 +1472,13 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(px0,py0,ps,ps);ctx.strokeStyle=hexA(P.c,.75);ctx.lineWidth=1.8*U;ctx.strokeRect(px0,py0,ps,ps);
       {const pim=this.shopImg(PASS_IMG[id]);if(pim){const s=ps-13*U;ctx.save();ctx.imageSmoothingEnabled=true;ctx.drawImage(pim,px0+(ps-s)/2,py0+3*U,s,s);ctx.restore();}
        else txt(P.k,px0+ps/2,py0+ps*.62,P.c,'center',F(28,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
-      for(let i=0;i<5;i++){ctx.fillStyle=i<lv?P.c:'rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(px0+ps/2+(i-2)*6.4*U,py0+ps-5.5*U,2.3*U,0,TAU);ctx.fill();}
+      {const pm=passMax(id);for(let i=0;i<pm;i++){ctx.fillStyle=i<lv?P.c:'rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(px0+ps/2+(i-(pm-1)/2)*6.4*U,py0+ps-5.5*U,2.3*U,0,TAU);ctx.fill();}}
       px0+=ps+4*U;
     }
     /* trinkets: one slot per slot you own (empty ones are dashed), the frame in the rarity colour, a perfection bar under the icon and, at 100%, the Ultra Instinct halo */
-    let tx2=m;const ty=(pshown?py0+ps:wy+sz)+7*U,ts=30*U,nslot=Math.max(g.tcap,g.trinkets.length);
+    let tx2=m;const ty0=(pshown?py0+ps:wy+sz)+7*U,ts=30*U,nslot=Math.max(g.tcap,g.trinkets.length),TPR=8;let ty=ty0;   /* v109: no cap in the run, so the slots wrap every TPR */
     for(let si=0;si<nslot;si++){
+      if(si&&si%TPR===0){tx2=m;ty+=ts+3*U;}
       const id=g.trinkets[si];
       if(!id){ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(tx2,ty,ts,ts);ctx.save();ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.6*U;ctx.setLineDash([4*U,3*U]);ctx.strokeRect(tx2,ty,ts,ts);ctx.restore();
         txt('+',tx2+ts/2,ty+ts*.68,'rgba(255,255,255,.35)','center',F(20,900));tx2+=ts+3*U;continue;}
@@ -1552,6 +1582,7 @@ this.W=1;this.H=1;this.Z=1;
     const stg=g.stage;
     const clkF=F(30,400).replace('"Rajdhani"','"Bangers"');
     txt(fmtT(Math.min(g.t,g.dur)),W/2,42*U,'#ffd23f','center',clkF);
+    if(g.post>0)txt(tr(T('RACCOGLI IL BOTTINO ','COLLECT THE LOOT '))+Math.ceil(g.post),W/2,96*U,'#ffd23f','center',F(16,800));   /* loot time after the final boss */
     if(g.t>=g.dur){                                       /* overtime: time past the stage length (keeps counting in Endless too) */
       ctx.font=clkF;const cw=ctx.measureText(fmtT(Math.min(g.t,g.dur))).width;
       txt('+'+fmtT(g.t-g.dur),W/2+cw/2+8*U,42*U,'#ff6a4a','left',F(20,400).replace('"Rajdhani"','"Bangers"'));
@@ -1645,7 +1676,7 @@ this.W=1;this.H=1;this.Z=1;
         const td=TRINKETS.find(q=>q.id===it.id),col=RARITY[it.rar].c,aff=g.run.coins>=it.price,full=false;
         const lines=trinStats(td,it.rar,it.pf).map(x=>[tr(x.t),true]);if(hasPf(td)&&it.pf!=null)lines.push(['\0perf',true],['\0bar',true]);
         if(td.x)lines.push([tr(td.x),true,1]);else if(td.sp)lines.push([tr(td.d),true,1]);
-        const cc=g.trinkets.length>=g.tcap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&TRINKETS.find(q=>q.id===cc);
+        const cc=g.trinkets.length>=g.runCap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&TRINKETS.find(q=>q.id===cc);
         const pw=Math.min(268*U,W-16*U),lh=18*U,ph=(78+Math.max(1,lines.length)*18+(it.sold?0:20))*U;
         const ix=(zt.cx+it.x-cx)*this.Z,iy=(zt.cy+it.y-cy)*this.Z;
         /* speech bubble ("nuvoletta") beside the item, with a tail pointing at it */
@@ -1683,7 +1714,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.tun)this.tunnelHud(g,W,H,U,txt,F,tr,tr2);
     /* banner */
     if(g.banner){
-      const b=g.banner,k=b.t/b.dur,a=k<.1?k/.1:k>.8?(1-k)/.2:1;
+      const b=g.banner,a=Math.min(1,b.t/.15)*clamp((b.dur-b.t)/BANNER_FADE,0,1);   /* v109: quick fade in, BANNER_FADE s fade out */
       ctx.globalAlpha=clamp(a,0,1);
       txt(b.txt,W/2,H*.3,b.col,'center',F(Math.min(34,Math.max(18,W/U/24)),400).replace('"Rajdhani"','"Bangers"'));
       if(b.sub){   /* second line: a thin golden rule and a smaller sentence under the title (Endless notices) */
