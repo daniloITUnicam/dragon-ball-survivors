@@ -37,9 +37,9 @@ ok(t2.sfx===1&&t2.owned.length===1,'the pick-up plays the "sphere" sound ('+t2.s
 const t3=await pg.evaluate(()=>{const g=G,got=[];g.loot=g.loot.filter(l=>!l.dead);g.loot=[];for(let i=0;i<6;i++){g.spawnLoot('ball',g.p.x+30*i,g.p.y);}
   const stars=g.loot.map(l=>l.star);const set=new Set([...stars,...g.ballOwned()]);
   for(const l of g.loot){g.p.x=l.x;g.p.y=l.y;g.updatePickups(1/60);}
-  return{stars,all:set.size,balls:g.balls,modal:g.modal&&g.modal.type,owned:[...g.ballOwned()].sort()};});
+  const sm=g.summon&&g.summon.kind;g.summon=null;SUMMON.unbindSkip();return{stars,all:set.size,balls:g.balls,modal:g.modal&&g.modal.type,summon:sm,owned:[...g.ballOwned()].sort()};});
 ok(t3.all===7&&t3.balls===7,'every ball has a different number of stars ('+t3.stars.join(',')+' + the one already owned)');
-ok(t3.modal==='wish','the seventh ball opens the wish');
+ok(t3.summon==='shenron','the seventh ball calls Shenron (v113: the wish window opens after the cinematic, tests/summon.js)');
 const t4=await pg.evaluate(()=>{const g=G;g.modal=null;g.balls=0;g.ballSet=[];g.loot=[];return g.ballOwned().size;});
 ok(t4===0,'counter reset after the wish');
 /* ---- pictures ---- */

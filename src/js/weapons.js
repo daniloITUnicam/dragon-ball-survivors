@@ -1,7 +1,7 @@
 'use strict';
 /* ====== Weapon classes. Tables have 6 entries: levels 1-5 + evolved ====== */
 const WS={
-  ki:{cd:[.8,.72,.64,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[8.5,10,12,13.5,16,19.5],pi:[0,0,0,0,0,0]},   /* v53: -15% damage (Ki Barrage was removed) */
+  ki:{cd:[1.6,1.44,1.28,.57,.5,.45],n:[1,1,2,2,3,4],dmg:[8.5,10,12,16.2,19.2,19.5],pi:[0,0,0,0,0,0]},   /* v53: -15% damage (Ki Barrage was removed); v112: levels 1-3 fire half as often (cd .8/.72/.64 -> 1.6/1.44/1.28), levels 4-5 hit +20% */
   kame:{cd:[3.8,3.4,3,2.8,2.5,2.2],dmg:[7,8.5,10.5,13,16.5,22],wid:[30,36,40,46,52,64],len:[380,418,456,494,532,680]},
   disc:{n:[2,2,3,3,4,6],r:[80,85,95,100,110,125],dmg:[11,12.5,14,16,19,25],spd:[2.6,2.8,3,3.2,4,4.4]},
   spirit:{cd:[11,10,8.5,8,7,6.5],dmg:[62,78,95,120,155,210],rad:[110,125,135,160,185,230]},
@@ -141,7 +141,12 @@ class Weapon{
 }
 
 const KI_EVO_DMG=.5;   /* both evolutions of the Ki Blast hit for half (it was far too strong) */
+/* v112: an enemy's body, for the Ki Blast: the sprites stand about 4.4 radii tall and 2.6 wide above the feet (e.x, e.y; flyers e.zoff higher) */
+const KI_BODY_H=2.1,KI_BODY_W=1.15;
 class KiWeapon extends Weapon{
+  static aim(tip,t,jit){return Math.atan2(t.y-(t.zoff||0)-t.r*KI_BODY_H-tip.y,t.x-tip.x)+(jit||0);}
+  /* does shot b touch enemy e's body (an ellipse from the feet to the head, widened by the shot's radius)? */
+  static hits(b,e){const rx=e.r*KI_BODY_W+b.r,ry=e.r*KI_BODY_H+b.r*.6,dx=(b.x-e.x)/rx,dy=(b.y-(e.y-(e.zoff||0)-e.r*KI_BODY_H))/ry;return dx*dx+dy*dy<1;}
   /* The shot is a visible gesture: while the cooldown runs out the ball gathers on the palm (g.pa 'shoot' with ball), the arm snaps toward the
      target and the blasts leave the hand (Pose.tip). The wind-up ends exactly when the cooldown reaches 0, so the rate of fire is the same. */
   update(dt){
@@ -164,15 +169,15 @@ class KiWeapon extends Weapon{
     const ang=Math.atan2(t.y-p.y,t.x-p.x),base=ang+g.aimJit(),n=s.n[L],pi=this.evo>=2?1:0;
     if(!g.pa||g.pa.st!=='shoot'||g.rt-g.pa.t0>g.pa.w+.05)g.armAct('shoot',base,{w:0,h:.2,r:.18,col:this.color});   /* no wind-up was possible: throw at once */
     else{g.pa.a=base;g.pa.t0=g.rt-g.pa.w;}
-    const tip=Pose.tip(g,base);
+    const tip=Pose.tip(g,base),fa=KiWeapon.aim(tip,t,base-ang);   /* v112: from the hand to the middle of the target's body (it aimed at the feet, a hand's height too low) */
     for(let i=0;i<n;i++){
-      const a=base+(i-(n-1)/2)*.17;
-      g.pr.push({x:tip.x,y:tip.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});
+      const a=fa+(i-(n-1)/2)*.17;
+      g.pr.push({x:tip.x,y:tip.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color,kb:1});
     }
     this.extras(()=>{   /* Quantità: one more blast per level, thrown a moment later at the nearest target */
       const t2=g.nearest(p.x,p.y,640),a=t2?Math.atan2(t2.y-p.y,t2.x-p.x)+g.aimJit():base;
-      g.armAct('shoot',a,{w:0,h:.2,r:.18,col:this.color});const tp=Pose.tip(g,a);
-      g.pr.push({x:tp.x,y:tp.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color});g.audio.sfx('shot');
+      g.armAct('shoot',a,{w:0,h:.2,r:.18,col:this.color});const tp=Pose.tip(g,a),a2=t2?KiWeapon.aim(tp,t2,0):a;
+      g.pr.push({x:tp.x,y:tp.y,vx:Math.cos(a2)*380,vy:Math.sin(a2)*380,r:7*(g.S.area*this.e2a),dmg:s.dmg[L]*this.dm*(this.evo?KI_EVO_DMG:1),pi,life:1.5,hit:[],c:this.color,kb:1});g.audio.sfx('shot');
     });
     g.audio.sfx('shot');this.cd=this.cdMax=s.cd[L]*g.S.cd*this.e2c;
   }

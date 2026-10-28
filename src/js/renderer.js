@@ -305,7 +305,7 @@ this.W=1;this.H=1;this.Z=1;
     if(!g.trial){   /* v109: ripples under what floats to the shore */
       const rip=o=>{if(o.sx==null||o.dead)return;for(let i=0;i<2;i++){const k=(t*.9+i*.5+(o.x*.003))%1;ctx.strokeStyle='rgba(225,245,255,'+(.5*(1-k)).toFixed(3)+')';ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(o.x,o.y+3,12+20*k,4+7*k,0,0,TAU);ctx.stroke();}};
       for(const l of g.loot)rip(l);for(const c of g.chests)rip(c);}
-    for(const l of (g.trial?[]:g.loot))this.drawLoot(l,t);
+    for(const l of (g.trial?[]:g.loot))if(!l.alt)this.drawLoot(l,t);   /* (the balls on Shenron's Altar are drawn with the island, SnakeArt.balls) */
     for(const f of (g.trial?[]:g.feat))this.drawFeature(f,t,g);
     for(const c of (g.trial?[]:g.chests))this.drawChest(c,t);
     /* entities, depth sorted */
@@ -439,6 +439,11 @@ this.W=1;this.H=1;this.Z=1;
     if(g.tsT>0){ctx.fillStyle='rgba(215,225,255,'+Math.min(.3,g.tsT*.3)+')';ctx.fillRect(0,0,this.W,this.H);}
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
+    if(g.summon){   /* v113: Shenron / Porunga (summon.js), then the hero again on top, lit by the dragon's light */
+      SUMMON.draw(this,g,(p.x-cx)*this.Z,(p.y-40-cy)*this.Z);
+      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,t);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
+      if(g.summon&&g.summon.ph!=='leave')return;   /* no HUD while the dragon is out */
+    }
     this.hud(g,dt,cx,cy);
   }
   /* the lettering of the damage numbers: a clean, upright, medium-weight font (white for a hit, red for a critical hit) with a thin dark outline for contrast.
@@ -1660,7 +1665,7 @@ this.W=1;this.H=1;this.Z=1;
     const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f']);
     if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a']);
     for(const c of g.chests)if(c.op===undefined)tgts.push([c.x,c.y,RARITY[c.rar||0].c]);
-    for(const l of g.loot)if(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag')tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
+    const altS=new Set();for(const l of g.loot)if(!(l.alt&&!l.dead&&(altS.has(l.isle)||!altS.add(l.isle)))&&(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag'))tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;
       if(sxp>20&&sxp<W-20&&syp>20&&syp<H-20)continue;

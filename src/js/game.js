@@ -3,7 +3,7 @@
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
 const FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
-const POST_T=30,SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
+const POST_T=15,ALT_PICK_R=30,SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
@@ -45,7 +45,7 @@ class Game{
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
-    this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
@@ -454,7 +454,12 @@ class Game{
       else if(w==='power'){for(const x of this.weapons.values())if(x.lv<WMAX){x.upgrade();if(x.lv<WMAX)x.upgrade();}this.say(this.env.tr(T('Desiderio: potere!','Wish: power!')),'#ffd23f',3);}
       else if(w==='tickets'){this.addTicket('t10',1);this.say(this.env.tr(T('Desiderio: 10 ticket!','Wish: 10 tickets!')),'#ffd23f',3);}
       else{this.addZenny(Math.round(300*ZMUL));const id=this.rollTrinket();if(id)this.addTrinket(id);this.say(this.env.tr(T('Desiderio: fortuna!','Wish: fortune!')),'#ffb13b',3);}
-      this.heal(this.p.maxHp);this.balls=0;this.ballSet=[];this.recalc();
+      this.heal(this.p.maxHp);this.balls=0;this.ballSet=[];this.recalc();SUMMON.leave(this);
+    }else if(m.type==='swish'){   /* v113: Porunga's wish (the Super Dragon Balls): a Lucky Ticket 10x or a character */
+      const w=m.options[i]||m.options[0],P=this.progress,real=!this.sandbox;
+      if(w==='lucky'){if(real)P.useSuperBalls('lucky');this.say(this.env.tr(T('Desiderio: Ticket 10× Fortunato!','Wish: Lucky Ticket 10×!')),'#ff9ad0',3.2);}
+      else{const id=w.slice(5),ch=CHARS.find(c=>c.id===id);if(real)P.useSuperBalls('char',id);this.say(this.env.tr(T('Desiderio: ','Wish: '))+(ch?this.env.tr(ch.n):id)+'!','#ffd23f',3.2);}
+      this.run.wishes++;this.wishLog.push(w==='lucky'?'lucky':'char');this.heal(this.p.maxHp);SUMMON.leave(this);
     }
     this.modal=null;this.drainTQ();
   }
@@ -1026,7 +1031,7 @@ class Game{
     return w;
   }
   pickLoot(){const w=this.lootWeights(),o=Object.keys(w).filter(k=>w[k]>0);return o.length?wpick(o,k=>w[k]):null;}
-  lootOnField(k){return this.loot.some(l=>l.k===k&&!l.dead);}
+  lootOnField(k){return this.loot.some(l=>l.k===k&&!l.dead&&!l.alt);}   /* (the balls lying on Shenron's Altar do not hold back the next Dragon Ball) */
   /* zenny bag: its value follows the moment it appears, 1000 at minute 30 (a straight line, in steps of 5, at least 25); the coin buffs (S.gold) apply on top when the run pays out */
   coinValue(t){return clamp(Math.round(ZMUL*(5+35*(t===undefined?this.t:t)/1800)),4,32);}   /* a loose coin: 4 zenny at the start, 32 at minute 30 and never more (it was 5 -> 40, then -20% on every zenny) */
   bagValue(t){return clamp(Math.round(ZMUL*1000*(t===undefined?this.t:t)/1800/5)*5,20,1040);}
@@ -1073,14 +1078,14 @@ class Game{
         this.ring(p.x,p.y,90,'#ffd23f',.6);this.ring(p.x,p.y,200,'#fff3b0',.9);this.ring(p.x,p.y,340,'#ffd23f',1.1);this.pillar(p.x,p.y,'#ffd23f',1.6);
         this.burst(l.x,l.y-30,40,'#ffe066');this.burst(l.x,l.y-30,20,'#ffffff');this.flash=Math.max(this.flash||0,.45);this.flashC='#ffe9a8';this.shake=Math.max(this.shake,.4);
         this.say(this.env.tr(T('SUPER SFERA DEL DRAGO ','SUPER DRAGON BALL '))+l.star+'★  ('+n+'/'+SB_TOTAL+')','#ffd23f',3.2);
-        if(n>=SB_TOTAL)this.say(this.env.tr(T('HAI TUTTE E '+SB_TOTAL+'! Esprimi il desiderio nel menu degli scenari','ALL '+SB_TOTAL+'! Make your wish in the stage menu')),'#ffe066',4);
+        if(!this.summon&&(this.sandbox||(got&&n>=SB_TOTAL)))SUMMON.start(this,'porunga');   /* v113: the Super Dragon Balls call Porunga here, in the run */
         break;}
       case'ball':this.balls++;this.run.balls++;if(l.star&&!this.ballSet.includes(l.star))this.ballSet.push(l.star);
         this.audio.sfx('sphere');                                                 /* assets/sphere_sound.mp3 */
         this.ring(p.x,p.y,70,'#ffb13b',.55);this.ring(p.x,p.y,140,'#ffe9a8',.85);this.pillar(p.x,p.y,'#ffb13b',1.2);
         this.burst(l.x,l.y-12,24,'#ffd27a');this.burst(l.x,l.y-12,12,'#ffffff');this.flash=Math.max(this.flash||0,.2);this.flashC='#ffd27a';
         this.say(this.env.tr(T('Sfera del Drago ','Dragon Ball '))+(l.star?l.star+'★  ':'')+'('+this.balls+'/7)','#ffb13b',2);
-        if(this.balls>=7)this.modal={type:'wish',options:['revive','power','fortune','tickets']};break;
+        if(this.balls>=7&&!this.summon)SUMMON.start(this,'shenron');break;   /* v113: Shenron appears, then the wish window */
     }
   }
   /* ---- water and lava (Sea): lakes and the sea are not walkable (you slide along the shore); lava can be crossed but burns 10% of the maximum HP per second ---- */
@@ -1807,6 +1812,7 @@ class Game{
     const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}
     if(this.post>0){this.post-=rdt;if(this.post<=0||(!this.chests.length&&!this.loot.length&&!this.gm.length&&!this.trial&&!this.tun)){this.post=0;this.finish(true);return;}}   /* loot time after the final boss: ends early once everything is picked up */
     dt*=this.timeScale;
+    if(this.summon){SUMMON.update(this,rdt);if(this.summon)dt*=this.summon.ts;if(this.modal)return;}   /* v113: the dragon is coming: the world almost stops */
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
@@ -2146,7 +2152,7 @@ class Game{
       for(const e of this.en){
         if(e.dead||b.hit.includes(e))continue;
         const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+b.r;
-        if(dx*dx+dy*dy<rr*rr){
+        if(b.kb?KiWeapon.hits(b,e):dx*dx+dy*dy<rr*rr){
           this.hit(e,b.dmg,b.vx*.18,b.vy*.18);b.hit.push(e);if(this.fx.length<380){this.burst(b.x,b.y,4,'#ffffff');this.burst(b.x,b.y,3,b.c);}
           if(b.expl)this.explodeAt(b.x,b.y,b.expl,b.dmg*(b.ex||.7),b.c,e);
           if(b.pi<=0){b.dead=true;break;}b.pi--;
@@ -2353,7 +2359,7 @@ class Game{
         else{this.spawnRing(16+Math.round(this.sd*3),null,e=>{e.hp*=1.3;e.max=e.hp;});
           this.say(this.env.tr(T('I GUARDIANI DELLA SUPER SFERA!','THE SUPER BALL GUARDIANS!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=Math.max(this.shake,.4);}
       }
-      if(d<(l.k==='sball'?SUP_PICK_R:l.k==='ball'?BALL_PICK_R:20)&&!l.lock){l.dead=true;this.collectLoot(l);}
+      if(d<(l.k==='sball'?SUP_PICK_R:l.k==='ball'?(l.alt?ALT_PICK_R:BALL_PICK_R):20)&&!l.lock){l.dead=true;this.collectLoot(l);}
     }
     for(const c of this.chests){
       c.t+=dt;this.drift(c,dt);
@@ -2531,6 +2537,7 @@ class MapDirector{
         const o={k,x:I.x+Math.cos(a)*d*I.r,y:I.y+Math.sin(a)*d*I.ry,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id};
         Snake.solid(I,o,22);g.loot.push(o);   /* v112: never inside a building */
       });
+      if(I.kind==='shrine')I.alt=SnakeArt.ballPos(I).map(b=>{const o={k:'ball',x:b.x,y:b.y,v:0,t:0,star:b.n,alt:1,isle:I.id};g.loot.push(o);return o;});   /* v112: the 7 balls on Shenron's Altar: climb it and pick them up */
       g.say(g.env.tr(SnakeArt.names[I.kind]),'#ffe9a0',2.4);
     }
   }

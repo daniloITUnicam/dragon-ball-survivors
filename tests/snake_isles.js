@@ -31,6 +31,17 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
  ok(fy>big.y0&&fy<=big.y1+1,'v112: the front edge of a structure lies inside its picture');
  const occN=E=>{let n=0;const c={save(){},restore(){},beginPath(){},rect(){},clip(){},translate(){},drawImage(){n++;},fillRect(){},ellipse(){},fill(){},arc(){},set fillStyle(v){},set globalAlpha(v){},set imageSmoothingEnabled(v){},set globalCompositeOperation(v){}};SnakeArt.occlude(c,[H],E,0,null);return n;};
  const sh=Sprites.sheets&&Sprites.sheets['isleo'+H.kind]&&Sprites.sheets['isleo'+H.kind].img;
+ /* v112: Shenron's Altar: up the stairs onto its top, its back wall holds, the 7 balls are picked up there */
+ {const J=L.find(q=>q.kind==='shrine'),G=ISLE_GEO.shrine,k=J.r/G[2],W=(sx,sy)=>[J.x+(sx-G[0])*k,J.y+(sy-G[1])*k],S=(x,y)=>[G[0]+(x-J.x)/k,G[1]+(y-J.y)/k];
+  const walk=(sx,sy,dx,dy,n)=>{const o={};[o.x,o.y]=W(sx,sy);for(let j=0;j<n;j++){o.x+=dx;o.y+=dy;World.resolve('snake',o,9);}return S(o.x,o.y);};
+  const up=walk(378,345,0,-3,120),back=walk(380,150,0,3,120);
+  ok(up[1]<205&&Math.abs(up[0]-378)<6,'v112: up the stairs you reach the top of the altar ('+up.map(v=>v.toFixed(0))+')');
+  ok(back[1]<175,'v112: from behind the altar\'s wall holds you back ('+back.map(v=>v.toFixed(0))+')');
+  const M2=Object.values(g).find(v=>v&&v.constructor&&v.constructor.name==='MapDirector');g.p.x=J.x;g.p.y=J.y+J.ry*.9;M2.isT=0;M2.isSeen=null;M2.update(.6);
+  const A=J.alt||[];ok(A.length===7&&A.every(l=>g.loot.includes(l)&&l.k==='ball')&&A.map(l=>l.star).sort().join('')==='1234567','v112: the 7 Dragon Balls (1-7 stars) lie on the altar');
+  g.balls=0;g.ballSet=[];g.en=[];for(const l of A){g.p.x=l.x+6;g.p.y=l.y;step(1);}
+  ok(g.balls>=7||A.every(l=>l.dead),'v112: walking over them on the altar picks them all up ('+A.filter(l=>l.dead).length+'/7)');
+  }
  ok(!sh||(occN([{x:cx,y:big.y0+30,w:40,h:120}])>=1&&occN([{x:cx,y:fy+40,w:40,h:120}])===0),'v112: a structure is painted over who stands behind it, not over who stands in front');
  const far={x:I.x,y:I.y+I.side*(I.r*2.6)};Snake.clamp(far,10);
  ok(Math.hypot(far.x-I.x,far.y-I.y)<=I.r+1||Math.abs(far.y-Snake.f(far.x))<=Snake.HW*1.2,'a point far outside is pulled back to the ground');

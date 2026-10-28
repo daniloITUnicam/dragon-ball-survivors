@@ -93,14 +93,23 @@ const SnakeArt={
     c.restore();
   },
   /* Shenron's Altar: the seven Dragon Balls on the altar (sprite px of the altar top: centre 379,225, radii 70 x 42), lit and gently floating */
-  balls(c,I,t,img){
-    const G=ISLE_GEO.shrine,k=I.r/G[2],cx=I.x+(379-G[0])*k,cy=I.y+(225-G[1])*k,rx=70*k*.6,ry=42*k*.6,S=26*k,L=[];
-    for(let i=0;i<7;i++){const a=-Math.PI/2+i/7*TAU+t*.12;L.push({x:cx+Math.cos(a)*rx,y:cy+Math.sin(a)*ry,n:i+1,ph:i*.9});}
+  /* v112: where the seven balls stand on the altar (world px, feet of each ball), 1 to 7 stars; they are real Dragon Balls you pick up by climbing the altar
+     (Game.islands lays them as loot, l.alt, kept in I.alt) */
+  ballPos(I){
+    const G=ISLE_GEO.shrine,k=I.r/G[2],cx=I.x+(379-G[0])*k,cy=I.y+(225-G[1])*k,rx=70*k*.6,ry=42*k*.6,L=[];
+    for(let i=0;i<7;i++){const a=-Math.PI/2+i/7*TAU;L.push({x:cx+Math.cos(a)*rx,y:cy+Math.sin(a)*ry,n:i+1});}
+    return L;
+  },
+  /* the balls still on the altar (only = filter on them, for the redraw in front of who stands behind one) */
+  balls(c,I,t,img,only){
+    const G=ISLE_GEO.shrine,k=I.r/G[2],S=26*k;
+    let L=I.alt?I.alt.filter(l=>!l.dead).map(l=>({x:l.x,y:l.y,n:l.star})):this.ballPos(I);
+    if(only)L=L.filter(only);
     L.sort((p,q)=>p.y-q.y);
-    for(const b of L){
+    for(const b of L){b.ph=b.n*.9;
       const h=6*k+Math.sin(t*2+b.ph)*3*k;
-      c.fillStyle='rgba(40,20,60,.35)';this.ell(c,b.x,b.y,S*.38,S*.14);
-      GLOW.at(c,b.x,b.y-h-S*.5,S*1.25,'#ffaa28',.55+.15*Math.sin(t*3+b.ph));
+      if(!only){c.fillStyle='rgba(40,20,60,.35)';this.ell(c,b.x,b.y,S*.38,S*.14);
+        GLOW.at(c,b.x,b.y-h-S*.5,S*1.25,'#ffaa28',.55+.15*Math.sin(t*3+b.ph));}   /* (the redraw in front of someone: the ball only, its glow is already there) */
       if(img){c.save();c.imageSmoothingEnabled=true;c.drawImage(img,(b.n-1)*64,0,64,64,b.x-S/2,b.y-h-S,S,S);c.restore();}
       else{c.fillStyle='#ff9d1c';this.cir(c,b.x,b.y-h-S*.5,S*.45);c.fillStyle='#d22';this.cir(c,b.x,b.y-h-S*.5,S*.12);}
     }
@@ -131,13 +140,19 @@ const SnakeArt={
       for(const o of L){
         let n=0;
         for(const e of E){
-          if(e.x+e.w<o.x0||e.x-e.w>o.x1||e.y-e.h>o.y1+bob||e.y<o.y0+bob||e.y>=Snake.front(o,e.x))continue;
+          if(e.x+e.w<o.x0||e.x-e.w>o.x1||e.y-e.h>o.y1+bob||e.y<o.y0+bob||e.y>=Snake.front(o,e.x)||(o.T.length&&Snake.onTop(o,e.x,e.y)))continue;
           if(!n){c.save();c.beginPath();}n++;c.rect(e.x-e.w,e.y-e.h,e.w*2,e.h+8);
         }
         if(!n)continue;
-        c.clip();c.imageSmoothingEnabled=true;c.drawImage(A.img,o.r[0],o.r[1],o.r[2],o.r[3],o.x0,o.y0+bob,o.x1-o.x0,o.y1-o.y0);
-        if(I.kind==='shrine'){c.translate(0,bob);this.balls(c,I,t,ballImg);}   /* the Dragon Balls float above the altar: in front of it */
-        c.restore();
+        c.clip();c.imageSmoothingEnabled=true;c.drawImage(A.img,o.r[0],o.r[1],o.r[2],o.r[3],o.x0,o.y0+bob,o.x1-o.x0,o.y1-o.y0);c.restore();
+      }
+      if(I.kind==='shrine'){   /* the Dragon Balls in front of who stands behind them (on the altar or behind it) are painted again over him */
+        const G=ISLE_GEO.shrine,k=I.r/G[2],bx=I.x+(379-G[0])*k,by=I.y+(225-G[1])*k,R=60*k;
+        for(const e of E){
+          if(Math.abs(e.x-bx)>R+e.w||e.y>by+R*.6||e.y<by-R*1.4)continue;
+          const B=(I.alt?I.alt.filter(l=>!l.dead):this.ballPos(I));if(!B.some(b=>b.y>e.y))continue;
+          c.save();c.beginPath();c.rect(e.x-e.w,e.y-e.h,e.w*2,e.h+8);c.clip();c.translate(0,bob);this.balls(c,I,t,ballImg,b=>b.y>e.y);c.restore();
+        }
       }
     }
   },

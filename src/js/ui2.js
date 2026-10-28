@@ -24,7 +24,7 @@ function wsFx(id,a,b){
   return out.length?out:null;
 }
 const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup')};
-const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets')};
+const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets'),lucky:T('Ticket 10× Fortunato (Porunga)','Lucky Ticket 10× (Porunga)'),char:T('Un personaggio (Porunga)','A character (Porunga)')};
 Object.assign(UI.prototype,{
   /* ---------- settings ---------- */
   screen_settings(a){
@@ -63,6 +63,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='gameplay'){
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
+        toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
         select(this.tr(T('Scheda iniziale della pausa','Pause menu opens on')),'pauseTab',[['map',this.t('mapTab')],['run',this.t('runTab')],['last',this.tr(T('Ultima usata','Last used'))]]),
         row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
         s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */
@@ -381,12 +382,23 @@ Object.assign(UI.prototype,{
       el=h('div',{class:'screen modal'},h('h2',null,this.t('trialShopTitle')),h('p',{class:'sub'},m.freePick?this.t('trialFreeDesc'):this.t('trialShopDesc',{n:Math.floor(g.run.coins)})),
         h('div',{class:'cards trialcards'},cards),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(0);}},this.t('trialLeave'))));
-    }else{
+    }else if(m.type!=='swish'){
       const W=[{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},
         {k:'力',c:'#ffd23f',n:T('Potere','Power'),d:T('Tutte le armi guadagnano un livello.','All weapons gain a level.')},
         {k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')},
         {k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha dei Cimeli: 10 estrazioni di cimeli.','A 10× Ticket for the Trinket Gacha: 10 trinket pulls.')}];
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
+        h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
+    }
+    else if(m.type==='swish'){   /* v113: Porunga, in the run: a Lucky Ticket 10x or one of up to three characters you do not have */
+      const W=m.options.map(o=>{
+        if(o==='lucky')return{k:'券',c:'#ff9ad0',n:T6('Ticket 10× Fortunato','Lucky Ticket 10×','Ticket 10× de la Suerte','Ticket 10× Chanceux','Glücksticket 10×','Ticket 10× da Sorte'),
+          d:T6('10 estrazioni con probabilità più alte nel Gacha dei Cimeli.','10 pulls with better odds in the Trinket Gacha.','10 tiradas con mejores probabilidades en el Gacha de Reliquias.','10 tirages avec de meilleures chances au Gacha des Reliques.','10 Ziehungen mit besseren Chancen im Relikt-Gacha.','10 tiragens com chances melhores no Gacha de Relíquias.')};
+        const ch=CHARS.find(c=>c.id===o.slice(5));
+        return{k:'人',c:'#ffd23f',n:ch?ch.n:T(o,o),d:T6('Sblocca questo personaggio, senza spendere zenny.','Unlock this character, without spending zenny.','Desbloquea este personaje, sin gastar zenny.','Débloque ce personnage, sans dépenser de zennys.','Schalte diesen Charakter frei, ohne Zenny auszugeben.','Desbloqueie este personagem, sem gastar zenny.')};
+      });
+      el=h('div',{class:'screen modal wish'},h('h2',null,this.tr(T6('Porunga esaudisce un desiderio','Porunga grants a wish','Porunga concede un deseo','Porunga exauce un vœu','Porunga erfüllt einen Wunsch','Porunga concede um desejo'))),
+        h('p',{class:'sub'},this.tr(T6('Hai riunito le Super Sfere del Drago.','You gathered the Super Dragon Balls.','Has reunido las Súper Bolas de Dragón.','Tu as réuni les Super Dragon Balls.','Du hast die Super-Dragonballs gesammelt.','Você reuniu as Super Esferas do Dragão.'))),
         h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
     }
     if(el.classList.contains('modal')){el.dataset.mt=m.type;if(again)el.classList.add('noanim');}

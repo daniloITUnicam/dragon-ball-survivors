@@ -261,6 +261,66 @@ class AudioSys{
     const lfo=c.createOscillator(),lg=c.createGain();lfo.frequency.value=6.5;lg.gain.value=vol*.35;lfo.connect(lg);lg.connect(g.gain);
     s.connect(bp);bp.connect(g);g.connect(this.sfxG);s.start(t);lfo.start(t);s.stop(t+dur+.05);lfo.stop(t+dur+.05);
   }
+  /* ---- v113: the summoning of the dragon (summon.js), original 8-bit sounds: 25% pulse waves, triangle bass, noise channel ---- */
+  pulse(){if(!this._pw&&this.ctx){const n=32,re=new Float32Array(n),im=new Float32Array(n);for(let k=1;k<n;k++)im[k]=2/(k*Math.PI)*Math.sin(k*Math.PI*.25);this._pw=this.ctx.createPeriodicWave(re,im);}return this._pw;}
+  /* one chip note: f Hz, d s, ty 'pulse' | 'square' | 'triangle' | 'sawtooth', o: {to: end frequency, vib: vibrato depth (ratio), vr: vibrato rate, at: attack, dl: delay, out: node} */
+  chip(f,d,ty,vol,o){
+    if(!this.ctx||this.s.sfx<=0)return null;o=o||{};
+    const c=this.ctx,t=c.currentTime+(o.dl||0),os=c.createOscillator(),g=c.createGain();
+    if(ty==='pulse')os.setPeriodicWave(this.pulse());else os.type=ty||'square';
+    os.frequency.setValueAtTime(f,t);if(o.to)os.frequency.exponentialRampToValueAtTime(Math.max(20,o.to),t+d);
+    let lfo=null;if(o.vib){lfo=c.createOscillator();const lg=c.createGain();lfo.frequency.value=o.vr||7;lg.gain.value=f*o.vib;lfo.connect(lg);lg.connect(os.frequency);lfo.start(t);lfo.stop(t+d+.05);}
+    const at=o.at||.005;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+Math.max(at,d*(o.hold||.35)));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    os.connect(g);g.connect(o.out||this.sfxG);os.start(t);os.stop(t+d+.05);
+    return{os,g,lfo};
+  }
+  /* the noise channel: band-limited burst, optional sweep and tremolo */
+  chipNoise(d,vol,f0,f1,o){
+    if(!this.ctx||this.s.sfx<=0)return;o=o||{};
+    const c=this.ctx,t=c.currentTime+(o.dl||0),sr=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();
+    sr.buffer=this.nbuf;sr.loop=true;sr.playbackRate.value=o.crush||.35;   /* slowed noise: grainier, like an old sound chip */
+    f.type=o.bp?'bandpass':'lowpass';f.Q.value=o.q||.8;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(40,f1),t+d);
+    const at=o.at||.01;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+d*(o.hold||.3));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    if(o.trem){const l=c.createOscillator(),lg=c.createGain();l.type='square';l.frequency.value=o.trem;lg.gain.value=vol*.6;l.connect(lg);lg.connect(g.gain);l.start(t);l.stop(t+d+.05);}
+    sr.connect(f);f.connect(g);g.connect(this.sfxG);sr.start(t);sr.stop(t+d+.05);
+  }
+  /* step: dark, rise, ball (i = which one), burst, emerge, roar, blip, leave; deep = Porunga (lower, harsher); sp = speed (x2 setting) */
+  summon(step,deep,i,sp){
+    if(!this.ctx||this.s.sfx<=0)return;
+    const c=this.ctx,k=deep?.75:1,q=1/(sp||1),N=m=>mtof(m)*k,P=(f,d,v,o)=>this.chip(f,d,'pulse',v,o),Tr=(f,d,v,o)=>this.chip(f,d,'triangle',v,o);
+    switch(step){
+      case'dark':{   /* the sky goes dark: a low droning pulse with tremolo under a falling minor arpeggio, and a rumble */
+        this.stopSummonDrone();const g=c.createGain();g.gain.value=1;g.connect(this.sfxG);this._sd=g;
+        const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=520;lp.connect(g);
+        this.chip(N(33),6.6*q,deep?'sawtooth':'pulse',.05,{at:.6,hold:.85,vib:.012,vr:5,out:lp});this.chip(N(40),6.6*q,'triangle',.05,{at:.8,hold:.85,out:lp});
+        const tr=c.createOscillator(),tg=c.createGain();tr.frequency.value=6;tg.gain.value=.35;tr.connect(tg);tg.connect(g.gain);tr.start();tr.stop(c.currentTime+6.8*q);this._sdl=tr;
+        [76,72,69,64,60,57].forEach((m,j)=>{P(N(m),.28*q,.035,{dl:j*.13*q});P(N(m),.22*q,.012,{dl:j*.13*q+.09*q});});   /* with a little echo */
+        this.chipNoise(1.6*q,.06,900,120,{at:.3,trem:9});break;}
+      case'rise':   /* the balls fly up: a climbing arpeggio, faster and faster, over a rising pulse sweep */
+        for(let j=0;j<16;j++){const m=60+[0,4,7,12][j%4]+Math.floor(j/4)*5;P(N(m),.11*q,.042,{dl:(j*.085-j*j*.0012)*q});}
+        P(N(48),1.3*q,.02,{to:N(72),vib:.02,vr:9,at:.1});this.chipNoise(1.3*q,.025,600,5000,{bp:1,q:2,at:.4});break;
+      case'ball':{   /* ball i flashes: a bell, one step higher each time, with its echo */
+        const m=[84,86,88,91,93,96,98][Math.min(6,i|0)]-(deep?2:0);
+        P(N(m),.3*q,.04);Tr(N(m-12),.35*q,.05);P(N(m),.25*q,.014,{dl:.1*q});P(N(m+12),.12*q,.012,{dl:.03*q});break;}
+      case'burst':   /* they rush together: the big flash */
+        this.chipNoise(1.1*q,.16,9000,160,{crush:.5,hold:.15});P(N(96),.7*q,.05,{to:N(36)});this.chip(N(36),.9*q,'square',.06,{to:N(24)});
+        Tr(N(84),.12,.05);Tr(N(91),.4*q,.04,{dl:.06});break;
+      case'emerge':   /* the dragon comes out of the light: the long rising chip sweep with vibrato, wind and a deep rumble */
+        P(N(36),1.8*q,.045,{to:N(84),vib:.03,vr:8,at:.15,hold:.7});P(N(43),1.8*q,.02,{to:N(91),vib:.03,vr:8.5,at:.2,hold:.7});
+        Tr(N(28),2*q,.07,{at:.3,hold:.7});this.chipNoise(1.9*q,.05,400,6000,{bp:1,q:1.6,at:.6,hold:.6,trem:7});break;
+      case'roar':{   /* the roar: a low growl (fast wobble), harsh noise, falling */
+        const f0=deep?82:110;
+        this.chip(f0,1.4*q,'square',.07,{to:f0*.62,vib:.18,vr:26,at:.04,hold:.4});this.chip(f0*1.5,1.2*q,'sawtooth',.03,{to:f0*.9,vib:.2,vr:31,at:.05});
+        Tr(f0/2,1.5*q,.08,{to:f0/3,at:.05});this.chipNoise(1.3*q,.08,1400,260,{bp:1,q:1.2,trem:24,at:.05,hold:.35});break;}
+      case'blip':   /* the dragon speaks: deep voice blips */
+        P((deep?95:125)*(1+Math.random()*.35),.06,.05);break;
+      case'leave':   /* it vanishes and the balls scatter: a falling sparkle and a whoosh */
+        this.stopSummonDrone();
+        for(let j=0;j<10;j++)P(N(100-j*3),.13*q,.026,{dl:j*.06*q});Tr(N(72),.6*q,.05);P(N(79),.5*q,.02,{dl:.05});
+        this.chipNoise(1.2*q,.05,7000,300,{bp:1,q:1.2,at:.05});break;
+    }
+  }
+  stopSummonDrone(){const g=this._sd;if(!g||!this.ctx)return;this._sd=null;const t=this.ctx.currentTime;try{if(this._sdl){this._sdl.stop(t+.5);this._sdl=null;}g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+.5);setTimeout(()=>{try{g.disconnect();}catch(e){}},800);}catch(e){}}
   /* deep impact: pitch-dropping sine + low noise thud */
   thump(vol,f,dur,delay){this.toneAt(f,dur,'sine',vol,-f*.65,delay||0);this.noise(dur*.6,vol*.8,700,70,delay||0);}
   /* distorted energy sweep */

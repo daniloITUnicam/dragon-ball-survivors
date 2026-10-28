@@ -201,7 +201,7 @@ const Snake={
     if(I._ob)return I._ob;
     const L=(typeof ISLE_OBJ!=='undefined'&&ISLE_OBJ[I.kind])||[],G=ISLE_GEO[I.kind],k=I.r/G[2],X=v=>I.x+(v-G[0])*k,Y=v=>I.y+(v-G[1])*k,N=this.FN;
     return I._ob=L.map(o=>{
-      const P=o.f.map(f=>{
+      const poly=f=>{
         const p=[];for(let j=0;j<f.length;j+=2)p.push(X(f[j]),Y(f[j+1]));
         let mx=0,my=0;const m=p.length/2;for(let j=0;j<p.length;j+=2){mx+=p[j]/m;my+=p[j+1]/m;}
         const n=[];let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
@@ -211,15 +211,24 @@ const Snake={
           n.push(nx,ny,nx*ax+ny*ay);bx0=Math.min(bx0,ax);bx1=Math.max(bx1,ax);by0=Math.min(by0,ay);by1=Math.max(by1,ay);
         }
         return{p,n,bx0,by0,bx1,by1};
-      });
-      const fx0=Math.min(...P.map(q=>q.bx0)),fx1=Math.max(...P.map(q=>q.bx1)),fy=new Array(N).fill(NaN);
+      };
+      const P=o.f.map(poly),T=(o.t||[]).map(poly),PT=P.concat(T);
+      /* an edge shared by two footprints of the same structure (the quads of the altar's wall) is inside their union: never pushed through (q.int) */
+      const key=(ax,ay,bx,by)=>Math.round(ax*10)+','+Math.round(ay*10)+','+Math.round(bx*10)+','+Math.round(by*10),E=new Map();
+      P.forEach((q,qi)=>{const p=q.p;for(let j=0;j<p.length;j+=2){const k=key(p[j],p[j+1],p[(j+2)%p.length],p[(j+3)%p.length]);E.set(k,qi);}});
+      P.forEach((q,qi)=>{const p=q.p;q.int=[];for(let j=0;j<p.length;j+=2){const o2=E.get(key(p[(j+2)%p.length],p[(j+3)%p.length],p[j],p[j+1]));q.int.push(o2!==undefined&&o2!==qi);}});
+      const fx0=Math.min(...PT.map(q=>q.bx0)),fx1=Math.max(...PT.map(q=>q.bx1)),fy=new Array(N).fill(NaN);
       for(let i=0;i<N;i++){const x=fx0+(fx1-fx0)*i/(N-1);
-        for(const q of P){const p=q.p;for(let j=0;j<p.length;j+=2){const ax=p[j],ay=p[j+1],bx=p[(j+2)%p.length],by=p[(j+3)%p.length];
+        for(const q of PT){const p=q.p;for(let j=0;j<p.length;j+=2){const ax=p[j],ay=p[j+1],bx=p[(j+2)%p.length],by=p[(j+3)%p.length];
           if(ax===bx||(ax-x)*(bx-x)>0)continue;const y=ay+(x-ax)/(bx-ax)*(by-ay);if(!(y<=fy[i]))fy[i]=y;}}}
       for(let i=0;i<N;i++)if(isNaN(fy[i])){let d=1;while(d<N){const a=fy[i-d],b=fy[i+d];if(a===a&&a!==undefined){fy[i]=a;break;}if(b===b&&b!==undefined){fy[i]=b;break;}d++;}}
-      return{x0:X(o.b[0]),y0:Y(o.b[1]),x1:X(o.b[2]),y1:Y(o.b[3]),r:o.r,P,fx0,fx1,fy};
+      return{x0:X(o.b[0]),y0:Y(o.b[1]),x1:X(o.b[2]),y1:Y(o.b[3]),r:o.r,P,T,fx0,fx1,fy};
     });
   },
+  /* inside the convex polygon q (from objs)? */
+  inPoly(q,x,y){if(x<q.bx0||x>q.bx1||y<q.by0||y>q.by1)return false;const n=q.n;for(let j=0;j<n.length;j+=3)if(n[j]*x+n[j+1]*y>n[j+2])return false;return true;},
+  /* standing ON structure s (the altar's top, its stairs): never hidden by it */
+  onTop(s,x,y){for(const q of s.T)if(this.inPoly(q,x,y))return true;return false;},
   /* the y of the front edge of structure s at x: whoever has his feet above it stands behind it */
   front(s,x){const N=this.FN,u=Math.max(0,Math.min(N-1,(x-s.fx0)/((s.fx1-s.fx0)||1)*(N-1))),i=Math.min(N-2,Math.floor(u)),f=u-i;return s.fy[i]*(1-f)+s.fy[i+1]*f;},
   /* on the snake's body (no island structure can be there) */
@@ -231,9 +240,9 @@ const Snake={
       let moved=false;
       for(const s of L)for(const q of s.P){
         if(o.x<q.bx0-rad||o.x>q.bx1+rad||o.y<q.by0-rad||o.y>q.by1+rad)continue;
-        const n=q.n;let best=-1e9,bi=0;
-        for(let j=0;j<n.length;j+=3){const d=n[j]*o.x+n[j+1]*o.y-n[j+2];if(d>best){best=d;bi=j;}}
-        if(best<rad-.01){const m=rad-best;o.x+=n[bi]*m;o.y+=n[bi+1]*m;moved=true;}
+        const n=q.n;let best=-1e9,mx=-1e9,bi=0;
+        for(let j=0;j<n.length;j+=3){const d=n[j]*o.x+n[j+1]*o.y-n[j+2];if(d>mx)mx=d;if(d>best&&!q.int[j/3]){best=d;bi=j;}}
+        if(mx<rad-.01){const m=rad-best;o.x+=n[bi]*m;o.y+=n[bi+1]*m;moved=true;}
       }
       if(!moved)return;
     }

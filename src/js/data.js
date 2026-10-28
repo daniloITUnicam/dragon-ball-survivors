@@ -40,7 +40,7 @@ const WEAPONS={
 };
 const MAX_WEAPONS=5;
 const SHORE_V=34;
-const TR_SHOCK_CD=16,TR_SLOW_CD=40,TR_BARRIER_CD=30;   /* v109: the timed trinket effects come half as often (shockwave 8 -> 16 s, slow time 20 -> 40 s, barrier 15 -> 30 s) */
+const TR_SHOCK_CD=4,TR_SLOW_CD=10,TR_BARRIER_CD=7.5;   /* v112: the timed trinket effects come twice as often as before v109 (shockwave 8 -> 4 s, slow time 20 -> 10 s, barrier 15 -> 7.5 s) */
 const BANNER_MIN=2,BANNER_FADE=.45;   /* v109: a message banner stays at least 2 s before the next one, then fades out */
 const TRAP_P=.30,TRAP_E=.40,TRAP_B=.10;   /* v109: a floor trap takes 30% of your max HP, 40% of an enemy's, 10% of a boss's (once per activation) */   /* px/s: a chest or pick-up that fell on the water floats to the shore at least this fast */
 /* seconds a kind of floor item stays away after one appeared (rarity scale: coin common, heal/xp uncommon, haste/dmg rare, magnet/luck very rare, capsule epic) */
@@ -620,12 +620,12 @@ const TRINKETS=[
  {id:'kaioh',r:2,k:'心',n:T('Cuore di Kaioh','Kaioh\'s Heart'),d:T('Ogni uccisione cura 0,4 salute.','Each kill heals 0.4 HP.'),sp:'vamp'},
  {id:'halo',r:2,k:'輪',n:T('Aureola dell\'Angelo','Angel Halo'),d:T('Rinasci una volta con il 50% di salute.','Revive once with 50% HP.'),sp:'revive'},
  {id:'timeroom',r:2,k:'時',n:T('Orologio dello Spirito','Spirit Room Clock'),d:T('-10% ricarica, +4% danno.','-10% cooldown, +4% damage.'),m:{cd:.10,might:.04}},
- {id:'dball4',r:2,k:'星',n:T('Sfera a 4 Stelle','Four-Star Ball'),d:T('Ogni 16s un\'onda d\'urto colpisce i vicini.','Every 16s a shockwave hits nearby foes.'),sp:'shock'},
+ {id:'dball4',r:2,k:'星',n:T('Sfera a 4 Stelle','Four-Star Ball'),d:T('Ogni 4s un\'onda d\'urto colpisce i vicini.','Every 4s a shockwave hits nearby foes.'),sp:'shock'},
  {id:'crystal',r:2,k:'鏡',n:T('Cristallo Divino','Divine Crystal'),d:T('+6% critico. I critici esplodono.','+6% crit. Crits explode.'),m:{crit:.06},sp:'critboom',x:T('I critici esplodono.','Crits explode.')},
  {id:'armor',r:3,k:'盾',n:T('Armatura Saiyan Reale','Royal Saiyan Armor'),d:T('+3 armatura, +30% salute.','+3 armor, +30% HP.'),m:{armor:3,hpPct:.30}},
- {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 40s i nemici rallentano per 4s.','Every 40s enemies slow for 4s.'),sp:'slowtime'},
+ {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 10s i nemici rallentano per 4s.','Every 10s enemies slow for 4s.'),sp:'slowtime'},
  {id:'dragonheart',r:3,k:'龍',n:T('Cuore del Drago','Dragon Heart'),d:T('+12% danno, +8% esperienza, +25% zenny.','+12% damage, +8% XP, +25% zenny.'),m:{might:.12,xp:.08,gold:.25}},
- {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 30s.','A barrier blocks one hit every 30s.'),sp:'barrier'},
+ {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 7,5s.','A barrier blocks one hit every 7.5s.'),sp:'barrier'},
  {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.')},
  /* more trinkets with plain stats, so the gacha pool is wider: they exist at every rarity (common .. mythic) like the other stat trinkets */
  {id:'shell',r:0,k:'亀',n:T('Guscio di Muten Roshi','Master Roshi\'s Shell'),d:T('',''),m:{armor:.7,regen:.3}},
