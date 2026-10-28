@@ -13,8 +13,25 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
  ok(new Set(L.map(i=>i.kind)).size===9,'every island kind appears');
  ok(L.every(i=>Math.abs(i.x)<=Snake.XMAX-400&&Math.abs(i.x)>=800),'none near the start nor past the end');
  const I=L.find(i=>i.x>0&&i.side>0)||L[0];
- const q={x:I.x,y:I.y+I.r*.5};Snake.clamp(q,10);
- ok(Math.hypot(q.x-I.x,q.y-I.y-I.r*.5)<1,'a point on the island is walkable (not pushed back)');
+ /* v112: depth of a point inside the footprints (> -rad = blocked) */
+ const deep=(J,x,y)=>{let d=-1e9;for(const s of Snake.objs(J))for(const qq of s.P){let mx=-1e9;for(let j=0;j<qq.n.length;j+=3)mx=Math.max(mx,qq.n[j]*x+qq.n[j+1]*y-qq.n[j+2]);d=Math.max(d,-mx);}return d;};
+ let fp=null;for(let a=0;a<64&&!fp;a++){const u=.15+(a%8)*.09,an=a*.7,x=I.x+Math.cos(an)*u*I.r,y=I.y+Math.sin(an)*u*I.ry;if(deep(I,x,y)<-40)fp=[x,y];}
+ const q={x:fp[0],y:fp[1]};Snake.clamp(q,10);
+ ok(Math.hypot(q.x-fp[0],q.y-fp[1])<1,'a free point on the island is walkable (not pushed back)');
+ /* v112: buildings, trees and rocks on the islands */
+ ok(L.every(J=>J.kind==='nimbus'||Snake.objs(J).length>=3),'v112: every island but the cloud has its structures ('+L.slice(0,9).map(J=>J.kind+' '+Snake.objs(J).length).join(', ')+')');
+ let stuck=0,tot=0;
+ for(const J of L)for(const s of Snake.objs(J))for(const qq of s.P){let mx=0,my=0;const n=qq.p.length/2;for(let j=0;j<qq.p.length;j+=2){mx+=qq.p[j]/n;my+=qq.p[j+1]/n;}if(Snake.inIsle(J,mx,my,14)>.95)continue;   /* on the rim: the island's edge holds it there */
+   const o={x:mx,y:my};Snake.clamp(o,14);tot++;if(deep(J,o.x,o.y)>-10)stuck++;}
+ ok(tot>80&&stuck===0,'v112: whoever lands inside a footprint is pushed out of it, his radius clear within 4 px ('+tot+' footprints, '+stuck+' left inside)');
+ const H=L.find(J=>J.kind==='kame')||L.find(J=>Snake.objs(J).length),big=Snake.objs(H).reduce((a,b)=>(b.x1-b.x0)>(a.x1-a.x0)?b:a);
+ g.en=[];g.p.x=(big.P[0].bx0+big.P[0].bx1)/2;g.p.y=(big.P[0].by0+big.P[0].by1)/2;step(3);
+ ok(deep(H,g.p.x,g.p.y)<-5,'v112: the hero cannot stand inside a building ('+H.kind+')');
+ const fy=Snake.front(big,(big.fx0+big.fx1)/2),cx=(big.fx0+big.fx1)/2;
+ ok(fy>big.y0&&fy<=big.y1+1,'v112: the front edge of a structure lies inside its picture');
+ const occN=E=>{let n=0;const c={save(){},restore(){},beginPath(){},rect(){},clip(){},translate(){},drawImage(){n++;},fillRect(){},ellipse(){},fill(){},arc(){},set fillStyle(v){},set globalAlpha(v){},set imageSmoothingEnabled(v){},set globalCompositeOperation(v){}};SnakeArt.occlude(c,[H],E,0,null);return n;};
+ const sh=Sprites.sheets&&Sprites.sheets['isleo'+H.kind]&&Sprites.sheets['isleo'+H.kind].img;
+ ok(!sh||(occN([{x:cx,y:big.y0+30,w:40,h:120}])>=1&&occN([{x:cx,y:fy+40,w:40,h:120}])===0),'v112: a structure is painted over who stands behind it, not over who stands in front');
  const far={x:I.x,y:I.y+I.side*(I.r*2.6)};Snake.clamp(far,10);
  ok(Math.hypot(far.x-I.x,far.y-I.y)<=I.r+1||Math.abs(far.y-Snake.f(far.x))<=Snake.HW*1.2,'a point far outside is pulled back to the ground');
  /* rewards */

@@ -29,10 +29,10 @@ const SnakeArt={
         if(F[1]){const h=im.height,y0=h*(1-F[1]),g=x.createLinearGradient(0,y0,0,h);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=g;x.fillRect(0,y0,im.width,h-y0);}
         if(F[0]){const y1=im.height*F[0],g=x.createLinearGradient(0,0,0,y1);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,im.width,y1);}
         S.fc=c;}else S.fc=S.img;}
-    return{img:S.fc};
+    const q=S.k||1;return{img:S.fc,w:S.img.width/q,h:S.img.height/q};   /* w, h in px of the 1x sprite (v112: the sheet is 2x, sprites.json k) */
   },
   /* how far the drawn island reaches above / below its centre (for culling): [top, bottom] in world px */
-  ext(I){const S=this.spr(I),G=ISLE_GEO[I.kind];if(!S)return[I.r*1.1,I.r*1.6];const k=I.r/G[2];return[G[1]*k+60,(S.img.height-G[1])*k+90];},
+  ext(I){const S=this.spr(I),G=ISLE_GEO[I.kind];if(!S)return[I.r*1.1,I.r*1.6];const k=I.r/G[2];return[G[1]*k+60,(S.h-G[1])*k+90];},
   /* ---- roads (v110): a smaller copy of the snake's body along I.road. The renderer paints the body and every road one layer at a time (shadow, outline, body,
      side, belly), so the layers of a road merge into the same layers of the body like a fork, and near the body each road widens into a smooth fillet ---- */
   RF:110,RE:64,   /* fillet: length along the road after the body's edge, and how much wider (each side) it starts */
@@ -78,7 +78,7 @@ const SnakeArt={
   },
   /* puffs of the cloud sea around the foot of the island: behind it (front=false), and a row over the bottom of the painting (front=true) that hides where it ends */
   puffs(c,I,t,front){
-    const S=this.spr(I);if(!S)return;const G=ISLE_GEO[I.kind],k=I.r/G[2],bot=(S.img.height-G[1])*k,ph=I.x*.011,cut=(this.FADE[I.kind]||[0,0])[1]>0;
+    const S=this.spr(I);if(!S)return;const G=ISLE_GEO[I.kind],k=I.r/G[2],bot=(S.h-G[1])*k,ph=I.x*.011,cut=(this.FADE[I.kind]||[0,0])[1]>0;
     c.save();
     const n=front?(cut?11:7):12;
     for(let i=0;i<n;i++){
@@ -110,8 +110,8 @@ const SnakeArt={
     if(S){
       const G=ISLE_GEO[I.kind],k=I.r/G[2],bob=Math.sin(t*.9+I.x*.01)*4,ph=I.x*.013;
       c.save();c.translate(0,bob);
-      const bot=(S.img.height-G[1])*k;c.fillStyle='rgba(150,60,0,.22)';this.ell(c,I.x,I.y+bot*.75+30,I.r*.9,I.ry*.45);   /* shadow on the clouds */
-      c.imageSmoothingEnabled=true;c.drawImage(S.img,I.x-G[0]*k,I.y-G[1]*k,S.img.width*k,S.img.height*k);c.imageSmoothingEnabled=false;
+      const bot=(S.h-G[1])*k;c.fillStyle='rgba(150,60,0,.22)';this.ell(c,I.x,I.y+bot*.75+30,I.r*.9,I.ry*.45);   /* shadow on the clouds */
+      c.imageSmoothingEnabled=true;c.drawImage(S.img,I.x-G[0]*k,I.y-G[1]*k,S.w*k,S.h*k);c.imageSmoothingEnabled=false;
       if(I.kind==='shrine')this.balls(c,I,t,ballImg);
       c.globalCompositeOperation='lighter';   /* spirit lights rising from the island */
       for(let i=0;i<4;i++){const r=(t*.3+i/4+ph)%1;GLOW.at(c,I.x+Math.sin(r*6+i*2)*I.r*.55,I.y-I.ry*.1-r*I.ry*1.3,10+6*(1-r),'#fff0b0',.6*(1-r));}
@@ -119,6 +119,27 @@ const SnakeArt={
       return;
     }
     this.isle0(c,I,t);
+  },
+  /* v112: the buildings, trees and rocks of the islands (ISLE_OBJ) painted again over whoever stands behind them. E = [{x,y,w,h}]: feet at (x,y), half width w,
+     height h. Each cut-out (isleo<kind> atlas) is clipped to the boxes of the ones whose feet are above its front edge (Snake.front), so nothing else is touched */
+  occlude(c,IS,E,t,ballImg){
+    if(!E.length)return;
+    for(const I of IS){
+      const A=typeof Sprites!=='undefined'&&Sprites.sheets&&Sprites.sheets['isleo'+I.kind];if(!(A&&A.img))continue;
+      const L=Snake.objs(I);if(!L.length)continue;
+      const bob=Math.sin(t*.9+I.x*.01)*4;
+      for(const o of L){
+        let n=0;
+        for(const e of E){
+          if(e.x+e.w<o.x0||e.x-e.w>o.x1||e.y-e.h>o.y1+bob||e.y<o.y0+bob||e.y>=Snake.front(o,e.x))continue;
+          if(!n){c.save();c.beginPath();}n++;c.rect(e.x-e.w,e.y-e.h,e.w*2,e.h+8);
+        }
+        if(!n)continue;
+        c.clip();c.imageSmoothingEnabled=true;c.drawImage(A.img,o.r[0],o.r[1],o.r[2],o.r[3],o.x0,o.y0+bob,o.x1-o.x0,o.y1-o.y0);
+        if(I.kind==='shrine'){c.translate(0,bob);this.balls(c,I,t,ballImg);}   /* the Dragon Balls float above the altar: in front of it */
+        c.restore();
+      }
+    }
   },
   /* the old drawn island (before v110), kept as the fallback */
   isle0(c,I,t){

@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','pausemap','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','gacha','quests','cloud','game','telemetry','skills','events','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_account','pausemap','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -167,7 +167,7 @@ if _sd.is_dir():
     _ov = {}
     if (_sd/'sprites.json').exists():
         _ov = json.loads((_sd/'sprites.json').read_text(encoding='utf8'))
-    _files = sorted((f for f in _sd.rglob('*.png') if all(re.fullmatch(r'[a-z][a-z0-9-]*', q) for q in f.relative_to(_sd).parts[:-1])), key=lambda f: f.name)   # sorted by file name: same order as when everything was in one folder
+    _files = sorted((f for f in [*_sd.rglob('*.png'), *_sd.rglob('*.webp')] if all(re.fullmatch(r'[a-z][a-z0-9-]*', q) for q in f.relative_to(_sd).parts[:-1])), key=lambda f: f.name)   # sorted by file name: same order as when everything was in one folder
     _seen = {}
     for f in _files:
         sid = f.stem
@@ -177,9 +177,14 @@ if _sd.is_dir():
         if not re.fullmatch(r'[a-z0-9]+(_\d+)?', sid):
             print('sprites: skipped', f.name, '(name must be <id>.png or <id>_<n>.png, lowercase)'); continue
         raw = f.read_bytes()
-        if raw[:8] != b'\x89PNG\r\n\x1a\n':
-            print('sprites: skipped', f.name, '(not a PNG)'); continue
-        w, h = struct.unpack('>II', raw[16:24])
+        if raw[:8] == b'\x89PNG\r\n\x1a\n': w, h = struct.unpack('>II', raw[16:24]); _mt = 'png'
+        elif raw[:4] == b'RIFF' and raw[8:12] == b'WEBP':   # v112: WebP sheets too (the painted islands): size from the VP8X / VP8 / VP8L header
+            _c = raw[12:16]; _mt = 'webp'
+            if _c == b'VP8X': w, h = 1 + int.from_bytes(raw[24:27], 'little'), 1 + int.from_bytes(raw[27:30], 'little')
+            elif _c == b'VP8L': _b = int.from_bytes(raw[21:25], 'little'); w, h = 1 + (_b & 0x3FFF), 1 + ((_b >> 14) & 0x3FFF)
+            else: w, h = struct.unpack('<HH', raw[26:30]); w &= 0x3FFF; h &= 0x3FFF
+        else:
+            print('sprites: skipped', f.name, '(not a PNG / WebP)'); continue
         e = dict(_ov.get('default', {})); e.update(_ov.get(sid, {}))
         cols = e.get('cols', 7)
         if not e.get('fw') and w % cols:
@@ -190,11 +195,11 @@ if _sd.is_dir():
                 from PIL import Image
                 import io
                 im = Image.open(io.BytesIO(raw)).convert('RGBA'); im = im.resize((max(1, round(im.width*_ps)), max(1, round(im.height*_ps))), Image.LANCZOS)
-                im = im.quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE); bio = io.BytesIO(); im.save(bio, 'PNG', optimize=True); raw = bio.getvalue()
+                im = im.quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE); bio = io.BytesIO(); im.save(bio, 'PNG', optimize=True); raw = bio.getvalue(); _mt = 'png'
                 e = dict(e); e['rects'] = [[round(r[0]*_ps), round(r[1]*_ps), max(1, round(r[2]*_ps)), max(1, round(r[3]*_ps))] for r in e['rects']]
                 e['anch'] = [[a_[0]*_ps, a_[1]*_ps] for a_ in e['anch']]; e['k'] = _ps
             except ImportError: print('sprites: DBS_PROP_SCALE needs Pillow - atlases left as they are')
-        e['u'] = 'data:image/png;base64,' + base64.b64encode(raw).decode()
+        e['u'] = 'data:image/' + _mt + ';base64,' + base64.b64encode(raw).decode()
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
 js = js.replace('__SPRITE_PACK__', json.dumps(_pack, separators=(',', ':')))

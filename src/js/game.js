@@ -2528,7 +2528,8 @@ class MapDirector{
       const ks=SnakeArt.loot[I.kind],a0=I.side>0?-Math.PI/2:Math.PI/2;   /* the items sit on the side facing the body (where the road arrives), away from the landmark */
       ks.forEach((k,i)=>{
         const a=a0+(i-1)*.95,d=(i===1?.55:.62);
-        g.loot.push({k,x:I.x+Math.cos(a)*d*I.r,y:I.y+Math.sin(a)*d*I.ry,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id});
+        const o={k,x:I.x+Math.cos(a)*d*I.r,y:I.y+Math.sin(a)*d*I.ry,v:k==='xp'?Math.round(g.need*.3):k==='bag'?g.bagValue():0,t:0,star:0,isle:I.id};
+        Snake.solid(I,o,22);g.loot.push(o);   /* v112: never inside a building */
       });
       g.say(g.env.tr(SnakeArt.names[I.kind]),'#ffe9a0',2.4);
     }

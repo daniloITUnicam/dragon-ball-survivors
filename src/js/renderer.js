@@ -397,6 +397,13 @@ this.W=1;this.H=1;this.Z=1;
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
     /* Tournament of Power: behind the tower the hero is hidden by it (the tower is painted again over him, clipped to his box so nothing else is touched) */
+    /* v112: Snake Way, behind a building / tree / rock of an island the hero, the enemies and the companion are hidden by it */
+    if(theme==='snake'&&!g.trial&&this._snIS&&this._snIS.length){
+      const E=[{x:p.x,y:p.y,w:46,h:124}];
+      if(g.pet)E.push({x:g.pet.x,y:g.pet.y,w:34,h:80});
+      for(const e of g.en)if(e.x>vx0-80&&e.x<vx1+80&&e.y>vy0-40&&e.y<vy1+260&&!Snake.onBody(e.x,e.y))E.push({x:e.x,y:e.y,w:e.r*1.9+8,h:e.r*4.6+20});
+      SnakeArt.occlude(ctx,this._snIS,E,t,this.ballSheet());
+    }
     if(theme==='void'&&!g.trial&&p.y<TOPARENA.TR*.4&&p.x>-130&&p.x<130&&p.y>-470){ctx.save();ctx.beginPath();ctx.rect(p.x-80,p.y-150,160,176);ctx.clip();TopArt.tower(ctx,t);ctx.restore();}
     /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn as sprites of a clean medium-weight lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
     ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
@@ -654,7 +661,7 @@ this.W=1;this.H=1;this.Z=1;
     SnakeArt.body(ctx,x0,x1,t);   /* light running down the body, sparkles on the scales */
     for(const I of RD)SnakeArt.roadLight(ctx,I,t);   /* ...and on along the roads */
     {const IS=Snake.islandsIn(cx-ISLE_RMAX-300,cx+vw+ISLE_RMAX+300).filter(I=>{const e=SnakeArt.ext(I);return I.y+e[1]>cy-60&&I.y-e[0]<cy+vh+60&&I.x+I.r*1.25>cx&&I.x-I.r*1.25<cx+vw;}),bi=this.ballSheet();
-     for(const I of IS)SnakeArt.puffs(ctx,I,t,false);
+     this._snIS=IS;for(const I of IS)SnakeArt.puffs(ctx,I,t,false);
      for(const I of IS){SnakeArt.isle(ctx,I,t,bi);SnakeArt.puffs(ctx,I,t,true);}}   /* the islands you can walk onto */
     ctx.lineCap='butt';ctx.lineJoin='miter';
   }

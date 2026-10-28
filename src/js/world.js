@@ -193,14 +193,63 @@ const Snake={
     for(let j=1;j<R.length;j++){const ax=R[j-1][0],ay=R[j-1][1],dx=R[j][0]-ax,dy=R[j][1]-ay,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)),px=ax+dx*t,py=ay+dy*t,d=(x-px)**2+(y-py)**2;if(d<bd){bd=d;bx=px;by=py;}}
     return[bx,by,Math.sqrt(bd)];
   },
-  /* push a point back onto the walkable ground: the body, an island or an island's road (rad = how much of the ground width the object itself takes) */
+  /* v112: the structures of island I (ISLE_OBJ) in world px, computed once. Per structure: the box of its picture (x0,y0,x1,y1), the atlas rect r, the footprints P
+     (convex polygons with their outward edge normals n = [nx,ny,c,...]: inside when nx*x+ny*y < c for every edge) and the front edge of the footprints, fy[] sampled
+     from fx0 to fx1 (FN samples; outside the footprints: the nearest edge) */
+  FN:24,
+  objs(I){
+    if(I._ob)return I._ob;
+    const L=(typeof ISLE_OBJ!=='undefined'&&ISLE_OBJ[I.kind])||[],G=ISLE_GEO[I.kind],k=I.r/G[2],X=v=>I.x+(v-G[0])*k,Y=v=>I.y+(v-G[1])*k,N=this.FN;
+    return I._ob=L.map(o=>{
+      const P=o.f.map(f=>{
+        const p=[];for(let j=0;j<f.length;j+=2)p.push(X(f[j]),Y(f[j+1]));
+        let mx=0,my=0;const m=p.length/2;for(let j=0;j<p.length;j+=2){mx+=p[j]/m;my+=p[j+1]/m;}
+        const n=[];let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
+        for(let j=0;j<p.length;j+=2){
+          const ax=p[j],ay=p[j+1],bx=p[(j+2)%p.length],by=p[(j+3)%p.length],l=Math.hypot(bx-ax,by-ay)||1;let nx=(by-ay)/l,ny=-(bx-ax)/l;
+          if(nx*(mx-ax)+ny*(my-ay)>0){nx=-nx;ny=-ny;}
+          n.push(nx,ny,nx*ax+ny*ay);bx0=Math.min(bx0,ax);bx1=Math.max(bx1,ax);by0=Math.min(by0,ay);by1=Math.max(by1,ay);
+        }
+        return{p,n,bx0,by0,bx1,by1};
+      });
+      const fx0=Math.min(...P.map(q=>q.bx0)),fx1=Math.max(...P.map(q=>q.bx1)),fy=new Array(N).fill(NaN);
+      for(let i=0;i<N;i++){const x=fx0+(fx1-fx0)*i/(N-1);
+        for(const q of P){const p=q.p;for(let j=0;j<p.length;j+=2){const ax=p[j],ay=p[j+1],bx=p[(j+2)%p.length],by=p[(j+3)%p.length];
+          if(ax===bx||(ax-x)*(bx-x)>0)continue;const y=ay+(x-ax)/(bx-ax)*(by-ay);if(!(y<=fy[i]))fy[i]=y;}}}
+      for(let i=0;i<N;i++)if(isNaN(fy[i])){let d=1;while(d<N){const a=fy[i-d],b=fy[i+d];if(a===a&&a!==undefined){fy[i]=a;break;}if(b===b&&b!==undefined){fy[i]=b;break;}d++;}}
+      return{x0:X(o.b[0]),y0:Y(o.b[1]),x1:X(o.b[2]),y1:Y(o.b[3]),r:o.r,P,fx0,fx1,fy};
+    });
+  },
+  /* the y of the front edge of structure s at x: whoever has his feet above it stands behind it */
+  front(s,x){const N=this.FN,u=Math.max(0,Math.min(N-1,(x-s.fx0)/((s.fx1-s.fx0)||1)*(N-1))),i=Math.min(N-2,Math.floor(u)),f=u-i;return s.fy[i]*(1-f)+s.fy[i+1]*f;},
+  /* on the snake's body (no island structure can be there) */
+  onBody(x,y){const s=this.df(x);return Math.abs(y-this.f(x))<=this.HW*Math.sqrt(1+s*s);},
+  /* push o out of the footprints standing on island I (rad = its radius): out through the edge it is least deep behind */
+  solid(I,o,rad){
+    const L=this.objs(I);
+    for(let it=0;it<6;it++){   /* footprints that overlap (a palm against the house, the altar and its steps): a few passes settle on the outside of their union */
+      let moved=false;
+      for(const s of L)for(const q of s.P){
+        if(o.x<q.bx0-rad||o.x>q.bx1+rad||o.y<q.by0-rad||o.y>q.by1+rad)continue;
+        const n=q.n;let best=-1e9,bi=0;
+        for(let j=0;j<n.length;j+=3){const d=n[j]*o.x+n[j+1]*o.y-n[j+2];if(d>best){best=d;bi=j;}}
+        if(best<rad-.01){const m=rad-best;o.x+=n[bi]*m;o.y+=n[bi+1]*m;moved=true;}
+      }
+      if(!moved)return;
+    }
+  },
+  /* push a point back onto the walkable ground: the body, an island or an island's road (rad = how much of the ground width the object itself takes);
+     v112: on an island, out of the buildings, trees and rocks standing on it (solid) */
   clamp(o,rad){
     o.x=this.cx(o.x);rad=rad||0;
-    const s=this.df(o.x),k=Math.sqrt(1+s*s),lim=Math.max(8,this.HW-rad)*k,c=this.f(o.x),dy=o.y-c;
+    let s=this.df(o.x),k=Math.sqrt(1+s*s),lim=Math.max(8,this.HW-rad)*k,c=this.f(o.x),dy=o.y-c;
     if(Math.abs(dy)<=lim)return;
+    const IS=this.isleNear(o.x);let hit=false;
+    for(const I of IS)if(Math.abs(o.x-I.x)<I.r+rad+40&&Math.abs(o.y-I.y)<I.ry+rad+40){this.solid(I,o,rad);hit=true;}
+    if(hit){o.x=this.cx(o.x);s=this.df(o.x);k=Math.sqrt(1+s*s);lim=Math.max(8,this.HW-rad)*k;c=this.f(o.x);dy=o.y-c;if(Math.abs(dy)<=lim)return;}
     let bx=o.x,by=dy>lim?c+lim:c-lim,bd=Math.abs(o.y-by);
     const rw=Math.max(6,ISLE_RW-rad);
-    for(const I of this.isleNear(o.x)){
+    for(const I of IS){
       const d=this.inIsle(I,o.x,o.y,rad);
       if(d<=1)return;
       const px=I.x+(o.x-I.x)/d,py=I.y+(o.y-I.y)/d,dd=Math.hypot(o.x-px,o.y-py);

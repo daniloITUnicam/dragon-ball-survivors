@@ -9,7 +9,7 @@ Gli sprite del gioco, divisi per uso. Guida completa: [`docs/SPRITES.md`](../../
 | `rocce/` | `rocks.png` (Namek), `lavarocks.png` (Inferno, con animazioni) | sì | sì |
 | `props/` | `<mappa>props.png` per `beach`, `plains`, `namek`, `sky`, `hell`, `redrock`, `waste`, `other`, `arena` (gli ostacoli di ogni mappa tranne il Vuoto: rects e ancore in `sprites.json`) | sì | sì |
 | `sprites.json` | metadati di tutti i fogli sopra (frame, ancoraggi, rects, animazioni) | sì | sì |
-| `_sorgenti/` | arte di partenza dei generatori: `barre/` (barre EXP e Salute), `mirini/` (pannelli del TAB), `boss/` (fogli dei Tamagami), `rocce/` (fogli delle rocce), `props/` (immagini di partenza degli ostacoli) | no | sì |
+| `_sorgenti/` | arte di partenza dei generatori: `barre/` (barre EXP e Salute), `mirini/` (pannelli del TAB), `boss/` (fogli dei Tamagami), `rocce/` (fogli delle rocce), `props/` (immagini di partenza degli ostacoli), `isole/` (isole della Via del Serpente a 1x e `<tipo>_x2.webp` ingrandite da `tools/esrgan_np.py`, per `tools/gen_isles.py`) | no | sì |
 | `_inutilizzati/` | sprite che il gioco non usa: `personaggi/` (fogli di Goku e degli altri, con il loro `sprites.json`), `boss/` (riferimento Furia), `rocce-vecchie/` (i 20 pezzi del vecchio atlas) | no | sì (archivio) |
 
 - `build.py` incorpora i `.png` di queste cartelle e delle altre sottocartelle con nome minuscolo; salta quelle che iniziano con `_` e quelle con maiuscole o spazi. Il nome del file è l'id del foglio, unico in tutta la cartella.
