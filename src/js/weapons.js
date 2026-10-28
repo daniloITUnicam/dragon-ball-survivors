@@ -123,8 +123,8 @@ class Weapon{
   cdXl(k){const g=this.g;k*=1-XL_CD*this.xl;return g.endless?Math.max(k,ENDLESS_CD_MIN/Math.max(ENDLESS_CD_MIN,g.S.cd)):k;}
   canXl(){return !!this.g.endless&&this.lv>=WMAX&&this.evo>=this.g.maxEvo(this.id)&&this.xl<WXL;}
   get lvShow(){return this.lv+this.xl;}
-  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*this.tier*this.xlD;}
-  get e2c(){return this.cdXl((this.evo>=2?.85:1)*(1-.015*this.lvB));}
+  get dm(){return(this.evo?1+.04*(this.g.formIdx+1):1)*this.tier*this.xlD*(this.fz?FUSION_DMG:1);}
+  get e2c(){return this.cdXl((this.evo>=2?.85:1)*(1-.015*this.lvB)*(this.fz?FUSION_CD:1));}
   get e2a(){return(this.evo>=2?1.2:1)*(1+.02*this.lvB)*this.xlA;}
   get e2n(){return this.evo>=2?2:0;}
   get evoName(){return this.evo>=2?this.def.evo2:this.def.evo;}

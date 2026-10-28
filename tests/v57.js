@@ -77,6 +77,7 @@ await ev(()=>{const g=G;g.weapons.clear();g.addWeapon('javelin');g.addWeapon('sp
 await wait(150);
 await ev(()=>{const g=G,e=g.trial.boss;const rn=Math.random;Math.random=()=>.9;g.weapons.clear();g.addWeapon('javelin');g.sparCopy.call(g,e,50,Math.PI);g.weapons.clear();g.addWeapon('spirit');delete g.sparCopy;g.sparCopy(e,50,Math.PI);Math.random=rn;});
 await wait(250);await pg.screenshot({path:OUT+'/v57_mimic_spear.png'});
+await ev(()=>Sprites.need('tama'));await wait(1200);   /* v114: the Tamagami sheets are decoded on demand */
 /* Tamagami: a boss that spawns before its sheet has loaded switches to the pack art once it arrives (the "no art" answer is not cached for good) */
 r=await ev(()=>{const sv=Sprites.sheets.tama2;delete Sprites.sheets.tama2;const e={boss:1,bid:'tama2'};const a=Sprites.enemySid(e);Sprites.sheets.tama2=sv;Sprites.nSheets=(Sprites.nSheets||0)+1;const b=Sprites.enemySid(e);const gl=Sprites.packPortrait('tama2',true);return{a,b,gl:!!(gl&&gl.c)};});
 ok(r.a===null&&r.b==='tama2'&&r.gl,'Tamagami sheet is picked up after a late load and the glossary uses the pack art ('+JSON.stringify(r)+')');

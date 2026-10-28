@@ -24,7 +24,7 @@ function wsFx(id,a,b){
   return out.length?out:null;
 }
 const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup')};
-const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets'),lucky:T('Ticket 10× Fortunato (Porunga)','Lucky Ticket 10× (Porunga)'),char:T('Un personaggio (Porunga)','A character (Porunga)')};
+const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets'),immortal:T('Immortalità','Immortality'),transform:T('Trasformazione','Transformation'),legend:T('Cimelio leggendario','Legendary trinket'),lucky:T('Ticket 10× Fortunato (Porunga)','Lucky Ticket 10× (Porunga)'),char:T('Un personaggio (Porunga)','A character (Porunga)')};
 Object.assign(UI.prototype,{
   /* ---------- settings ---------- */
   screen_settings(a){
@@ -64,6 +64,8 @@ Object.assign(UI.prototype,{
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
         toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
+        toggle(this.tr(T6('Suggerimenti','Hints','Consejos','Astuces','Tipps','Dicas')),'hints',this.tr(T6('Brevi consigli la prima volta che incontri qualcosa di nuovo.','Short tips the first time you meet something new.','Consejos breves la primera vez que encuentras algo nuevo.','De courts conseils la première fois que tu rencontres quelque chose de nouveau.','Kurze Tipps, wenn dir zum ersten Mal etwas Neues begegnet.','Dicas curtas na primeira vez que você encontra algo novo.'))),
+        row(this.tr(T6('Rivedi i suggerimenti','Show hints again','Volver a ver los consejos','Revoir les astuces','Tipps erneut zeigen','Rever as dicas')),h('button',{class:'btn small alt','data-fid':'hintsReset',onclick:()=>{Hints.reset(this.save);this.save.settings.hints=true;this.app.save.write();this.sfx();this.toast({type:'info',msg:this.tr(T6('I suggerimenti torneranno nella prossima partita.','Hints will show again next run.','Los consejos volverán en la próxima partida.','Les astuces reviendront à la prochaine partie.','Die Tipps erscheinen in der nächsten Runde wieder.','As dicas voltarão na próxima partida.'))});this.rebuild(true);}},this.tr(T6('Ripristina','Reset','Restablecer','Réinitialiser','Zurücksetzen','Redefinir')))),
         select(this.tr(T('Scheda iniziale della pausa','Pause menu opens on')),'pauseTab',[['map',this.t('mapTab')],['run',this.t('runTab')],['last',this.tr(T('Ultima usata','Last used'))]]),
         row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
         s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */
@@ -272,6 +274,7 @@ Object.assign(UI.prototype,{
   },
   describeReward(r){
     if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
+    if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
     if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null};}
@@ -383,10 +386,14 @@ Object.assign(UI.prototype,{
         h('div',{class:'cards trialcards'},cards),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(0);}},this.t('trialLeave'))));
     }else if(m.type!=='swish'){
-      const W=[{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},
-        {k:'力',c:'#ffd23f',n:T('Potere','Power'),d:T('Tutte le armi guadagnano un livello.','All weapons gain a level.')},
-        {k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')},
-        {k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha dei Cimeli: 10 estrazioni di cimeli.','A 10× Ticket for the Trinket Gacha: 10 trinket pulls.')}];
+      const WD={revive:{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},
+        power:{k:'力',c:'#ffd23f',n:T('Potere','Power'),d:T('Tutte le armi guadagnano un livello.','All weapons gain a level.')},
+        fortune:{k:'金',c:'#ffb13b',n:T('Fortuna','Fortune'),d:T('Zenny e un cimelio casuale.','Zenny and a random trinket.')},
+        tickets:{k:'券',c:'#ff9ad0',n:T('10 Ticket','10 Tickets'),d:T('Un Ticket 10× per il Gacha dei Cimeli: 10 estrazioni di cimeli.','A 10× Ticket for the Trinket Gacha: 10 trinket pulls.')},
+        immortal:{k:'不',c:'#fff0a0',n:T6('Immortalità','Immortality','Inmortalidad','Immortalité','Unsterblichkeit','Imortalidade'),d:T6('Per 20 secondi niente può ferirti.','For 20 seconds nothing can hurt you.','Durante 20 segundos nada puede herirte.','Pendant 20 secondes rien ne peut te blesser.','20 Sekunden lang kann dich nichts verletzen.','Por 20 segundos nada pode te ferir.')},
+        transform:{k:'変',c:'#ffcf3a',n:T6('Trasformazione','Transformation','Transformación','Transformation','Verwandlung','Transformação'),d:T6('Passi subito alla trasformazione successiva.','You reach your next transformation at once.','Alcanzas al instante tu siguiente transformación.','Tu passes tout de suite à ta transformation suivante.','Du erreichst sofort deine nächste Verwandlung.','Você alcança na hora a sua próxima transformação.')},
+        legend:{k:'宝',c:'#ffb13b',n:T6('Cimelio leggendario','Legendary trinket','Reliquia legendaria','Relique légendaire','Legendäres Relikt','Relíquia lendária'),d:T6('Scegli un cimelio leggendario fra 3.','Pick a Legendary trinket out of 3.','Elige una reliquia legendaria entre 3.','Choisis une relique légendaire parmi 3.','Wähle ein legendäres Relikt aus 3.','Escolha uma relíquia lendária entre 3.')}},
+        W=m.options.map(o=>WD[o]||WD.power);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
         h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
     }
@@ -476,9 +483,10 @@ Object.assign(UI.prototype,{
           h('div',{class:'esum'},chip('time',fmtT(res.t),1),chip('kills',res.kills,2),chip('level',res.lvl,3),chip('bosses',res.bossKills,4)),
           res.sandbox?h('p',{class:'sub'},this.t('sbNoReward')):
           h('div',{class:'rewards compact'},
-            res.lines.filter(l=>l.v>0||l.k==='coins').map(l=>h('div',{class:'rline'},h('span',null,this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
+            res.lines.filter(l=>l.v>0||l.k==='coins').map(l=>h('div',{class:'rline'},h('span',null,l.lab?this.tr(l.lab):this.t(labels[l.k])),h('b',null,zAmt(l.v,true)))),
             res.mult!==1?h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))):null,
             h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
+          res.sandbox?null:this.masteryLine(res.mastery),
           !res.sandbox&&res.kept&&res.kept.length?h('div',{class:'echips kept'},res.kept.map(k=>{const i=this.tinfo(k.id,k.r,k.p);return h('span',{class:'tchip tkept',style:'--c:'+i.c,title:this.t(k.up?'trinketsUp':'trinketsKept')+'\n'+i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')},glyph(i.t.k,i.c),i.name+(k.up?' ↑':''));})):null,
           tk.length||(!res.sandbox&&res.sold)?h('div',{class:'echips'},
             tk.map(k=>h('span',{class:'tchip',title:this.t('ticketsFound')},h('i',{class:'tk'}),res.tickets[k]+'× '+this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10'))),
@@ -487,6 +495,7 @@ Object.assign(UI.prototype,{
       h('div',{class:'row'},
         h('button',{class:'btn primary','data-focus':!canEnd?true:null,onclick:()=>{this.sfx();this.app.retry();}},this.t('retry')),
         h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.toMenu();}},this.t('toMenu')),
+        this.shareBtn(res),
         showEnd?h('span',{class:'endwrap'},
           h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',
             onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')),

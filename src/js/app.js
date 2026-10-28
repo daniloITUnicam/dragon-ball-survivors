@@ -114,6 +114,7 @@ class App{
   makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g)};}
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
+    Online.unseed();if(o.week&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
     this.game=new Game(o,this.makeEnv());this.state='play';
     this.audio.unlock();if(this.audio.slowMusic)this.audio.slowMusic(1);this.audio.play('stage'+STAGES[o.stage].id);
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
@@ -131,7 +132,8 @@ class App{
     this.game.resolveModal(i);this.ui.closeModal();this.state='play';
   }
   onEnd(res,g){
-    this.state='end';this.lastRes=res;this.ui.closeModal();this.ui.hideSandbox();
+    this.state='end';this.lastRes=res;this.ui.closeModal();this.ui.hideSandbox();Online.unseed();
+    {const row=Online.row(g||this.game,res),cl=this.cloud;if(row&&cl.uid&&cl.nick)cl.submitScore(row).then(ok=>{if(ok)this.ui.toast({type:'info',msg:this.ui.tr(OT.sent)});}).catch(()=>{});}   /* v115: leaderboards */
     this.audio.play('menu');this.ui.show('end',res);
   }
   /* used by the update watcher (update.js): ends the run in progress right now and keeps EVERY coin (no 25% defeat penalty);
@@ -147,11 +149,11 @@ class App{
   endRunManually(){const g=this.game;this.ui.clear();if(g&&!g.ended)g.finish(false);else this.toMenu();}
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
   retry(){if(this.lastOpts)this.startGame(this.lastOpts);}
-  toMenu(){if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
+  toMenu(){Online.unseed();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
     for(const a of['interact','pet','kaioken','senzu','dash','target'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
-    this.renderer.keyHints=h;
+    h._pad=pad;this.renderer.keyHints=h;
   }
   loop(now){
     requestAnimationFrame(n=>this.loop(n));

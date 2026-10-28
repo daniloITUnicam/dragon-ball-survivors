@@ -8,7 +8,7 @@
      - 'buff'   a war cry: the crowd on screen moves faster for a few seconds
      - 'tint'   the sky changes colour (the Full Moon)
    The drawing of the markers / the sky is in Renderer.drawEvents / eventOverlay. ============================================================ */
-const T6=(it,en,es,fr,de,pt)=>({it,en,es,fr,de,pt});
+/* T6 lives in util.js (v115) */
 const MAP_EVENTS={
   /* Saiyan Plains: the Saibaman seeds sprout, then the seedlings ripen into kamikazes */
   plains:{n:T6('SEMI DI SAIBAMAN!','SAIBAMAN SEEDS!','¡SEMILLAS DE SAIBAMAN!','GRAINES DE SAIBAIMAN !','SAIBAMAN-SAMEN!','SEMENTES DE SAIBAMAN!'),

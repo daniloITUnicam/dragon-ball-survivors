@@ -55,6 +55,15 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 29 ottobre 2026 (Patti, Maestria e Classifiche)
+
+- **Desideri:** Shenron offre 4 desideri su 7; nuovi Immortalità (20 s senza danni), Trasformazione (subito la forma successiva) e Cimelio leggendario (1 Leggendario su 3).
+- **Evoluzioni doppie:** 11 coppie di armi; con entrambe evolute al massimo il Forziere offre la fusione: +30% danno, −15% Ricarica, un solo slot.
+- **Patti:** ☠ nella scelta dello scenario, 7 maledizioni che aggiungono 15-30% di Zenny ciascuna e Ticket 1× a scenario completato.
+- **Maestria:** ogni personaggio sale fino al Lv 10 giocandolo: colori alternativi (Lv 3 e 7), una passiva propria (Lv 5), un titolo (Lv 10).
+- **Primo avvio guidato:** suggerimenti brevi la prima volta che incontri qualcosa (Impostazioni > Gameplay per spegnerli o rivederli).
+- **Online:** 🏆 Classifiche per scenario e difficoltà (tempo, uccisioni, danni) con un soprannome, Sfida settimanale uguale per tutti, 📸 scheda di fine partita da condividere. Lato server: esegui una volta `supabase/online.sql` nel SQL Editor di Supabase.
+
 ### 🆕 Aggiornamento del 28 ottobre 2026, parte 3 (fondamenta)
 
 - **Fogli su richiesta** (`sheets.js`): `SPRITE_LAZY` (isole `isle*` / `isleo*`, draghi `shenron` / `porunga`, Tamagami `tama*` / `tamas*`) non si decodificano all'avvio. `Sprites.need(gruppo)` / `Sprites.drop(gruppo)` da `Game` (isole sulla Via del Serpente, Tamagami negli scenari con le Super Sfere; i draghi si liberano a ogni partita), `SUMMON.start` chiede i draghi, `Sprites.enemySheet` e la statua decodificano un foglio pigro la prima volta che serve (`Sprites.decode`). Il menu si ricostruisce una volta ogni 250 ms di caricamenti (`app.js`), non a ogni foglio.

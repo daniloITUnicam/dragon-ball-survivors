@@ -60,6 +60,8 @@ Object.assign(UI.prototype,{
     return h('span',{class:'winfo',tabindex:'0','data-fid':'wi'+w.id,'aria-label':this.tr(T('Statistiche','Stats'))},'i',
       h('div',{class:'wtip',style:'--c:'+w.color},h('div',{class:'wth'},h('b',null,this.tr(w.evo?w.evoName:w.def.n)),h('i',null,lv)),
         h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
+        (()=>{const f=FUSIONS.find(x=>x.a===w.id||x.b===w.id);if(!f)return null;const o=WEAPONS[f.a===w.id?f.b:f.a];   /* v115: its double-evolution partner */
+          return h('p',{class:'fzline',style:'color:'+f.c},'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla'))+(w.fz?' ✓':'')+': '+this.tr(f.n)+' — '+this.tr(T6('con ','with ','con ','avec ','mit ','com '))+this.tr(o.n)+(w.fz?'':' ('+this.tr(T6('entrambe evolute al massimo','both fully evolved','ambas evolucionadas al máximo','les deux évoluées au maximum','beide voll entwickelt','ambas totalmente evoluídas'))+')'));})(),
         h('div',{class:'wtr'},rows.map(r=>{
           const fm=v=>{const x=Math.abs(v)>=100?Math.round(v):Math.round(v*10)/10;return String(x).replace('.',',');},d=r.fin-r.base,up=Math.abs(d)>1e-6*Math.max(1,Math.abs(r.base))&&Math.abs(d)>=.005;
           return h('div',{class:'wtrow'},h('span',null,this.tr(T(r.lab[0],r.lab[1]))),

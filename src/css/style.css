@@ -617,3 +617,30 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .tbox select{max-width:200px}.tbox input{width:190px;box-sizing:border-box}
 .tbox .sl{min-width:0}
 @media (max-width:700px){.tbox .tctl,.tbox .tctl .row{align-items:flex-start;justify-content:flex-start}}
+/* v115: Pacts */
+.pactgrid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:1000px;margin:8px auto}
+.card.opt.pact{width:200px;min-height:170px;border-color:color-mix(in srgb,var(--c) 40%,transparent)}
+.card.opt.pact.sel{border-color:var(--c);box-shadow:0 0 18px color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 14%,rgba(10,14,30,.85))}
+.card.opt.pact .pb{color:var(--gold);font-weight:700}
+.pactsum{text-align:center;color:#fff3cf;font-weight:600;margin:6px 0 10px}
+.btn.pactOn{background:linear-gradient(#5a1630,#2a0a18);border-color:#ff5a7a;color:#ffd0dc}
+/* v115: Mastery */
+.mastbox{margin:8px 0;padding:8px 10px;border:1px solid rgba(255,210,63,.35);border-radius:8px;background:rgba(10,14,30,.45);font-size:13px}
+.mastbox .mhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.mastbox .mhead b{color:var(--gold)}
+.mtitle{color:#ffe9a0;font-style:italic}
+.mbar{height:6px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;margin:4px 0}.mbar>div{height:100%;background:linear-gradient(90deg,#ffb13b,#ffd23f)}
+.msub{font-size:11px;opacity:.75}
+.mrws{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:4px 0}.mrw{opacity:.55;font-size:12px}.mrw.got{opacity:1}.mrw i{color:var(--gold);font-style:normal;margin-right:4px}
+.mskins{gap:6px;justify-content:flex-start}.mskin .msw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;background:#ff8a2a;filter:hue-rotate(var(--h))}
+.mline{margin:6px 0;padding:6px 8px;border-radius:6px;background:rgba(255,210,63,.08);display:grid;grid-template-columns:1fr auto;gap:2px 8px}.mline .mbar{grid-column:1/3}.mline.up{box-shadow:0 0 12px rgba(255,210,63,.45)}
+/* v115: leaderboards */
+.boards{max-width:880px;margin:0 auto}
+.nickrow{gap:8px;align-items:center;justify-content:center}.nickrow input{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,210,63,.5);background:rgba(10,14,30,.7);color:#fff;font:inherit;width:200px}
+.nickmsg{font-size:12px;opacity:.8}
+.wkcard{margin:8px auto;padding:10px 14px;max-width:620px;border:1px solid rgba(255,210,63,.5);border-radius:10px;background:rgba(10,14,30,.6)}
+.wkh{display:flex;justify-content:space-between;color:var(--gold)}.wkrow{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font-weight:700;margin:6px 0}
+.blist{max-width:720px;margin:8px auto;max-height:46vh;overflow:auto}
+.brow{display:grid;grid-template-columns:52px 1fr 1fr 110px 90px;gap:8px;align-items:center;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brow i{font-style:normal;opacity:.7}.brow .bval{text-align:right;color:var(--gold);font-weight:800}.brow .bmeta,.brow .bch{opacity:.8;font-size:13px}
+.brow.me{background:rgba(255,210,63,.14)}.brow.top1 i{color:#ffd23f}.brow.top2 i{color:#d8e0ea}.brow.top3 i{color:#e0a060}
+@media (max-width:600px){.brow{grid-template-columns:40px 1fr 70px;}.brow .bch,.brow .bmeta{display:none}}

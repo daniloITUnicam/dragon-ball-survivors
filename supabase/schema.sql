@@ -60,3 +60,7 @@ create policy "testers_delete" on public.testers for delete to authenticated usi
 
 revoke all on public.testers from anon;
 grant select, insert, delete on public.testers to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Online (v115): nicknames, scores, leaderboards, weekly challenge → see supabase/online.sql (run it once too)
+-- ---------------------------------------------------------------------------

@@ -46,7 +46,7 @@ const SUMMON={
     if(t>=T.burst)once('burst',()=>{this.snd(g,'burst');g.shake=Math.max(g.shake,.5);});
     if(t>=T.em0+.1)once('em',()=>this.snd(g,'emerge'));
     if(t>=T.em1){once('speak',()=>this.snd(g,'roar'));const ch=Math.floor((t-T.em1-T.say)*34/2);if(ch>=0&&ch*2<g.env.tr(S.K.line).length)once('bl'+ch,()=>this.snd(g,'blip'));}   /* the roar, then its voice while the words appear */
-    if(t>=T.wish){S.ph='wait';this.unbindSkip();g.modal=S.kind==='shenron'?{type:'wish',options:['revive','power','fortune','tickets']}:{type:'swish',options:this.superOpts(g)};}
+    if(t>=T.wish){S.ph='wait';this.unbindSkip();g.modal=S.kind==='shenron'?{type:'wish',options:g.wishOptions()}:{type:'swish',options:this.superOpts(g)};}
   },
   /* after the wish: the dragon leaves */
   leave(g){const S=g.summon;if(!S)return;S.ph='leave';S.lt=0;g.flash=Math.max(g.flash||0,.5);g.flashC='#ffffff';this.snd(g,'leave');},

@@ -23,6 +23,7 @@ Contro: gli indirizzi non vengono verificati (chiunque può registrare un'email 
 ### 1. Crea il progetto Supabase
 1. Registrati su <https://supabase.com> (piano Free) → **New project** (scegli una regione europea, imposta una password del database e conservala).
 2. Quando è pronto vai in **SQL Editor → New query**, incolla tutto il contenuto di [`supabase/schema.sql`](../supabase/schema.sql) e premi **Run**. Crea la tabella `saves` con le regole di sicurezza.
+   Poi, in una nuova query, fai lo stesso con [`supabase/online.sql`](../supabase/online.sql): crea soprannomi (`profiles`), punteggi (`scores`) e la funzione `leaderboard` per le Classifiche e la Sfida settimanale. Si può rieseguire senza danni.
 
 ### 2. Prendi URL e chiave
 **Project Settings → API** (o *API Keys*): copia

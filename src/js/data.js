@@ -1,6 +1,7 @@
 'use strict';
 /* ====== Static game data (bilingual strings use T(it,en)) ====== */
 const T=(it,en)=>({it,en});
+const T6=(it,en,es,fr,de,pt)=>({it,en,es,fr,de,pt});
 const GLYPHS='金豆変力復気波円玉炎光剣追砲槍双舞環焔時衝滅雷星爆蹴乱命速引修鎧学眼袋耳雲杖心輪鏡盾龍怒運猿鬼守癒分吸戻狂界疾破福閃';
 const DMG_NERF=.92;
 const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
@@ -40,6 +41,35 @@ const WEAPONS={
 };
 const MAX_WEAPONS=5;
 const SHORE_V=34;
+/* v115: Pacts — opt-in handicaps chosen before a run; each one adds b to the zenny bonus, and a won stage pays a 1× ticket per PACT_TK of bonus */
+const PACTS=[
+  {id:'iron',k:'鉄',c:'#b8c4d0',b:.3,fx:{hp:1.6},n:T6('Patto di ferro','Iron Pact','Pacto de hierro','Pacte de fer','Eiserner Pakt','Pacto de ferro'),d:T6('Nemici +60% vita.','Enemies +60% HP.','Enemigos +60% de vida.','Ennemis +60 % de vie.','Gegner +60 % LP.','Inimigos +60% de vida.')},
+  {id:'fury',k:'怒',c:'#ff5a5a',b:.25,fx:{dmg:1.35},n:T6('Patto della furia','Fury Pact','Pacto de la furia','Pacte de fureur','Pakt des Zorns','Pacto da fúria'),d:T6('Nemici +35% danno.','Enemies +35% damage.','Enemigos +35% de daño.','Ennemis +35 % de dégâts.','Gegner +35 % Schaden.','Inimigos +35% de dano.')},
+  {id:'horde',k:'群',c:'#c9a0ff',b:.25,fx:{spawn:1.4},n:T6('Patto dell\'orda','Horde Pact','Pacto de la horda','Pacte de la horde','Pakt der Horde','Pacto da horda'),d:T6('+40% nemici.','+40% enemies.','+40% de enemigos.','+40 % d\'ennemis.','+40 % Gegner.','+40% de inimigos.')},
+  {id:'haste',k:'速',c:'#4ab0ff',b:.2,fx:{espd:1.2},n:T6('Patto del vento','Wind Pact','Pacto del viento','Pacte du vent','Pakt des Windes','Pacto do vento'),d:T6('Nemici +20% velocità.','Enemies +20% speed.','Enemigos +20% de velocidad.','Ennemis +20 % de vitesse.','Gegner +20 % Tempo.','Inimigos +20% de velocidade.')},
+  {id:'glass',k:'脆',c:'#ff9ad0',b:.3,fx:{php:.6},n:T6('Patto di cristallo','Glass Pact','Pacto de cristal','Pacte de verre','Gläserner Pakt','Pacto de cristal'),d:T6('−40% vita massima.','−40% max HP.','−40% de vida máxima.','−40 % de vie max.','−40 % max. LP.','−40% de vida máxima.')},
+  {id:'fast',k:'飢',c:'#8be07a',b:.15,fx:{nosenzu:1},n:T6('Patto del digiuno','Fasting Pact','Pacto del ayuno','Pacte du jeûne','Pakt des Fastens','Pacto do jejum'),d:T6('Niente Fagioli Senzu.','No Senzu Beans.','Sin Semillas del Ermitaño.','Pas d\'Haricots Magiques.','Keine Magischen Bohnen.','Sem Feijões dos Deuses.')},
+  {id:'dim',k:'鈍',c:'#ffb13b',b:.2,fx:{xp:.75},n:T6('Patto dell\'oblio','Oblivion Pact','Pacto del olvido','Pacte de l\'oubli','Pakt des Vergessens','Pacto do esquecimento'),d:T6('−25% esperienza.','−25% experience.','−25% de experiencia.','−25 % d\'expérience.','−25 % Erfahrung.','−25% de experiência.')}
+],PACT_TK=.25;
+const pactBonus=ids=>(ids||[]).reduce((s,id)=>{const p=PACTS.find(x=>x.id===id);return s+(p?p.b:0);},0);
+/* merged effects of a pact list: multipliers multiply, flags OR */
+const pactFx=ids=>{const o={hp:1,dmg:1,spawn:1,espd:1,php:1,xp:1,nosenzu:0};for(const id of ids||[]){const p=PACTS.find(x=>x.id===id);if(p)for(const k in p.fx)o[k]=k==='nosenzu'?1:o[k]*p.fx[k];}return o;};
+/* v115: double evolutions — two fully evolved partner weapons fuse from a chest: both hit harder and faster, and the pair takes a single weapon slot */
+const FUSIONS=[
+  {id:'ki_homing',a:'ki',b:'homing',k:'嵐',c:'#ffd23f',n:T6('Tempesta di Ki','Ki Storm','Tormenta de Ki','Tempête de Ki','Ki-Sturm','Tempestade de Ki')},
+  {id:'kame_breaker',a:'kame',b:'breaker',k:'終',c:'#59c8ff',n:T6('Kamehameha Finale','Final Kamehameha','Kamehameha Final','Kamehameha Final','Finales Kamehameha','Kamehameha Final')},
+  {id:'disc_slash',a:'disc',b:'slash',k:'斬',c:'#ffb13b',n:T6('Lama Kienzan','Kienzan Blade','Hoja Kienzan','Lame Kienzan','Kienzan-Klinge','Lâmina Kienzan')},
+  {id:'spirit_meteor',a:'spirit',b:'meteor',k:'宇',c:'#8ad8ff',n:T6('Genkidama Universale','Universal Spirit Bomb','Genkidama Universal','Genkidama Universelle','Universelle Genkidama','Genki Dama Universal')},
+  {id:'aura_shock',a:'aura',b:'shock',k:'爆',c:'#ff5a3d',n:T6('Aura Esplosiva','Explosive Aura','Aura Explosiva','Aura Explosive','Explosive Aura','Aura Explosiva')},
+  {id:'hakai_chain',a:'hakai',b:'chain',k:'裁',c:'#b060ff',n:T6('Giudizio Divino','Divine Judgment','Juicio Divino','Jugement Divin','Göttliches Urteil','Julgamento Divino')},
+  {id:'hellzone_javelin',a:'hellzone',b:'javelin',k:'獄',c:'#c8ff3a',n:T6('Lance Infernali','Hellzone Lances','Lanzas Infernales','Lances Infernales','Höllenlanzen','Lanças Infernais')},
+  {id:'sweep_dyn',a:'sweep',b:'dyn',k:'轟',c:'#59c8ff',n:T6('Calcio Big Bang','Big Bang Kick','Patada Big Bang','Coup Big Bang','Big-Bang-Tritt','Chute Big Bang')},
+  {id:'flare_chrono',a:'flare',b:'chrono',k:'時',c:'#fff7b0',n:T6('Lampo del Tempo','Time Flash','Destello del Tiempo','Éclair Temporel','Zeitblitz','Clarão do Tempo')},
+  {id:'dsunday_boomer',a:'dsunday',b:'boomer',k:'隊',c:'#d98aff',n:T6('Domenica Ginyu','Ginyu Sunday','Domingo Ginyu','Dimanche Ginyu','Ginyu-Sonntag','Domingo Ginyu')},
+  {id:'spiral_dbeam',a:'spiral',b:'dbeam',k:'帝',c:'#7fe0a0',n:T6('Danza dell\'Imperatore','Emperor\'s Dance','Danza del Emperador','Danse de l\'Empereur','Tanz des Kaisers','Dança do Imperador')}
+],FUSION_DMG=1.3,FUSION_CD=.85;
+const fusionDesc=f=>{const a=WEAPONS[f.a].n,b=WEAPONS[f.b].n;return T6(`Fonde ${a.it} e ${b.it}: +30% danno, −15% ricarica a entrambe e uno slot arma libero.`,`Fuses ${a.en} and ${b.en}: +30% damage, −15% cooldown for both, and a weapon slot freed.`,`Fusiona ${a.en} y ${b.en}: +30% daño, −15% recarga a ambas y un hueco de arma libre.`,`Fusionne ${a.en} et ${b.en} : +30 % de dégâts, −15 % de recharge pour les deux et un emplacement d'arme libéré.`,`Verschmilzt ${a.en} und ${b.en}: +30 % Schaden, −15 % Abklingzeit für beide und ein freier Waffenplatz.`,`Funde ${a.en} e ${b.en}: +30% de dano, −15% de recarga para ambas e um espaço de arma livre.`);};
+const WISH_POOL=['revive','power','fortune','tickets','immortal','transform','legend'],WISH_IMMORTAL=20;   /* v115: Shenron's wishes (4 of them are offered each time) and the immortality wish's length in s */
 const TR_SHOCK_CD=4,TR_SLOW_CD=10,TR_BARRIER_CD=7.5;   /* v112: the timed trinket effects come twice as often as before v109 (shockwave 8 -> 4 s, slow time 20 -> 10 s, barrier 15 -> 7.5 s) */
 const BANNER_MIN=2,BANNER_FADE=.45;   /* v109: a message banner stays at least 2 s before the next one, then fades out */
 const TRAP_P=.30,TRAP_E=.40,TRAP_B=.10;   /* v109: a floor trap takes 30% of your max HP, 40% of an enemy's, 10% of a boss's (once per activation) */   /* px/s: a chest or pick-up that fell on the water floats to the shore at least this fast */

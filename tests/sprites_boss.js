@@ -6,6 +6,7 @@ const OUT=process.env.SHOTS||'/tmp/o';let fails=0;const ok=(c,m)=>{console.log((
   const pg=await b.newPage();await pg.setViewport({width:900,height:600});const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   await pg.goto('file://'+(process.env.HTML||'/home/claude/dbs/dist/dragon-ball-survivors.html'));await wait(1800);
   const ev=(f,...a)=>pg.evaluate(f,...a);
+  await ev(()=>Sprites.need('tama'));await wait(1200);   /* v114: the Tamagami sheets are decoded on demand */
   const ids=await ev(()=>Object.keys(BOSSES).filter(id=>Sprites.BOSS_SHEET[id]&&Sprites.sheets[Sprites.BOSS_SHEET[id]]));
   ok(ids.length>=30,'bosses with pack art: '+ids.length);
   ok(Object.values(await ev(()=>Sprites.BOSS_SHEET)).every(s=>true)&&await ev(()=>Object.values(Sprites.BOSS_SHEET).every(s=>Sprites.sheets[s])),'every mapped boss sheet exists');

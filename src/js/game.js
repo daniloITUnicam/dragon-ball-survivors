@@ -34,7 +34,12 @@ class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
     this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
-    this.diffId=o.diff;this.D=DIFF[o.diff];this.x2=!!o.x2;this.sandbox=!!o.sandbox;
+    this.diffId=o.diff;this.D=DIFF[o.diff];
+    this.week=o.week||null;this.pacts=o.sandbox||o.week?[]:(o.pacts||[]).filter(id=>PACTS.some(p=>p.id===id));this.pk=pactFx(this.pacts);
+    {const ml=Mastery.lv(this.save,o.char),mr=(this.save.mastery||{})[o.char]||{};this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(o.char):null;this.skin=Mastery.skinOf(this.save,o.char);}
+    this.spdK*=this.pk.espd;   /* v115: Pacts */
+    if(this.pacts.length)this.D=Object.assign({},this.D,{hp:this.D.hp*this.pk.hp,dmg:this.D.dmg*this.pk.dmg,spawn:this.D.spawn*this.pk.spawn});
+this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
@@ -45,7 +50,7 @@ class Game{
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
-    this.balls=0;this.ballSet=[];this.senzu=Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.ballSet=[];this.senzu=this.pk.nosenzu?0:Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.immT=0;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
@@ -114,6 +119,7 @@ class Game{
     const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
+    if(this.mastP)for(const k in this.mastP)sh[k]+=this.mastP[k];   /* v115: the character's mastery passive (Lv 5) */
     const S={};
     S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
@@ -137,7 +143,7 @@ class Game{
     {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(this.cdMin(.3),S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
     this.abPassive(S);
     this.S=S;
-    const mh=Math.round((C.hp+20*(P.vit||0)+20*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp));
+    const mh=Math.round((C.hp+20*(P.vit||0)+20*sl('hp')+sh.hp)*(1+tm.hpPct+(this.totemFx.hp||0))*(1+this.swap.hp)*this.pk.php);
     if(mh>this.p.maxHp)this.p.hp+=mh-this.p.maxHp;else if(this.p.hp>mh)this.p.hp=mh;
     this.p.maxHp=mh;
     const e=this.formEntry;this.formColor=e?e.aura:null;
@@ -184,6 +190,20 @@ class Game{
 
   /* ---------- weapons / upgrades ---------- */
   addWeapon(id){if(this.weapons.has(id))return this.weapons.get(id);const w=Weapon.create(this,id);this.weapons.set(id,w);return w;}
+  /* v115: double evolutions. The partner (fzB) stays in this.weapons (it fires and draws as before) but does not take a slot */
+  wCount(){let n=0;for(const w of this.weapons.values())if(!w.fzB)n++;return n;}
+  fuseReady(){
+    const full=id=>{const w=this.weapons.get(id);return w&&!w.fz&&w.maxed&&w.evo>=1&&w.evo>=this.maxEvo(id);};
+    return FUSIONS.find(f=>full(f.a)&&full(f.b))||null;
+  }
+  fuseWeapons(fid){
+    const f=FUSIONS.find(x=>x.id===fid),a=f&&this.weapons.get(f.a),b=f&&this.weapons.get(f.b);if(!a||!b||a.fz||b.fz)return false;
+    a.fz=b.fz=f.id;b.fzB=true;this.run.fusions=(this.run.fusions||0)+1;this.audio.sfx('evolve');
+    this.say(this.env.tr(f.n)+'!',f.c,3.4,this.env.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')));
+    this.flash=.6;this.flashC=f.c;this.ring(this.p.x,this.p.y,260,f.c,.8);this.ring(this.p.x,this.p.y,180,WEAPONS[f.b].c,.7);
+    this.burst(this.p.x,this.p.y-20,56,f.c);this.pillar(this.p.x,this.p.y,f.c,1.2);this.bolt(this.p.x,this.p.y-20,200,f.c,8);
+    this.recalc();return true;
+  }
   evolveWeapon(id){
     const w=this.weapons.get(id);if(!w||w.evo>=this.maxEvo(id))return false;
     w.evolve();this.run.evos++;this.audio.sfx('evolve');
@@ -208,9 +228,9 @@ class Game{
   }
   levelOptions(){
     const pool=this.upgradePool();
-    if(this.weapons.size<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!(this.shopLv('ban')>0&&this.save.banned.includes(id))&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
+    if(this.wCount()<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!(this.shopLv('ban')>0&&this.save.banned.includes(id))&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
-    const sz=this.senzu<SENZU_MAX&&Math.random()<.09;
+    const sz=!this.pk.nosenzu&&this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
     const need=this.neededPass().filter(id=>pool.some(o=>o.type==='p'&&o.id===id));
     if(need.length&&Math.random()<.55){const nid=pick(need),i=pool.findIndex(o=>o.type==='p'&&o.id===nid);if(i>2){const t=pool[i];pool.splice(i,1);pool.unshift(t);}}
@@ -396,14 +416,15 @@ class Game{
     return out;
   }
   /* nothing left to give a chest: no evolution ready, no weapon level, no secondary upgrade (Endless levels past 5 do not count) */
-  allMaxed(){return ![...this.weapons.values()].some(w=>this.evoReady(w))&&!this.chestUps(1).length;}
+  allMaxed(){return ![...this.weapons.values()].some(w=>this.evoReady(w))&&!this.fuseReady()&&!this.chestUps(1).length;}
   chestRewards(isFinal,boss,elite,rar){
     const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sd))}),used=[];
     const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:r,pf:pfFloor(rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1),cf.pf)};};   /* Epic+: the perfection starts from cf.pf; Mythic: a better roll for its Mythic trinkets */
     /* the weapon slot: a ready evolution, otherwise a character upgrade; then cf.t more character upgrades */
     const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     const ev=elig.length?pick(elig).id:null;if(ev)R.push({k:'evo',id:ev});
-    const ups=this.chestUps(cf.t+(ev?0:1),ev);
+    const fu=ev?null:this.fuseReady();if(fu)R.push({k:'fuse',id:fu.id});   /* v115: no evolution ready: a double evolution takes the slot */
+    const ups=this.chestUps(cf.t+(ev||fu?0:1),ev);
     for(const o of ups)R.push({k:'up',o});
     /* trinkets only once everything is maxed: what the upgrades could not fill (all of it when nothing was left), at most cf.tn, the first ones of the chest's own rarity */
     const slots=cf.t+1-R.length;
@@ -426,12 +447,15 @@ class Game{
   skipLevel(){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.sk>0))return false;this.ru.sk--;return true;}   /* the caller then closes the window with resolveModal(-1): nothing is taken */
   banLevel(i){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.bn>0))return false;const k=this.optKey(m.options[i]||{});if(!k)return false;
     this.ru.bn--;this.banRun.add(k);m.banMode=false;this.levelRedraw(m);return true;}
+  /* v115: the wish window shows 4 wishes out of WISH_POOL (no transformation left: not offered) */
+  wishOptions(){const pool=WISH_POOL.filter(w=>w!=='transform'||this.formsUnlocked<this.formMax);shuffle(pool);return pool.slice(0,4);}
   resolveModal(i){
     const m=this.modal;if(!m)return;
     if(m.type==='level'){if(i>=0)this.applyOption(m.options[i]||m.options[0]);}
     else if(m.type==='chest'){
       for(const r of m.rewards){
         if(r.k==='evo')this.evolveWeapon(r.id);
+        else if(r.k==='fuse')this.fuseWeapons(r.id);
         else if(r.k==='up')this.applyOption(r.o);
         else if(r.k==='trinket')this.addTrinket(r.id,r.rar,{pf:r.pf});
         else if(r.k==='zenny')this.addZenny(r.v);
@@ -453,6 +477,14 @@ class Game{
       if(w==='revive'){this.revives++;this.say(this.env.tr(T('Desiderio: una seconda vita!','Wish: a second life!')),'#8be07a',3);}
       else if(w==='power'){for(const x of this.weapons.values())if(x.lv<WMAX){x.upgrade();if(x.lv<WMAX)x.upgrade();}this.say(this.env.tr(T('Desiderio: potere!','Wish: power!')),'#ffd23f',3);}
       else if(w==='tickets'){this.addTicket('t10',1);this.say(this.env.tr(T('Desiderio: 10 ticket!','Wish: 10 tickets!')),'#ffd23f',3);}
+      else if(w==='immortal'){this.immT=WISH_IMMORTAL;this.say(this.env.tr(T('Desiderio: immortalità per 20 secondi!','Wish: 20 seconds of immortality!')),'#fff0a0',3);}
+      else if(w==='transform'){if(this.formsUnlocked<this.formMax)this.unlockForm();this.say(this.env.tr(T('Desiderio: trasformazione!','Wish: transformation!')),'#ffcf3a',3);}
+      else if(w==='legend'){   /* a Legendary trinket out of 3: the pick window comes right after */
+        const opts=[];for(let k=0;k<3;k++){const c=pickTrinket(3,t=>!opts.includes(t.id)&&!this.trinkets.includes(t.id))||pickTrinket(3,t=>!opts.includes(t.id));if(c)opts.push(c.id);}
+        this.heal(this.p.maxHp);this.balls=0;this.ballSet=[];this.recalc();SUMMON.leave(this);
+        if(opts.length){this.modal={type:'pick',opts,rars:opts.map(()=>3),pfs:opts.map(()=>pfFloor(rollPf(this.S.luck,1),50))};return;}
+        this.say(this.env.tr(T('Desiderio: fortuna!','Wish: fortune!')),'#ffb13b',3);
+      }
       else{this.addZenny(Math.round(300*ZMUL));const id=this.rollTrinket();if(id)this.addTrinket(id);this.say(this.env.tr(T('Desiderio: fortuna!','Wish: fortune!')),'#ffb13b',3);}
       this.heal(this.p.maxHp);this.balls=0;this.ballSet=[];this.recalc();SUMMON.leave(this);
     }else if(m.type==='swish'){   /* v113: Porunga's wish (the Super Dragon Balls): a Lucky Ticket 10x or a character */
@@ -768,7 +800,7 @@ class Game{
     }
   }
   /* ---------- progression ---------- */
-  addXp(v){const a=v*this.S.xp;this.xp+=a;this.xpAcc+=a;}
+  addXp(v){const a=v*this.S.xp*this.pk.xp;this.xp+=a;this.xpAcc+=a;}
   levelUp(){
     this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('levelup');
     if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
@@ -1142,7 +1174,7 @@ class Game{
   }
   hurt(d,src){
     const p=this.p;
-    if(p.inv>0||this.sb.god)return;
+    if(p.inv>0||this.sb.god||this.immT>0)return;   /* (v115: the immortality wish) */
     if(this.trial){const dd=Math.max(1,Math.round((d-this.S.armor)*this.S.taken));p.hp=Math.max(1,p.hp-dd);p.inv=.5;this.floatText(p.x,p.y-40,dd,4);this.audio.sfx('hurt');return;}
     if(this.barrierReady){this.barrierReady=false;this.barrierT=this.has('barrier')?TR_BARRIER_CD:25;this.floatText(p.x,p.y-50,this.env.tr(T('Bloccato!','Blocked!')),2);this.ring(p.x,p.y,50,'#8ad8ff',.4);p.inv=.4;return;}
     if(Math.random()<this.S.dodge){this.floatText(p.x,p.y-50,this.env.tr(T('Schivata!','Dodge!')),3);p.inv=.25;return;}
@@ -1813,6 +1845,7 @@ class Game{
     if(this.post>0){this.post-=rdt;if(this.post<=0||(!this.chests.length&&!this.loot.length&&!this.gm.length&&!this.trial&&!this.tun)){this.post=0;this.finish(true);return;}}   /* loot time after the final boss: ends early once everything is picked up */
     dt*=this.timeScale;
     if(this.summon){SUMMON.update(this,rdt);if(this.summon)dt*=this.summon.ts;if(this.modal)return;}   /* v113: the dragon is coming: the world almost stops */
+    Hints.tick(this,rdt);   /* v115: guided first run */
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
@@ -1827,6 +1860,7 @@ class Game{
     if(this.luckT>0){this.luckT-=dt;if(this.luckT<=0)this.recalc();}
     if(this.petLuckT>0){this.petLuckT-=dt;if(this.petLuckT<=0)this.recalc();}
     if(this.emoT>0){this.emoT-=dt;if(this.emoT<=0)this.emo=null;}
+    if(this.immT>0)this.immT-=dt;
     if(this.buffs.dmg>0){this.buffs.dmg-=dt;if(this.buffs.dmg<=0)this.recalc();}
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 

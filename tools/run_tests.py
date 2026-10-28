@@ -17,9 +17,11 @@ def run(p):
         return p.name, 'PASS' if ok else 'FAIL', (bad[0] if bad else (out[-1] if out else ''))[:150]
     except subprocess.TimeoutExpired:
         return p.name, 'FAIL', 'timeout'
-if any(p.name == 'cloud_e2e.js' for p in tests):   # that test needs its own build, pointed at the local mock server
+if any(p.name in ('cloud_e2e.js', 'online.js') for p in tests):   # that test needs its own build, pointed at the local mock server
     env = dict(os.environ, DBS_OUT='/tmp/o/cloud.html', DBS_AUDIO='link', SUPABASE_URL='http://127.0.0.1:54321', SUPABASE_ANON_KEY='testkey', SUPABASE_RESET='1')
     pathlib.Path('/tmp/o').mkdir(exist_ok=True)
+    subprocess.run([sys.executable, 'build.py'], cwd=ROOT, env=env, capture_output=True)
+    env = dict(env, DBS_OUT='/tmp/o/online.html', SUPABASE_URL='http://127.0.0.1:54322')   # online.js: its own mock port, so it can run next to cloud_e2e
     subprocess.run([sys.executable, 'build.py'], cwd=ROOT, env=env, capture_output=True)
 # the tests of the imported character sheets (archived in assets/sprites/_inutilizzati/personaggi: the game draws its characters itself now) run on a build that puts them back
 PACK = {'sprites_goku.js', 'sprites_pack.js', 'goku_grid.js', 'charge_walk.js', 'sprites_boss.js', 'rocks_walk.js'}

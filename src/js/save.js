@@ -12,9 +12,9 @@ class SaveData{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
-      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},
+      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},hints:{},pacts:[],mastery:{},
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
+      settings:{lang,hints:true,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],target:['Tab'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],target:[10],debug:[8]}
@@ -34,6 +34,8 @@ class SaveData{
     d.zenny=Math.max(0,Math.floor(+d.zenny||0));   /* the balance is never negative or fractional, whatever the file says */
     /* saves from before the universal dash: Shift used to be a second key for the pet, it now belongs to the dash */
     if(!(obj&&obj.binds&&obj.binds.kb&&obj.binds.kb.dash)){d.binds.kb.pet=(d.binds.kb.pet||[]).filter(k=>k!=='ShiftLeft'&&k!=='ShiftRight');if(!d.binds.kb.pet.length)d.binds.kb.pet=['KeyQ'];}
+    if(obj&&!obj.hints&&d.stats.runs>=3)d.hints={_vet:1};   /* v115: players who already know the game skip the first-run hints */
+    d.pacts=(Array.isArray(d.pacts)?d.pacts:[]).filter((id,i,a)=>PACTS.some(p=>p.id===id)&&a.indexOf(id)===i);
     if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
     /* the automatic level-up and its priority list used to be Endless-only settings called endAuto / endPrio: they work in every mode now, and keep what the player had */
     {const os=obj&&obj.settings;if(os){if(os.lvAuto===undefined&&os.endAuto===true)d.settings.lvAuto=true;if(!(Array.isArray(os.lvPrio)&&os.lvPrio.length)&&Array.isArray(os.endPrio))d.settings.lvPrio=os.endPrio.filter(k=>typeof k==='string').slice(0,10);}
@@ -130,7 +132,7 @@ class Progress{
     return[
       {k:'coins',v:g.run.coins-Math.min(b.coins,g.run.minC)},   /* what was already paid is not paid twice: after "Continue" only the new coins count (spending in Zeno's Shop first eats the old ones) */
       {k:'clear',v:firstWin?Math.round(200*ZMUL*(idx+1)):0}
-    ];
+    ].concat(g.pacts&&g.pacts.length?[{k:'pacts',v:0,lab:T6('Patti','Pacts','Pactos','Pactes','Pakte','Pactos')}]:[]);
   }
   /* opts.keep: the run was ended by the game itself (a new release is being installed) - no 25% penalty for not winning */
   /* a trinket carried to the end of the run joins the bag (one entry per trinket + rarity). Returns null when it cannot (Test mode, or the bag already has it: then the caller sells it) */
@@ -147,6 +149,7 @@ class Progress{
     if(g.formsUnlocked>(d.maxForm[g.C.id]||0))d.maxForm[g.C.id]=g.formsUnlocked;
     const firstWin=!!win&&!b.cleared;
     const lines=this.rewardLines(g,win,firstWin);
+    {const pl=lines.find(l=>l.k==='pacts');if(pl){pl.v=Math.round(lines.reduce((s,l)=>s+l.v,0)*pactBonus(g.pacts));pl.lab=T6('Patti +'+Math.round(pactBonus(g.pacts)*100)+'%','Pacts +'+Math.round(pactBonus(g.pacts)*100)+'%','Pactos +'+Math.round(pactBonus(g.pacts)*100)+'%','Pactes +'+Math.round(pactBonus(g.pacts)*100)+' %','Pakte +'+Math.round(pactBonus(g.pacts)*100)+' %','Pactos +'+Math.round(pactBonus(g.pacts)*100)+'%');}}
     const raw=lines.reduce((s,l)=>s+l.v,0);
     const mult=1;   /* v109: no end-of-run multiplier at all (stage, difficulty and Coin buffs went earlier; the -25% of a defeat goes now too) */
     const total=Math.floor(raw*mult);
@@ -159,6 +162,7 @@ class Progress{
     {const rc=st.rec||(st.rec={});for(const [k,v] of Object.entries({evos:g.run.evos,trinkets:g.run.tpicks||0,legendary:g.run.legendary,bosses:g.run.bossKills,coins:g.run.coins,mythic:g.run.mythic||0,k20:g.run.k20||0,streak:g.run.streak||0}))rc[k]=Math.max(rc[k]||0,v||0);}
     st.zenny+=total;d.zenny+=total;
     const tks={};for(const k of TICKET_KINDS){const n=(g.run.tk[k]||0)-((b.tk&&b.tk[k])||0);if(n>0){d.tickets[k]+=n;tks[k]=n;}}   /* the tickets found in the run */
+    if(firstWin&&g.pacts&&g.pacts.length){const n=Math.max(1,Math.floor(pactBonus(g.pacts)/PACT_TK+1e-6));d.tickets.t1+=n;tks.t1=(tks.t1||0)+n;}   /* v115: a stage won under Pacts pays 1× tickets too */
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
     if(firstWin&&g.diffId==='extreme')d.xc[idx]=1;   /* this stage has been cleared on Extreme: it unlocks Endless for the stage */
     if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
@@ -174,10 +178,11 @@ class Progress{
       const a=d.wc[id]||(d.wc[id]=[]);if(!a.includes(idx))a.push(idx);
       if(!d.we[id]&&STAGES.every((_,i)=>a.includes(i))){d.we[id]=1;this.notify({type:'weapon',id,evo2:true});}
     }
+    const mast=Mastery.gain(d,g,win,b);   /* v115: character mastery */
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();
-    return{win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),taken:JSON.parse(JSON.stringify(g.takenBy||{})),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,kept:(g.run.tkept||[]).slice(),xc:!!d.xc[idx],ws:this.weaponLevels(g)};
+    return{mastery:mast,win,t:g.t,kills:g.kills,lvl:g.lvl,bossKills:g.run.bossKills,lines,mult,total,unlocked,ach,stage:idx,x2:g.x2,dmg:Object.assign({},g.dmgBy),taken:JSON.parse(JSON.stringify(g.takenBy||{})),coins:g.run.coins,tickets:tks,sold:g.run.tsold||0,kept:(g.run.tkept||[]).slice(),xc:!!d.xc[idx],ws:this.weaponLevels(g)};
   }
   buyChar(id){
     const c=CHARS.find(x=>x.id===id);

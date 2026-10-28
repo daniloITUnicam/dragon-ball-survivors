@@ -66,6 +66,7 @@ const ts=await pg.evaluate(()=>{const g=G,out={},r0=Math.random;
   Math.random=r0;g.en=[];g.bossAlive=0;g.spawnBoss('nappa');e=g.en.find(x=>x.boss);Math.random=()=>0.5;g.killEnemy(e);out.bossNo=g.run.tk.t10;Math.random=r0;
   const e1=g.run.tk.t1;g.eliteDown({x:g.p.x,y:g.p.y,r:10});out.elite=g.run.tk.t1-e1;
   g.modal=null;g.balls=6;g.collectLoot({k:'ball',x:g.p.x,y:g.p.y,star:7});for(let k=0;!(g.modal&&g.modal.type==='wish')&&k<900;k++){if(g.modal)g.resolveModal(0);g.update(1/60);}   /* v113: Shenron appears first (a level-up on the way is answered) */
+  if(g.modal)g.modal.options[3]='tickets';   /* v115: 4 wishes out of 7, drawn at random */
   out.wishOptions=g.modal&&g.modal.options.slice();const t0=g.run.tk.t10;g.resolveModal(3);out.wish=g.run.tk.t10-t0;out.log=g.wishLog.slice(-1)[0];
   out.chance=GACHA.bossChance;return out;});
 ok(ts.chance===1&&ts.boss20===1&&ts.bossNo===2,'every boss drops a 10x ticket (100%)');

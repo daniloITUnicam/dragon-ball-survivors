@@ -143,6 +143,7 @@ class UI{
         this.btn('gachaBtn',()=>this.push('gacha')),
         this.btn('unl',()=>this.push('unl')),
         this.btn('ach',()=>this.push('ach')),
+        this.boardsBtn(),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         this.testAll()?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
@@ -178,7 +179,8 @@ class UI{
         /* the explanation lives in the tooltip (on the wrapper too, so it also shows while the button is locked) */
         h('span',{class:'x2wrap',title:x2ok?this.t('x2Desc'):this.t('x2Locked')},
           h('button',{class:'btn small'+(sel.x2?'':' alt'),disabled:!x2ok,'data-fid':'x2',title:x2ok?this.t('x2Desc'):this.t('x2Locked'),
-            onclick:()=>{this.sfx();sel.x2=!sel.x2;this.rebuild(true);}},'x2 '+(x2ok?(sel.x2?this.t('on'):this.t('off')):'🔒')))),
+            onclick:()=>{this.sfx();sel.x2=!sel.x2;this.rebuild(true);}},'x2 '+(x2ok?(sel.x2?this.t('on'):this.t('off')):'🔒'))),
+        this.pactsBtn()),
       h('div',{class:'grid stages'},cards));
   }
   screen_chars(){
@@ -221,13 +223,14 @@ class UI{
       C.price?h('button',{class:'btn small'+(d.zenny>=C.price?'':' alt'),disabled:d.zenny<C.price,'data-fid':'buychar',onclick:()=>{
         if(this.app.progress.buyChar(C.id)){this.sfx('buy');sel.char=C.id;sel.peek=null;this.toast({type:'info',msg:this.t('charBought',{c:this.tr(C.n)})});this.rebuild();}
       }},(()=>{const pt=this.t('buyChar',{n:'\u0001'}).split('\u0001');return[pt[0],zAmt(C.price),pt[1]||''];})()):null):null;
-    const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx('uiStart');d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet});}},this.t('start'));
+    const startBtn=h('button',{class:'btn primary',disabled:!!peekId,'data-fid':'start',onclick:()=>{this.sfx('uiStart');d.lastChar=sel.char;d.lastStage=sel.stage;this.app.save.write();this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:sel.x2,sandbox:false,pet:d.pet,pacts:this.pactsOpen()?d.pacts:[]});}},this.t('start'));
     const detail=h('div',{class:'detail'},
       h('div',{class:'preview'},portrait?h('div',{class:'emoframe'},portrait):null,big,this.trinketSlot(),this.weaponCount()),
       h('h3',null,this.tr(C.n)),h('p',null,this.tr(C.d)),lock,
       h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},
         h('span',null,'HP '+C.hp),h('span',null,this.t('stSpeed')+' x'+C.spd),h('span',null,this.t('stPower')+' x'+C.might)),
+      this.masteryBox(C),
       (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',{title:this.tr(T('La ricarica diminuisce a ogni livello (fino a −10 s).','Cooldown shrinks with every level (up to −10 s).'))},abBase(ab.cd)+'s ↓'):null),h('p',null,this.tr(ab.d)),
         ABIL_TIER[ab.m]?h('p',{class:'abtier'},h('span',null,'◆ '+this.tr(T('Forma centrale: ','Middle form: '))),this.tr(ABIL_TIER[ab.m].p)):null,
         ABIL_TIER[ab.m]?h('p',{class:'abtier fin'},h('span',null,'★ '+this.tr(T('Forma finale: ','Final form: '))),this.tr(ABIL_TIER[ab.m].f)):null):null;})(),
@@ -301,7 +304,7 @@ class UI{
       const cfg=cfgForForm(a.c,form),ck='menu:'+a.c.id+':'+form;
       if(a.big&&form>=0){const col=LINES[a.c.line||'saiyan'][form].aura;GLOW.at(g,a.w/2,a.base-60,70+Math.sin(t*9)*6,col,.55);}
       const sp=Sprites.player(ck,cfg,po.f,false,po.ex);
-      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{let kp=a.k*Sprites.pk(sp);if(a.big&&sp.px)kp=Math.min(kp,(a.base-6)/sp.oy);g.scale(kp,kp);}   /* tall sheets must not be cut by the canvas top */g.imageSmoothingEnabled=!sp.px;g.drawImage(sp.c,-sp.ox,-sp.oy);
+      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{let kp=a.k*Sprites.pk(sp);if(a.big&&sp.px)kp=Math.min(kp,(a.base-6)/sp.oy);g.scale(kp,kp);}   /* tall sheets must not be cut by the canvas top */g.imageSmoothingEnabled=!sp.px;g.drawImage(a.big&&a.open?Mastery.skinned(sp.c,Mastery.skinOf(this.save,a.c.id)):sp.c,-sp.ox,-sp.oy);
       if(!a.open){g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#0b1a2b';g.fillRect(0,0,a.w,a.h);g.globalCompositeOperation='source-over';}
       else if(a.big&&po.fx){g.setTransform(1,0,0,1,0,0);GLOW.at(g,a.w/2+44,a.base-62,30,'#ffe9a0',.9);}
     }
