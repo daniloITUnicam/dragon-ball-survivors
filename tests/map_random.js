@@ -10,6 +10,7 @@ const r=await pg.evaluate(()=>{const o=[],bad=[];const ok=(c,m)=>{(c?o:bad).push
   MAP.roll(0);const c0=sig(th);MAP.roll(111);const a=sig(th);MAP.roll(111);const a2=sig(th);MAP.roll(222);const b2=sig(th);
   ok(a.h===a2.h,th+': the same seed replays the same layout');
   if(th==='snake'){MAP.roll(111);const f1=Snake.f(6000);MAP.roll(222);const f2=Snake.f(6000);MAP.roll(0);const f0=Snake.f(6000);ok(Math.abs(f1-f2)>20&&Math.abs(f1-f0)>20,'snake: different seeds wind the body differently ('+Math.round(f1)+' / '+Math.round(f2)+' / '+Math.round(f0)+')');}
+  else if(!a.n&&!b2.n)ok(true,th+': fixed arena, no props to scatter');   /* the Tournament of Power ring */
   else ok(a.h!==b2.h&&a.h!==c0.h,th+': different seeds give different layouts ('+a.n+'/'+b2.n+' props)');
   /* the start is clear for many seeds */
   let free=true,dry=true;

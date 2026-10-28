@@ -19,7 +19,7 @@ const r=await pg.evaluate(()=>{const A=__app,o={};A.loop=()=>{};
   g.spawnLoot('sball',g.p.x,g.p.y);const s=g.loot[g.loot.length-1];s.x=g.p.x;s.y=g.p.y;s.guard=true;g.update(1/60);o.porunga=!!g.summon&&g.summon.kind==='porunga';
   let k=0;while(!g.modal&&k<600){g.update(1/60);A.renderer.draw(g,1/60);k++;}o.swish=g.modal&&g.modal.type==='swish'&&g.modal.options[0]==='lucky';
   A.ui.openModal(g.modal,g);o.cards=document.querySelectorAll('.screen.modal.wish .card').length;A.resolveModal(0);for(let i=0;i<150;i++)g.update(1/60);o.gone2=!g.summon;
-  o.sheets=!!(Sprites.sheets.shenron&&Sprites.sheets.porunga);
+  o.sheets=!!(SPRITE_PACK.shenron&&SPRITE_PACK.porunga&&Sprites._dec&&Sprites._dec.has('porunga'));   /* (decoded on demand, v114) */
   /* ×2: from the settings, and the X key */
   A.save.d.settings.summonX2=true;g.balls=6;g.spawnLoot('ball',g.p.x,g.p.y);const l2=g.loot[g.loot.length-1];l2.x=g.p.x;l2.y=g.p.y;g.update(1/60);
   let q=0;while(!g.modal&&q<900){g.update(1/60);q++;}o.x2At=q/60;A.resolveModal(0);for(let i=0;i<150;i++)g.update(1/60);A.save.d.settings.summonX2=false;

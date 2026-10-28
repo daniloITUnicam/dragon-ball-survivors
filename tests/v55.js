@@ -32,10 +32,10 @@ ok(r.arenaFinal==='cell'&&!r.ruinsHasCell,'Cell is the final boss of the Cell Ga
 await go({stage:4});
 r=await ev(()=>{const g=G;g.en=[];g.eb=[];g.bossAlive=0;g.spawnBoss('beerus',true,{x:g.p.x+260,y:g.p.y,k:1});const e=g.en.find(x=>x.final);e.sh=99;g.eb.push({x:g.p.x+50,y:g.p.y,vx:0,vy:0,r:7,dmg:5,life:5});
   g.damageEnemy(e,1e12,0,0,false);const s0={vic:!!g.vic,ended:g.ended,cleared:g.cleared,eb:g.eb.length};
-  let steps=0,boomAt=-1,maxShake=0;for(;steps<900&&!g.ended;steps++){g.update(.016);if(g.vic&&g.vic.boom&&boomAt<0)boomAt=steps;if(g.shake>maxShake)maxShake=g.shake;}
+  let steps=0,boomAt=-1,maxShake=0;for(;steps<1500&&!g.ended;steps++){g.update(.016);if(g.vic&&g.vic.boom&&boomAt<0)boomAt=steps;if(g.shake>maxShake)maxShake=g.shake;}
   return{s0,steps,boomAt,ended:g.ended,vicLeft:!!g.vic,maxShake,sec:steps*.016};});
 ok(r.s0.vic&&!r.s0.ended&&r.s0.cleared&&r.s0.eb===0,'the final boss dies: the death sequence starts, the stage is not over yet and enemy bullets are cleared');
-ok(r.ended&&!r.vicLeft&&r.sec>3.9&&r.sec<5,'the stage-complete menu opens after the sequence (~'+r.sec.toFixed(1)+' s, blast at step '+r.boomAt+')');
+ok(r.ended&&!r.vicLeft&&r.sec>3.9&&r.sec<4.2+15+.5,'the stage-complete menu opens after the sequence and the loot time (POST_T 15 s at most: ~'+r.sec.toFixed(1)+' s, blast at step '+r.boomAt+')');
 ok(r.maxShake>.5,'the screen shakes during the sequence ('+r.maxShake.toFixed(2)+')');
 /* ---------- block b: weapon Aura, Piccolo (Hellzone Grenade + Special Beam Cannon), Toppo, Gotenks ---------- */
 r=await ev(()=>{const ow=id=>CHARS.filter(c=>c.start.includes(id)).map(c=>c.id);
@@ -64,7 +64,7 @@ r=await ev(()=>({n:WEAPONS.hellzone.n.en,e1:WEAPONS.hellzone.evo.en,e2:WEAPONS.h
 ok(r.n==='Hellzone Grenade'&&r.e2==='Divine Hellzone Grenade','names: '+r.n+' > '+r.e1+' > '+r.e2);
 /* Special Beam Cannon */
 await go({char:'piccolo',weapons:3});
-r=await ev(()=>{const g=G;g.setLevel(10);g.modal=null;g.en=[];g.eb=[];const line=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+300,g.p.y-8),line2=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+520,g.p.y-8),off=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+300,g.p.y+150);
+r=await ev(()=>{const g=G;g.setLevel(10);g.modal=null;for(let i=0;g.xform&&i<900;i++){g.update(1/60);g.modal=null;}g.en=[];g.eb=[];   /* level 10 is a transformation since v109: let it finish */const line=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+300,g.p.y-8),line2=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+520,g.p.y-8),off=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+300,g.p.y+150);
   for(const e of[line,line2,off]){e.hp=e.max=5000;e.armor=0;g.en.push(e);}
   g.weapons.clear();g.abCd=0;g.formIdx=-1;g.recalc();const used=g.useAbility();
   const sb0=!!g.sbc;let t=0,firedAt=-1;while(t<2.4){g.update(.016);t+=.016;if(firedAt<0&&line.hp<line.max)firedAt=t;}
@@ -76,7 +76,7 @@ r=await ev(()=>{const g=G;g.en=[];const e=g.mkEnemy(Object.values(ENEMIES)[0],g.
 ok(r.tier===2&&r.beams===2,'final form: twin cannon, two consecutive beams');
 /* Sphere of Justice */
 await go({char:'toppo',weapons:3});
-r=await ev(()=>{const g=G;g.setLevel(10);g.modal=null;g.en=[];g.eb=[];g.weapons.clear();const tg=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+330,g.p.y),side=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+330,g.p.y+90),far=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x-500,g.p.y);
+r=await ev(()=>{const g=G;g.setLevel(10);g.modal=null;for(let i=0;g.xform&&i<900;i++){g.update(1/60);g.modal=null;}g.en=[];g.eb=[];   /* level 10 is a transformation since v109: let it finish */g.weapons.clear();const tg=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+330,g.p.y),side=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x+330,g.p.y+90),far=g.mkEnemy(Object.values(ENEMIES)[0],g.p.x-500,g.p.y);
   for(const e of[tg,side,far]){e.hp=e.max=6000;e.armor=0;g.en.push(e);}
   g.abCd=0;g.formIdx=-1;g.recalc();const used=g.useAbility();const n0=g.spheres.length;let t=0,phase1=-1,peak=0,sx0=side.x;
   while(t<4&&g.spheres.length){g.update(.016);t+=.016;const s=g.spheres[0];if(s&&s.ph===1){if(phase1<0)phase1=t;peak=Math.max(peak,s.rr);}}

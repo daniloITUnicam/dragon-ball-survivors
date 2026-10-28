@@ -32,6 +32,6 @@ for(const id of NEW){
   console.log(id.padEnd(9),'weapons',[...g.weapons.keys()].join(',').padEnd(18),'forms',g.formsUnlocked+'/'+ff,'hp',Math.round(g.p.hp)+'/'+g.p.maxHp,err||'');
 }
 /* jackpot scales with ability strength */
-{const mk=id=>{const g=new X.Game({stage:0,char:id,diff:'normal',x2:false,sandbox:true},{save,audio,progress:new X.Progress(save,()=>{}),tr:o=>typeof o==='string'?o:o.it,onEnd:()=>{}});g.sb.god=true;g.sb.nospawn=true;g.setLevel(10);for(let i=0;i<5;i++)g.update(1/30);g.loot.length=0;g.useAbility();return g.loot.filter(l=>l.k==='coin').length;};
+{const mk=id=>{const g=new X.Game({stage:0,char:id,diff:'normal',x2:false,sandbox:true},{save,audio,progress:new X.Progress(save,()=>{}),tr:o=>typeof o==='string'?o:o.it,onEnd:()=>{}});g.sb.god=true;g.sb.nospawn=true;g.setLevel(10);for(let i=0;i<5||(g.xform&&i<600);i++){g.update(1/30);if(g.modal)g.modal=null;}g.loot.length=0;g.useAbility();   /* (level 10 is a transformation since v109: wait for its cinematic to end) */return g.loot.filter(l=>l.k==='coin').length;};
  const s=mk('satan'),bu=mk('bulma');console.log('jackpot coins satan',s,'bulma',bu);if(!(bu>s))fail('bulma jackpot should drop more coins');}
 console.log(bad?'PROBLEMS '+bad:'all ok');process.exit(bad?1:0);

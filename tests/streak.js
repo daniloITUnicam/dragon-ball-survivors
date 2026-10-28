@@ -10,7 +10,7 @@ await wait(300);
 const a=await pg.evaluate(()=>{const g=G;g.streak=0;g.xp=0;for(let i=0;i<10;i++)g.bumpStreak();const s10=g.streak,t10=g.streakT;
   let ticks=0;for(let i=0;i<30*3;i++){g.en=[];g.update(1/30);ticks++;}const after3=g.streak;
   for(let i=0;i<30*1.5;i++){g.en=[];g.update(1/30);}return{s10,t10,after3,after45:g.streak,best:g.run.streak};});
-ok(a.s10===10&&a.t10===4,'each kill adds to the streak and restarts the 4 s window');
+ok(a.s10===10&&Math.abs(a.t10-4)<.1,'each kill adds to the streak and restarts the window (4 s, shrinking slowly with the streak: '+a.t10.toFixed(2)+' s at 10)');
 ok(a.after3===10&&a.after45===0&&a.best===10,'still alive after 3 s, broken after 4.5 s without kills; record kept ('+a.best+')');
 /* milestones pay XP only at 25, 50, 100... */
 const m=await pg.evaluate(()=>{const g=G;g.streak=0;g.xp=0;g.need=100;const xp=[];let last=0,says=0;const say0=g.say.bind(g);g.say=(...a)=>{says++;return say0(...a);};

@@ -21,7 +21,7 @@ const SUMMON={
     const S={kind,K,t:0,ph:'in',ts:1,lt:0,fired:{},x2:!!(g.save&&g.save.settings&&g.save.settings.summonX2),btn:null,stars:kind==='shenron'?[1,2,3,4,5,6,7]:Array.from({length:K.n},(_,i)=>i+1),
       clouds:Array.from({length:14},()=>({x:Math.random(),y:Math.random()*.75,r:rng(.18,.42),v:rng(-.012,.012),a:rng(.35,.75)})),
       bolts:[.35,1.1,1.9,3.5,3.9,4.6,5.6,6.3].map(t=>({t:t+rng(-.1,.1),x:rng(.08,.92),seed:Math.random()*1e4}))};
-    g.summon=S;g.p.inv=Math.max(g.p.inv,1);
+    g.summon=S;g.p.inv=Math.max(g.p.inv,1);if(typeof Sprites!=='undefined'&&Sprites.need)Sprites.need('dragons');   /* decoded now: the dragon comes out 3.4 s later */
     if(g.audio.slowMusic)g.audio.slowMusic(.55);
     g.audio.sfx('thunder');this.snd(g,'dark');
     this.bindSkip(g);

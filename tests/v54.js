@@ -1,5 +1,5 @@
 /* v54: companion (XP carried to you + shockwave when surrounded), boss chest = 4 trinkets, trinket perfection (0-100%), Ultra Instinct aura, skip-lower rule, swap window, HUD slots */
-const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
+require('fs').mkdirSync('/tmp/tab',{recursive:true});const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
 const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1280,height:760}});
 const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
@@ -25,14 +25,15 @@ ok(r.eff.every(x=>/false$/.test(x)),'effect-only trinkets have no perfection ('+
 console.log('   Potara (might/HP) at 0 / 50 / 100%: '+r.pot);
 /* ---------- chest: 4 trinkets, luck does not add more ---------- */
 await go();
-r=await ev(()=>{const g=G;g.luckBonus=.45;g.recalc();const a=g.pickCount();const rw=g.chestRewards(false,true,false);const pk=rw.find(x=>x.k==='pick');return{a,n:pk&&pk.opts.length,uniq:pk&&new Set(pk.opts).size};});
-ok(r.a===4&&r.n===4&&r.uniq===4,'a boss chest offers exactly 4 different trinkets even with a lot of Luck ('+r.n+')');
+r=await ev(()=>{const g=G;g.luckBonus=.45;g.recalc();return{a:g.pickCount()};});
+ok(r.a===4,'a trinket choice offers exactly 4 trinkets even with a lot of Luck (v109: chests give character upgrades first, tests/v109.js)');
 /* mythic only for trinkets with stats */
 r=await ev(()=>{const bad=[];for(const id of['halo','mirror','timering','dball4','windboots','kaioh','hoipoi']){for(let i=0;i<4000;i++)if(G.rarOf(id)===4){bad.push(id);break;}}
   let myth=0;for(let i=0;i<20000;i++)if(G.rarOf('potara')===4)myth++;return{bad,myth};});
 ok(r.bad.length===0&&r.myth>80&&r.myth<400,'effect-only trinkets are never Mythic; a stat trinket is ~1% ('+r.myth+'/20000)');
 /* ---------- skip lower trinkets (rarity, then perfection) + same trinket upgrades in place ---------- */
-r=await ev(()=>{const g=G;g.save.settings.trinRefuse=true;g.save.shop.tslot=0;g.trinkets=[];g.tRar={};g.tPf={};g.tSrc={};
+r=await ev(()=>{const g=G;Object.defineProperty(g,'runCap',{get:()=>1,configurable:true});   /* v109: no trinket limit in a run - the refuse rules apply at a limit, checked with the old one */
+  g.save.settings.trinRefuse=true;g.save.shop.tslot=0;g.trinkets=[];g.tRar={};g.tPf={};g.tSrc={};
   g.equipTrinket('potara',2,null,60);                  // Epic Potara at 60%
   const lowRar=g.autoRefuse('scouter',0,100,false);    // Common even at 100%: refused
   const sameLow=g.autoRefuse('mask',2,40,false);       // same rarity, less perfection: refused
@@ -83,14 +84,14 @@ ok(r.mig==='50,50,100','old or damaged bag entries are repaired: missing -> 50%,
 await go();
 /* ---------- UI: swap window, perfection, HUD slots ---------- */
 await go();
-await ev(()=>{const g=G;g.save.shop.tslot=0;g.trinkets=[];g.tRar={};g.tSrc={};g.equipTrinket('scouter',0,null,20);g.tq=[];g.addTrinket('potara',3,{pf:75});});
+await ev(()=>{const g=G;Object.defineProperty(g,'runCap',{get:()=>1,configurable:true});g.save.shop.tslot=0;g.trinkets=[];g.tRar={};g.tSrc={};g.equipTrinket('scouter',0,null,20);g.tq=[];g.addTrinket('potara',3,{pf:75});});
 await wait(500);
 r=await ev(()=>({modal:G.modal&&G.modal.type,perf:document.querySelectorAll('.tswap .perf').length,delta:document.querySelectorAll('.tswap .tsdelta').length,verdict:(document.querySelector('.tsverdict')||{}).textContent,sell:document.querySelectorAll('.tswap .tssell').length}));
 ok(r.modal==='tswap'&&r.perf>=2&&r.delta>=1&&!!r.verdict&&r.sell>=1,'swap window: perfection bars, before/after %, verdict "'+r.verdict+'" and sale value ('+JSON.stringify(r)+')');
 await pg.screenshot({path:'/tmp/tab/v54_swap.png'});
 await ev(()=>{__app.resolveModal(1);});await wait(300);
 /* a 100% trinket: aura + HUD slot */
-await ev(()=>{const g=G;g.save.shop.tslot=2;g.trinkets=[];g.tRar={};g.tSrc={};const id='scouter';g.equipTrinket(id,4,null,100);g.equipTrinket('potara',2,null,64);g.equipTrinket('senzubag',0,null,30);window.__perfId=id;});
+await ev(()=>{const g=G;delete g.runCap;g.save.shop.tslot=2;g.trinkets=[];g.tRar={};g.tSrc={};const id='scouter';g.equipTrinket(id,4,null,100);g.equipTrinket('potara',2,null,64);g.equipTrinket('senzubag',0,null,30);window.__perfId=id;});
 await wait(500);await pg.screenshot({path:'/tmp/tab/v54_hud.png'});
 r=await ev(()=>({aura:G.perfAura,id:window.__perfId,n:G.trinkets.length,cap:G.tcap}));
 ok(r.aura===true&&r.n===3&&r.cap===3,'a 100% trinket switches the Ultra Instinct aura on ('+r.id+'), 3 of 3 slots used');

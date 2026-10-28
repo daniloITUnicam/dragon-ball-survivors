@@ -75,7 +75,7 @@ class App{
     cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
     this.applySettings();this.enforceTest();
     this.ui.show('main');
-    Sprites.loadPack(()=>{const t=this.ui.top;if(this.state==='menu'&&t&&(t.name==='chars'||t.name==='main'))this.ui.rebuild(true);});
+    Sprites.loadPack(()=>{if(this._sbR)return;this._sbR=setTimeout(()=>{this._sbR=0;const t=this.ui.top;if(this.state==='menu'&&t&&(t.name==='chars'||t.name==='main'))this.ui.rebuild(true);},250);});   /* v114: one menu refresh for a burst of decoded sheets (it was one per sheet, ~50 at start) */
     this.cloud.start();
     this.updater.start();
     requestAnimationFrame(n=>this.loop(n));

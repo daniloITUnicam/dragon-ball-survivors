@@ -33,7 +33,7 @@ const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
-    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);this.C=CHARS.find(c=>c.id===o.char);
+    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
     this.diffId=o.diff;this.D=DIFF[o.diff];this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};

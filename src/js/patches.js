@@ -16,6 +16,15 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-28c',date:'2026-10-28',
+    name:T("Fondamenta","Foundations"),
+    sum:T("Avvio più leggero, meno memoria fuori dalla Via del Serpente e niente più disconnessioni dal cloud subito dopo l'accesso.","A lighter start, less memory away from Snake Way and no more cloud sign-outs right after logging in."),
+    new:[{g:T('Prestazioni','Performance'),l:[
+      T("Le immagini grandi (isole della Via del Serpente, Shenron e Porunga, statue dei Tamagami) si preparano solo nella partita che le usa e si liberano dopo: circa 100 MB di memoria in meno nelle altre mappe, avvio più rapido.","The big pictures (Snake Way islands, Shenron and Porunga, the Tamagami statues) are prepared only in the run that uses them and freed afterwards: about 100 MB less memory on the other maps, faster start."),
+      T("All'avvio il menu si aggiorna una volta sola mentre le immagini si caricano (prima si ridisegnava una cinquantina di volte).","At start the menu refreshes once while the pictures load (it was redrawn about fifty times).")]}],
+    fix:[{g:T('Account','Account'),l:[
+      T("Subito dopo l'accesso o la registrazione il gioco poteva rinnovare l'accesso due volte insieme e scollegarti: ora lo rinnova una volta sola.","Right after logging in or signing up the game could renew the session twice at once and sign you out: it now renews it once."),
+      T("Sistemati i test automatici del gioco (95 su 101 superati, prima 67): controllano a ogni modifica che non si rompa nulla.","The game's automatic tests are fixed (95 of 101 pass, was 67): they check at every change that nothing breaks.")]}]},
   {id:'2026-10-28b',date:'2026-10-28',
     name:T("Shenron e Porunga","Shenron and Porunga"),
     sum:T("Quando riunisci le Sfere del Drago il drago appare in partita, con un'evocazione da film; le Super Sfere del Drago chiamano Porunga e il loro desiderio si esprime subito.","When you gather the Dragon Balls the dragon appears in the run, with a cinematic summoning; the Super Dragon Balls call Porunga and their wish is made right away."),

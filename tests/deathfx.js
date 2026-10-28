@@ -49,7 +49,8 @@ const OUT=process.env.SHOTS||'/tmp';let fails=0;const ok=(c,m)=>{console.log((c?
   /* 4. Space collects the chest */
   await start(0);
   await ev(()=>{window.__nm=false;});
-  await ev(()=>{const g=G;g.chests.push({x:g.p.x+5,y:g.p.y,final:false,t:0,elite:true});});await wait(1200);
+  await ev(()=>{const g=G;g.chests.push({x:g.p.x+5,y:g.p.y,final:false,t:0,elite:true});});
+  for(let i=0;i<30&&!await ev(()=>G.modal&&G.modal.type==='chest');i++)await wait(200);   /* the chest opens with its animation first */
   ok(await ev(()=>G.modal&&G.modal.type==='chest'),'a chest opens its window');
   await pg.keyboard.press('Space');await wait(500);
   ok(await ev(()=>!G.modal&&__app.state==='play'),'Space presses "Collect" even when a reward card has the focus');

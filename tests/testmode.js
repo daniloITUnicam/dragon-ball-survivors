@@ -9,9 +9,9 @@ const r=await pg.evaluate(()=>{const a=__app,o=[];const d=a.save.d;d.zenny=0;d.s
  d.settings.sandbox=false;const n=a.progress.revertTest();o.push('reverted '+n+' lvl '+(d.shop[SHOP[0].id]||0)+' tb '+JSON.stringify(d.testBuys));return o;});
 console.log(r.join('\n'));
 // UI flow
-await pg.evaluate(()=>{__app.ui.show('main');});await wait(300);
+await pg.evaluate(()=>{Object.defineProperty(__app.cloud,'canTest',{get:()=>true,configurable:true});__app.ui.show('main');});await wait(300);   /* the switch is shown to testers only (cloud.canTest) */
 await pg.evaluate(()=>{__app.ui.push('settings',{tab:'general'});});await wait(300);
-const clickT=async()=>{await pg.evaluate(()=>document.querySelector('[data-fid="tsandbox"]').click());await wait(250);};
+const clickT=async()=>{for(let k=0;k<2;k++){await pg.evaluate(()=>document.querySelector('[data-fid="tsandbox"]').click());await wait(250);}};   /* first click arms it, the second confirms */
 await clickT();let st=await pg.evaluate(()=>({sb:__app.save.d.settings.sandbox,btn:document.querySelector('[data-fid="tsandbox"]').textContent}));console.log('after 1st click',JSON.stringify(st));
 await clickT();st=await pg.evaluate(()=>__app.save.d.settings.sandbox);console.log('after 2nd click sandbox=',st);
 await pg.evaluate(()=>{__app.progress.buy(SHOP[1].id);});

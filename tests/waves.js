@@ -7,7 +7,7 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
 const start=(stage,diff)=>pg.evaluate((stage,diff)=>{__app.save.d.settings.reduceFx=false;__app.applySettings();__app.startGame({stage,char:'goku',diff,x2:false,sandbox:false});const g=__app.game;g.sb.god=true;window.G=g;g.modal=null;g.en=[];g.eb=[];g.loot=[];g.gm=[];for(const q of g.bossQ)q.done=true;return{dur:g.dur,TS:g.TS,eliteN:g.elitePlan.length};},stage,diff);
 /* ---------- wave rhythm ---------- */
 const s1=await start(5,'normal');await wait(300);
-const w=await pg.evaluate(()=>{const g=G;g.hordeT=1e9;g.packT=1e9;g.wave.until=5;
+const w=await pg.evaluate(()=>{const g=G;g.hordeT=1e9;g.packT=1e9;g.wave.until=5;for(const b of g.bossQ)b.t+=1e6;g.minis=null;   /* no boss in these 330 s: a boss fight cuts the cycle short by design */
   const log=[];let ph=g.wave.ph,t0=g.t,spawns=0,ph0=ph;const so=g.spawnOne.bind(g);g.spawnOne=()=>{spawns++;return so();};
   const per={calm:{n:0,t:0},surge:{n:0,t:0},rest:{n:0,t:0}};let gemJump=null,gemV=0,need=0;
   for(let i=0;i<30*330;i++){
@@ -65,18 +65,18 @@ ok(el.info&&el.info.max/el.info.defhp>=9&&el.info.r>el.info.defr*1.3&&el.info.dm
 ok(/LITE|ELITE/.test(el.banner||''),'a banner announces it ('+el.banner+')');
 const kill=await pg.evaluate(()=>{const g=G;const e=g.en.find(e=>e.elite);g.p.x=e.x+400;const z0=g.zenny!==undefined?g.zenny:null;g.chests=[];g.damageEnemy(e,1e12,0,0,false);
   const c=g.chests[0];const out={chests:g.chests.length,elite:!!(c&&c.elite),boss:!!(c&&c.boss),run:g.run.elites,dead:e.dead};
-  g.p.x=c.x;g.p.y=c.y;g.updatePickups(1/30);out.modal=g.modal&&g.modal.type;out.rw=g.modal&&g.modal.rewards.map(r=>r.k);return out;});
+  g.p.x=c.x;g.p.y=c.y;g.updatePickups(1/30);for(let k=0;!(g.modal&&g.modal.type==='chest')&&k<300;k++){if(g.modal)g.resolveModal(0);g.p.x=c.x;g.p.y=c.y;g.update(1/30);}out.modal=g.modal&&g.modal.type;   /* the chest opens with its animation first */out.rw=g.modal&&g.modal.rewards&&g.modal.rewards.map(r=>r.k);return out;});
 ok(kill.chests===1&&kill.elite&&!kill.boss&&kill.run===1&&kill.dead,'killing an elite always leaves a chest ('+JSON.stringify(kill)+')');
-ok(kill.modal==='chest'&&kill.rw.length>=2&&kill.rw.some(k=>k==='trinket'||k==='zenny')&&kill.rw.some(k=>k==='up'||k==='evo'||k==='zenny'),'its chest holds an upgrade plus a sure trinket ('+(kill.rw||[]).join('+')+')');
+ok(kill.modal==='chest'&&kill.rw.length>=1&&kill.rw.every(k=>k==='up'||k==='evo'||k==='trinket'||k==='zenny'),'its chest holds character upgrades (v109: trinkets once everything is maxed) ('+(kill.rw||[]).join('+')+')');
 await pg.evaluate(()=>{G.modal=null;});
 /* chest with several elites in a row keeps giving the trinket */
-const many=await pg.evaluate(()=>{const g=G;let n=0;for(let i=0;i<20;i++){const r=g.chestRewards(false,false,true);if(r.some(x=>x.k==='trinket'||x.k==='zenny'))n++;}return n;});
-ok(many===20,'the sure trinket (or zenny when none is left) comes every time');
+const many=await pg.evaluate(()=>{const g=G;let n=0;for(let i=0;i<20;i++){const r=g.chestRewards(false,false,true);if(r.length&&r.some(x=>x.k==='up'||x.k==='evo'||x.k==='trinket'||x.k==='zenny'))n++;}return n;});
+ok(many===20,'an elite chest is never empty');
 /* ---------- guaranteed Dragon Ball ---------- */
 await start(5,'normal');await wait(200);
 const bl=await pg.evaluate(()=>{const g=G;g.en=[];g.hordeT=1e9;g.packT=1e9;g.wave.until=1e9;const out={};
   g.bossAlive=1;g.t=g.ballAt+1;g.update(1/30);out.boss=g.loot.filter(l=>l.k==='ball').length;g.bossAlive=0;
-  g.update(1/30);const b=g.loot.filter(l=>l.k==='ball');out.n=b.length;out.ttl=b[0]&&b[0].ttl;out.guar=b[0]&&b[0].guar;out.dist=Math.round(Math.hypot(b[0].x-g.p.x,b[0].y-g.p.y));out.star=b[0].star;out.next=Math.round(g.ballAt-g.t);out.banner=g.banner&&g.banner.txt;
+  g.update(1/30);const b=g.loot.filter(l=>l.k==='ball');out.n=b.length;out.ttl=b[0]&&b[0].ttl;out.guar=b[0]&&b[0].guar;out.dist=Math.round(Math.hypot(b[0].x-g.p.x,b[0].y-g.p.y));out.star=b[0].star;out.next=Math.round(g.ballAt-g.t);out.banner=[g.banner&&g.banner.txt,...(g.bq||[]).map(q=>q.txt)].filter(Boolean).join(' | ');   /* v109: banners queue up (the stage name may still be on) */
   g.t=g.ballAt+1;g.update(1/30);out.second=g.loot.filter(l=>l.k==='ball').length;out.delayed=Math.round(g.ballAt-g.t);
   /* walk over it */
   g.balls=0;g.ballSet=[];const bb=g.loot.find(l=>l.k==='ball');g.p.x=bb.x;g.p.y=bb.y;g.updatePickups(1/30);out.balls=g.balls;out.has=[...g.ballOwned()].join();

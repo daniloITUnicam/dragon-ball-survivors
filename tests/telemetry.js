@@ -55,12 +55,12 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
 
   /* 5. off switch and test mode */
   await start(0);await ev(()=>{__app.save.d.settings.tele=false;const g=G;g.en.length=0;for(let i=0;i<120;i++){g.modal=null;g.update(1/30);}g.finish(false);});
-  ok(await ev(()=>TeleStore.count())===1,'with the switch off nothing is recorded');
+  ok(await ev(()=>TeleStore.count())===2,'outside Test mode a run is always recorded, even with the switch off (it only works in Test mode)');
   await start(0,true);await ev(()=>{__app.save.d.settings.tele=true;const g=G;for(let i=0;i<120;i++){g.modal=null;g.update(1/30);}g.finish(false);});
-  ok(await ev(()=>TeleStore.count())===1,'a test-mode (sandbox) run is not recorded');
+  ok(await ev(()=>TeleStore.count())===2,'a test-mode (sandbox) run is not recorded');
 
   /* 6. the Settings screen */
-  await ev(()=>{__app.save.d.settings.tele=true;__app.toMenu();});await wait(500);
+  await ev(()=>{Object.defineProperty(__app.cloud,'canTest',{get:()=>true,configurable:true});__app.save.d.settings.tele=true;__app.save.d.settings.sandbox=true;__app.toMenu();});await wait(500);   /* the "Game data" row is shown in Test mode only */
   await ev(()=>__app.ui.push('settings',{tab:'gameplay'}));await wait(300);
   ok(await click('.settings [data-fid="teleOpen"]'),'Settings > Gameplay has the "Game data" button');await wait(400);
   ok(await ev(()=>__app.ui.top.name==='telemetry'&&!!document.querySelector('[data-fid="telesw"]')&&!!document.querySelector('[data-fid="tx_all"]')&&!!document.querySelector('[data-fid="tx_minutes"]')),'its screen has the switch and the export buttons');
@@ -70,11 +70,13 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   await click('[data-fid="telesw"]');await wait(300);
   ok(await ev(()=>/boss/i.test(document.body.textContent)||document.body.textContent.includes(__app.ui.t('teleLast'))),'the last run summary is shown');
   await click('[data-fid="tx_all"]');await click('[data-fid="tx_minutes"]');
-  await click('[data-fid="teleclear"]');await wait(150);ok(await ev(()=>TeleStore.count())===1,'delete needs a second press');
+  const nRuns=await ev(()=>TeleStore.count());await click('[data-fid="teleclear"]');await wait(150);ok(nRuns>0&&await ev(()=>TeleStore.count())===nRuns,'delete needs a second press');
   await click('[data-fid="teleclear"]');await wait(300);
   ok(await ev(()=>TeleStore.count())===0&&await ev(()=>document.body.textContent.includes(__app.ui.t('teleNone'))),'second press deletes the data');
 
-  /* 7. music: Perfect Cell's theme for the final boss of the Cell Games; other stages keep the synthesized final-boss music */
+  await ev(()=>{__app.save.d.settings.sandbox=false;});
+  /* 7. music: Perfect Cell's theme for the final boss of the Cell Games; other stages keep the synthesized final-boss music (only when the build has the music files: assets/*.mp3) */
+  if(!await ev(()=>!!trackUri('stage8'))){console.log('SKIP music checks: this build has no music files (assets/*.mp3)');ok(errs.length===0,'no JS errors '+errs.join('|'));console.log(fails?'FAILED '+fails:'ALL OK');await b.close();process.exit(fails?1:0);}
   ok(await ev(()=>!!trackUri('fboss8')&&/perfect/i.test(decodeURIComponent(trackUri('fboss8')))&&/cell games/i.test(decodeURIComponent(trackUri('stage8')))),'build maps "perfect cell theme" to the Cell final boss and "cell games" to the stage');
   await start(7);
   await ev(()=>{const g=G;g.sb.nospawn=true;g.en.length=0;window.__pl=null;__app.audio.play=n=>{window.__pl=n;};g.spawnBoss('cell',true);});for(let i=0;i<30&&!await ev(()=>window.__pl);i++)await wait(200);

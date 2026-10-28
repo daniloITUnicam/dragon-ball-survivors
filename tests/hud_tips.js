@@ -19,8 +19,8 @@ const OUT=process.env.SHOTS||'/tmp/o';let fails=0;const ok=(c,m)=>{console.log((
   await pg.screenshot({path:OUT+'/hud_tip.png',clip:{x:0,y:0,width:520,height:360}});
   await pg.mouse.move(600,400);await wait(100);ok(await ev(()=>document.getElementById('tip').style.display==='none'),'tooltip hides away from the HUD');
   // paused
-  await ev(()=>__app.pause());await wait(500);
-  const tw=await tip(Z.find(z=>z.k==='weapon'));ok(tw&&/Lv \d\/5/.test(tw),'tooltips also work while paused ('+JSON.stringify(tw)+')');
+  await ev(()=>{__app.save.d.settings.pauseTab='run';__app.pause();});await wait(500);   /* the Run tab (the pause opens on the Map tab by default) */
+  const tw=await tip(Z.find(z=>z.k==='dash'));ok(tw&&/dash|scatto/i.test(tw),'tooltips also work while paused, on the ability buttons left uncovered ('+JSON.stringify(tw)+')');   /* the pause panels cover the weapon row now and list the weapons themselves */
   ok(await ev(()=>/Senzu/i.test(document.querySelector('.pausescr').innerText)&&/Dash/i.test(document.querySelector('.pausescr').innerText)),'the pause screen lists the abilities (dash, Senzu...) with their explanation');
   await pg.screenshot({path:OUT+'/hud_pause.png'});
   await ev(()=>__app.resume());await wait(300);

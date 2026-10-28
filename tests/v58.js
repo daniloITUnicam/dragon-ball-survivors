@@ -14,7 +14,7 @@ let r=await ev(()=>{const sh=SHOP.find(s=>s.id==='proj');
     names:new Set(TRINKETS.map(t=>t.n.it)).size,total:TRINKETS.length,ids:new Set(TRINKETS.map(t=>t.id)).size,
     tbl:[[2,0],[3,0],[3,100],[4,0],[4,49],[4,50],[4,99],[4,100]].map(([r,p])=>trinProj(r,p)),
     txt:trinStats(TRINKETS.find(t=>t.id==='cx_proj_might'),4,100).map(x=>x.t.en).join(', ')};});
-ok(r.sh&&r.sh.max===2&&r.sh.c0===2000&&r.sh.c1===6000&&r.sh.n==='Quantità/Amount','shop "Quantità": max 2, 2000 then 6000 ('+JSON.stringify(r.sh)+')');
+ok(r.sh&&r.sh.max===2&&r.sh.c0===3000&&r.sh.c1===9000&&r.sh.n==='Quantità/Amount','shop "Quantità": max 2, 3000 then 9000 (shop rebalance; '+JSON.stringify(r.sh)+')');
 ok(r.nX>=100&&r.sets===r.nX,'new trinkets: '+r.nX+' different stat combinations ('+r.sets+' distinct sets)');
 ok(r.stat.every(n=>n>=100),'at every rarity the pool has 100+ stat trinkets: '+r.stat.join('/'));
 ok(r.projAt[0]===0&&r.projAt[1]===0&&r.projAt[2]===0&&r.projAt[3]===10&&r.projAt[4]===10,'only 10 combos carry Quantità, at Legendary and Mythic only: '+r.projAt.join('/'));
@@ -39,7 +39,7 @@ r=await ev(()=>{const g=G;g.weapons.clear();const w=g.addWeapon('ki');const s0=w
 ok(r.with2===r.s0+2,'a Ki Blast fires '+r.s0+' -> '+r.with2+' projectiles');
 /* Dragon Ball scanner + Saiyan Armor */
 r=await ev(()=>{const sc=SHOP.find(s=>s.id==='scan'),ar=SHOP.find(s=>s.id==='armor');return{sc:sc&&{max:sc.max,c0:shopCost(sc,0),icon:SHOP_IMG.scan.length>500},ar:ar.d.en};});
-ok(r.sc&&r.sc.max===2&&r.sc.c0===3000&&r.sc.icon,'shop "Dragon Ball Scanner": max 2, first price 3000, with the pixel-art icon ('+JSON.stringify(r.sc)+')');
+ok(r.sc&&r.sc.max===2&&r.sc.c0===10000&&r.sc.icon,'shop "Dragon Ball Scanner": max 2, first price 10000 (shop rebalance), with the pixel-art icon ('+JSON.stringify(r.sc)+')');
 ok(/\+2 armor/.test(r.ar),'Saiyan Armor gives +2 per level ('+r.ar+')');
 r=await ev(()=>{const A=__app,d=A.save.d;const res={};for(const lv of[0,1,2]){d.shop.scan=lv;d.shop.armor=lv;A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;g.recalc();res[lv]={k:g.scanK,every:Math.round(g.ballEvery*100)/100,armor:g.S.armor};}d.shop.scan=0;d.shop.armor=0;return res;});
 ok(r[0].k===1&&Math.abs(r[1].k-1.05)<1e-9&&Math.abs(r[2].k-1.1)<1e-9&&r[1].every<r[0].every&&r[2].every<r[1].every,'the scanner shortens the Dragon Ball interval '+r[0].every+' > '+r[1].every+' > '+r[2].every+' s');
@@ -47,7 +47,7 @@ ok(Math.abs((r[2].armor-r[0].armor)-4)<1e-9,'two levels of Saiyan Armor add 4 ar
 /* Urlo di Broly! */
 r=await ev(()=>{const A=__app,d=A.save.d,sh=SHOP.find(s=>s.id==='broly'),out={sh:sh&&{max:sh.max,c0:shopCost(sh,0),n:sh.n.it,icon:SHOP_IMG.broly.length>500}};
   d.shop.broly=0;A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;const r0=g.spawnRate();d.shop.broly=5;const r5=g.spawnRate();d.shop.broly=0;out.k=r5/r0;return out;});
-ok(r.sh&&r.sh.max===5&&r.sh.c0===666&&r.sh.n==='Urlo di Broly!'&&r.sh.icon,'shop "Urlo di Broly!": max 5, first price 666, with the picture icon ('+JSON.stringify(r.sh)+')');
+ok(r.sh&&r.sh.max===5&&r.sh.c0===500&&r.sh.n==='Urlo di Broly!'&&r.sh.icon,'shop "Urlo di Broly!": max 5, first price 500 (shop rebalance), with the picture icon ('+JSON.stringify(r.sh)+')');
 ok(Math.abs(r.k-1.25)<1e-9,'five levels raise the enemy spawn rate by 25% (x'+r.k+')');
 /* shop colours + pixel-art icons */
 SHOP_LEN=await ev(()=>SHOP.length);

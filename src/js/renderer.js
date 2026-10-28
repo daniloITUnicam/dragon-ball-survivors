@@ -984,7 +984,7 @@ this.W=1;this.H=1;this.Z=1;
   drawSuperBall(l){
     const ctx=this.ctx,t=l.t,im=this.ballSheet(),S=76,star=Math.max(1,Math.min(7,l.star||1)),gx=l.x,gy=l.y+6,fl=Math.sin(t*1.6)*6,pulse=.5+.5*Math.sin(t*3.2);
     /* a Tamagami guardian: until it wakes up its statue (pedestal included) stands there and the ball floats above its head; afterwards the bare pedestal stays */
-    const tid=Math.max(1,Math.min(3,star)),art=l.tama&&!l.woke&&Sprites.sheets['tamas'+tid]?this.statueArt(tid):null;
+    const tid=Math.max(1,Math.min(3,star));if(l.tama&&!Sprites.sheets['tamas'+tid])Sprites.decode('tamas'+tid);const art=l.tama&&!l.woke&&Sprites.sheets['tamas'+tid]?this.statueArt(tid):null;
     const hy=art?art.oy+S*.5+12:S*.62+10;l.hy=l.hy===undefined?hy:l.hy+(hy-l.hy)*Math.min(1,(this.fdt||.016)*5);     /* the ball glides down when the statue wakes */
     const cy=gy-l.hy-fl;
     let stone=null;

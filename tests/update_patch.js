@@ -71,12 +71,12 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
   let res=null;for(let i=0;i<80&&!res;i++){await wait(200);res=await pg.evaluate(()=>__app.lastRes&&G.ended?({total:__app.lastRes.total,mult:__app.lastRes.mult,win:__app.lastRes.win,exp:STAGES[G.stageIdx].zenny*G.S.gold*G.D.zenny*(G.x2?2:1),cls:document.getElementById('upd').className,msg:document.querySelector('#upd .umsg').textContent,state:__app.state,z:__app.save.d.zenny,z0:__z0,ach:Object.keys(__app.save.d.ach).filter(id=>!__a0.includes(id)).reduce((s,id)=>s+(ACHIEVEMENTS.find(a=>a.id===id)||{reward:0}).reward,0)}):null).catch(()=>null);}
   ok(!!res,'the run was ended when the countdown reached 0');
   if(res){
-    ok(Math.abs(res.mult-res.exp)<1e-9&&!res.win,'no defeat penalty: multiplier '+res.mult.toFixed(3)+' = full ('+res.exp.toFixed(3)+', not x0.75)');
+    ok(res.mult===1&&!res.win,'no defeat penalty: multiplier '+res.mult.toFixed(3)+' (v109: no end-of-run multiplier at all, not x0.75)');
     ok(res.total>0&&res.z-res.z0===res.total+res.ach,'coins saved: +'+res.total+(res.ach?' (+'+res.ach+' achievement rewards)':'')+' (zenny '+res.z0+' -> '+res.z+')');
     ok(/done/.test(res.cls)&&/Partita salvata/.test(res.msg)&&res.state==='end','message "'+res.msg+'" shown over the end screen');
     await pg.screenshot({path:'/tmp/upd_saved.png'});
   }
-  await wait(3200);
+  await wait(3200);await pg.waitForFunction(()=>window.__app,{timeout:20000}).catch(()=>{});
   const after=await pg.evaluate(()=>({mk:window.__marker,z:JSON.parse(localStorage.getItem('dragonball-survivors-v2')).zenny,url:location.href,n:JSON.parse(sessionStorage.getItem('dbs-upd')||'null'),upd:!!document.getElementById('upd'),state:__app.state})).catch(e=>({err:e.message}));
   ok(after.mk===undefined&&!after.upd&&after.state==='menu','the page reloaded by itself and is back on the menu');
   ok(res&&after.z===res.z,'the saved coins survived the reload ('+after.z+')');
@@ -91,6 +91,7 @@ const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
   const a2=await pg.evaluate(()=>({n:JSON.parse(sessionStorage.getItem('dbs-upd')||'null'),mk:window.__marker})).catch(e=>({err:e.message}));
   ok(a2.n&&a2.n.n===2,'second automatic reload recorded ('+JSON.stringify(a2.n)+')');
   /* ---------- the build is still stale after two reloads: stop insisting ---------- */
+  await pg.waitForFunction(()=>window.__app&&window.__app.updater,{timeout:20000}).catch(()=>{});   /* the page is reloading (13 MB to parse) */
   ok(!(await pg.evaluate(()=>__app.updater.check(true))),'after two reloads without effect the watcher stops insisting (no endless loop)');
   /* a *different* newer build is still announced */
   setVer('feedface9999');

@@ -84,11 +84,22 @@ Sprites.sheetFrame=function(sid,frame){
   g.drawImage(S.img,i*S.fw,0,S.fw,S.fh,0,0,S.fw,S.fh);
   return{c,ox:S.ax,oy:S.ay,s:S.ppu,px:true,sheet:sid};
 };
-/* decode the embedded sheets; onLoad(id) fires for each one so open menus can refresh */
+/* decode the embedded sheets; onLoad(id) fires for each one so open menus can refresh.
+   v114: the big sheets only one place needs (SPRITE_LAZY: the Snake Way islands, the summoned dragons, the Tamagami statues - about 100 MB of
+   decoded pixels) are not decoded at start: Sprites.need(group) decodes a group when a run needs it, Sprites.drop(group) frees it again */
+const SPRITE_LAZY={isles:/^isleo?[a-z]+$/,dragons:/^(shenron|porunga)$/,tama:/^tamas?\d+f?$/};
+Sprites.lazyOf=function(id){for(const k in SPRITE_LAZY)if(SPRITE_LAZY[k].test(id))return k;return null;};
 Sprites.loadPack=function(onLoad){
-  for(const id of Object.keys(SPRITE_PACK)){
+  Sprites._onLoad=onLoad;
+  for(const id of Object.keys(SPRITE_PACK))if(!Sprites.lazyOf(id))Sprites.decode(id);
+};
+Sprites.need=function(group){for(const id of Object.keys(SPRITE_PACK))if(Sprites.lazyOf(id)===group)Sprites.decode(id);};
+Sprites.drop=function(group){for(const id of Object.keys(Sprites.sheets))if(Sprites.lazyOf(id)===group){delete Sprites.sheets[id];Sprites._dec&&Sprites._dec.delete(id);}};
+Sprites.decode=function(id){
+  const dec=Sprites._dec||(Sprites._dec=new Set());if(dec.has(id)||Sprites.sheets[id])return;dec.add(id);
+  {const onLoad=Sprites._onLoad;
     const d=SPRITE_PACK[id],img=new Image();
-    img.onload=()=>{
+    img.onload=()=>{if(!dec.has(id))return;   /* dropped meanwhile */
       const cols=Math.max(1,d.cols||7),fw=d.fw||Math.floor(img.width/cols),fh=d.fh||img.height;
       Sprites.nSheets=(Sprites.nSheets||0)+1;
       Sprites.sheets[id]={img,cols,fw,fh,ax:d.ax!==undefined?d.ax:fw/2,ay:d.ay!==undefined?d.ay:fh-2,ppu:d.ppu||2,has:d.has||[],walk:d.walk||null,pw:d.pw||null,dh:d.dh||null,rects:d.rects||null,hand:d.hand||null,kinds:d.kinds||null,anim:d.anim||null,pp:d.pp||null,fps:d.fps||0,dry:d.dry||null,anch:d.anch||null,k:d.k||1};
@@ -146,6 +157,8 @@ Sprites.ENEMY_SHEET={sai:'saibaman'};
 Sprites.enemySheet=function(e){
   const fl=e.boss&&e.bid&&e.pf&&Sprites.BOSS_FORMS[e.bid],fid=fl&&fl[Math.min(e.pf,fl.length-1)];
   const id=e.boss?(e.bid&&((fid&&Sprites.sheets[fid])?fid:Sprites.BOSS_SHEET[e.bid])):(e.def&&Object.keys(Sprites.ENEMY_SHEET).map(k=>ENEMIES[k]===e.def?Sprites.ENEMY_SHEET[k]:null).find(Boolean));
+  if(id&&!Sprites.sheets[id]&&fid&&Sprites.lazyOf(fid))Sprites.decode(fid);
+  if(id&&!Sprites.sheets[id]&&Sprites.lazyOf(id))Sprites.decode(id);   /* v114: a lazy sheet (a Tamagami spawned from the sandbox, say) is decoded the first time it is asked for */
   return id&&Sprites.sheets[id]?id:null;
 };
 /* pack art id of an enemy, cached on it; a 'none' answer is recomputed whenever another sheet finishes loading (the pack decodes asynchronously, a boss spawned meanwhile must not stay procedural for good) */

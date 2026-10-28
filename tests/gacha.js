@@ -43,7 +43,7 @@ ok(eq.bad===false&&eq.okq===true&&eq.tr[0]==='armor'&&eq.rar===4&&eq.src==='bag'
 ok(eq.picks===0&&eq.mythic===0,'and it does not count as a pick for the achievements');
 ok(eq.armor>eq.base+2,'its stats apply (Mythic Royal Saiyan Armor: armor '+eq.base.toFixed(1)+' -> '+eq.armor.toFixed(1)+')');
 /* ---------- a trinket found in the run is sold ---------- */
-const sl=await pg.evaluate(()=>{const g=G,out={};const sd=g.sd,sale=r=>trinketSale(r,sd);g.modal=null;g.tq=[];
+const sl=await pg.evaluate(()=>{const g=G,out={};const sd=g.sd,sale=r=>trinketSale(r,sd);g.modal=null;g.tq=[];Object.defineProperty(g,'runCap',{get:()=>1,configurable:true});   /* v109: no trinket limit in a run - the swap rules are checked with the old limit of 1 */
   out.mythicSale=trinketSale(4,0);out.table=[0,1,2,3,4].map(r=>trinketSale(r,0));
   const c0=g.run.coins;
   g.addTrinket('potara',1);out.m1=g.modal&&g.modal.type;g.resolveModal(0);                 /* replace the bag trinket: it stays in the bag, nothing is sold */
@@ -52,8 +52,8 @@ const sl=await pg.evaluate(()=>{const g=G,out={};const sd=g.sd,sale=r=>trinketSa
   const c1=g.run.coins;g.addTrinket('boots',0);g.resolveModal(1);out.sold2=g.run.coins-c1;out.exp2=sale(0);out.cur2=g.trinkets[0];   /* decline: the offered one is sold */
   const c2=g.run.coins;g.tq.push({id:'scouter',rar:0,onYes(){},onNo(){},buy:true});g.drainTQ();g.resolveModal(1);out.shop=g.run.coins-c2;     /* decline in Zeno-sama's shop: not bought, not sold */
   const c3=g.run.coins,held=g.trinkets[0],hr=g.trR(held);const v=g.sellHeld();out.end=g.run.coins-c3;out.expEnd=sale(hr);out.src3=g.tSrc[held];out.again=g.sellHeld();
-  out.bagKept=__app.save.d.bag.some(b=>b.id==='armor'&&b.r===4);return out;});
-ok(sl.mythicSale===2080&&sl.table[0]===80,'sale value = (market value + bonus) -20%: Mythic (1600+1000)*.8, Common (80+20)*.8 ('+sl.table.join('/')+')');
+  out.bagKept=__app.save.d.bag.some(b=>b.id==='armor'&&b.r===4);delete g.runCap;out.formula=[0,1,2,3,4].every(r=>trinketSale(r,0)===Math.round((ZENO_PRICE[r]+GACHA.sell[r])*ZMUL*TSELL_MUL));return out;});
+ok(sl.formula&&sl.table.every((v,i)=>i===0||v>sl.table[i-1]),'sale value = (market value + bonus) x ZMUL x TSELL_MUL, rising with rarity ('+sl.table.join('/')+')');
 ok(sl.m1==='tswap'&&sl.afterBag===0&&sl.src1==='run'&&sl.cur1==='potara','replacing the trinket from the bag sells nothing (it stays in the bag)');
 ok(sl.sold1===sl.exp1,'replacing a trinket found in the run sells it ('+sl.sold1+')');
 ok(sl.sold2===sl.exp2&&sl.cur2==='cape','keeping the old one sells the offered one ('+sl.sold2+')');
@@ -65,11 +65,12 @@ const ts=await pg.evaluate(()=>{const g=G,out={},r0=Math.random;
   g.en=[];g.bossAlive=0;g.spawnBoss('raditz');let e=g.en.find(x=>x.boss);Math.random=()=>0.05;g.killEnemy(e);out.boss20=g.run.tk.t10;
   Math.random=r0;g.en=[];g.bossAlive=0;g.spawnBoss('nappa');e=g.en.find(x=>x.boss);Math.random=()=>0.5;g.killEnemy(e);out.bossNo=g.run.tk.t10;Math.random=r0;
   const e1=g.run.tk.t1;g.eliteDown({x:g.p.x,y:g.p.y,r:10});out.elite=g.run.tk.t1-e1;
-  g.modal=null;g.balls=6;g.collectLoot({k:'ball',x:g.p.x,y:g.p.y,star:7});out.wishOptions=g.modal&&g.modal.options.slice();const t0=g.run.tk.t10;g.resolveModal(3);out.wish=g.run.tk.t10-t0;out.log=g.wishLog.slice(-1)[0];
+  g.modal=null;g.balls=6;g.collectLoot({k:'ball',x:g.p.x,y:g.p.y,star:7});for(let k=0;!(g.modal&&g.modal.type==='wish')&&k<900;k++){if(g.modal)g.resolveModal(0);g.update(1/60);}   /* v113: Shenron appears first (a level-up on the way is answered) */
+  out.wishOptions=g.modal&&g.modal.options.slice();const t0=g.run.tk.t10;g.resolveModal(3);out.wish=g.run.tk.t10-t0;out.log=g.wishLog.slice(-1)[0];
   out.chance=GACHA.bossChance;return out;});
 ok(ts.chance===1&&ts.boss20===1&&ts.bossNo===2,'every boss drops a 10x ticket (100%)');
 ok(ts.elite===1,'an Elite drops a 1x ticket');
-ok(ts.wishOptions.length===4&&ts.wishOptions[3]==='tickets'&&ts.wish===1&&ts.log==='tickets','the Dragon Ball wish can be 10 tickets (a 10x ticket)');
+ok(ts.wishOptions.length===4&&ts.wishOptions[3]==='tickets'&&ts.wish===1&&ts.log==='tickets','the Dragon Ball wish can be 10 tickets (a 10x ticket) '+JSON.stringify([ts.wishOptions,ts.wish,ts.log]));
 const fl=await pg.evaluate(()=>{const g=G,d=__app.save.d,t0={...d.tickets},run={...g.run.tk};g.finish(false);const t1={...d.tickets};
   g.ended=false;g.finish(false);const t2={...d.tickets};   /* a second finish (continue) must not pay twice */
   return{run,gain:{t1:t1.t1-t0.t1,t10:t1.t10-t0.t10,l10:t1.l10-t0.l10},again:t2.t10-t1.t10+t2.t1-t1.t1,res:__app.lastRes||null};});

@@ -18,7 +18,7 @@ await pg.evaluate(()=>{const g=G,sec=g.feat.find(f=>f.kind==='secret');g.en=g.en
 await pg.evaluate(()=>{const g=G,sec=g.feat.find(f=>f.kind==='secret');g.p.x=sec.x;g.p.y=sec.y+30;step(2);});await wait(200);await pg.screenshot({path:'/tmp/zeno0c.png'});
 const r2=await pg.evaluate(()=>{const g=G,o={};const alt=g.feat.find(f=>f.kind==='secret');g.p.x=alt.x;g.p.y=alt.y+30;step(2);g.input.interact=true;step(2);o.portal=g.feat.some(f=>f.kind==='zenoportal');o.noZenoYet=!g.trial;const sec=g.feat.find(f=>f.kind==='zenoportal');
  g.run.coins=5000;const n0=g.trinkets.length,en0=g.en.length,px=sec.x,py=sec.y;
- g.p.x=sec.x;g.p.y=sec.y+10;step(3);
+ g.p.x=sec.x;g.p.y=sec.y+10;step(2);g.input.interact=true;step(2);   /* features are used with E */
  o.inZeno=!!(g.trial&&g.trial.zeno);o.items=g.trial?g.trial.items.length:0;o.enemiesHidden=g.en.length===0;
  o.secretGone=!g.feat.some(f=>f.kind==='secret'&&!f.used);
  const t0=g.t;step(30);o.timeFrozen=Math.abs(g.t-t0)<1e-6;
@@ -46,7 +46,7 @@ await wait(300);await pg.screenshot({path:'/tmp/zeno2.png'});
 const r4=await pg.evaluate(()=>{const g=G,tr=g.trial,o={};
  g.p.x=tr.exit.x;g.p.y=tr.exit.y;step(3);o.out=!g.trial;o.enemiesBack=g.en.length>=0;o.pos=Math.hypot(g.p.x-0,g.p.y-0)>=0;
  // timeout path
- g.map.secretDone=false;g.map.spawnSecret();const s1=g.feat.find(f=>f.kind==='secret'&&!f.used);g.p.x=s1.x;g.p.y=s1.y+30;step(2);g.input.interact=true;step(2);const s2=g.feat.find(f=>f.kind==='zenoportal');g.p.x=s2.x;g.p.y=s2.y;step(3);o.in2=!!g.trial;step(60*61);o.timedOut=!g.trial;
+ g.map.secretDone=false;g.map.spawnSecret();const s1=g.feat.find(f=>f.kind==='secret'&&!f.used);g.p.x=s1.x;g.p.y=s1.y+30;step(2);g.input.interact=true;step(2);const s2=g.feat.find(f=>f.kind==='zenoportal');g.p.x=s2.x;g.p.y=s2.y;step(2);g.input.interact=true;step(2);o.in2=!!g.trial;step(60*61);o.timedOut=!g.trial;
  return o;});
 ok(r4.out,'the exit portal leaves the shop');
 ok(r4.in2&&r4.timedOut,'the shop closes by itself after 60 s');

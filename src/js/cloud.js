@@ -150,13 +150,19 @@ class Cloud{
   async token(){
     const s=this.sess;if(!s)throw new Error('signed-out');
     if(s.expires_at-Date.now()>60000)return s.access_token;
-    try{
-      const j=await this.req('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:s.refresh_token}});
-      this.setSession(j,s.user);return this.sess.access_token;
-    }catch(e){
-      if(e.net)throw e;
-      this.sess=null;this.saveSess();this.setStatus('idle');this.notify({type:'auth'});throw e;
-    }
+    /* one refresh at a time: calls that arrive while it runs wait for it. Two parallel refreshes with the same refresh token (sync + tester check at login)
+       made the second one fail as a reused token, and that signed you out */
+    if(!this._ref)this._ref=(async()=>{
+      try{
+        const j=await this.req('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:s.refresh_token}});
+        this.setSession(j,s.user);return this.sess.access_token;
+      }catch(e){
+        if(e.net)throw e;
+        if(this.sess===s){this.sess=null;this.saveSess();this.setStatus('idle');this.notify({type:'auth'});}
+        throw e;
+      }finally{this._ref=null;}
+    })();
+    return this._ref;
   }
   /* called once at start: handles the redirect from Google / e-mail links, then syncs */
   async start(){
