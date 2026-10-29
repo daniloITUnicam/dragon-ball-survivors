@@ -18,9 +18,9 @@ const Online={
   build(g){return{w:[...g.weapons.values()].map(w=>[w.id,w.lv,w.evo|0,w.fz?1:0]),tr:g.trinkets.slice(0,16).map(id=>[id,g.tRar[id]|0]),f:g.formsUnlocked|0,p:g.pacts||[],m:g.mastLv|0};},
   /* one row of public.scores; null when the run does not go on a board (Test mode, Endless) */
   row(g,res){
-    if(!g||!res||res.sandbox||g.sandbox||g.endless)return null;
+    if(!g||!res||res.sandbox||g.sandbox||g.endless||g.unranked||GUARD.tainted||(g.save&&g.save.tf)||!g.runId)return null;   /* v118: anti-cheat */
     let dmg=0;for(const k in g.dmgBy)dmg+=g.dmgBy[k]||0;
-    return{stage:g.stageIdx,diff:g.diffId,ch:g.C.id,x2:!!g.x2,win:!!res.win,t:Math.round(g.t*10)/10,kills:g.kills|0,dmg:Math.round(dmg),lvl:Math.max(1,g.lvl|0),pacts:(g.pacts||[]).length,week:g.week||null,build:this.build(g),ev:COMMUNITY.runEv(g)};
+    return{stage:g.stageIdx,diff:g.diffId,ch:g.C.id,x2:!!g.x2,win:!!res.win,t:Math.round(g.t*10)/10,kills:g.kills|0,dmg:Math.round(dmg),lvl:Math.max(1,g.lvl|0),pacts:(g.pacts||[]).length,week:g.week||null,build:this.build(g),ev:COMMUNITY.runEv(g),run_id:g.runId};
   },
   fmt(metric,r){return metric==='kills'?String(r.kills):metric==='dmg'?this.big(r.dmg):fmtT(r.t);},
   big(n){n=+n||0;return n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':String(Math.round(n));},
@@ -67,6 +67,8 @@ Object.assign(Cloud.prototype,{
   async setNick(n){n=String(n||'').trim();if(!NICK_RE.test(n))return 'bad';if(!this.uid)return 'net';
     try{const t=await this.token();await this.req('/rest/v1/profiles?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{user_id:this.uid,nick:n,updated_at:new Date().toISOString()}]});this.nick=n;this.notify({type:'nick'});if(this.sd.d.title&&this.setTitle)this.setTitle(this.sd.d.title).catch(()=>{});return '';}
     catch(e){return e.status===409||e.code==='23505'?'taken':e.net?'net':'bad';}},
+  /* v118: a run token from the server when the run starts: the score must come with it, and not sooner than the time it claims */
+  async runStart(){if(!this.enabled||!this.uid||!this.nick)return null;const t=await this.token(),j=await this.req('/rest/v1/rpc/run_start',{method:'POST',token:t,body:{}});return typeof j==='string'?j:(j&&j.id)||null;},
   async submitScore(row){if(!row||!this.enabled||!this.uid||!this.nick)return false;const t=await this.token();
     await this.req('/rest/v1/scores',{method:'POST',token:t,headers:{Prefer:'return=minimal'},body:[Object.assign({user_id:this.uid},row)]});return true;},
   async board(stage,diff,metric,week){if(!this.enabled)throw new Error('offline');let t=null;if(this.uid)try{t=await this.token();}catch(e){}

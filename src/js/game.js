@@ -1508,7 +1508,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
   }
   bossAttack(e){
-    const p=this.p,bd=e.bd,aim=Math.atan2(p.y-18-e.y,p.x-e.x),d=e.dmg;
+    const p=this.coop?this.coopTgt(e):this.p,bd=e.bd,aim=Math.atan2(p.y-18-e.y,p.x-e.x),d=e.dmg;
     let pat=bd.pats[Math.min(e.phase,bd.pats.length-1)];
     if(e.sparring)pat=bd.pats[Math.floor(Math.random()*bd.pats.length)];
     if(bd.rnd&&!e.sparring)pat=bd.pats[Math.floor(Math.random()*bd.pats.length)];
@@ -1802,7 +1802,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         if(!b.shot){b.shot=true;this.shake=Math.max(this.shake,.5);this.flash=.25;this.flashC=b.col;this.audio.sfx('boom');this.burst(b.x+Math.cos(b.a)*30,b.y+Math.sin(b.a)*30,18,b.col);}
         b.hcd=(b.hcd||0)-dt;
         const dx=p.x-b.x,dy=p.y-14-b.y,c=Math.cos(b.a),s2=Math.sin(b.a),al=dx*c+dy*s2,pe=Math.abs(-dx*s2+dy*c);
-        if(al>0&&al<b.len&&pe<b.w+8&&b.hcd<=0){b.hcd=.3;this.hurt(b.dmg,{bs:1,o:b.e});}
+        if(this.coop){if(b.hcd<=0&&this.hitHeroes(q=>{const qx=q.x-b.x,qy=q.y-14-b.y,qa=qx*c+qy*s2;return qa>0&&qa<b.len&&Math.abs(-qx*s2+qy*c)<b.w+8;},b.dmg,{bs:1,o:b.e}))b.hcd=.3;}
+        else if(al>0&&al<b.len&&pe<b.w+8&&b.hcd<=0){b.hcd=.3;this.hurt(b.dmg,{bs:1,o:b.e});}
       }
     }
     this.jbeams=this.jbeams.filter(b=>b.t<b.charge+b.fire);
@@ -1832,7 +1833,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   updateBossShock(dt){
     const s=this.bshock;if(!s)return;
     s.t+=dt;const k=Math.min(1,s.t/s.dur),R=s.max*(1-Math.pow(1-k,2.2)),p=this.p;
-    if(!s.hit){const dx=p.x-s.x,dy=p.y-s.y,d=Math.hypot(dx,dy)||1;if(d<=R+10){s.hit=true;this.hurt(s.dmg,{bs:1,o:s.o});p.x+=dx/d*70;p.y+=dy/d*70;}}
+    if(this.coop){const hs=s.hs||(s.hs=new Set());this.hitHeroes(q=>{if(hs.has(q))return false;const dx=q.x-s.x,dy=q.y-s.y,d=Math.hypot(dx,dy)||1;if(d>R+10)return false;hs.add(q);q.x+=dx/d*70;q.y+=dy/d*70;return true;},s.dmg,{bs:1,o:s.o});}
+    else if(!s.hit){const dx=p.x-s.x,dy=p.y-s.y,d=Math.hypot(dx,dy)||1;if(d<=R+10){s.hit=true;this.hurt(s.dmg,{bs:1,o:s.o});p.x+=dx/d*70;p.y+=dy/d*70;}}
     if(s.t>=s.dur)this.bshock=null;
   }
   /* ground circles that explode after a short warning (boss slam, stomping enemies) */
@@ -1842,7 +1844,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       z.t+=dt;
       if(z.t>=z.dur){
         z.done=true;this.ring(z.x,z.y,z.r*1.2,z.c,.4);this.burst(z.x,z.y,14,z.c);this.burst(z.x,z.y,8,'#ffffff');this.audio.sfx('boom');this.shake=Math.max(this.shake,.3);
-        if(Math.hypot(p.x-z.x,p.y-z.y)<z.r+8)this.hurt(z.dmg,{bs:1,o:z.o});
+        if(this.coop)this.hitHeroes(q=>Math.hypot(q.x-z.x,q.y-z.y)<z.r+8,z.dmg,{bs:1,o:z.o});else if(Math.hypot(p.x-z.x,p.y-z.y)<z.r+8)this.hurt(z.dmg,{bs:1,o:z.o});
       }
     }
     this.bz=this.bz.filter(z=>!z.done);
@@ -1864,7 +1866,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p,rad=e.def.rad;
     e.dead=true;this.ring(e.x,e.y,rad,'#ff9d3a',.4);this.burst(e.x,e.y-6,26,'#ffb13b');this.burst(e.x,e.y-6,14,'#ffffff');
     this.audio.sfx('boom');this.shake=Math.max(this.shake,.25);
-    if(Math.hypot(p.x-e.x,p.y-e.y)<rad+8)this.hurt(e.dmg,{o:e});
+    if(this.coop)this.hitHeroes(q=>Math.hypot(q.x-e.x,q.y-e.y)<rad+8,e.dmg,{o:e});else if(Math.hypot(p.x-e.x,p.y-e.y)<rad+8)this.hurt(e.dmg,{o:e});
     this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL*.5*this.earlyXp());
   }
 
@@ -1898,7 +1900,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.buffs.dmg>0){this.buffs.dmg-=dt;if(this.buffs.dmg<=0)this.recalc();}
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 
-    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held||p.down){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;p.ivx=ix;p.ivy=iy;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!frozen){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
@@ -1957,7 +1959,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(p.atk>0)p.atk-=dt;
     if(this.fireT>0)this.fireT-=dt;
     const pn=this.pr.length;
-    if(!this.dying)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
+    if(!this.dying&&!p.down)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
     this.curW=null;
     if(this.pr.length>pn||this.cast)p.atk=.34;
     this.updateProjectiles(dt);
@@ -2230,7 +2232,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
 
   updateEnemies(dt){
-    const p=this.p,grid=new Map();this.shotRefill(dt);
+    let p=this.p;const grid=new Map();this.shotRefill(dt);
     for(const e of this.en){
       if(e.dead)continue;
       const k=(Math.floor(e.x/40)+5000)*10000+(Math.floor(e.y/40)+5000);
@@ -2242,7 +2244,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const tag=()=>{if(ow){for(let i=Math.min(nb,this.eb.length);i<this.eb.length;i++)if(!this.eb[i].o)this.eb[i].o=ow;for(let i=Math.min(nz,this.bz.length);i<this.bz.length;i++)if(!this.bz[i].o)this.bz[i].o=ow;
       const R=this.rain||[];for(let i=Math.min(nr,R.length);i<R.length;i++)if(!R[i].o)R[i].o=ow;}nb=this.eb.length;nz=this.bz.length;nr=(this.rain||[]).length;};
     for(const e of this.en){
-      tag();ow=e;
+      tag();ow=e;if(this.coop)p=this.coopTgt(e);   /* v120: co-op: the nearest standing hero */
       if(e.atk>0)e.atk-=dt;
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
@@ -2291,7 +2293,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
             e.jp={sx:e.x,sy:e.y,tx:e.x+(tx0-e.x)*kj,ty:e.y+(ty0-e.y)*kj,t:0,dur:.42};this.audio.sfx('leap');}}
           else{const j=e.jp;j.t+=dt;e.atk=Math.max(e.atk||0,.4);const k=Math.min(1,j.t/j.dur);e.x=j.sx+(j.tx-j.sx)*k;e.y=j.sy+(j.ty-j.sy)*k;e.zoff=Math.sin(k*Math.PI)*Math.min(34,14+dist*.1);
             if(k>=1){e.zoff=0;e.st=0;e.stT=rnd(3.2,4.6);e.stun=.45;this.ring(e.x,e.y,40,'#ffd9a0',.3);this.burst(e.x,e.y,4,'#d8c8a0');this.audio.sfx('land');
-              if(Math.hypot(p.x-e.x,p.y-e.y)<e.r+30)this.hurt(e.dmg*.6,e);e.atk=.6;}}
+              if(Math.hypot(p.x-e.x,p.y-e.y)<e.r+30){if(this.coop)this.hurtP(p,e.dmg*.6,e);else this.hurt(e.dmg*.6,e);}e.atk=.6;}}
           break;}
         case'slam':{
           /* stomps the ground: stops, red circle warns, then an area blast */
@@ -2343,7 +2345,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         }
       }
       if(this.stage.theme==='void'&&!this.trial)TOPARENA.clamp(e,e.r*.3);   /* flyers, hoverers and bosses too */
-      if(e.ai!=='explode'&&!e.under&&dist<e.r+8)this.hurt(e.dmg,e);
+      if(e.ai!=='explode'&&!e.under&&dist<e.r+8){if(this.coop)this.hurtP(p,e.dmg,e);else this.hurt(e.dmg,e);}
     }
     tag();
   }
@@ -2384,6 +2386,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     for(const b of this.eb){
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
       if(b.life<=0){b.dead=true;continue;}
+      if(this.coop){if(this.hitHeroes(q=>{const dx=b.x-q.x,dy=b.y-(q.y-14);return dx*dx+dy*dy<(b.r+8)*(b.r+8);},b.dmg,b))b.dead=true;continue;}
       const dx=b.x-p.x,dy=b.y-(p.y-14);
       if(dx*dx+dy*dy<(b.r+8)*(b.r+8)){this.hurt(b.dmg,b);b.dead=true;}
     }
@@ -2436,6 +2439,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(c.op!==undefined){
         c.op+=dt;
         if(!c.burst&&c.op>.34){c.burst=1;this.ring(c.x,c.y-14,64+16*(c.rar||0),RARITY[c.rar||0].c,.5);this.shake=Math.max(this.shake,.18);}
+        if(c.op>=.85&&!this.modal&&this.coop&&c.own&&c.own!==this.coop.me){this.coopChest(c,c.own);continue;}
         if(c.op>=.85&&!this.modal){
           c.dead=true;this.run.chests++;this.emote('wow',1);
           this.modal={type:'chest',rar:c.rar||0,rewards:this.chestRewards(c.final,c.boss,c.elite,c.rar)};

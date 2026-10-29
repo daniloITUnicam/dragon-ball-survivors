@@ -156,3 +156,66 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.overtaken(timestamptz) from public;
 grant execute on function public.overtaken(timestamptz) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- v118: anti-cheat on the server. Every ranked run asks for a token when it starts (run_start); a score must carry an unused token of the
+-- same account, arrive no sooner than the run could really have lasted, stay within plausible numbers and, for the weekly challenge,
+-- belong to the current week. The weekly ghost must match one of the player's own weekly scores. Safe to run again.
+-- ---------------------------------------------------------------------------
+create table if not exists public.runs (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  started_at timestamptz not null default now(),
+  used       boolean not null default false
+);
+create index if not exists runs_user on public.runs (user_id, started_at desc);
+alter table public.runs enable row level security;
+revoke all on public.runs from anon, authenticated;
+
+create or replace function public.run_start() returns uuid
+  language plpgsql security definer set search_path = public as $$
+declare rid uuid;
+begin
+  if auth.uid() is null then raise exception 'sign in'; end if;
+  delete from public.runs where user_id = auth.uid() and started_at < now() - interval '2 days';
+  if (select count(*) from public.runs where user_id = auth.uid() and started_at > now() - interval '1 minute') >= 6 then raise exception 'too many runs'; end if;
+  insert into public.runs (user_id) values (auth.uid()) returning id into rid;
+  return rid;
+end $$;
+revoke all on function public.run_start() from public;
+grant execute on function public.run_start() to authenticated;
+
+alter table public.scores add column if not exists run_id uuid;
+
+create or replace function public.scores_guard() returns trigger
+  language plpgsql security definer set search_path = public as $$
+declare r public.runs%rowtype; real_s double precision;
+begin
+  if not exists (select 1 from public.profiles where user_id = new.user_id) then raise exception 'nickname required'; end if;
+  if exists (select 1 from public.scores where user_id = new.user_id and created_at > now() - interval '20 seconds') then raise exception 'too many scores'; end if;
+  select * into r from public.runs where id = new.run_id and user_id = new.user_id for update;
+  if not found or r.used then raise exception 'bad run token'; end if;
+  real_s := extract(epoch from now() - r.started_at);
+  -- game time can run up to 2x real time (x2 mode); a little slack for the network
+  if real_s + 10 < new.t * 0.45 then raise exception 'too fast'; end if;
+  -- plausibility: kills and damage per second of game time, level per minute
+  if new.kills > new.t * 90 + 500 then raise exception 'implausible kills'; end if;
+  if new.dmg > (new.t + 60) * 5000000 then raise exception 'implausible damage'; end if;
+  if new.lvl > new.t / 3 + 40 then raise exception 'implausible level'; end if;
+  if new.week is not null and new.week <> to_char(now() at time zone 'utc', 'IYYY-"W"IW') then raise exception 'not this week'; end if;
+  update public.runs set used = true where id = r.id;
+  new.created_at := now();
+  return new;
+end $$;
+
+create or replace function public.ghost_submit(p_week text, p_score double precision, p_ch text, p_path jsonb) returns void
+  language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'sign in'; end if;
+  if not exists (select 1 from public.profiles where user_id = auth.uid()) then raise exception 'nickname required'; end if;
+  -- the ghost must belong to a weekly score this player really posted (same week, at least that score)
+  if not exists (select 1 from public.scores where user_id = auth.uid() and week = p_week and t::float8 * 1e7 + kills >= p_score) then raise exception 'no such run'; end if;
+  insert into public.ghosts (week, user_id, score, ch, path) values (p_week, auth.uid(), p_score, p_ch, p_path)
+  on conflict (week, user_id) do update set score = excluded.score, ch = excluded.ch, path = excluded.path, updated_at = now()
+    where public.ghosts.score < excluded.score;
+end $$;

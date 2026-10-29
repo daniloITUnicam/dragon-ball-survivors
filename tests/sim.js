@@ -1,7 +1,7 @@
 // Headless balance simulator: node tests/sim.js <stage 1-5> <diff> <N> <charIds|all> [dt]
 const fs=require('fs'),path=require('path');
 const SRC=path.join(__dirname,'..','src','js');
-let code='const Sea={has:()=>false,wet:()=>-9,cache:new Map()};const Renderer=function(){};   /* tunnel.js adds its drawing to Renderer.prototype */\n';for(const f of ['util','data','trinkets2','weapons','weapons2','mapart','isle_obj','world','config','save','mastery','cloud','online','gacha','quests','game','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','pose','tunnel','corpse'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
+let code='const Sea={has:()=>false,wet:()=>-9,cache:new Map()};const Renderer=function(){};   /* tunnel.js adds its drawing to Renderer.prototype */\n';for(const f of ['util','guard','data','trinkets2','weapons','weapons2','mapart','isle_obj','world','config','save','mastery','cloud','online','gacha','quests','game','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','pose','tunnel','corpse'])code+=fs.readFileSync(path.join(SRC,f+'.js'),'utf8')+'\n';
 code+='\nglobalThis.__X={LINES,ABIL,TOTEMS,Game,SaveData,Progress,CHARS,STAGES,FORM_TIERS,TRINKETS,WEAPONS,ENEMIES,BOSSES,SHOP,Weapon,PASS,WMAX,MAX_PASSIVES,xpNeed,ESC_E,ESC_N,ESC_X,ESC_EVERY,ENDLESS_MILE,ENDLESS_W,ENDLESS_BONUS,ENDLESS_ZENO,ENDLESS_CD_MIN,ENDLESS_T0,ENDLESS_TK,WXL,XL_DMG,XL_AREA,XL_CD,BERS_T,BERS_T2,BERS_AIM,X_SPAWN_K,X_CAP_K};';
 (0,eval)(code);
 const X=globalThis.__X;

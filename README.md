@@ -55,6 +55,23 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 6 (co-op: la partita insieme, BETA)
+
+- Quando l'host avvia, tutta la stanza gioca la stessa partita nello stesso mondo (fino a 4 giocatori, collegamento diretto con l'host).
+- Esperienza e livello condivisi (il mondo aspetta che tutti abbiano scelto la carta), bottino di chi lo raccoglie, chi va a terra si rialza con un compagno vicino per 3 secondi.
+- Lato server: riesegui `supabase/coop.sql`.
+
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 5 (co-op: la lobby, BETA)
+
+- Menu principale > 👥 Co-op: crea una stanza, entra con un codice o un link, trova una partita (Duo/Trio/Squadra, mappa, difficoltà), inviti, classifica co-op.
+- Stanza: l'host sceglie la destinazione, ognuno il personaggio e «Sono pronto!», chat con frasi rapide, amici (aggiungi, accetta, invita), codice da copiare o condividere.
+- Lato server: esegui una volta `supabase/coop.sql` nel SQL Editor di Supabase (dopo `online.sql`). La partita insieme arriva con la fase 2.
+
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 4 (anti-cheat)
+
+- Il server controlla ogni punteggio: codice di partita, tempo reale, numeri credibili, settimana giusta per la Sfida settimanale (riesegui `supabase/online.sql`).
+- La build normale (`python3 build.py`) chiude il gioco alla console del browser e blocca tasto destro / F12 / Ctrl+Maiusc+I / Ctrl+U; con gli strumenti sviluppatore aperti o un salvataggio modificato a mano i punteggi non vanno in classifica. Per i test: `DBS_DEV=1 python3 build.py` (lo fa già `tools/run_tests.py`). Dettagli in `docs/SECURITY.md`.
+
 ### 🆕 Aggiornamento del 29 ottobre 2026, parte 3 (debolezze, meteo e carriera)
 
 - Debolezze dei boss (+15% da un tipo di arma), Kamehameha caricato tenendo premuto il tasto dell'abilità, Saibaman d'oro che scappa col bottino.

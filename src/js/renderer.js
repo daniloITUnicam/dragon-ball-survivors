@@ -406,6 +406,7 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,t);
+    if(g.coop||g.coopView)COOPG.drawOthers(this,g,t);   /* v120: the other heroes, their weapons, names, the fallen */
     /* Tournament of Power: behind the tower the hero is hidden by it (the tower is painted again over him, clipped to his box so nothing else is touched) */
     /* v112: Snake Way, behind a building / tree / rock of an island the hero, the enemies and the companion are hidden by it */
     if(theme==='snake'&&!g.trial&&this._snIS&&this._snIS.length){
@@ -1783,6 +1784,7 @@ this.W=1;this.H=1;this.Z=1;
       }
     }
     MAPX.hud(this,g);   /* v116: the Supreme Kai's mission */
+    COOPG.hud(this,g);   /* v120: someone is choosing */
     if(g.trial&&g.trial.phase==='train'){
       const tr=g.trial,rem=Math.max(0,Math.ceil(tr.dur-tr.t)),bw=Math.min(360*U,W*.5);
       txt(tt('trialTrain')+' '+rem+'s',W/2,H*.18,'#5a64c8','center',F(26,400).replace('"Rajdhani"','"Bangers"'));

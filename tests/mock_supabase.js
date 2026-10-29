@@ -2,7 +2,7 @@
 const http=require('http'),crypto=require('crypto');
 function start(port,opt){
   opt=opt||{};
-  const titles=new Map(),ghosts=new Map(),profiles=new Map(),scores=[],users=new Map(),byTok=new Map(),refresh=new Map(),saves=new Map(),log=[],codes=new Map(),sentAt=new Map();
+  const runs=new Map(),titles=new Map(),ghosts=new Map(),profiles=new Map(),scores=[],users=new Map(),byTok=new Map(),refresh=new Map(),saves=new Map(),log=[],codes=new Map(),sentAt=new Map();
   const mk=u=>{const a='at_'+crypto.randomBytes(6).toString('hex'),r='rt_'+crypto.randomBytes(6).toString('hex');byTok.set(a,u.id);refresh.set(r,u.id);return{access_token:a,refresh_token:r,expires_in:opt.expires||30,expires_at:Math.floor(Date.now()/1000)+(opt.expires||30),user:{id:u.id,email:u.email}};};
   const srv=http.createServer((req,res)=>{
     const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PUT,PATCH,OPTIONS','Content-Type':'application/json'};
@@ -54,6 +54,7 @@ function start(port,opt){
       }
       if(p==='/rest/v1/scores'&&req.method==='POST'){
         if(!uid)return send(401,{message:'JWT required'});
+        for(const row of j){if(!row.run_id||!runs.has(row.run_id)||runs.get(row.run_id).used||runs.get(row.run_id).uid!==uid)return send(400,{message:'bad run token'});runs.get(row.run_id).used=true;}   /* v118 */
         for(const row of j){if(row.user_id!==uid)return send(403,{message:'rls'});if(!profiles.has(uid))return send(400,{message:'nickname required'});scores.push(Object.assign({},row,{created_at:Date.now()+scores.length}));}return send(201);
       }
       if(p==='/rest/v1/rpc/leaderboard'&&req.method==='POST'){
@@ -62,6 +63,7 @@ function start(port,opt){
         const rows=[...best.values()].sort((a,b)=>sc(b)-sc(a)||a.created_at-b.created_at).slice(0,j.p_limit||50).map((r,i)=>({rank:i+1,nick:profiles.get(r.user_id),title:titles.get(r.user_id)||null,ch:r.ch,t:r.t,kills:r.kills,dmg:r.dmg,lvl:r.lvl,win:r.win,pacts:r.pacts,build:r.build,me:r.user_id===uid}));
         return send(200,rows);
       }
+      if(p==='/rest/v1/rpc/run_start'&&req.method==='POST'){if(!uid)return send(401,{message:'JWT required'});const id='run-'+crypto.randomBytes(6).toString('hex');runs.set(id,{uid,used:false});return send(200,id);}
       /* v116: community totals, the weekly ghost, overtaken */
       if(p==='/rest/v1/rpc/community'&&req.method==='POST'){const o={};for(const r of scores)if(r.ev)for(const k in r.ev)o[k]=(o[k]||0)+r.ev[k];return send(200,Object.entries(o).map(([k,v])=>({k,v})));}
       if(p==='/rest/v1/rpc/ghost_submit'&&req.method==='POST'){if(!uid)return send(401,{message:'JWT required'});const k=j.p_week+'|'+uid,o=ghosts.get(k);if(!o||o.score<j.p_score)ghosts.set(k,{uid,score:j.p_score,ch:j.p_ch,path:j.p_path,week:j.p_week});return send(204);}

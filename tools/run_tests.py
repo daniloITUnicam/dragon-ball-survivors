@@ -7,6 +7,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 args = sys.argv[1:]; jobs = 3
 if '-j' in args: i = args.index('-j'); jobs = int(args[i+1]); del args[i:i+2]
 SKIP = re.compile(r'^(shot|mock_supabase|balance_sim|sim\.js)')   # sim.js is a command-line balance simulator (needs arguments), not a test
+os.environ['DBS_DEV'] = '1'   # every build made here (and the main one, below) is the open DEV build: the tests reach the game through window.__app
+subprocess.run([sys.executable, 'build.py'], cwd=ROOT, env=dict(os.environ), capture_output=True)
 tests = sorted(p for p in (ROOT/'tests').glob('*.js') if not SKIP.match(p.name) and (not args or any(a in p.name for a in args)))
 def run(p):
     try:

@@ -24,7 +24,7 @@ function zIcon(){
 const zAmt=(n,raw)=>h('span',{class:'zv'},zIcon(),raw?n:fmtN(n));
 /* a ticket as an item: "+1 [ticket 10×]" (the same icon in the Achievement cards, the notifications and the "found" message) */
 const TK_LAB={t1:'1×',t10:'10×',l10:'10×'},TK_NAME={t1:T('Ticket 1×','1× Ticket'),t10:T('Ticket 10×','10× Ticket'),l10:T('Ticket Lucky 10×','Lucky 10× Ticket')};
-const tkChip=(kind,n)=>h('span',{class:'tkr',title:(window.__app&&__app.ui?__app.ui.tr(TK_NAME[kind]):TK_NAME[kind].en)},'+'+(n||1)+' ',h('i',{class:'tkico '+kind},h('b',null,TK_LAB[kind])),kind==='l10'?h('small',{class:'tkl'},'Lucky'):null);
+const tkChip=(kind,n)=>h('span',{class:'tkr',title:(APP_REF&&APP_REF.ui?APP_REF.ui.tr(TK_NAME[kind]):TK_NAME[kind].en)},'+'+(n||1)+' ',h('i',{class:'tkico '+kind},h('b',null,TK_LAB[kind])),kind==='l10'?h('small',{class:'tkl'},'Lucky'):null);
 
 class UI{
   constructor(app){
@@ -145,6 +145,7 @@ class UI{
         this.btn('ach',()=>this.push('ach')),
         this.boardsBtn(),
         this.careerBtn(),
+        this.coopBtn(),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         this.testAll()?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
@@ -281,7 +282,7 @@ class UI{
   animate(dt){
     this.animT=(this.animT||0)+dt;
     if(this.top&&this.top.name==='stages'){this.animStages(dt);return;}
-    if(this.top&&this.top.name==='quick')this.animStages(dt);
+    if(this.top&&(this.top.name==='quick'||this.top.name==='coopRoom'))this.animStages(dt);   /* v119: the co-op destination card too */
     const t=this.animT,list=this.anim;if(!list||!list.length||!this.top||(this.top.name!=='chars'&&this.top.name!=='quick'))return;
     for(const a of list){
       if(!a.cv.isConnected)continue;

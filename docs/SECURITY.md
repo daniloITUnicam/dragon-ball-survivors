@@ -39,3 +39,13 @@ Il gioco è a un giocatore e i punteggi non sono pubblici: non c'è una classifi
 ## Test
 
 `node tests/security.js` (salvataggio avvelenato, JSON sicuro, CSP con una partita avviata e script iniettato che non deve partire) e `node tests/cloud_e2e.js` (password, blocco, ritorno da Google non avviato qui). Tutti i test: `python3 tools/run_tests.py -j 3`.
+
+
+## Anti-cheat (v118)
+
+A web page cannot stop its owner from reading or changing it: everything on the client is a deterrent. The real protection is on the server.
+
+- **Server (`supabase/online.sql`)**: `run_start()` hands out a one-use run token; the `scores_guard` trigger refuses a score without an unused token of the same account, one that arrives sooner than the run could have lasted (game time up to 2× real time), implausible kills / damage / level, and weekly scores outside their ISO week. `ghost_submit` only accepts a ghost that matches a real weekly score of the player. Leaderboard rows keep the best run per player.
+- **Release build (the default `python3 build.py`)**: the whole game is wrapped in one closure, so nothing (no `window.__app`, `WEAPONS`, `Game`…) is reachable from the console; right click, F12, Ctrl+Shift+I/J/C/K and Ctrl+U are blocked (`src/js/guard.js`). A `debugger` check notices open developer tools: that session is not posted to the leaderboards.
+- **Save checksum**: the local save is stored with a salted checksum; a hand-edited save still loads but is marked (`tf`) and its scores are not posted.
+- **DEV build (`DBS_DEV=1 python3 build.py`)**: open, no deterrents; `tools/run_tests.py` uses it for the automatic tests.

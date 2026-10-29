@@ -22,7 +22,7 @@ class SaveData{
     };
   }
   load(){
-    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw)return this.normalize(safeJSON(raw));}catch(e){}
+    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const ck=this.storage.getItem(SaveData.KEY+'-ck');const d=this.normalize(safeJSON(raw));if(ck&&ck!==GUARD.ck(raw))d.tf=1;this.tampered=!!d.tf;return d;}}catch(e){}   /* v118: a save edited by hand keeps working but stays off the leaderboards */
     const d=this.defaults();
     if(typeof PATCHES!=='undefined'&&PATCHES.length)d.patchSeen=PATCHES[0].id;   /* a brand-new player has no patch notes to catch up on */
     return d;
@@ -59,12 +59,12 @@ class SaveData{
   }
   write(){
     if(!this.silent)this.d.updated=Date.now();
-    try{this.storage&&this.storage.setItem(SaveData.KEY,JSON.stringify(this.d));}catch(e){}
+    try{if(this.storage){const raw=JSON.stringify(this.d);this.storage.setItem(SaveData.KEY,raw);this.storage.setItem(SaveData.KEY+'-ck',GUARD.ck(raw));}}catch(e){}
     if(!this.silent&&this.onWrite)try{this.onWrite();}catch(e){}
   }
   get shop(){return this.d.shop;}
   get settings(){return this.d.settings;}
-  reset(){this.d=this.defaults();this.write();}
+  reset(){this.d=this.defaults();this.tampered=false;this.write();}
 }
 
 class Progress{

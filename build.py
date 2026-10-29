@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_account','pausemap','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -209,6 +209,13 @@ glyphs = re.search(r"GLYPHS='([^']+)'", js).group(1)
 html = html.replace('__GLYPHS__', urllib.parse.quote(''.join(dict.fromkeys(glyphs))))
 # ---- build id: a hash of everything that ends up in the page. The game compares it with version.json (published next to the
 # page by the deploy workflow) to notice a new release while somebody is playing (src/js/update.js). Same sources -> same id. ----
+# ---- release vs dev: a release build (the default) runs the anti-cheat deterrents (src/js/guard.js) and wraps the whole game in one closure,
+# so nothing of it is reachable from the page (no window.__app, no WEAPONS / BOSSES to edit from a console). DBS_DEV=1: the open build the tests use ----
+_dev = (os.environ.get('DBS_DEV') or '').strip().lower() in ('1','true','yes')
+js = js.replace("'__DEV__'", "'1'" if _dev else "''")
+if not _dev:
+    js = '(()=>{\n' + js + '\n})();'
+print('build:', 'DEV (open, for the tests)' if _dev else 'release (closed, anti-cheat on)')
 _bid = hashlib.sha1((js + '\0' + css + '\0' + html).encode('utf8')).hexdigest()[:12]
 js = js.replace('__BUILD_ID__', _bid)
 js = js.replace('</script>', '<\\/script>')

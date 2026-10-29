@@ -47,6 +47,17 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 29, 2026 update, part 5 (co-op: the lobby, BETA)
+
+- Main menu > 👥 Co-op: create a room, join with a code or a link, find a match (Duo/Trio/Squad, map, difficulty), invitations, co-op leaderboard.
+- Room: the host picks the destination, everyone their character and "I'm ready!", chat with quick phrases, friends (add, accept, invite), a code to copy or share.
+- Server side: run `supabase/coop.sql` once in the Supabase SQL Editor (after `online.sql`). Playing together comes with phase 2.
+
+### 🆕 October 29, 2026 update, part 4 (anti-cheat)
+
+- The server checks every score: run code, real time, believable numbers, the right week for the Weekly challenge (run `supabase/online.sql` again).
+- The normal build (`python3 build.py`) closes the game to the browser console and blocks right click / F12 / Ctrl+Shift+I / Ctrl+U; with developer tools open or a hand-edited save, scores are not posted. For the tests: `DBS_DEV=1 python3 build.py` (`tools/run_tests.py` already does it). Details in `docs/SECURITY.md`.
+
 ### 🆕 October 29, 2026 update, part 3 (weaknesses, weather and career)
 
 - Boss weaknesses (+15% from one kind of weapon), charged Kamehameha by holding the ability key, a golden Saibaman running off with loot.
