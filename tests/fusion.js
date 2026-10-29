@@ -6,7 +6,7 @@ const pg=await b.newPage();await pg.setViewport({width:1280,height:720});const e
 await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
 const ok=(c,m)=>console.log((c?'PASS ':'FAIL ')+m)||(!c&&(process.exitCode=1));
 const r=await pg.evaluate(()=>{const A=__app,o={};A.loop=()=>{};
-  const ids=new Set();for(const f of FUSIONS){ids.add(f.a);ids.add(f.b);}o.cover=ids.size===FUSIONS.length*2&&Object.keys(WEAPONS).every(id=>ids.has(id));
+  const ids=new Set();for(const f of FUSIONS){ids.add(f.a);ids.add(f.b);}o.cover=ids.size===FUSIONS.length*2&&Object.keys(WEAPONS).every(id=>ids.has(id)||FUSION_SOLO.includes(id));
   A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false});const g=A.game;g.sb.god=true;
   g.weapons.clear();g.addWeapon('ki');g.addWeapon('homing');const ki=g.weapons.get('ki'),ho=g.weapons.get('homing');
   for(const w of [ki,ho]){w.lv=WMAX;}o.notYet=!g.fuseReady();
@@ -18,7 +18,7 @@ const r=await pg.evaluate(()=>{const A=__app,o={};A.loop=()=>{};
   o.again=!g.fuseReady();A.renderer.draw(g,1/60);
   const before=g.pr.length;for(let i=0;i<240;i++)g.update(1/60);o.fires=g.run&&Object.keys(g.dmgBy||{}).length>=0;
   return o;});
-ok(r.cover,'11 pairs cover each of the 22 weapons once');
+ok(r.cover,'every weapon is in one pair at most, only the solo ones in none');
 ok(r.notYet&&r.ready,'ready only when both weapons are fully evolved');
 ok(r.chest&&r.card,'the next chest offers the double evolution (Ki Storm)');
 ok(r.fused&&Math.abs(r.dm-1.3)<.01&&Math.abs(r.cd-.85)<.01&&r.slot&&r.again,'after it: +30% damage, −15% cooldown, the pair takes one slot ('+r.dm.toFixed(2)+'/'+r.cd.toFixed(2)+')');

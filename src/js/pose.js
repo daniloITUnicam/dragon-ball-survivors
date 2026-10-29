@@ -18,6 +18,7 @@ const ARM_FIRE={
 };
 const POSE_FIERCE={kamec:1,kamef:1,both:1,slam:1};
 const poseE3=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3);
+let POSE_ON=false;   /* (the tests turn it on to check the old poses still work) */
 const Pose={
   /* which way the character looks while acting: toward the aim (horizontal), otherwise the way it walks */
   fdOf(g,a){const c=Math.cos(a);return Math.abs(c)>.2?(c>0?1:-1):(g.p.face||1);},
@@ -34,6 +35,7 @@ const Pose={
   },
   /* the current pose of the player (null = none): {st, a, ph, u, e, ...} */
   cur(g){
+    if(!POSE_ON)return null;   /* v123: the arm poses are off (no arms stretched toward the target) */
     const c=g.cast;
     if(c)return g.fireT>0?{st:'kamef',a:c.a,ph:1,u:1,e:.5,x:1,col:c.color}:{st:'kamec',a:c.a,ph:0,u:Math.min(1,c.t/c.dur),kk:Math.min(1,c.t/c.dur),col:c.color};
     const pa=g.pa;if(!pa)return null;

@@ -13,7 +13,8 @@ Object.assign(WS,{
   chain:{cd:[2.2,2.05,1.9,1.75,1.6,1.45],jumps:[3,4,4,5,6,8],dmg:[5,6,7,8,9.5,11]},   /* nerfed in v59: half the damage (was 10-22) and a slower rhythm (was 1.4-0.9 s) */
   meteor:{cd:[3.2,3,2.8,2.6,2.4,2.1],n:[2,3,3,4,5,6],dmg:[14,16,18,21,24,28],rad:[50,54,58,64,70,80]},
   sweep:{cd:[7.5,7,6.5,6,5.5,4.8],dur:[2.2,2.3,2.4,2.5,2.6,2.8],dmg:[4.5,5,5.6,6.4,7.4,8.6],len:[300,320,340,360,390,440],wid:[26,28,30,32,35,40]},
-  dyn:{cd:[1.2,1.1,1,.9,.8,.7],rad:[72,80,88,98,110,130],dmg:[13,16,19,23,27,32]}
+  dyn:{cd:[1.2,1.1,1,.9,.8,.7],rad:[72,80,88,98,110,130],dmg:[13,16,19,23,27,32]},
+  bigbang:{cd:[3.2,3,2.8,2.6,2.4,2.2],n:[1,1,1,1,1,2],dmg:[24,28,33,38,44,52],rad:[78,84,92,100,110,128],r:[16,17,18,19,20,23]}
 });
 /* second evolutions hit a bit softer than the classic x1.5 */
 class NW extends Weapon{
@@ -480,4 +481,49 @@ class DynWeapon extends NW{
     }
   }
 }
-const NEWW={javelin:JavelinWeapon,dsunday:DSundayWeapon,breaker:BreakerWeapon,spiral:SpiralWeapon,boomer:BoomerWeapon,hellzone:HellzoneWeapon,chrono:ChronoWeapon,shock:ShockWeapon,hakai:HakaiWeapon,chain:ChainWeapon,meteor:MeteorWeapon,sweep:SweepWeapon,dyn:DynWeapon};
+/* v124: Big Bang Attack (Vegeta). A ki sphere charges in front of the hand (sheet frames 0-3), flies at the nearest enemy and blows up on the first
+   body it touches, or at the end of its flight (frame 4 = the blast, 5-7 = the ring that fades). Without the sheet: a glowing ball and the usual rings */
+const BB_CHARGE=.28,BB_SPD=300,BB_LIFE=1.7;
+class BigBangWeapon extends NW{
+  constructor(g,id){super(g,id);this.bs=[];this.xs=[];}
+  shoot(a){const g=this.g,p=this.g.p,s=this.st,L=this.L,A=this.area();
+    this.bs.push({a,t:-BB_CHARGE,x:p.x+Math.cos(a)*22,y:p.y-18+Math.sin(a)*22,r:s.r[L]*Math.sqrt(A),dmg:s.dmg[L]*this.dm,rad:s.rad[L]*A*(this.evo>=2?1.25:1)});}
+  update(dt){
+    const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
+    this.cd-=dt;
+    if(this.cd<=0){
+      const t=g.nearest(p.x,p.y,560);
+      if(t){const base=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),n=s.n[L]+(this.evo>=2?1:0);
+        for(let i=0;i<n;i++)this.shoot(base+(i-(n-1)/2)*.35);
+        this.extras(()=>{const t2=g.nearest(p.x,p.y,560);this.shoot(t2?Math.atan2(t2.y-8-(p.y-18),t2.x-p.x)+g.aimJit():base);});
+        g.audio.sfx('shot');this.cd=this.cdv();
+      }else this.cd=.2;
+    }
+    for(const b of this.bs){
+      b.t+=dt;
+      if(b.t<0){const k=1+b.t/BB_CHARGE;b.x=p.x+Math.cos(b.a)*(16+8*k);b.y=p.y-18+Math.sin(b.a)*(16+8*k);continue;}   /* charging: it stays on the hand */
+      b.x+=Math.cos(b.a)*BB_SPD*dt;b.y+=Math.sin(b.a)*BB_SPD*dt;
+      if(g.eb.length)g.cutC(b.x,b.y,b.r);
+      let hitE=b.t>=BB_LIFE;
+      if(!hitE)for(const e of g.en){if(e.dead)continue;const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+b.r;if(dx*dx+dy*dy<rr*rr){hitE=true;break;}}
+      if(hitE){b.done=true;g.explodeAt(b.x,b.y,b.rad,b.dmg,this.color);g.ring(b.x,b.y,b.rad*1.2,'#ffffff',.35);g.shake=Math.max(g.shake,.22);g.audio.sfx('boom');
+        this.xs.push({x:b.x,y:b.y,R:b.rad,t:0});}
+    }
+    if(this.bs.length)keepIf(this.bs,b=>!b.done);
+    for(const x of this.xs)x.t+=dt;
+    if(this.xs.length)keepIf(this.xs,x=>x.t<BB_XT);
+  }
+  draw(ctx){
+    const g=this.g,t=g.rt,c=this.color,sh=WFX.has('bigbang');
+    for(const b of this.bs){
+      const k=b.t<0?1+b.t/BB_CHARGE:1,r=b.r*(.35+.65*k);
+      if(sh){GLOW.at(ctx,b.x,b.y,r*3.2,c,.45);WFX.draw(ctx,'bigbang',b.t<0?Math.min(3,Math.floor(k*4)):2+Math.floor(t*10)%2,b.x,b.y,r*2.9,t*4,1,0);continue;}
+      GLOW.at(ctx,b.x,b.y,r*3.4,c,.7);ctx.fillStyle='#e8f8ff';ctx.beginPath();ctx.arc(b.x,b.y,r*.75,0,TAU);ctx.fill();
+      ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(b.x,b.y,r,0,TAU);ctx.stroke();
+    }
+    if(sh)for(const x of this.xs){const k=x.t/BB_XT;WFX.draw(ctx,'bigbang',4+Math.min(3,Math.floor(k*4)),x.x,x.y,x.R*2.2*(.8+.3*k),0,k>.75?(1-k)/.25:1,0);}
+  }
+}
+const BB_XT=.5;   /* how long the painted blast lasts */
+const NEWW={javelin:JavelinWeapon,dsunday:DSundayWeapon,breaker:BreakerWeapon,spiral:SpiralWeapon,boomer:BoomerWeapon,hellzone:HellzoneWeapon,chrono:ChronoWeapon,shock:ShockWeapon,hakai:HakaiWeapon,chain:ChainWeapon,meteor:MeteorWeapon,sweep:SweepWeapon,dyn:DynWeapon,bigbang:BigBangWeapon};

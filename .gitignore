@@ -9,6 +9,7 @@ _cs/
 # Una nuova cartella di fogli (es. personaggi/) va aggiunta qui con una riga "!assets/sprites/<nome>/".
 assets/sprites/*/
 !assets/sprites/boss/
+!assets/sprites/armi/
 !assets/sprites/effetti/
 !assets/sprites/rocce/
 !assets/sprites/props/

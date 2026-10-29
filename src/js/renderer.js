@@ -72,7 +72,7 @@ function footShadow(c,ox,oy){
     return{cx:(a+b)/2-ox,cy:Math.min(bot-oy,0)+Math.max(0,bot-oy)*.5-ry*.55,rx,ry};
   }catch(e){return null;}   /* a tainted canvas (file:// without the sheet inlined): the old round shadow */
 }
-const LIFE_LEAN=.14,LIFE_K=110,LIFE_D=11,LIFE_STEP=.04,LIFE_BREATH=.022;   /* v116: the alive layer (see Renderer.life) */
+const LIFE_STEP=.04,LIFE_BREATH=.022;   /* v116: the alive layer (see Renderer.life); v122: no more lean / sway into the direction of movement */
 /* v121: biome levels cached by chunks of TCH x TCH tiles, at most TCH_MAX chunks kept */
 const TCH=8,TCH_MAX=64;
 /* v121: rectangle batcher - many small same-coloured rectangles (flowers, grass, glints) become one path and one fill per colour */
@@ -382,6 +382,7 @@ this.W=1;this.H=1;this.Z=1;
     const elv=ELEC.lvl(g);
     this.fxBegin();
     for(const b of (FXL.a>0?g.pr:[])){
+      if(b.wid&&WFX.proj(ctx,b,t))continue;   /* v123: painted sheet */
       if(b.tr)VFX.trail(ctx,b.tr,b.r*.9,b.c);
       if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
       else VFX.orb(ctx,b.x,b.y,b.r,b.c,t);
@@ -399,6 +400,7 @@ this.W=1;this.H=1;this.Z=1;
     /* fx */
     this.fxBegin();
     for(const f of (FXL.a>0?g.fx:[])){
+      if(f.abfx||(f.beam&&f.ab&&WFX.AB[f.ab])){if(WFX.abFx(ctx,f,g))continue;}   /* v123: painted character abilities */
       if(f.beam){
         const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
         ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.a);ctx.globalCompositeOperation='lighter';
@@ -517,14 +519,8 @@ this.W=1;this.H=1;this.Z=1;
   }
   drawPlayer(g,t){
     const ctx=this.ctx,p=g.p,u=(g.C.u||1.95);
-    let frame=g.cast?6:p.atk>0?(p.atk>.17?5:6):p.mv?Sprites.walkFrame(g.pcKey,t):0;
-    /* imported sprite sheets: charging a beam is a normal walk/idle (the pack's wind-up/thrust frames are full poses), the arm only
-       extends (frame 6) while the beam is actually firing; a plain shot while moving keeps the walk cycle */
-    if(Sprites.sheetFor(g.pcKey)){
-      if(g.fireT>0)frame=6;
-      else if(p.mv)frame=Sprites.walkFrame(g.pcKey,t);
-      else if(g.cast)frame=0;
-    }
+    /* v123: no more attack poses (arms stretched toward the target): while using the weapons the hero keeps walking / standing */
+    let frame=p.mv?Sprites.walkFrame(g.pcKey,t):0;
     /* optional sheet frames for the weapon poses (10-15, see pose.js / docs/SPRITES_AI.md); only when the sheet declares them */
     let pzS=null;
     if(!g.dying&&Sprites.sheetFor(g.pcKey)&&!g.xform&&!(g.dashT>0&&Sprites.sheetHas(g.pcKey,8))){const z0=Pose.cur(g),f2=z0?Pose.sheetFrame(z0):0;if(f2&&Sprites.sheetHas(g.pcKey,f2)){frame=f2;pzS=z0;}}
@@ -596,11 +592,11 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     const bob=p.mv&&!sp.px?-Math.abs(Math.sin(t*9))*1.2:0;   /* pack sprites bob inside their own walk frames */
     const Z=pz?Pose.build(g,pz,u,fd,Sprites.pose(fm).bob,bob):null,blink=!g.dying&&p.inv>0&&p.inv<.45,whiteArm=flash&&!xf;
-    const LF=g.dying?null:this.life(g,t),lft=()=>{if(LF){ctx.translate(p.x,p.y+bob-(LF.oy||0));ctx.transform(1,0,LF.sk,1,0,0);ctx.scale(LF.sx,LF.sy);ctx.translate(-p.x,-(p.y+bob));}};   /* v116: the alive layer moves the painted arms with the body */
+    const LF=g.dying?null:this.life(g,t),lft=()=>{if(LF){ctx.translate(p.x,p.y+bob-(LF.oy||0));ctx.scale(LF.sx,LF.sy);ctx.translate(-p.x,-(p.y+bob));}};   /* v116: the alive layer moves the painted arms with the body */
     if(Z){ctx.save();lft();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.B,g.pc,u,false,whiteArm);ctx.restore();}   /* the far arm goes behind the body */
     ctx.save();ctx.translate(p.x,p.y+bob);
     if(g.dying){const dd=g.dying.t,kd=Math.min(1,dd/.6);ctx.rotate(-p.face*(Math.PI/2)*(1-Math.pow(1-kd,3)));ctx.globalAlpha=1-.55*Math.min(1,Math.max(0,(dd-.5)/1.4));}
-    if(LF){if(LF.oy)ctx.translate(0,-LF.oy);ctx.transform(1,0,LF.sk,1,0,0);ctx.scale(LF.sx,LF.sy);}   /* v116: breathing, steps, sway, recoil, dash stretch */
+    if(LF){if(LF.oy)ctx.translate(0,-LF.oy);ctx.scale(LF.sx,LF.sy);}   /* v116: breathing, steps, recoil, dash stretch */
     ctx.scale(fd*k,k);
     if(!g.dying&&p.inv>0&&p.inv<.45)ctx.globalAlpha=.55;
     ctx.imageSmoothingEnabled=!sp.px;
@@ -623,10 +619,10 @@ this.W=1;this.H=1;this.Z=1;
       let hx=p.x+ca*d,hy=p.y-17+sa*d;
       if(Z&&Z.ball){hx=Z.ball.x;hy=Z.ball.y;}   /* procedural arms: the ball is held between the hands */
       else if(SB){hx=SB.x;hy=SB.y;}   /* sheet frame 10: the hand anchor of the sprite */
-      else{ctx.lineCap='round';ctx.strokeStyle=g.pc.skin;ctx.lineWidth=3.4;
-        if(!sp.px)for(const sd of[-1,1]){ctx.beginPath();ctx.moveTo(p.x+sd*4,p.y-18);ctx.lineTo(hx-sa*sd*2.4,hy+ca*sd*2.4);ctx.stroke();}}
-      this.fxBegin();VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
-      if(c.kind==='kame'){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy,(14+26*kk)*(1+.1*Math.sin(g.rt*19)),c.color,.55*kk+.2);   /* charging ball: pulsing halo and rotating rays */
+
+      this.fxBegin();const wk=c.kind==='kame'&&!g.weapons.has('sweep')&&WFX.draw(ctx,'kame',Math.min(5,Math.floor(kk*6)),hx,hy,26+70*kk,0,1,0);   /* v123: the painted charge */
+      if(!wk)VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
+      if(c.kind==='kame'&&!wk){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy,(14+26*kk)*(1+.1*Math.sin(g.rt*19)),c.color,.55*kk+.2);   /* charging ball: pulsing halo and rotating rays */
         for(let i=0;i<8;i++){const aa=g.rt*3+i*TAU/8,r0=5+9*kk,l=(10+16*kk)*(.7+.3*Math.sin(g.rt*17+i));ctx.strokeStyle=hexA('#ffffff',.25+.45*kk);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(hx+Math.cos(aa)*r0,hy+Math.sin(aa)*r0);ctx.lineTo(hx+Math.cos(aa)*(r0+l),hy+Math.sin(aa)*(r0+l));ctx.stroke();}ctx.restore();}
       ctx.save();ctx.globalCompositeOperation='lighter';
       for(let i=0;i<10;i++){const aa=g.rt*7+i*.63,rr=(1-kk)*46+10+((i*13)%7),px=hx+Math.cos(aa)*rr,py=hy+Math.sin(aa)*rr*.8;ctx.globalAlpha=.5+.4*kk;ctx.strokeStyle=i%2?c.color:'#fff';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+(hx-px)*.22,py+(hy-py)*.22);ctx.stroke();}
@@ -970,6 +966,7 @@ this.W=1;this.H=1;this.Z=1;
     const ox=p.x,oy=p.y-24;ctx.setLineDash([14,10]);ctx.lineDashOffset=-t*60;ctx.lineWidth=1.6;ctx.strokeStyle=hexA(c,.1+.3*k);
     ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+Math.cos(s.ang)*900,oy+Math.sin(s.ang)*900);ctx.stroke();ctx.setLineDash([]);
     /* glow + spirals around the fingertips */
+    if(WFX.has('absbc')){WFX.draw(ctx,'absbc',k<.6?0:1,hx,hy,40+60*k,s.ang,.6+.4*k);ctx.restore();return;}   /* v123: painted charge */
     GLOW.at(ctx,hx,hy,12+34*k,c,.5+.5*k);GLOW.at(ctx,hx,hy,6+14*k,'#ffffff',.7);
     for(let j=0;j<3;j++){
       ctx.strokeStyle=hexA(j===1?'#b46bff':c,.4+.5*k);ctx.lineWidth=1.8;ctx.beginPath();
@@ -984,6 +981,9 @@ this.W=1;this.H=1;this.Z=1;
     for(const s of g.spheres){
       const k=s.ph?Math.min(1,s.t/s.hold):0,r=s.ph===0?15+Math.sin(t*30):s.rr;
       ctx.save();ctx.translate(s.x,s.y);
+      if(s.met&&WFX.has('abmeteor')){   /* v124: the painted comet, head on the sphere, tail behind where it flies */
+        if(s.ph===1){ctx.save();ctx.scale(1,.8);ctx.strokeStyle=hexA(c,.15+.35*k);ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*34;ctx.beginPath();ctx.arc(0,0,s.R,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+        GLOW.at(ctx,0,0,r*3,c,.5);WFX.draw(ctx,'abmeteor',t*12,0,0,clamp(r*1.7/.25,110,440),s.a,1,Math.floor(t*12/4)%2,true);ctx.restore();continue;}
       if(s.ph===1){ctx.save();ctx.scale(1,.8);ctx.strokeStyle=hexA('#ff4fd8',.15+.35*k);ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*34;ctx.beginPath();ctx.arc(0,0,s.R,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
       GLOW.at(ctx,0,0,r*3.4,c,.55);GLOW.at(ctx,0,0,r*2,'#ff4fd8',.25+.3*k);
       ctx.globalCompositeOperation='lighter';ctx.lineWidth=2;ctx.strokeStyle=hexA('#d8a0ff',.8);
@@ -1278,15 +1278,14 @@ this.W=1;this.H=1;this.Z=1;
      idle breathing, a squash-and-stretch on every step, the upper body leaning into the run on a spring (it overshoots when you stop, like hair and clothes),
      a recoil squash when hit and a stretch while dashing. Scales are around the feet. */
   life(g,t){
-    const p=g.p,A=g.pla||(g.pla={sk:0,v:0}),dt=Math.min(.05,this.fdt||.016),mv=p.mv&&!g.cast&&!g.xform;
-    if(A.fr!==this._fr){A.fr=this._fr;const tx=mv?-(p.ivx||0)*LIFE_LEAN:0;A.v+=((tx-A.sk)*LIFE_K-A.v*LIFE_D)*dt;A.sk=clamp(A.sk+A.v*dt,-.3,.3);}   /* once per frame (the hero can be drawn twice) */
+    const p=g.p,mv=p.mv&&!g.cast&&!g.xform;
     let sx=1,sy=1;
     if(mv){const s=Math.abs(Math.sin(t*Math.PI*5));sy=1+LIFE_STEP*s;sx=1-LIFE_STEP*.7*s;}
     else{const b=Math.sin(t*2.6);sy=1+LIFE_BREATH*b;sx=1-LIFE_BREATH*.5*b;}
     if(p.hurtAt!=null){const q=clamp(1-(g.t-p.hurtAt)/.2,0,1);sx*=1+.14*q;sy*=1-.12*q;}
     if(g.dashT>0){sx*=1.16;sy*=.9;}
-    const vp=EXTRAS.pose(g,t);if(vp){sx*=vp.sx;sy*=vp.sy;return{sk:0,sx,sy,oy:vp.oy};}   /* v117: victory pose */
-    return{sk:A.sk,sx,sy};
+    const vp=EXTRAS.pose(g,t);if(vp){sx*=vp.sx;sy*=vp.sy;return{sx,sy,oy:vp.oy};}   /* v117: victory pose */
+    return{sx,sy};
   }
   /* v116: the ally who dropped in (its base sprite, the attack frame while it strikes, a glow in its weapon's colour) */
   drawAlly(a,t,g){

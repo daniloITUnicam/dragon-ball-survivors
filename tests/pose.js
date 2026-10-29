@@ -5,6 +5,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'  ok  ':'FAIL  ')+m);if(!c)fails++;
 const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:900,height:600}});
 const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+await pg.evaluate(()=>{window.__poseDefault=POSE_ON;POSE_ON=true;});   /* v123: the arm poses are off in the game; turned on here to check they still work */
 const start=(ws)=>pg.evaluate((ws)=>{window.__MAPSEED=0;__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;window.G=g;g.sb.nospawn=true;g.p.hp=g.p.maxHp=1e7;
   g.weapons.clear();for(const id of ws)g.addWeapon(id);g.en.length=0;g.modal=null;return true;},ws);
 const foe=(dx,dy)=>pg.evaluate((dx,dy)=>{const g=G,e=g.mkEnemy(ENEMIES.saibaman||Object.values(ENEMIES)[0],g.p.x+dx,g.p.y+dy);e.hp=e.max=1e9;e.spd=0;g.en.push(e);return g.en.length;},dx,dy);

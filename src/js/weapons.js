@@ -238,15 +238,16 @@ class KameWeapon extends Weapon{
       const k=Math.sin(Math.min(1,b.t/b.dur)*Math.PI);
       /* the original Kamehameha is a lighter sky blue with a dense, deep blue glow around it; a transformation still tints it */
       const c=b.evo?this.color:(g.formColor||'#8fe3ff');
-      ctx.save();ctx.translate(p.x+Math.cos(b.a)*14,p.y-18+Math.sin(b.a)*14);ctx.rotate(b.a);
-      const L=b.len*(b.ext||.01);
+      const off=WFX.has('kame')?26:14;   /* v123: the painted beam starts in front of the hero, not inside */
+      ctx.save();ctx.translate(p.x+Math.cos(b.a)*off,p.y-18+Math.sin(b.a)*off);ctx.rotate(b.a);
+      const L=Math.max(0,b.len*(b.ext||.01)-(off-14));
       if(!b.evo&&k>.02){   /* dense blue glow under the beam */
         ctx.save();ctx.globalCompositeOperation='lighter';
         const gr=ctx.createLinearGradient(0,-b.wid*1.1*k,0,b.wid*1.1*k);gr.addColorStop(0,'rgba(20,70,255,0)');gr.addColorStop(.32,'rgba(30,90,255,.5)');gr.addColorStop(.5,'rgba(90,170,255,.6)');gr.addColorStop(.68,'rgba(30,90,255,.5)');gr.addColorStop(1,'rgba(20,70,255,0)');
         ctx.globalAlpha=.85*k;ctx.fillStyle=gr;ctx.fillRect(-6,-b.wid*1.1*k,L+8,b.wid*2.2*k);
         GLOW.at(ctx,0,0,b.wid*1.9,'#2a63ff',.8*k);GLOW.at(ctx,L,0,b.wid*1.6,'#2a63ff',.7*k);ctx.restore();
       }
-      VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);
+      if(!WFX.beam(ctx,'kame',L,b.wid*(.55+.4*k)*(b.evo?.72:1),g.rt,Math.min(1,k*2.5),3,5))VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);   /* v123: painted beam */
       ctx.restore();
       if(Math.random()<.9&&g.fx.length<420){const d=rnd(30,b.len),cs=Math.cos(b.a),sn=Math.sin(b.a),o=rnd(-.5,.5)*b.wid;g.fx.push({x:p.x+cs*d-sn*o,y:p.y-18+sn*d+cs*o,vx:cs*60+rnd(-40,40),vy:sn*60+rnd(-40,40)-20,l:rnd(.25,.5),m:.5,c:Math.random()<.5?'#ffffff':c,s:rnd(2,4)});}
     }
@@ -271,6 +272,7 @@ class DiscWeapon extends Weapon{
   }
   draw(ctx){
     const g=this.g,c=this.color,k=this.evo?1.5:1,t=g.rt;
+    if(WFX.has('disc')){for(let i=0;i<this.pos.length;i++){const q=this.pos[i];WFX.draw(ctx,'disc',t*16+i*3,q[0],q[1],72*k*(this.evo>=2?1.15:1));}return;}   /* v123: painted disc */
     for(let i=0;i<this.pos.length;i++){
       const q=this.pos[i];
       ctx.save();ctx.translate(q[0],q[1]);
@@ -362,6 +364,7 @@ class SpiritWeapon extends Weapon{
   draw(ctx){
     for(const b of this.bombs){
       const k=b.t/b.fall,r=b.vr*(.45+.55*k),cx=b.x,cy=b.y-(1-k)*(480+b.vr)-r*.6;
+      if(WFX.draw(ctx,'spirit',this.g.rt*12,cx,cy,r*(this.evo?2.15:2.5)))continue;   /* v123: painted sphere */
       GLOW.at(ctx,cx,cy,r*2.1,'#3aa8ff',.5);GLOW.at(ctx,cx,cy,r*1.4,'#9ae8ff',.55);
       ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineJoin='round';
       for(let i=0;i<12+(this.evo?6:0);i++){
@@ -394,6 +397,7 @@ class AuraWeapon extends Weapon{
   }
   draw(ctx){
     const g=this.g,p=g.p,r=this.st.r[this.L]*(g.S.area*this.e2a),t=g.rt,c=this.color;
+    if(WFX.has('aura')){WFX.draw(ctx,'aura',t*12,p.x,p.y-10-r*.5,r*2.25*(1+Math.sin(t*10)*.02));if(Math.random()<.4&&g.fx.length<420){const a=rnd(0,TAU),d=r*rnd(.3,.95);g.fx.push({x:p.x+Math.cos(a)*d,y:p.y-10+Math.sin(a)*d*.8,vx:rnd(-15,15),vy:rnd(-110,-50),l:rnd(.3,.7),m:.7,c:Math.random()<.4?'#ffffff':c,s:rnd(2,4)});}return;}   /* v123: painted ring of fire */
     ctx.save();ctx.translate(p.x,p.y-10);ctx.globalCompositeOperation='lighter';
     const f=1+Math.sin(t*10)*.04;
     const gr=ctx.createRadialGradient(0,0,r*.2,0,0,r*f);gr.addColorStop(0,hexA(c,0));gr.addColorStop(.75,hexA(c,.16));gr.addColorStop(1,hexA(c,.42));
@@ -422,8 +426,10 @@ class FlareWeapon extends Weapon{
       if(e.dead)continue;
       if(Math.hypot(e.x-p.x,e.y-p.y)<vr){e.stun=Math.max(e.stun,e.boss?s.stun[L]*.4:s.stun[L]);any=true;g.hit(e,s.dmg[L]*this.dm);}
     }
-    if(any){g.flash=.5;g.flashC='#fffbd0';g.audio.sfx('flare');this.cd=s.cd[L]*g.S.cd*this.e2c;}else this.cd=.5;
+    if(any){g.flash=.5;g.flashC='#fffbd0';g.audio.sfx('flare');this.cd=s.cd[L]*g.S.cd*this.e2c;this.fl={t0:g.rt};}else this.cd=.5;
   }
+  /* v123: the painted starburst over the hero (half a second) */
+  draw(ctx){const f=this.fl;if(!f)return;const k=(this.g.rt-f.t0)/.55;if(k>=1){this.fl=null;return;}const p=this.g.p;WFX.draw(ctx,'flare',k*8,p.x,p.y-30,(260+80*this.evo)*(.8+.4*k));}
 }
 
 class SlashWeapon extends Weapon{
@@ -459,6 +465,8 @@ class SlashWeapon extends Weapon{
   }
   draw(ctx){
     const p=this.g.p,c=this.color;
+    if(WFX.has('slash')){for(const sl of this.slashes){const k=sl.t/sl.dur,n=Math.max(1,Math.round(sl.half*2/(Math.PI*.62)));   /* v123: painted arc (several around for the 360-degree slash) */
+      for(let i=0;i<n;i++)WFX.draw(ctx,'slash',k*6,p.x,p.y-14,sl.rad*2.5,sl.a+(n>1?(i-(n-1)/2)*2*sl.half/n:0));}return;}
     for(const sl of this.slashes){
       const k=sl.t/sl.dur,r=sl.rad*(.7+.3*k);
       ctx.save();ctx.translate(p.x,p.y-14);ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
@@ -517,6 +525,7 @@ class DeathBeamWeapon extends Weapon{
     const g=this.g,p=g.p,c=this.color;
     for(const l of this.lines){
       const k=l.t/l.dur,wd=l.wid*(1-k*.45);
+      if(WFX.has('dbeam')){ctx.save();ctx.translate(p.x+Math.cos(l.a)*16,p.y-18+Math.sin(l.a)*16);ctx.rotate(l.a);WFX.beam(ctx,'dbeam',l.len,Math.max(8,wd*4),this.g.rt,1-k*.8,0,5);ctx.restore();continue;}   /* v123: painted beam */
       ctx.save();ctx.translate(p.x,p.y-18);ctx.rotate(l.a);ctx.globalCompositeOperation='lighter';
       ctx.globalAlpha=(1-k)*.35;ctx.fillStyle=c;ctx.fillRect(0,-wd*1.8,l.len,wd*3.6);
       ctx.globalAlpha=(1-k)*.9;ctx.fillStyle=c;ctx.fillRect(0,-wd,l.len,wd*2);

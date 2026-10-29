@@ -37,6 +37,7 @@ const WEAPONS={
   chain:{n:T('Fulmine Angelico','Angelic Bolt'),d:T('Fulmine che salta tra i nemici.','Lightning that jumps between foes.'),evo:T('Fulmine del Cielo',"Heaven's Bolt"),evoD:T('Più salti, più danno.','More jumps, more damage.'),evo2:T('Tempesta Angelica','Angelic Storm'),evo2D:T('Due salti in più, raggio maggiore.','Two extra jumps, wider reach.'),k:'雷',c:'#8ad8ff',lv50:1},
   meteor:{n:T('Meteora di Fusione','Fusion Meteor'),d:T('Piovono meteore sui nemici.','Meteors rain on foes.'),evo:T('Pioggia di Meteore','Meteor Shower'),evoD:T('Più meteore, esplosioni maggiori.','More meteors, bigger blasts.'),evo2:T('Cataclisma Cometa','Comet Cataclysm'),evo2D:T('Una meteora in più, area maggiore.','One extra meteor, wider.'),k:'星',c:'#ff9a3a',lv50:1},
   sweep:{n:T('Big Bang Kamehameha','Big Bang Kamehameha'),d:T('Un raggio ruota tutto intorno a te.','A beam sweeps all around you.'),evo:T('Big Bang Doppio','Twin Big Bang'),evoD:T('Due raggi opposti.','Two opposing beams.'),evo2:T('Big Bang Trinità','Triple Big Bang'),evo2D:T('Tre raggi che ruotano.','Three rotating beams.'),k:'爆',c:'#59c8ff',lv50:1},
+  bigbang:{n:T('Attacco Big Bang','Big Bang Attack'),d:T('Carica una sfera di ki e la scaglia: esplode al contatto.','Charges a ki sphere and hurls it: it explodes on contact.'),evo:T('Big Bang Finale','Final Big Bang'),evoD:T('Due sfere, esplosioni più ampie.','Two spheres, wider blasts.'),evo2:T('Big Bang Galattico','Galactic Big Bang'),evo2D:T('Una sfera in più, esplosioni enormi.','One more sphere, huge blasts.'),k:'爆',c:'#59c8ff'},
   dyn:{n:T('Calcio Dinamite','Dynamite Kick'),d:T('Esplosione ravvicinata che spinge via.','Close blast that knocks back.'),evo:T('Calcio Dinamite Super','Super Dynamite Kick'),evoD:T('Doppia esplosione.','Double blast.'),evo2:T('Calcio Campione','Champion Kick'),evo2D:T('Esplosioni più ampie e potenti.','Wider, stronger blasts.'),k:'蹴',c:'#ffe24d',lv50:1}
 };
 const MAX_WEAPONS=5;
@@ -67,7 +68,7 @@ const FUSIONS=[
   {id:'flare_chrono',a:'flare',b:'chrono',k:'時',c:'#fff7b0',n:T6('Lampo del Tempo','Time Flash','Destello del Tiempo','Éclair Temporel','Zeitblitz','Clarão do Tempo')},
   {id:'dsunday_boomer',a:'dsunday',b:'boomer',k:'隊',c:'#d98aff',n:T6('Domenica Ginyu','Ginyu Sunday','Domingo Ginyu','Dimanche Ginyu','Ginyu-Sonntag','Domingo Ginyu')},
   {id:'spiral_dbeam',a:'spiral',b:'dbeam',k:'帝',c:'#7fe0a0',n:T6('Danza dell\'Imperatore','Emperor\'s Dance','Danza del Emperador','Danse de l\'Empereur','Tanz des Kaisers','Dança do Imperador')}
-],FUSION_DMG=1.3,FUSION_CD=.85;
+],FUSION_DMG=1.3,FUSION_CD=.85,FUSION_SOLO=['bigbang'];   /* weapons without a partner yet (the Big Bang Attack waits for the Galick Gun) */
 const fusionDesc=f=>{const a=WEAPONS[f.a].n,b=WEAPONS[f.b].n;return T6(`Fonde ${a.it} e ${b.it}: +30% danno, −15% ricarica a entrambe e uno slot arma libero.`,`Fuses ${a.en} and ${b.en}: +30% damage, −15% cooldown for both, and a weapon slot freed.`,`Fusiona ${a.en} y ${b.en}: +30% daño, −15% recarga a ambas y un hueco de arma libre.`,`Fusionne ${a.en} et ${b.en} : +30 % de dégâts, −15 % de recharge pour les deux et un emplacement d'arme libéré.`,`Verschmilzt ${a.en} und ${b.en}: +30 % Schaden, −15 % Abklingzeit für beide und ein freier Waffenplatz.`,`Funde ${a.en} e ${b.en}: +30% de dano, −15% de recarga para ambas e um espaço de arma livre.`);};
 const WISH_POOL=['revive','power','fortune','tickets','immortal','transform','legend'],WISH_IMMORTAL=20;   /* v115: Shenron's wishes (4 of them are offered each time) and the immortality wish's length in s */
 const TR_SHOCK_CD=4,TR_SLOW_CD=10,TR_BARRIER_CD=7.5;   /* v112: the timed trinket effects come twice as often as before v109 (shockwave 8 -> 4 s, slow time 20 -> 10 s, barrier 15 -> 7.5 s) */
@@ -102,7 +103,7 @@ const EVO_RECIPE={
   ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','might'],flare:['magnet','growth'],
   slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['proj','might'],breaker:['armor','might'],
   spiral:['speed','regen'],boomer:['magnet','haste'],hellzone:['regen','armor'],chrono:['haste','growth'],shock:['armor','vit'],hakai:['growth','might'],
-  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen']
+  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen'],bigbang:['might','growth']
 };
 const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
@@ -177,7 +178,7 @@ const LINES={
 const CHARS=[
  {id:'goku',line:'saiyan',n:T('Goku','Goku'),d:T('Parte col Kamehameha. Più veloce.','Starts with Kamehameha. Faster.'),start:['kame'],spd:1.1,might:1.1,hp:100,regen:0,xpm:1,
   cfg:{skin:'#f2b98a',outfit:'#f57c10',belt:'#2347a8',under:'#2347a8',legs:'#f57c10',hair:'#15121c',hs:'goku',boot:'#2347a8',emblem:1,wrist:'#2347a8',bootTop:'#f2c230'}},
- {id:'vegeta',line:'vegeta',n:T('Vegeta','Vegeta'),d:T('Parte col Colpo di Ki. Danno +20%.','Starts with Ki Blast. +20% damage.'),start:['ki'],spd:1,might:1.2,hp:95,regen:0,xpm:1,
+ {id:'vegeta',line:'vegeta',n:T('Vegeta','Vegeta'),d:T('Parte con Attacco Big Bang e Colpo di Ki. Danno +20%.','Starts with Big Bang Attack and Ki Blast. +20% damage.'),start:['bigbang','ki'],spd:1,might:1.2,hp:95,regen:0,xpm:1,
   cfg:{skin:'#f0b48c',outfit:'#2a4fb8',legs:'#2a4fb8',belt:'#f1efe8',armor:'#f1efe8',shoulder:'#f2c230',hair:'#15121c',hs:'vegeta',boot:'#f1efe8',gloves:'#f4f1ea',bootTop:'#f2c230'}},
  {id:'piccolo',line:'namek',n:T('Piccolo','Piccolo'),d:T('Parte con la Granata Infernale. Più salute, rigenera.','Starts with Hellzone Grenade. More HP, regenerates.'),start:['hellzone'],spd:.95,might:1.1,hp:125,regen:.6,xpm:1,
   cfg:{skin:'#79c24d',outfit:'#6a3d9a',legs:'#6a3d9a',belt:'#2a58c8',shoulder:'#f4f1ea',cape:'#f4f1ea',hair:'#79c24d',hs:'antenna',boot:'#5a3a8a',turban:'#f4f1ea',pointy:true}},
@@ -807,12 +808,12 @@ const ABIL={
   krillin:AB('blind','#fff7b0','Taiyoken','Solar Flare',50),
   trunks:AB('nova','#8ab4ff','Fendente Furioso','Furious Slash',38,.9),
   yamcha:AB('dash','#ffb13b','Pugno Zanna di Lupo','Wolf Fang Fist',22,1),
-  tien:AB('clones','#ffe9a0','Multiforma','Multi-Form',55),
-  gohan:AB('crit','#c8a0ff','Potenziale Nascosto','Hidden Potential',50),
+  tien:AB('beam','#ffe24d','Raggio Dodon','Dodon Ray',40,1),   /* v123: was Multi-Form (clones) */
+  gohan:AB('beam','#ffb13b','Masenko','Masenko',40,1),   /* v123: was Hidden Potential (crit) */
   muten:AB('beam','#59c8ff','Kamehameha del Maestro','Master\'s Kamehameha',42,.9),
   goten:AB('dash','#ffd23f','Scatto Fulmineo','Lightning Dash',22,.8),
   c18:AB('barrier','#8ad8ff','Barriera Energetica','Energy Barrier',50),
-  broly:AB('berserk','#8aff3a','Berserk','Berserk',0),
+  broly:Object.assign(AB('sphere','#8aff3a','Meteora Gigante','Gigantic Meteor',44,1.1),{d:T('Scaglia una meteora di ki verde sul nemico più vicino: avanza lentamente crescendo e poi esplode con danni enormi.','Hurls a green ki meteor at the nearest enemy: it rolls slowly forward as it grows, then explodes for huge damage.')}),
   freezer:AB('nova','#c9a0ff','Supernova Mortale','Death Nova',42,1.1),
   cell:AB('absorb','#6fbf4a','Assorbimento','Absorption',50,1),
   bu:AB('regen','#ff9ec7','Rigenerazione Elastica','Elastic Regeneration',55,1.1),
@@ -847,7 +848,7 @@ const ABIL={
   bulma:AB('jackpot','#ff9ec7','Invenzione Geniale','Genius Invention',50,1.5),
   yajirobe:AB('regen','#8be07a','Scorta di Senzu','Senzu Stash',50,1.4),
   saiyaman:AB('crit','#7ae08a','Posa Eroica','Heroic Pose',50),
-  chaozu:AB('blind','#e8f0ff','Paralisi Psichica','Psychic Paralysis',45),
+  chaozu:AB('beam','#ffe24d','Raggio Dodon','Dodon Ray',40,.9),   /* v123: was Psychic Paralysis (blind) */
   recoome:AB('dash','#ff9d1c','Calcio Recoome','Recoome Kick',24,1.1),
   guldo:AB('timestop','#8aff6a','Fermatempo','Time Freeze',68),
   turles:AB('absorb','#ff7a3a','Frutto dell\'Albero','Fruit of the Tree',50,1.1),

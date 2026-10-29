@@ -4,6 +4,7 @@ const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Pro
 const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:900,height:600,deviceScaleFactor:3}});
 const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 await pg.goto('file:///home/claude/dbs/dist/dragon-ball-survivors.html');await wait(1500);
+await pg.evaluate(()=>{window.__poseDefault=POSE_ON;POSE_ON=true;});   /* v123: the arm poses are off in the game; turned on here to check they still work */
 await pg.evaluate(()=>{window.__MAPSEED=0;__app.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true});const g=__app.game;window.G=g;
   const R=__app.renderer,o=R.drawPlayer;R.drawPlayer=function(gg,t){if(window.__pz)window.__pz(gg);return o.call(this,gg,t);};
   g.en.length=0;g.p.hp=g.p.maxHp=1e7;});

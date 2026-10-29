@@ -16,6 +16,34 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-29j',date:'2026-10-29',
+    name:T("Attacco Big Bang e nuove abilità","Big Bang Attack and new abilities"),
+    sum:T("Una nuova arma per Vegeta e quattro personaggi con l'abilità che gli spetta, tutte con la grafica dipinta.","A new weapon for Vegeta and four characters with the ability that belongs to them, all with painted art."),
+    new:[{g:T('Armi','Weapons'),l:[
+      T("Nuova arma: Attacco Big Bang. Una sfera di ki si carica sulla mano, vola verso il nemico più vicino ed esplode al primo contatto (o a fine corsa) con un'onda azzurra.","New weapon: Big Bang Attack. A ki sphere charges on the hand, flies at the nearest enemy and blows up on the first contact (or at the end of its flight) in a blue blast."),
+      T("Evoluzioni: Big Bang Finale (Forza + Crescita: due sfere, esplosioni più ampie) e Big Bang Galattico (una sfera in più, esplosioni enormi).","Evolutions: Final Big Bang (Might + Growth: two spheres, wider blasts) and Galactic Big Bang (one more sphere, huge blasts)."),
+      T("Vegeta parte con Attacco Big Bang e Colpo di Ki. Si sblocca per tutti vincendo uno stage con Vegeta (anche se l'avevi già fatto prima).","Vegeta starts with Big Bang Attack and Ki Blast. It unlocks for everyone by winning a stage with Vegeta (even if you had already done it before).")]},
+      {g:T('Personaggi','Characters'),l:[
+      T("Tenshinhan e Jiaozi: nuova abilità Raggio Dodon, un raggio sottile e veloce dal dito (prende il posto di Multiforma e Paralisi Psichica).","Tien and Chiaotzu: new ability Dodon Ray, a thin, fast beam from the finger (it replaces Multi-Form and Psychic Paralysis)."),
+      T("Gohan: nuova abilità Masenko, un'onda di fuoco dalle mani sopra la testa (prende il posto di Potenziale Nascosto).","Gohan: new ability Masenko, a wave of fire from the hands over the head (it replaces Hidden Potential)."),
+      T("Broly: nuova abilità Meteora Gigante. La cometa verde vola sul nemico più vicino, avanza piano crescendo e poi esplode con danni enormi (prende il posto del Berserk).","Broly: new ability Gigantic Meteor. The green comet flies at the nearest enemy, rolls slowly forward as it grows and then explodes for huge damage (it replaces Berserk).")]},
+      {g:T('Note','Notes'),l:[
+      T("Le abilità mantengono i bonus della forma centrale e finale (raggio più grande, danno maggiore).","The abilities keep the middle- and final-form bonuses (bigger beam, more damage).")]}]},
+  {id:'2026-10-29i',date:'2026-10-29',
+    name:T("Nuova grafica per 10 armi","New art for 10 weapons"),
+    sum:T("Dieci armi passano dagli effetti disegnati dal codice a vere animazioni dipinte.","Ten weapons move from effects drawn by code to real painted animations."),
+    new:[{g:T('Armi','Weapons'),l:[
+      T("Kamehameha: la carica in mano cresce in 6 fotogrammi, poi il raggio ha la sua esplosione alla partenza, un corpo che scorre e la testa a bulbo con le scintille.","Kamehameha: the charge in the hands grows over 6 frames, then the beam has its burst at the start, a flowing body and the bulb head with sparks."),
+      T("Colpo di Ki, Colpi Eccentrici e Lancia Ribelle: proiettili animati che si girano nella direzione in cui volano.","Ki Blast, Homing Orbs and Rebel Javelin: animated projectiles that turn toward where they fly."),
+      T("Disco Distruttore che gira, Genkidama con il vortice, Aura come un anello di fuoco attorno a te, Taiyoken con il lampo a stella.","A spinning Destructo Disc, a Spirit Bomb with its swirl, Aura as a ring of fire around you, Solar Flare with its starburst."),
+      T("Spada con il fendente dipinto (più fendenti attorno a te per il colpo a 360 gradi) e Raggio Perforante con partenza, corpo e punta.","Sword with a painted slash (several slashes around you for the 360-degree swing) and Piercing Beam with its start, body and tip.")]},
+      {g:T('Personaggi','Characters'),l:[
+      T("Il Kamehameha parte davanti al personaggio, non più da dentro: l'esplosione della partenza è davanti alle mani.","The Kamehameha starts in front of the character, no longer inside it: the burst at the start is in front of the hands."),
+      T("Abilità dei personaggi (tasto R) con la nuova grafica: Final Flash di Vegeta, Supernova di Freezer e Cooler, Raggio Mortale di Frost (raggi tutto attorno), Cannone Speciale di Piccolo (carica e raggio a spirale), Lama di Ki di Goku Black.","Character abilities (R key) with the new art: Vegeta's Final Flash, Frieza's and Cooler's Supernova, Frost's Death Beam (rays all around), Piccolo's Special Beam Cannon (charge and spiral beam), Goku Black's Ki Blade."),
+      T("Niente più braccia che si allungano verso il bersaglio quando usi le armi: il personaggio continua a camminare o resta fermo, gli attacchi partono come prima.","No more arms stretching toward the target when you use the weapons: the character keeps walking or standing still, the attacks fire as before.")]},
+      {g:T('Note','Notes'),l:[
+      T("Le evoluzioni usano la stessa animazione, più grande; le altre 12 armi restano com'erano finché non arriva la loro grafica.","The evolutions use the same animation, bigger; the other 12 weapons stay as they were until their art arrives."),
+      T("Il gioco pesa circa 1 MB in più per le nuove animazioni.","The game is about 1 MB bigger for the new animations.")]}]},
   {id:'2026-10-29h',date:'2026-10-29',
     name:T("Più fps e un gioco più leggero","More fps and a lighter game"),
     sum:T("Risoluzione dinamica per tenere il gioco fluido, una pagina più piccola che si apre prima e qualche calcolo ripetuto di meno.","Dynamic resolution to keep the game smooth, a smaller page that opens sooner and a few repeated calculations fewer."),
@@ -25,7 +53,8 @@ const PATCHES=[
       {g:T('Account','Account'),l:[
       T("Schermata Account rinnovata: scheda con il tuo personaggio, soprannome, titolo e stato della sincronizzazione; sotto otto riquadri con Zenny, partite, tempo di gioco, nemici sconfitti, personaggi, achievement, cimeli e vittorie.","Renewed Account screen: a card with your character, nickname, title and sync state; below it eight tiles with Zenny, runs, play time, enemies defeated, characters, achievements, trinkets and wins."),
       T("«Esci» diventa «Scollega account», separato dagli altri pulsanti e da toccare due volte (la prima chiede conferma); i progressi salvati restano sul dispositivo.","'Log out' becomes 'Disconnect account', apart from the other buttons and tapped twice (the first tap asks for confirmation); the saved progress stays on the device.")]}],
-    fix:[T("Dopo aver perso o finito una partita, nella successiva il pannello del bersaglio [Tab] compariva enorme e sfocato su tutto lo schermo (coprendo anche le barre di Esperienza e Salute): la sua animazione usava ancora l'orologio della partita precedente.","After losing or finishing a run, in the next one the [Tab] target panel showed up huge and blurred over the whole screen (covering the Experience and Health bars too): its animation still used the previous run's clock.")],
+    fix:[T("Il personaggio non si piega più verso la direzione in cui cammina (l'inclinazione a destra e sinistra lo faceva sembrare la Torre Eiffel); restano il respiro da fermo e il passo.","The character no longer bends toward the direction it walks (the lean to the right and left made it look like the Eiffel Tower); the breathing while standing and the step remain."),
+      T("Dopo aver perso o finito una partita, nella successiva il pannello del bersaglio [Tab] compariva enorme e sfocato su tutto lo schermo (coprendo anche le barre di Esperienza e Salute): la sua animazione usava ancora l'orologio della partita precedente.","After losing or finishing a run, in the next one the [Tab] target panel showed up huge and blurred over the whole screen (covering the Experience and Health bars too): its animation still used the previous run's clock.")],
     bal:[{g:T('Prestazioni','Performance'),l:[
       T("La pagina del gioco passa da 13,3 MB a 11,3 MB: codice e stili compressi (esbuild) e i fogli degli sprite in WebP senza perdita (gli stessi pixel).","The game page goes from 13.3 MB to 11.3 MB: code and styles minified (esbuild) and the sprite sheets in lossless WebP (the same pixels)."),
       T("I cimeli si trovano per nome con una tabella invece di scorrere tutti i 727 ogni volta (succedeva anche a ogni colpo, per Furia, e a ogni fotogramma nella barra dei cimeli).","Trinkets are looked up by name in a table instead of going through all 727 every time (it also happened on every hit, for Rage, and every frame in the trinket bar)."),

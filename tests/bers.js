@@ -1,7 +1,7 @@
 const {X}=require('./sim.js');
 const audio=new Proxy({},{get:()=>()=>{}});const mem={};const save=new X.SaveData({getItem:k=>mem[k]||null,setItem:(k,v)=>{mem[k]=v;}});
 const g=new X.Game({stage:0,char:'broly',diff:'normal',x2:false,sandbox:true},{save,audio,progress:new X.Progress(save,()=>{}),tr:o=>typeof o==='string'?o:o.it,onEnd:()=>{}});
-g.sb.god=true;
+g.sb.god=true;Object.defineProperty(g,'abil',{value:X.AB('berserk','#8aff3a','Berserk','Berserk',0),configurable:true});   /* v124: no character has it by default any more */
 console.log('berAvail',g.berAvail,'kaiAvail',g.kaiAvail);
 for(let i=0;i<300;i++)g.update(1/30);
 const m0=g.S.might;console.log('enemies',(g.en||g.foes||g.E||[]).length);

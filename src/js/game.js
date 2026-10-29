@@ -10,7 +10,7 @@ const COMBO=[{n:50,m:1.1,t:T6('COMBO!','COMBO!','¡COMBO!','COMBO !','COMBO!','C
 const comboTier=n=>{let r=null;for(const c of COMBO)if(n>=c.n)r=c;return r;};
 const POST_T=15,ALT_PICK_R=30,SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
-const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
+const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain',bigbang:'shot'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
 const SPAWN_K=.85,CAP_K=.78;
 /* enemy fire: a volley is smaller (x0.67), the shooters wait longer between volleys, and all of them share a "shot budget" that refills at a fixed rate,
@@ -556,13 +556,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         const ang=near?Math.atan2(near.y-8-(p.y-18),near.x-p.x):(p.face>0?0:Math.PI);
         const fire=(a2,dm,len,w)=>{const cs=Math.cos(a2),sn=Math.sin(a2);
           for(const e of this.en){if(e.dead)continue;const rx=e.x-p.x,ry=e.y-8-(p.y-18),t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<w/2+e.r)this.hit(e,dm,cs*220,sn*220);}
-          this.fx.push({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c});};
+          this.fx.push({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c,ab:this.C.id});};
         const dmg=(30+L*3)*v;
         if(f2){fire(ang,dmg*1.7,1020,168);fire(ang+Math.PI,dmg*1.0,720,120);}   /* final form: a huge beam, and another one behind you */
         else fire(ang,dmg,640,64);
         this.shake=Math.max(this.shake,f2?.9:.5);this.flash=.25;this.flashC=c;this.audio.sfx('abBeam');break;}
       case'nova':{
         const R=230*v*(f2?1.85:1),nd=(28+L*2.4)*v*(f2?1.7:1);   /* final form: the small wave becomes huge */
+        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-14,R,l:.7,m:.7});   /* v123: painted Supernova / Death Beam */
         this.ring(p.x,p.y,R,c,.7);this.ring(p.x,p.y,R*.6,'#ffffff',.5);if(f2){this.ring(p.x,p.y,R*.8,c,.9);this.ring(p.x,p.y,R*.35,'#ffffff',.6);}this.burst(p.x,p.y-14,f2?60:34,c);this.bolt(p.x,p.y-14,R*.9,c,f2?18:10);this.shake=Math.max(this.shake,f2?.9:.45);this.flash=.2;this.flashC=c;
         for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){this.hit(e,nd,0,0);e.stun=Math.max(e.stun,f2?1.2:.4);if(!e.boss){e.kx+=dx/d*(f2?500:380);e.ky+=dy/d*(f2?500:380);}}}
         this.audio.sfx('abNova');break;}
@@ -575,6 +576,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'dash':{
         let dx=this.input.x,dy=this.input.y;const dl=Math.hypot(dx,dy);if(dl<.1){dx=p.face>0?1:-1;dy=0;}else{dx/=dl;dy/=dl;}
         this.startDash(dx,dy,v*(f2?2:1),f2?.8:.5,c);
+        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-18,a:Math.atan2(dy,dx),follow:1,R:f2?150:110,l:.5,m:.5});   /* v123: Goku Black's painted Ki Blade */
         if(f2){this.bv.t=.32;this.dashT=.4;this.dashWave=true;}   /* final form: longer dash, double damage, shockwave on arrival */
         this.audio.sfx('abDash');break;}
       case'clones':{
@@ -586,7 +588,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         this.armAct('face',ang,{w:.05,h:this.sbc.dur+.25,r:.25,col:c});this.ring(p.x,p.y-30,70,c,.6);this.audio.sfx('abPower');break;}
       case'sphere':{   /* Sphere of Justice (Toppo): a dark sphere thrown at the nearest enemy; it grows, pulls everything in and explodes */
         const tx=near?near.x:p.x+(p.face>0?1:-1)*260,ty=near?near.y-8:p.y-14;
-        this.spheres.push({x:p.x+(p.face>0?10:-10),y:p.y-26,tx,ty,ph:0,t:0,tk:0,rr:12,f2,R:170*v*(f2?1.6:1)*Math.min(2,this.S.area||1),dmg:(46+L*3.4)*v*(f2?1.7:1),hold:f2?1.8:1.5});
+        const met=this.C.id==='broly';   /* v124: Broly's Gigantic Meteor - same throw, no pull: it keeps rolling forward while it grows */
+        this.spheres.push({x:p.x+(p.face>0?10:-10),y:p.y-26,tx,ty,ph:0,t:0,tk:0,rr:12,f2,met,a:Math.atan2(ty-(p.y-26),tx-p.x),R:170*v*(f2?1.6:1)*Math.min(2,this.S.area||1),dmg:(46+L*3.4)*v*(f2?1.7:1),hold:f2?1.8:1.5});
         this.armAct('shoot',Math.atan2(ty-(p.y-18),tx-p.x),{h:.3,r:.22,col:c});this.ring(p.x,p.y-24,60,c,.5);this.audio.sfx('spirit');break;}
       case'ghosts':{   /* Super Ghost Kamikaze (Gotenks): ghosts that fly at the nearest enemy and copy the active weapons (updateGhosts) */
         const n=f2?5:3;
@@ -686,23 +689,24 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(Math.abs(-rx*sn+ry*cs)<w/2+e.r){this.hit(e,dm,cs*240,sn*240);e.stun=Math.max(e.stun,e.boss?.15:.5);this.burst(e.x,e.y-8,8,c);}
     }
     this.eb=this.eb.filter(b=>{const rx=b.x-ox,ry=b.y-oy,t=rx*cs+ry*sn;return !(t>-10&&t<len&&Math.abs(-rx*sn+ry*cs)<w/2+b.r);});   /* the beam also erases the bullets it crosses */
-    this.fx.push({beam:true,sbc:true,x:ox,y:oy,a:ang,len,w:f2?26:18,l:.75,m:.75,c});   /* (thinner to look at than it is to hit) */
+    this.fx.push({beam:true,sbc:true,x:ox,y:oy,a:ang,len,w:f2?26:18,l:.75,m:.75,c,ab:'sbc'});   /* (thinner to look at than it is to hit) */
     this.ring(ox,oy,50,c,.3);this.burst(ox,oy,14,'#ffffff');this.shake=Math.max(this.shake,.5);this.flash=.2;this.flashC=c;this.audio.sfx('abBeam');
   }
   /* ---------- Sphere of Justice (Toppo): thrown, grows while it pulls the enemies in, then explodes ---------- */
   updateSpheres(dt){
     const c=this.abil.c;
     for(const s of this.spheres){
-      s.t+=dt;
+      s.t+=dt;const c2=s.met?'#eaffb0':'#ff4fd8';
       if(s.ph===0){
         const dx=s.tx-s.x,dy=s.ty-s.y,d=Math.hypot(dx,dy),st=500*dt;
         if(d<=st+4){s.x=s.tx;s.y=s.ty;s.ph=1;s.t=0;this.ring(s.x,s.y,60,c,.45);this.audio.sfx('flare');}
-        else{s.x+=dx/d*st;s.y+=dy/d*st;}
-        if(this.fx.length<400&&Math.random()<dt*60)this.fx.push({x:s.x+rnd(-6,6),y:s.y+rnd(-6,6),vx:rnd(-20,20),vy:rnd(-20,20),l:.35,m:.35,c:Math.random()<.5?c:'#ff4fd8',s:rnd(2,4)});
+        else{s.x+=dx/d*st;s.y+=dy/d*st;s.a=Math.atan2(dy,dx);}
+        if(this.fx.length<400&&Math.random()<dt*60)this.fx.push({x:s.x+rnd(-6,6),y:s.y+rnd(-6,6),vx:rnd(-20,20),vy:rnd(-20,20),l:.35,m:.35,c:Math.random()<.5?c:c2,s:rnd(2,4)});
       }else{
         const k=Math.min(1,s.t/s.hold);s.rr=12+(s.R*.38-12)*k;
         const pull=(s.f2?230:160)*dt;
-        for(const e of this.en){
+        if(s.met){s.x+=Math.cos(s.a)*70*dt;s.y+=Math.sin(s.a)*70*dt;}
+        else for(const e of this.en){
           if(e.dead)continue;
           const dx=s.x-e.x,dy=s.y-(e.y-8),d=Math.hypot(dx,dy);
           if(d<s.R*1.3+e.r&&!e.boss&&d>16){e.x+=dx/d*pull;e.y+=dy/d*pull;}
@@ -710,7 +714,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         s.tk-=dt;
         if(s.tk<=0){s.tk=.3;for(const e of this.en){if(e.dead)continue;if(Math.hypot(e.x-s.x,e.y-8-s.y)<s.rr+e.r)this.hit(e,s.dmg*.07,0,0);}}
         if(this.eb.length)this.cutC(s.x,s.y,s.rr);
-        if(this.fx.length<400&&Math.random()<dt*50){const a=rnd(0,TAU),R=s.R*rnd(.7,1.2);this.fx.push({x:s.x+Math.cos(a)*R,y:s.y+Math.sin(a)*R*.85,vx:-Math.cos(a)*R*2.4,vy:-Math.sin(a)*R*2.0,l:.42,m:.42,c:Math.random()<.5?c:'#ff4fd8',s:rnd(2,3.6)});}
+        if(this.fx.length<400&&Math.random()<dt*50){const a=rnd(0,TAU),R=s.R*rnd(.7,1.2);this.fx.push({x:s.x+Math.cos(a)*R,y:s.y+Math.sin(a)*R*.85,vx:-Math.cos(a)*R*2.4,vy:-Math.sin(a)*R*2.0,l:.42,m:.42,c:Math.random()<.5?c:c2,s:rnd(2,3.6)});}
         if(s.t>=s.hold)this.boomSphere(s);
       }
     }
@@ -718,7 +722,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   boomSphere(s){
     s.done=true;const c=this.abil.c,R=s.R;
-    this.ring(s.x,s.y,R,c,.8);this.ring(s.x,s.y,R*.62,'#ffffff',.55);this.ring(s.x,s.y,R*1.25,'#ff4fd8',.9);this.burst(s.x,s.y,44,c);this.burst(s.x,s.y,22,'#ffffff');this.bolt(s.x,s.y,R*.95,c,s.f2?18:12);
+    this.ring(s.x,s.y,R,c,.8);this.ring(s.x,s.y,R*.62,'#ffffff',.55);this.ring(s.x,s.y,R*1.25,s.met?'#eaffb0':'#ff4fd8',.9);this.burst(s.x,s.y,44,c);this.burst(s.x,s.y,22,'#ffffff');this.bolt(s.x,s.y,R*.95,c,s.f2?18:12);
     this.shake=Math.max(this.shake,s.f2?1:.7);this.flash=.3;this.flashC=c;this.audio.sfx('abNova');this.cutC(s.x,s.y,R);
     for(const e of this.en){
       if(e.dead)continue;
@@ -2061,7 +2065,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.armAct(f.st,a,{w:f.w||0,h:f.h,r:f.r,col:w.color,ball:f.ball|0,alt:f.alt?(w.alt=!w.alt)|0:0});
   }
   aimJit(){return this.bers>0?rnd(-BERS_AIM,BERS_AIM):0;}
-  get berAvail(){return this.C.id==='broly';}
+  get berAvail(){return this.abil.m==='berserk';}
   get bersCdMax(){return this.cdFor(45);}
   startBerserk(){
     if(this.abBlocked())return false;

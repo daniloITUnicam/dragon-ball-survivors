@@ -1,4 +1,4 @@
-/* ability tiers (middle form passive / final form empowered), cooldown curve, Broly berserk, enemy escalation steps, progress-bar milestones */
+/* ability tiers (middle form passive / final form empowered), cooldown curve, Berserk, enemy escalation steps, progress-bar milestones */
 const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox'],defaultViewport:{width:1100,height:640}});
 const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
@@ -31,8 +31,8 @@ const n0=await use(-1,prep),n2=await use(7,prep);
 ok(n0.enHp[0]===1&&n2.enHp[0]<1,'nova: enemy at 330 px untouched by the base wave, hit by the final one ('+n0.enHp[0]+' vs '+n2.enHp[0].toFixed(4)+')');
 /* buff, clones, crit, timestop, dash, regen, blind */
 await mk('kale');const k2=await use(2);ok(k2.buf&&!/tk/.test(k2.buf)&&/"t":14/.test(k2.buf),'Kale final form: stronger buff, no damage-taken drawback ('+k2.buf+')');
-await mk('tien');const c2=await use(7);ok(c2.clones===6&&c2.cloneT===14,'Tien final form: 6 clones for 14 s');
-await mk('gohan');const g2=await use(7);ok(g2.critT===12&&g2.critDmg===2.5,'Gohan final form: 12 s of crits, x2.5 crit damage');
+await mk('goku');await pg.evaluate(()=>{Object.defineProperty(G,'abil',{value:AB('clones','#ffe9a0','Multiforma','Multi-Form',55),configurable:true});});const c2=await use(7);ok(c2.clones===6&&c2.cloneT===14,'clones (no character uses them since v123, Tien got the Dodon Ray): 6 clones for 14 s in the final form');
+await mk('saiyaman');const g2=await use(7);ok(g2.critT===12&&g2.critDmg===2.5,'Great Saiyaman final form: 12 s of crits, x2.5 crit damage');
 await mk('hit');const h2=await use(7);ok(h2.ts===3.6,'Hit final form: time stops for 3.6 s');
 await mk('yamcha');const y2=await use(7);ok(y2.dashWave,'Yamcha final form: dash ends with a shockwave');
 await mk('bu');const lastF=await pg.evaluate(()=>LINES[G.C.line].length-1);const p0=await use(-1),p2=await use(lastF);ok(p2.rate>p0.rate*1.6&&p2.inv>=1.9,'Majin Buu final form: stronger regeneration + invulnerability ('+p0.rate.toFixed(2)+' -> '+p2.rate.toFixed(2)+')');
@@ -46,8 +46,8 @@ const fr=await pg.evaluate(i=>FORM_TIERS[i].regen,rg[3]);ok(Math.abs(rg[1]-rg[0]
 await mk('goku');
 const ka=await pg.evaluate(()=>{const g=G,o=[];g.kai=1;for(const i of[-1,3,7]){g.formIdx=i;g.recalc();o.push(g.kaiDrain);}g.kai=0;return o;});
 ok(Math.abs(ka[0]-4)<1e-9&&ka[1]<ka[0]&&ka[2]<ka[1],'Kaioken drain shrinks with the transformations: '+ka.map(x=>x.toFixed(2)).join(' > '));
-/* berserk */
-await mk('broly');
+/* berserk (no character uses it since v124, Broly got the Gigantic Meteor) */
+await mk('broly');await pg.evaluate(()=>{Object.defineProperty(G,'abil',{value:AB('berserk','#8aff3a','Berserk','Berserk',0),configurable:true});});
 const bs=await pg.evaluate(()=>{const g=G;g.xform=null;g.modal=null;g.formIdx=-1;g.recalc();const m0=g.S.might,a0=g.S.armor,tk0=g.S.taken;g.bersCd=0;g.bers=0;g.useAbility();const m1=g.S.might,a1=g.S.armor,tk1=g.S.taken,mx=g.bersMax;g.bers=0;g.bv=null;g.recalc();g.formIdx=5;g.recalc();g.bersCd=0;g.useAbility();return{m0,m1,a0,a1,tk0,tk1,mx,mx2:g.bersMax,a2:g.S.armor,cd:g.bersCdMax};});
 ok(bs.m1>bs.m0*1.7&&bs.a1-bs.a0>=5&&bs.tk1<bs.tk0,'Broly berserk: damage x'+(bs.m1/bs.m0).toFixed(2)+', armor +'+(bs.a1-bs.a0)+', damage taken x'+(bs.tk1/bs.tk0).toFixed(2));
 ok(bs.mx===6&&bs.mx2===8&&bs.a2-bs.a0>=8,'final form berserk lasts '+bs.mx2+' s with +'+(bs.a2-bs.a0)+' armor (cooldown '+bs.cd+' s)');
