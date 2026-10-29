@@ -55,7 +55,7 @@ Object.assign(Game.prototype,{
     this.swap={might:0,spd:0,cd:0,hp:0};this.dmgBy={};this.takenBy={};this.slowT=0;this.slowCd=TR_SLOW_CD*.6;this.shockCd=TR_SHOCK_CD;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;
     this.fz=null;for(const id of C.start.slice(0,this.maxW))this.addWeapon(id);
     this.revives=this.shopLv('revive');this.luckT=0;this.petLuckT=0;this.initPet(save.pet||'dende');
-    {const T0=[],R0={},P0={},S0={};for(const eq of (save.equips||[save.equip]).slice(0,this.tcap)){const td=eq&&TRINKETS.find(x=>x.id===eq.id),be=td&&(save.bag||[]).find(b=>b.id===eq.id&&b.r===eq.r);
+    {const T0=[],R0={},P0={},S0={};for(const eq of (save.equips||[save.equip]).slice(0,this.tcap)){const td=eq&&trinDef(eq.id),be=td&&(save.bag||[]).find(b=>b.id===eq.id&&b.r===eq.r);
         if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';if(td.sp==='barrier')this.barrierReady=true;}
       if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
     this.recalc();this.p.hp=this.p.maxHp;{const vp=EXTRAS.poseOf(save,C.id);this.vpose=vp?vp.id:null;}

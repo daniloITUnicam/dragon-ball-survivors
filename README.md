@@ -55,6 +55,12 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 8 (fps)
+
+- Risoluzione dinamica (Impostazioni → Video): sotto i 50 fps disegna meno pixel (fino al 60%), risale quando torna fluido.
+- Pagina da 13,3 a 11,3 MB (codice minificato con esbuild, sprite in WebP lossless); cimeli cercati con una tabella.
+- Per la build locale minificata: `npm i esbuild` nella cartella del progetto (facoltativo; senza, la build resta come prima).
+
 ### 🆕 Aggiornamento del 29 ottobre 2026, parte 7 (prestazioni, menu, co-op)
 
 - Prestazioni: folle di nemici circa a metà costo, colpi che controllano solo i nemici vicini, oggetti a terra dipinti una volta, sprite preparati nei momenti liberi.

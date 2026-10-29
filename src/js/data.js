@@ -635,6 +635,9 @@ const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0f
    tn = trinkets then (1 / 2 / 3 / 3 / 3), the first g of the chest's own rarity, pf = their perfection starts from this value (the roll is squeezed into pf..100) */
 const CHEST_W=[52,40,6,1.6,.4];
 const CHEST_RAR=[{w:1,t:0,tn:1,g:0,pf:0},{w:1,t:2,tn:2,g:1,pf:0},{w:1,t:3,tn:3,g:1,pf:35},{w:1,t:4,tn:3,g:1,pf:50},{w:1,t:5,tn:3,g:1,pf:75,pb:1.2}];
+/* v121: trinket by id through a Map (rebuilt when the list grows: trinkets2.js adds to it at load) instead of a linear search */
+let TRIN_ID=null,TRIN_N=-1;
+function trinDef(id){if(TRIN_N!==TRINKETS.length){TRIN_ID=new Map();for(const t of TRINKETS)if(!TRIN_ID.has(t.id))TRIN_ID.set(t.id,t);TRIN_N=TRINKETS.length;}return TRIN_ID.get(id);}
 const TRINKETS=[
  {id:'scouter',r:0,k:'眼',n:T('Scouter Rotto','Broken Scouter'),d:T('+8% probabilità di critico.','+8% crit chance.'),m:{crit:.08}},
  {id:'senzubag',r:0,k:'袋',n:T('Sacchetto di Senzu','Senzu Pouch'),d:T('+0,6 salute al secondo.','+0.6 HP/s.'),m:{regen:.6}},

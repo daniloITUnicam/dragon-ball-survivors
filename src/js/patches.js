@@ -16,6 +16,16 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-29h',date:'2026-10-29',
+    name:T("Più fps e un gioco più leggero","More fps and a lighter game"),
+    sum:T("Risoluzione dinamica per tenere il gioco fluido, una pagina più piccola che si apre prima e qualche calcolo ripetuto di meno.","Dynamic resolution to keep the game smooth, a smaller page that opens sooner and a few repeated calculations fewer."),
+    new:[{g:T('Video','Video'),l:[
+      T("Risoluzione dinamica (Impostazioni > Video, attiva di base): se la partita scende sotto i 50 fps il gioco disegna il 10% di pixel in meno per lato, fino al 60%, e risale quando torna sopra i 57 fps per 6 secondi.","Dynamic resolution (Settings > Video, on by default): if the run drops under 50 fps the game draws 10% fewer pixels per side, down to 60%, and climbs back once it stays over 57 fps for 6 seconds."),
+      T("Se disegnare meno pixel non aiuta (per esempio uno schermo a 30 Hz o un computer lento nei calcoli e non nella grafica) il passo viene annullato e dopo due tentativi smette di abbassare.","If drawing fewer pixels does not help (for example a 30 Hz screen, or a computer slow at the calculations rather than the graphics) the step is undone, and after two tries it stops lowering.")]}],
+    bal:[{g:T('Prestazioni','Performance'),l:[
+      T("La pagina del gioco passa da 13,3 MB a 11,3 MB: codice e stili compressi (esbuild) e i fogli degli sprite in WebP senza perdita (gli stessi pixel).","The game page goes from 13.3 MB to 11.3 MB: code and styles minified (esbuild) and the sprite sheets in lossless WebP (the same pixels)."),
+      T("I cimeli si trovano per nome con una tabella invece di scorrere tutti i 727 ogni volta (succedeva anche a ogni colpo, per Furia, e a ogni fotogramma nella barra dei cimeli).","Trinkets are looked up by name in a table instead of going through all 727 every time (it also happened on every hit, for Rage, and every frame in the trinket bar)."),
+      T("Boomerang Ginyu e Impatto Potente calcolano la loro area una volta per colpo invece che per ogni nemico.","Ginyu Boomerang and Power Impact work out their area once per throw instead of for every enemy.")]}]},
   {id:'2026-10-29g',date:'2026-10-29',
     name:T("Prestazioni, menu principale e co-op","Performance, main menu and co-op"),
     sum:T("Il gioco regge meglio le folle di nemici, il menu principale sta tutto in una pagina e in co-op la scelta delle carte non ferma più gli altri.","The game copes better with big crowds of enemies, the main menu fits on one page and in co-op picking a card no longer stops the others."),

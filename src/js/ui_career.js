@@ -64,6 +64,6 @@ Object.assign(UI.prototype,{
       body=h('div',{class:'bview'},h('h3',null,T_(C.n)+' · '+T_(STAGES[B.s].n)+' · '+T_(DIFF[B.d].n)+' · '+this.t('lv')+' '+B.l),
         B.p.length?h('div',{class:'chips'},B.p.map(id=>{const P=PACTS.find(x=>x.id===id);return h('span',{class:'chip',style:'--c:'+P.c},'☠ '+T_(P.n));})):null,
         h('div',{class:'chips'},B.w.map(([id,lv,ev,fz])=>{const W=WEAPONS[id];return h('span',{class:'chip',style:'--c:'+W.c},glyph(W.k,W.c),T_(ev>=2?W.evo2:ev?W.evo:W.n)+' Lv'+lv+(fz?' ✦':''));})),
-        h('div',{class:'chips'},B.t.map(([id,r])=>{const t=TRINKETS.find(x=>x.id===id);return h('span',{class:'tchip',style:'--c:'+RARITY[r].c,title:T_(t.n)},glyph(t.k,RARITY[r].c),T_(t.n));})));}
+        h('div',{class:'chips'},B.t.map(([id,r])=>{const t=trinDef(id);return h('span',{class:'tchip',style:'--c:'+RARITY[r].c,title:T_(t.n)},glyph(t.k,RARITY[r].c),T_(t.n));})));}
     return h('div',{class:'center'},this.header(CT.paste),h('div',{class:'row'},inp,h('button',{class:'btn primary','data-fid':'bcgo',onclick:show},'OK')),body);}
 });

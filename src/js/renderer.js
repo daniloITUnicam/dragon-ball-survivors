@@ -96,6 +96,7 @@ this.W=1;this.H=1;this.Z=1;
     if(s.res==='720'){ih=720;iw=Math.round(720*cw/ch);}
     else if(s.res==='1080'){ih=1080;iw=Math.round(1080*cw/ch);}
     else{const sc=clamp(s.scale||1,.5,2)*Math.min(2,window.devicePixelRatio||1);iw=Math.round(cw*sc);ih=Math.round(ch*sc);}
+    {const d=s.dynRes===false?1:(this.dyn||1);iw=Math.round(iw*d);ih=Math.round(ih*d);}   /* v121: dynamic resolution */
     this.cv.width=iw;this.cv.height=ih;this.cv.style.width=cw+'px';this.cv.style.height=ch+'px';
     this.W=iw;this.H=ih;this.Z=clamp(Math.min(iw,ih)/560,.6,3.4);this.vign=null;
     this.U=Math.max(.8,ih/720);
@@ -256,6 +257,15 @@ this.W=1;this.H=1;this.Z=1;
       }
     }
   }
+  /* v121: dynamic resolution - every 1.5 s of play the frame rate is checked: under 50 fps the canvas renders 10% fewer pixels per side (down to 60%),
+     at 57+ fps for 6 s it climbs back by 10%. If rendering smaller did not help (the game is limited by something else, or the screen runs at 30 Hz)
+     the step is undone, and after two such tries it stops lowering. Settings > Video > Dynamic resolution turns it off. */
+  dynTick(fd){const s=this.save.d.settings;if(s.dynRes===false){if((this.dyn||1)!==1){this.dyn=1;this.dynPend=true;}return;}
+    const D=this.dd||(this.dd={acc:0,n:0,good:0,cool:0,fail:0,down:0});if(this.dyn==null)this.dyn=1;
+    D.acc+=fd;D.n++;D.cool-=fd;if(D.acc<1.5)return;const fps=D.n/D.acc;D.acc=0;D.n=0;if(D.cool>0)return;
+    if(D.down){const gain=fps>D.down*1.04;D.down=0;if(!gain){D.fail++;this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.cool=4;return;}}
+    if(fps<50&&this.dyn>.6&&D.fail<2){D.down=fps;this.dyn=Math.max(.6,+(this.dyn-.1).toFixed(2));this.dynPend=true;D.cool=1.5;D.good=0;return;}
+    if(fps>=57){if(++D.good>=4&&this.dyn<1){this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.good=0;D.cool=1.5;}}else D.good=0;}
   /* the biome level of every tile (dry..lush, a noise lookup), kept per chunk of TCH x TCH tiles so it is not worked out again every frame */
   tChunk(c,r){const k=c*65536+r;let ch=this.tc.get(k);if(ch){ch.u=this._fr;return ch;}
     const theme=this.tcTheme,TS=64,sea=Sea.has(theme),dn=DEC_DENS[theme]||0,lv=new Uint8Array(TCH*TCH),dc=new Uint8Array(TCH*TCH);
@@ -286,6 +296,7 @@ this.W=1;this.H=1;this.Z=1;
   draw(g,dt){
     const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
     {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+.3*f;}   /* v116: boss cinematic camera */
+    if(this.dynPend){this.dynPend=false;this.resize();}
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
   }
   drawFrame(g,dt){
@@ -306,7 +317,8 @@ this.W=1;this.H=1;this.Z=1;
     if(theme==='snake'&&Ambient.on&&Ambient.lod>=.5)Ambient.flockShadows(ctx,cx,cy,g.vw,g.vh,t,3,1,0);   /* shadows of the bird flocks gliding over the cloud sea */
     /* v109: effect quality follows the real frame time - when the game runs under ~42 fps the electric overlay (the costliest effect of the late forms) thins out, and comes back above ~55 fps */
     {const now=performance.now(),fd=this._lastD?Math.min(.25,(now-this._lastD)/1000):1/60;this._lastD=now;const sm=this._sm=(this._sm||1/60)+(fd-(this._sm||1/60))*.05;
-     if(sm>1/42)ELEC.q=Math.max(.25,ELEC.q-fd*.5);else if(sm<1/55)ELEC.q=Math.min(1,ELEC.q+fd*.1);}
+     if(sm>1/42)ELEC.q=Math.max(.25,ELEC.q-fd*.5);else if(sm<1/55)ELEC.q=Math.min(1,ELEC.q+fd*.1);
+     if(dt>0&&fd<.2)this.dynTick(fd);}
     ELEC.n=0;this.fxBegin();
     for(const e of g.en)if(e.bm&&!e.dead)this.drawBmGround(e,t);
     if(g.rain.length)this.drawRainGround(g,t);
@@ -1381,7 +1393,7 @@ this.W=1;this.H=1;this.Z=1;
     /* items on the ground */
     const p=(this.gameRef||{}).p;
     for(const it of tr.items){
-      const tdef=TRINKETS.find(q=>q.id===it.id),col=RARITY[it.rar].c,ix=x0+it.x,iy=y0+it.y,near=tr.near===it;
+      const tdef=trinDef(it.id),col=RARITY[it.rar].c,ix=x0+it.x,iy=y0+it.y,near=tr.near===it;
       ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(ix,iy+6,26,9,0,0,TAU);ctx.fill();
       if(it.sold){ctx.fillStyle='rgba(120,100,140,.5)';ctx.beginPath();ctx.ellipse(ix,iy,22,8,0,0,TAU);ctx.fill();continue;}
       GLOW.at(ctx,ix,iy-14,44+8*Math.sin(t*3+it.x),col,.6);
@@ -1580,7 +1592,7 @@ this.W=1;this.H=1;this.Z=1;
       if(!id){ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(tx2,ty,ts,ts);ctx.save();ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.6*U;ctx.setLineDash([4*U,3*U]);ctx.strokeRect(tx2,ty,ts,ts);ctx.restore();
         txt('+',tx2+ts/2,ty+ts*.68,'rgba(255,255,255,.35)','center',F(20,900));tx2+=ts+3*U;continue;}
       this.zones.push({x:tx2,y:ty,w:ts,h:ts,k:'trinket',id});
-      const t=TRINKETS.find(x=>x.id===id),rr=g.trR(id),tc=RARITY[rr].c,pf=g.trP(id),has=hasPf(t),perfect=has&&pf>=100;
+      const t=trinDef(id),rr=g.trR(id),tc=RARITY[rr].c,pf=g.trP(id),has=hasPf(t),perfect=has&&pf>=100;
       if(perfect)GLOW.at(ctx,tx2+ts/2,ty+ts/2,ts*(1.05+.12*Math.sin(g.rt*4)),'#cfeaff',.4);
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(tx2,ty,ts,ts);ctx.fillStyle=hexA(tc,.16);ctx.fillRect(tx2,ty,ts,ts);
       ctx.strokeStyle=perfect?'#f4faff':tc;ctx.lineWidth=2*U;ctx.strokeRect(tx2,ty,ts,ts);
@@ -1775,10 +1787,10 @@ this.W=1;this.H=1;this.Z=1;
       txt(tr2('Avvicinati a un oggetto per vederne gli effetti · restaci sopra per comprarlo · portale in basso per uscire','Get close to an item to see what it does · stand right on it to buy · portal below to leave'),W/2,H*.82+38*U,'#ffffff','center',F(13));
       const it=zt.look||zt.near;
       if(it){
-        const td=TRINKETS.find(q=>q.id===it.id),col=RARITY[it.rar].c,aff=g.run.coins>=it.price,full=false;
+        const td=trinDef(it.id),col=RARITY[it.rar].c,aff=g.run.coins>=it.price,full=false;
         const lines=trinStats(td,it.rar,it.pf).map(x=>[tr(x.t),true]);if(hasPf(td)&&it.pf!=null)lines.push(['\0perf',true],['\0bar',true]);
         if(td.x)lines.push([tr(td.x),true,1]);else if(td.sp)lines.push([tr(td.d),true,1]);
-        const cc=g.trinkets.length>=g.runCap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&TRINKETS.find(q=>q.id===cc);
+        const cc=g.trinkets.length>=g.runCap?(g.trinkets.length===1?g.trinkets[0]:'*'):null,ccd=cc&&cc!=='*'&&trinDef(cc);
         const pw=Math.min(268*U,W-16*U),lh=18*U,ph=(78+Math.max(1,lines.length)*18+(it.sold?0:20))*U;
         const ix=(zt.cx+it.x-cx)*this.Z,iy=(zt.cy+it.y-cy)*this.Z;
         /* speech bubble ("nuvoletta") beside the item, with a tail pointing at it */

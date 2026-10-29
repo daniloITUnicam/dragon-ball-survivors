@@ -78,6 +78,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='video'){
       body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
+        toggle(this.tr(T6('Risoluzione dinamica','Dynamic resolution','Resolución dinámica','Résolution dynamique','Dynamische Auflösung','Resolução dinâmica')),'dynRes',this.tr(T6('Se il gioco scende sotto i 50 fps, disegna meno pixel (fino al 60%) e risale quando torna fluido.','If the game drops under 50 fps it draws fewer pixels (down to 60%) and goes back up once it is smooth again.','Si el juego baja de 50 fps, dibuja menos píxeles (hasta el 60%) y vuelve a subir cuando va fluido.','Si le jeu passe sous 50 fps, il dessine moins de pixels (jusqu\'à 60 %) et remonte quand tout redevient fluide.','Fällt das Spiel unter 50 fps, zeichnet es weniger Pixel (bis 60 %) und geht wieder hoch, sobald es flüssig läuft.','Se o jogo cair abaixo de 50 fps, desenha menos pixels (até 60%) e volta a subir quando estiver fluido.'))),
         toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps'),
         toggle(this.t('reduceFx'),'reduceFx',this.t('reduceFxDesc')),
         slider(this.t('fxOpacity'),'fxAlpha',0,100,5,v=>Math.round(v)+'%',this.t('fxOpacityDesc'))];
@@ -186,7 +187,7 @@ Object.assign(UI.prototype,{
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],passMax(id)),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
-    const trins=g.trinkets.map(id=>{const tr=TRINKETS.find(x=>x.id===id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf))),this.perfBar(pf)));});
+    const trins=g.trinkets.map(id=>{const tr=trinDef(id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf))),this.perfBar(pf)));});
     /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
@@ -278,7 +279,7 @@ Object.assign(UI.prototype,{
     if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=TRINKETS.find(x=>x.id===r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null};}
+    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
@@ -336,7 +337,7 @@ Object.assign(UI.prototype,{
       el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs),this.refuseToggle());
     }else if(m.type==='tswap'){
       /* every trinket slot is taken: compare the new trinket with what you carry and choose which one to replace (or keep them all) */
-      const nt=TRINKETS.find(x=>x.id===m.nw.id),curs=m.curs,multi=curs.length>1,sn=trinStats(nt,m.nw.rar,m.nw.pf),G=this.app.game,sd=G?G.sd:0;
+      const nt=trinDef(m.nw.id),curs=m.curs,multi=curs.length>1,sn=trinStats(nt,m.nw.rar,m.nw.pf),G=this.app.game,sd=G?G.sd:0;
       const weak=curs.reduce((b,c,i)=>c.rar<curs[b].rar?i:b,0),np=hasPf(nt)?(m.nw.pf!=null?m.nw.pf:PF_NOM):null;
       const sc=(id,r,pf)=>G.trinScore(id,r,pf);
       /* perfection before -> after, and what the sale of a found trinket pays */
@@ -351,11 +352,11 @@ Object.assign(UI.prototype,{
           h('div',{class:'tshead'},glyph(t.k,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
           this.perfBar(pf),h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null,extra||null);};
       const rep=(i,lbl)=>h('button',{class:'btn'+(i===weak?' primary':' alt'),'data-focus':i===weak?true:null,onclick:()=>{this.sfx('chest');this.app.resolveModal(i);}},(multi?(i+1)+' · ':'')+lbl);
-      const curCols=curs.map((c,i)=>{const ct=TRINKETS.find(x=>x.id===c.id),cp=hasPf(ct)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf);
+      const curCols=curs.map((c,i)=>{const ct=trinDef(c.id),cp=hasPf(ct)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf);
         return col(ct,c.rar,cp,st,sn,this.t(c.src==='bag'?'swapCurBag':'swapCur'),h('div',{class:'tsextra'},dl(cp,np),c.src==='bag'?null:sell(this.t('swapSellOld'),c.rar),multi?h('div',{class:'row tsbtn'},rep(i,this.t('swapReplace'))):null));});
       const c0=curs[0],cmp=sc(m.nw.id,m.nw.rar,m.nw.pf)-Math.max(...curs.map(c=>sc(c.id,c.rar,c.pf))),vd=cmp>0?'up':cmp<0?'down':'eq';
       const verdict=h('div',{class:'tsverdict '+vd},this.t(cmp>0?'swapBetter':cmp<0?'swapWorse':'swapSame'));
-      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(TRINKETS.find(x=>x.id===c0.id),c0.rar,c0.pf),this.t('swapNew'),h('div',{class:'tsextra'},multi?null:dl(hasPf(TRINKETS.find(x=>x.id===c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
+      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(trinDef(c0.id),c0.rar,c0.pf),this.t('swapNew'),h('div',{class:'tsextra'},multi?null:dl(hasPf(trinDef(c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
       el=h('div',{class:'screen modal'},h('h2',null,this.t(multi?'swapTitleN':'swapTitle1')),
         h('p',{class:'sub'},this.t(multi?'swapSubN':'swapSub1',{n:curs.length})),
         h('div',{class:'tswap'+(multi?' multi':'')},multi?[newCol,h('div',{class:'tsarrow'},'→'),...curCols]:[curCols[0],h('div',{class:'tsarrow'},'→'),newCol]),
@@ -423,7 +424,7 @@ Object.assign(UI.prototype,{
         w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
-    if(z.k==='trinket'){const t=TRINKETS.find(x=>x.id===z.id);if(!t)return null;const rr=g.trR(z.id),pf=hasPf(t)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('p',null,this.tr(trinDesc(t,rr,pf))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
+    if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),pf=hasPf(t)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('p',null,this.tr(trinDesc(t,rr,pf))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
     if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
       ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
     if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}

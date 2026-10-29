@@ -95,10 +95,10 @@ class BoomerWeapon extends NW{
       const k=b.t/b.dur;if(k>=1){b.done=true;continue;}
       if(k>.5&&!b.turn){b.turn=true;b.hit.clear();}
       const r=Math.sin(k*Math.PI)*b.d;
-      b.x=p.x+Math.cos(b.a)*r;b.y=p.y-14+Math.sin(b.a)*r*.9;if(g.eb.length)g.cutC(b.x,b.y,17*this.area());
+      const br=17*this.area();b.x=p.x+Math.cos(b.a)*r;b.y=p.y-14+Math.sin(b.a)*r*.9;if(g.eb.length)g.cutC(b.x,b.y,br);
       for(const e of g.en){
         if(e.dead||b.hit.has(e))continue;
-        const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+17*this.area();
+        const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+br;
         if(dx*dx+dy*dy<rr*rr){b.hit.add(e);g.hit(e,s.dmg[L]*this.dm,dx*2,dy*2);}
       }
     }
@@ -255,7 +255,7 @@ class ShockWeapon extends NW{
     const g=this.g,p=g.p,s=this.st,L=this.L;
     this.cd-=dt;
     if(this.cd<=0){
-      if(g.en.some(e=>this.inView(e,s.rad[L]*this.area()+40))){
+      const vr=s.rad[L]*this.area()+40;if(g.en.some(e=>this.inView(e,vr))){
         const R=s.rad[L]*this.area(),n=this.evo?2:1;
         for(let i=0;i<n;i++)this.rs.push({r:0,t:-i*.22,max:R,hit:new Set()});
         g.audio.sfx('thunder');g.shake=Math.max(g.shake,.16);this.cd=this.cdv();

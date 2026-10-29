@@ -97,7 +97,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
     {const T0=[],R0={},P0={},S0={};   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
-      for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&TRINKETS.find(x=>x.id===eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
+      for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&trinDef(eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
         if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
       if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
     this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
@@ -108,7 +108,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   get formMax(){return Math.min(FORM_TIERS.length,LINES[this.C.line||'saiyan'].length);}
   get form(){return this.formIdx>=0?Object.assign({idx:this.formIdx},FORM_TIERS[this.formIdx]):null;}
   get formEntry(){return this.formIdx>=0?LINES[this.C.line||'saiyan'][this.formIdx]:null;}
-  has(sp){return this.trinkets.some(id=>{const t=TRINKETS.find(x=>x.id===id);return t&&t.sp===sp;});}
+  has(sp){return this.trinkets.some(id=>{const t=trinDef(id);return t&&t.sp===sp;});}
   /* v109: the banner never covers another one: a new message waits in a queue (bq) until the one on screen has been shown BANNER_MIN s, which then fades out in BANNER_FADE s;
      the same text already on screen or waiting is not repeated. Every message also goes into the run's event history (evLog, pause screen) */
   say(txt,col,dur,sub){
@@ -139,7 +139,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* ---------- stats ---------- */
   tMods(){
     const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0};
-    for(const id of this.trinkets){const t=TRINKETS.find(x=>x.id===id);if(t&&t.m){const tmx=trinMods(t,this.trR(id),this.trP(id));for(const k in tmx)m[k]+=tmx[k];}}
+    for(const id of this.trinkets){const t=trinDef(id);if(t&&t.m){const tmx=trinMods(t,this.trR(id),this.trP(id));for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
   recalc(){
@@ -331,12 +331,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* shop level used by the run: an upgrade switched off in the shop (save.shopOff) counts as level 0 */
   shopLv(id){const d=this.save;return d.shopOff&&d.shopOff[id]?0:(d.shop[id]||0);}
   trP(id){const p=this.tPf[id];return p!=null?p:PF_NOM;}   /* perfection (0-100) of a carried trinket */
-  get perfAura(){return this.trinkets.some(id=>hasPf(TRINKETS.find(x=>x.id===id))&&this.trP(id)>=100);}   /* a carried trinket at 100% perfection: Ultra Instinct aura */
-  trR(id){const r=this.tRar[id];if(r!=null)return r;const t=TRINKETS.find(x=>x.id===id);return t?t.r:0;}
-  rarOf(id){const t=TRINKETS.find(x=>x.id===id),rr=this.rrar&&this.rrar[id];if(this.rrar)delete this.rrar[id];return Math.random()<.01&&t&&t.m&&(!t.sp||t.x)?4:(rr!=null?rr:(t?t.r:0));}   /* rr: the rarity this trinket was rolled at (stat trinkets exist at every rarity) */    /* 1%: it turns out mythic (only trinkets with stats can: an effect alone has nothing to scale) */
+  get perfAura(){return this.trinkets.some(id=>hasPf(trinDef(id))&&this.trP(id)>=100);}   /* a carried trinket at 100% perfection: Ultra Instinct aura */
+  trR(id){const r=this.tRar[id];if(r!=null)return r;const t=trinDef(id);return t?t.r:0;}
+  rarOf(id){const t=trinDef(id),rr=this.rrar&&this.rrar[id];if(this.rrar)delete this.rrar[id];return Math.random()<.01&&t&&t.m&&(!t.sp||t.x)?4:(rr!=null?rr:(t?t.r:0));}   /* rr: the rarity this trinket was rolled at (stat trinkets exist at every rarity) */    /* 1%: it turns out mythic (only trinkets with stats can: an effect alone has nothing to scale) */
   /* a trinket found during the run is not kept: it is sold for zenny when something replaces it and at the end of the run (the one from the bag is never sold) */
   sellTrinket(id,rar,why){
-    const t=TRINKETS.find(x=>x.id===id);if(!t)return 0;
+    const t=trinDef(id);if(!t)return 0;
     const v=trinketSale(rar,this.sd);this.addZenny(v);this.run.tsold=(this.run.tsold||0)+1;
     if(why!=='end'){this.floatText(this.p.x,this.p.y-70,this.env.tr(why==='auto'?T('Rifiutato: ','Refused: '):T('Venduto: ','Sold: '))+this.env.tr(t.n)+'  +Z '+v,1);this.audio.sfx('coin');}
     return v;
@@ -360,7 +360,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* takes a trinket out of its slot (a found one is sold; the one from the bag just goes back to the bag) */
   dropTrinket(id){
     const i=this.trinkets.indexOf(id);if(i<0)return -1;
-    const t=TRINKETS.find(x=>x.id===id);
+    const t=trinDef(id);
     if(this.tSrc[id]==='run')this.sellTrinket(id,this.trR(id));
     this.trinkets.splice(i,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];
     if(t&&t.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
@@ -369,7 +369,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* the slot of the weakest carried trinket (the one a full inventory gives up) */
   weakestTrinket(){let b=null,br=1e9;for(const id of this.trinkets){const r=this.trinScore(id,this.trR(id),this.trP(id));if(r<br){br=r;b=id;}}return b;}
   equipTrinket(id,rar,replaceId,pf){
-    const t=TRINKETS.find(x=>x.id===id);if(!t)return false;
+    const t=trinDef(id);if(!t)return false;
     let at=-1;
     if(replaceId&&this.trinkets.includes(replaceId))at=this.dropTrinket(replaceId);
     else if(this.trinkets.includes(id))at=this.dropTrinket(id);
@@ -382,18 +382,18 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   /* setting "skip lower trinkets": with every slot taken, a trinket worse than everything you carry (lower rarity, or the same rarity with less perfection) is sold at once;
      the comparison window only opens for one that beats at least one of your trinkets */
-  trinScore(id,rar,pf){const t=TRINKETS.find(x=>x.id===id);return rar*1000+(hasPf(t)?(pf!=null?pf:PF_NOM):PF_NOM);}
+  trinScore(id,rar,pf){const t=trinDef(id);return rar*1000+(hasPf(t)?(pf!=null?pf:PF_NOM):PF_NOM);}
   autoRefuse(id,rar,pf,buy){
     if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.runCap)return false;
     return this.trinScore(id,rar,pf)<Math.min(...this.trinkets.map(x=>this.trinScore(x,this.trR(x),this.trP(x))));
   }
   addTrinket(id,rar,cb){
-    if(!TRINKETS.find(x=>x.id===id))return false;
+    if(!trinDef(id))return false;
     if(rar==null)rar=this.rarOf(id);
     const pf=cb&&cb.pf!=null?cb.pf:rollPf(this.S.luck);
     const buy=!!(cb&&cb.buy),yes=()=>{if(cb&&cb.onYes)cb.onYes();},no=()=>{if(cb&&cb.onNo)cb.onNo();};
     if(this.trinkets.includes(id)){   /* already carried: a better copy (higher rarity, or the same rarity with more perfection) upgrades it in place, otherwise the new one is sold */
-      if(rar>this.trR(id)||(rar===this.trR(id)&&hasPf(TRINKETS.find(x=>x.id===id))&&pf>this.trP(id))){const ok=this.equipTrinket(id,rar,id,pf);if(ok)yes();return ok;}
+      if(rar>this.trR(id)||(rar===this.trR(id)&&hasPf(trinDef(id))&&pf>this.trP(id))){const ok=this.equipTrinket(id,rar,id,pf);if(ok)yes();return ok;}
       if(!buy)this.sellTrinket(id,rar);
       no();return false;
     }
@@ -1148,7 +1148,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'luck':this.luckBonus=Math.min(.4,this.luckBonus+.03);this.recalc();this.audio.sfx('pkluck');this.burst(p.x,p.y-20,14,'#8be07a');this.floatText(p.x,p.y-50,this.env.tr(T('Fortuna +3%','Luck +3%')),2);break;
       case'capsule':{this.audio.sfx('pkcapsule');   /* v109: a character upgrade until everything is maxed, then a trinket */
         {const up=this.chestUps(1)[0];if(up){this.applyOption(up);this.say(this.env.tr(up.type==='w'?WEAPONS[up.id].n:PASS[up.id].n)+' Lv '+(up.lv+1),up.type==='w'?WEAPONS[up.id].c:PASS[up.id].c,2.4);break;}}
-        const id=this.rollTrinket();if(id){const rr=this.rarOf(id),t=TRINKETS.find(x=>x.id===id);this.addTrinket(id,rr);this.say(this.env.tr(t.n),RARITY[rr].c,2.4);}else this.addZenny(30);break;}
+        const id=this.rollTrinket();if(id){const rr=this.rarOf(id),t=trinDef(id);this.addTrinket(id,rr);this.say(this.env.tr(t.n),RARITY[rr].c,2.4);}else this.addZenny(30);break;}
       case'sball':{
         const got=this.sandbox?0:this.progress.addSuperBall(l.star),n=this.sandbox?1:this.save.sball.length;this.run.sballs=(this.run.sballs||0)+(got?1:0);
         this.audio.sfx('sphere');this.audio.sfx('ticket');
@@ -2524,7 +2524,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   /* buying: free slot -> equip; otherwise a comparison window asks which carried trinket to replace */
   zenoBuy(it){
-    const tr=this.trial,t=TRINKETS.find(x=>x.id===it.id);
+    const tr=this.trial,t=trinDef(it.id);
     if(!tr||!t)return;tr.hold=0;
     const done=()=>{
       this.spendCoins(it.price);it.sold=true;tr.zj=.7;this.run.zbuy=(this.run.zbuy||0)+1;

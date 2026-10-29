@@ -14,7 +14,7 @@ class SaveData{
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
       dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},hints:{},pacts:[],mastery:{},wk:{},comm:{},album:{},bk:{},sk:{},title:'',
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,hints:true,hitstop:true,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
+      settings:{lang,hints:true,hitstop:true,dynRes:true,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],target:['Tab'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],target:[10],debug:[8]}
@@ -138,7 +138,7 @@ class Progress{
   /* a trinket carried to the end of the run joins the bag (one entry per trinket + rarity). Returns null when it cannot (Test mode, or the bag already has it: then the caller sells it) */
   keepTrinket(g,id,r,p){
     if(this.blocked(g))return null;
-    const d=this.d,t=TRINKETS.find(x=>x.id===id);if(!t||!(r>=0&&r<=4))return null;
+    const d=this.d,t=trinDef(id);if(!t||!(r>=0&&r<=4))return null;
     const pf=hasPf(t)?Math.max(0,Math.min(100,Math.round(+p)||0)):PF_NOM,ob=d.bag.find(b=>b.id===id&&b.r===r);
     if(ob){const old=ob.p!=null?ob.p:PF_NOM;if(hasPf(t)&&pf>old){ob.p=pf;return{up:1,from:old};}return null;}
     d.bag.push({id,r,at:Date.now(),p:pf});return{up:0};

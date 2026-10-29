@@ -161,6 +161,18 @@ js = js.replace('/*__SFX__*/{}', json.dumps(_sfx, separators=(',', ':')))
 # The sheets the game uses live in folders with a lowercase name (boss/, effetti/, rocce/, ...; loose files in assets/sprites/ work too). NOT scanned: folders that start
 # with "_" (_sorgenti = source art of the generators, _inutilizzati = sheets the game does not use) and folders with capitals or spaces (raw frame packs, see assets/sprites/README.md).
 import struct
+def _webp(raw):
+    """PNG bytes -> lossless WebP bytes (None without Pillow, or when it would not be smaller); results cached under dist/.cache/webp"""
+    cd = ROOT/'dist'/'.cache'/'webp'; key = hashlib.sha1(raw).hexdigest(); cf = cd/(key + '.webp')
+    if cf.exists(): out = cf.read_bytes(); return out if out else None
+    try:
+        from PIL import Image
+        import io
+    except ImportError: return None
+    im = Image.open(io.BytesIO(raw)); im = im.convert('RGBA') if im.mode not in ('RGB', 'RGBA') else im
+    bio = io.BytesIO(); im.save(bio, 'WEBP', lossless=True, quality=100, method=6, exact=True); out = bio.getvalue()
+    if len(out) >= len(raw): out = b''
+    cd.mkdir(parents=True, exist_ok=True); cf.write_bytes(out); return out or None
 _sd = pathlib.Path(os.environ.get('DBS_SPRITES') or (ROOT/'assets'/'sprites'))
 _pack = {}
 if _sd.is_dir():
@@ -199,6 +211,9 @@ if _sd.is_dir():
                 e = dict(e); e['rects'] = [[round(r[0]*_ps), round(r[1]*_ps), max(1, round(r[2]*_ps)), max(1, round(r[3]*_ps))] for r in e['rects']]
                 e['anch'] = [[a_[0]*_ps, a_[1]*_ps] for a_ in e['anch']]; e['k'] = _ps
             except ImportError: print('sprites: DBS_PROP_SCALE needs Pillow - atlases left as they are')
+        if _mt == 'png' and os.environ.get('DBS_WEBP') != '0':   # v121: PNG sheets go in as lossless WebP (same pixels, ~17% smaller); cached by content in dist/.cache
+            _wk = _webp(raw)
+            if _wk: raw, _mt = _wk, 'webp'
         e['u'] = 'data:image/' + _mt + ';base64,' + base64.b64encode(raw).decode()
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
@@ -215,6 +230,23 @@ _dev = (os.environ.get('DBS_DEV') or '').strip().lower() in ('1','true','yes')
 js = js.replace("'__DEV__'", "'1'" if _dev else "''")
 if not _dev:
     js = '(()=>{\n' + js + '\n})();'
+# ---- minify (esbuild, when it is installed: `npm i esbuild` in the repo, or on the PATH): a smaller page that parses faster.
+# Default: on for release builds, off for DEV builds (readable stack traces in the tests). DBS_MINIFY=1 / 0 forces it. ----
+def _esbuild():
+    for c in [os.environ.get('DBS_ESBUILD'), str(ROOT/'node_modules'/'.bin'/'esbuild'), shutil.which('esbuild'), '/opt/npm-tools/node_modules/.bin/esbuild']:
+        if c and pathlib.Path(c).exists(): return c
+    return None
+_min_env = os.environ.get('DBS_MINIFY')
+if _min_env == '1' or (_min_env is None and not _dev):
+    _eb = _esbuild()
+    if not _eb: print('minify: esbuild not found - the page is built unminified (npm i esbuild to enable)')
+    else:
+        def _mini(code, loader):
+            r = subprocess.run([_eb, '--minify', '--keep-names', '--loader=' + loader, '--charset=utf8', '--legal-comments=none', '--target=es2020', '--log-level=error'], input=code.encode('utf8'), capture_output=True)
+            if r.returncode != 0: print('minify failed (' + loader + '), kept unminified:', r.stderr.decode('utf8', 'replace')[:400]); return code
+            return r.stdout.decode('utf8').rstrip('\n')
+        _n0 = len(js) + len(css); js = _mini(js, 'js'); css = _mini(css, 'css')
+        print(f'minify: {_n0/1024:.0f} KB -> {(len(js)+len(css))/1024:.0f} KB (js + css)')
 print('build:', 'DEV (open, for the tests)' if _dev else 'release (closed, anti-cheat on)')
 _bid = hashlib.sha1((js + '\0' + css + '\0' + html).encode('utf8')).hexdigest()[:12]
 js = js.replace('__BUILD_ID__', _bid)

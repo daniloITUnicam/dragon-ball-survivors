@@ -11,7 +11,7 @@ const RAR_NORM=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
 
 Object.assign(UI.prototype,{
   /* ---------- helpers ---------- */
-  tdef(id){return TRINKETS.find(x=>x.id===id);},
+  tdef(id){return trinDef(id);},
   /* name, rarity and effect text of a trinket at a rarity, in the language of the player */
   tinfo(id,r,p){const t=this.tdef(id),pf=hasPf(t)?(p!=null?p:PF_NOM):null;return{t,c:RARITY[r].c,name:this.tr(t.n),rar:this.tr(RARITY[r].n),desc:this.tr(trinDesc(t,r,pf)),stats:trinStats(t,r,pf),perf:pf};},
   /* perfection of a trinket: a bar (0-100%) and, at 100%, the Ultra Instinct shimmer */
@@ -203,7 +203,7 @@ Object.assign(UI.prototype,{
   },
   /* the big lettering: Mythic = flash, rays, shaking screen and the jackpot sound; Legendary = a shorter golden one */
   async gachaBanner(ov,rar,res,snd,wait,A){
-    const myth=rar>=4,it=res.find(x=>x.r===rar),nm=it?this.tr(TRINKETS.find(q=>q.id===it.id).n):'';
+    const myth=rar>=4,it=res.find(x=>x.r===rar),nm=it?this.tr(trinDef(it.id).n):'';
     const el=h('div',{class:'gjack'+(myth?'':' leg')},h('div',{class:'grays'}),myth?h('div',{class:'gflash'}):null,
       h('div',{class:'gbanner'},this.t(myth?'gMythic':'gLegend')),h('div',{class:'gsub'},myth?this.t('gJackpot'):nm));
     for(let i=0;i<14;i++){const s=h('i',{class:'gstar',style:'--x:'+Math.round(Math.random()*92+2)+'%;--y:'+Math.round(Math.random()*90+2)+'%;--s:'+Math.round(14+Math.random()*34)+'px;--d:'+(Math.random()*1.2).toFixed(2)+'s;--c:'+(myth?'#ff7ac8':'#ffb020')},'✦');el.append(s);}

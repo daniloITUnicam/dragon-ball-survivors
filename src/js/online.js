@@ -46,7 +46,7 @@ const Online={
     [...g.weapons.values()].slice(0,8).forEach((w,i)=>{const X=R+(i%4)*148,Y=250+Math.floor(i/4)*86;x.fillStyle='rgba(0,0,0,.4)';x.fillRect(X,Y,138,76);x.strokeStyle=w.fz?(FUSIONS.find(f=>f.id===w.fz)||{}).c||'#fff':w.evo?'#ffd23f':'rgba(255,255,255,.25)';x.lineWidth=2;x.strokeRect(X,Y,138,76);
       tx(w.def.k,X+30,Y+50,w.def.c,J(34),'center');{const fz=w.fz&&FUSIONS.find(f=>f.id===w.fz);let nm=tr(fz?fz.n:w.evo?w.evoName:w.def.n),fs=15;x.font=F(fs,700);while(x.measureText(nm).width>78&&fs>11){fs-=1;x.font=F(fs,700);}while(x.measureText(nm).width>78&&nm.length>4)nm=nm.slice(0,-2)+'…';tx(nm,X+56,Y+30,fz?fz.c:'#fff',F(fs,700));}tx('Lv '+w.lv+(w.evo?' '+'★'.repeat(w.evo):'')+(w.fz?' ✦':''),X+56,Y+54,'#ffd23f',F(15,700));});
     const ty=g.weapons.size>4?440:356;tx(tr(T6('Cimeli','Trinkets','Reliquias','Reliques','Relikte','Relíquias')),R,ty,'#fff',F(22));
-    g.trinkets.slice(0,12).forEach((id,i)=>{const t=TRINKETS.find(q=>q.id===id);if(!t)return;const r=g.tRar[id]|0,X=R+(i%6)*98,Y=ty+12+Math.floor(i/6)*58;
+    g.trinkets.slice(0,12).forEach((id,i)=>{const t=trinDef(id);if(!t)return;const r=g.tRar[id]|0,X=R+(i%6)*98,Y=ty+12+Math.floor(i/6)*58;
       x.fillStyle='rgba(0,0,0,.4)';x.fillRect(X,Y,90,50);x.strokeStyle=RARITY[r].c;x.lineWidth=2;x.strokeRect(X,Y,90,50);tx(t.k,X+45,Y+36,RARITY[r].c,J(26),'center');});
     if(g.trinkets.length>12)tx('+'+(g.trinkets.length-12),R+590,ty,'#cfd8ff',F(20),'right');
     tx(new Date().toISOString().slice(0,10),W-20,H-18,'rgba(255,255,255,.5)',F(16,600),'right');

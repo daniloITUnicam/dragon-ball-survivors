@@ -24,6 +24,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build tools (esbuild minifies the page, Pillow turns the PNG sheets into lossless WebP)
+        run: |
+          npm i --no-save --no-package-lock esbuild@0.24.2
+          pip install pillow
+      - uses: actions/cache@v4   # the WebP conversions, by content (only new or changed sheets are converted again)
+        with:
+          path: dist/.cache
+          key: webp-${{ hashFiles('assets/sprites/**/*.png') }}
+          restore-keys: webp-
       - name: Build (single HTML file)
         # Impostazioni Supabase (login + salvataggi cloud): Settings → Secrets and variables → Actions → Variables.
         # Se non sono impostate il gioco funziona lo stesso, senza il pulsante Account.
