@@ -72,6 +72,7 @@ function footShadow(c,ox,oy){
     return{cx:(a+b)/2-ox,cy:Math.min(bot-oy,0)+Math.max(0,bot-oy)*.5-ry*.55,rx,ry};
   }catch(e){return null;}   /* a tainted canvas (file:// without the sheet inlined): the old round shadow */
 }
+const LIFE_LEAN=.14,LIFE_K=110,LIFE_D=11,LIFE_STEP=.04,LIFE_BREATH=.022;   /* v116: the alive layer (see Renderer.life) */
 class Renderer{
   constructor(canvas,save){
     this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;
@@ -261,7 +262,13 @@ this.W=1;this.H=1;this.Z=1;
   fxBegin(){if(FXL.a>=1)return;FXL.m=Math.pow(FXL.a,1.7);this.ctx.globalAlpha=1;}
   fxEnd(){if(FXL.m===1)return;FXL.m=1;this.ctx.globalAlpha=1;}
   resetCtx(){const c=this.ctx;try{for(let i=0;i<40;i++)c.restore();}catch(e){}c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.setLineDash([]);c.lineCap='butt';c.lineJoin='miter';c.shadowBlur=0;c.filter='none';}
+  /* v116: camera punch — the zoom grows for a moment and eases back (g.zoomP decays here, with the real frame time) */
   draw(g,dt){
+    const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
+    {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+.3*f;}   /* v116: boss cinematic camera */
+    this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
+  }
+  drawFrame(g,dt){
     Sprites.warmStep();this.fdt=dt;
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p;
     FXL.a=s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1);FXL.m=1;
@@ -269,7 +276,7 @@ this.W=1;this.H=1;this.Z=1;
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
     let sx=0,sy=0;if(g.shake>0&&s.shake){sx=rnd(-1,1)*g.shake*(FXL.on?5:14);sy=rnd(-1,1)*g.shake*(FXL.on?5:14);}
-    const cx=p.x-g.vw/2+sx,cy=p.y-14-g.vh/2+sy;
+    const co=this.camOff,cx=p.x-g.vw/2+sx+(co?co.x:0),cy=p.y-14-g.vh/2+sy+(co?co.y:0);
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
     const theme=g.stage.theme;
     Ambient.setCfg(s);if(g.trial||g.tun){Ambient.on=false;Ambient.wxOn=false;Ambient.dnOn=false;Ambient.nt=0;Ambient.evI=0;}else Ambient.update(g,dt,t,cx,cy,g.vw,g.vh,theme,p);
@@ -283,6 +290,7 @@ this.W=1;this.H=1;this.Z=1;
     ELEC.n=0;this.fxBegin();
     for(const e of g.en)if(e.bm&&!e.dead)this.drawBmGround(e,t);
     if(g.rain.length)this.drawRainGround(g,t);
+    MAPX.drawGround(this,g,ctx,t);   /* v116 */
     if(FXL.a>0){for(const w of g.weapons.values())if(w.drawGround)w.drawGround(ctx);
     const au=g.weapons.get('aura');if(au){au.draw(ctx);au.elecOverlay(ctx);}}
     this.fxEnd();
@@ -293,8 +301,8 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gm.y-r);ctx.lineTo(gm.x+r*.8,gm.y);ctx.lineTo(gm.x,gm.y+r);ctx.lineTo(gm.x-r*.8,gm.y);ctx.closePath();ctx.fill();
       ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gm.y-r*.5,2,r*.5);
     }
-    if(g.rg&&!g.trial){const r=g.rg,pu=1+.12*Math.sin(t*6),R=(13+Math.min(9,Math.log10(1+r.v)*3))*pu;
-      GLOW.at(ctx,r.x,r.y,R*3.2,'#ff3b2f',.75);
+    if(g.rg&&!g.trial){const r=g.rg,pu=1+.12*Math.sin(t*6),R=9*pu;   /* the same size as the biggest normal gem */
+      GLOW.at(ctx,r.x,r.y,R*2.6,'#ff3b2f',.6);
       ctx.fillStyle='#b3150c';ctx.beginPath();ctx.moveTo(r.x,r.y-R);ctx.lineTo(r.x+R*.85,r.y);ctx.lineTo(r.x,r.y+R);ctx.lineTo(r.x-R*.85,r.y);ctx.closePath();ctx.fill();
       ctx.fillStyle='#ff5a3d';ctx.beginPath();ctx.moveTo(r.x,r.y-R*.78);ctx.lineTo(r.x+R*.62,r.y);ctx.lineTo(r.x,r.y+R*.78);ctx.lineTo(r.x-R*.62,r.y);ctx.closePath();ctx.fill();
       ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(r.x-R*.14,r.y-R*.55,R*.28,R*.5);
@@ -314,6 +322,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
     if(theme==='void'&&!g.trial&&vx1>-70&&vx0<70&&vy1>-440&&vy0<70)list.push({tw:1,y:TOPARENA.TR*.4});   /* the tower in the middle of the ring */
     if(g.pet)list.push({pet:g.pet,y:g.pet.y});
+    if(g.ally)list.push({ally:g.ally,y:g.ally.y});
     if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
     this._snapN=0;
     list.sort((a,b)=>a.y-b.y);
@@ -322,6 +331,7 @@ this.W=1;this.H=1;this.Z=1;
       if(e.tw){TopArt.tower(ctx,t);continue;}
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,t,g);continue;}
+      if(e.ally){this.drawAlly(e.ally,t,g);continue;}
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
       if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
@@ -425,9 +435,9 @@ this.W=1;this.H=1;this.Z=1;
         continue;
       }
       ctx.globalAlpha=a;
-      ctx.fillStyle=d.c===1?'#ffd23f':d.c===4?'#ff6b6b':d.c===2?'#ffb0b0':d.c===3?'#9fe8ff':'#fff';
+      ctx.fillStyle=d.c===1||d.c===7?'#ffd23f':d.c===4?'#ff6b6b':d.c===2?'#ffb0b0':d.c===3?'#9fe8ff':'#fff';
       const txt=String(d.s);
-      ctx.font=(d.c===1?'900 17px':(typeof d.s==='string'?'700 14px':'700 13px'))+' "Rajdhani",sans-serif';
+      ctx.font=(d.c===7?'900 '+(19*(d.t<.12?1+(.12-d.t)*3:1)).toFixed(1)+'px':d.c===1?'900 17px':(typeof d.s==='string'?'700 14px':'700 13px'))+' "Rajdhani",sans-serif';
       ctx.strokeText(txt,d.x,y);ctx.fillText(txt,d.x,y);
     }
     ctx.imageSmoothingEnabled=smo;
@@ -438,6 +448,18 @@ this.W=1;this.H=1;this.Z=1;
     if(!g.trial&&!g.tun)this.eventOverlay(g,t);
     if(g.tsT>0){ctx.fillStyle='rgba(215,225,255,'+Math.min(.3,g.tsT*.3)+')';ctx.fillRect(0,0,this.W,this.H);}
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
+    if(g.lsT>0){   /* v116: Last Stand: the world loses its colours (the hero is drawn again on top, in colour), a red pulse at the edges */
+      const f=Math.min(1,(LS_T-g.lsT)/.3,g.lsT/.5);ctx.save();ctx.globalAlpha=.85*f;ctx.globalCompositeOperation='saturation';ctx.fillStyle='#808080';ctx.fillRect(0,0,this.W,this.H);ctx.restore();
+      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,t);ctx.setTransform(1,0,0,1,0,0);
+      const pu=.5+.5*Math.sin(t*9),gr=ctx.createRadialGradient(this.W/2,this.H/2,Math.min(this.W,this.H)*.3,this.W/2,this.H/2,Math.max(this.W,this.H)*.7);gr.addColorStop(0,'rgba(255,0,0,0)');gr.addColorStop(1,'rgba(200,0,20,'+(.35+.2*pu)*f+')');ctx.fillStyle=gr;ctx.fillRect(0,0,this.W,this.H);}
+    ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);BOSSX.draw(this,g,ctx,t);GHOST.draw(this,g,ctx,t);EXTRAS.draw(this,g,ctx,t);
+    if(g.kch>KCH_MIN){const k=(g.kch-KCH_MIN)/(KCH_MAX-KCH_MIN),kw=g.weapons.get('kame'),c=kw?kw.color:'#59c8ff';GLOW.at(ctx,p.x+p.face*10,p.y-20,16+30*k,c,.5+.4*k);GLOW.at(ctx,p.x+p.face*10,p.y-20,8+10*k,'#ffffff',.8);
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(p.x-20,p.y+8,40,4);ctx.fillStyle=k>=1?'#ffffff':c;ctx.fillRect(p.x-20,p.y+8,40*k,4);}   /* v117: charging the Kamehameha */ctx.setTransform(1,0,0,1,0,0);   /* v116: guard bars */
+    {const W=EXTRAS.wx(g);if(W&&W.k==='sand'){const a=.4*clamp((W.I-WX_MIN)/(1-WX_MIN),0,1)+.15,gr=ctx.createRadialGradient(this.W/2,this.H/2,Math.min(this.W,this.H)*.22,this.W/2,this.H/2,Math.max(this.W,this.H)*.6);
+      gr.addColorStop(0,'rgba(200,160,90,0)');gr.addColorStop(1,'rgba(170,120,60,'+a.toFixed(3)+')');ctx.fillStyle=gr;ctx.fillRect(0,0,this.W,this.H);}}   /* v117: a sandstorm closes the view */
+    if(g.bcine)MOMENTS.cineHud(this,g);
+    BOSSX.hud(this,g);
+    if(g.clash){ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);CLASH.draw(this,g,ctx,t);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;CLASH.hud(this,g);}   /* v116 */
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.summon){   /* v113: Shenron / Porunga (summon.js), then the hero again on top, lit by the dragon's light */
       SUMMON.draw(this,g,(p.x-cx)*this.Z,(p.y-40-cy)*this.Z);
@@ -541,9 +563,11 @@ this.W=1;this.H=1;this.Z=1;
     this.fxEnd();
     const bob=p.mv&&!sp.px?-Math.abs(Math.sin(t*9))*1.2:0;   /* pack sprites bob inside their own walk frames */
     const Z=pz?Pose.build(g,pz,u,fd,Sprites.pose(fm).bob,bob):null,blink=!g.dying&&p.inv>0&&p.inv<.45,whiteArm=flash&&!xf;
-    if(Z){ctx.save();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.B,g.pc,u,false,whiteArm);ctx.restore();}   /* the far arm goes behind the body */
+    const LF=g.dying?null:this.life(g,t),lft=()=>{if(LF){ctx.translate(p.x,p.y+bob-(LF.oy||0));ctx.transform(1,0,LF.sk,1,0,0);ctx.scale(LF.sx,LF.sy);ctx.translate(-p.x,-(p.y+bob));}};   /* v116: the alive layer moves the painted arms with the body */
+    if(Z){ctx.save();lft();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.B,g.pc,u,false,whiteArm);ctx.restore();}   /* the far arm goes behind the body */
     ctx.save();ctx.translate(p.x,p.y+bob);
     if(g.dying){const dd=g.dying.t,kd=Math.min(1,dd/.6);ctx.rotate(-p.face*(Math.PI/2)*(1-Math.pow(1-kd,3)));ctx.globalAlpha=1-.55*Math.min(1,Math.max(0,(dd-.5)/1.4));}
+    if(LF){if(LF.oy)ctx.translate(0,-LF.oy);ctx.transform(1,0,LF.sk,1,0,0);ctx.scale(LF.sx,LF.sy);}   /* v116: breathing, steps, sway, recoil, dash stretch */
     ctx.scale(fd*k,k);
     if(!g.dying&&p.inv>0&&p.inv<.45)ctx.globalAlpha=.55;
     ctx.imageSmoothingEnabled=!sp.px;
@@ -576,7 +600,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.globalAlpha=.35*kk;ctx.strokeStyle=c.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(hx,hy,16+30*(1-kk),0,TAU);ctx.stroke();
       ctx.restore();this.fxEnd();
     }
-    if(Z){ctx.save();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.A,g.pc,u,true,whiteArm);ctx.restore();}   /* the near arm in front */
+    if(Z){ctx.save();lft();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.A,g.pc,u,true,whiteArm);ctx.restore();}   /* the near arm in front */
   }
   /* Kaioken: a constant, living red aura (as in the anime) - glow, wavering flame tongues in two layers, a pulsing outline halo, rising sparks and ground rings.
      Drawn with the player, i.e. above every ability effect, so it never fades into the background. */
@@ -677,7 +701,7 @@ this.W=1;this.H=1;this.Z=1;
   /* Janemba's beam: thin warning line while charging, then a thick crimson beam */
   drawBeams(g,t){
     const ctx=this.ctx;
-    for(const b of g.jbeams||[]){
+    for(const b of g.jbeams||[]){if(g.clash&&g.clash.b===b)continue;   /* v116: the clash draws this one itself */
       const fire=b.t>=b.charge,k=fire?(b.t-b.charge)/b.fire:b.t/b.charge;
       ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);
       if(b.cp){   /* the Master copies your beam: the same Kamehameha art in the colour of your weapon */
@@ -1034,7 +1058,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     ctx.save();ctx.translate(l.x,l.y-6-lift);ctx.scale(pop*(2-sq),pop*(pk<1?1-Math.sin(pk*Math.PI)*.12:sq));
     switch(k){
-      case'coin':ctx.scale(Math.max(.18,Math.abs(Math.cos(T0*4+ph))),1);break;                 /* spinning coin */
+      case'coin':if(!l.flat)ctx.scale(Math.max(.18,Math.abs(Math.cos(T0*4+ph))),1);break;                 /* spinning coin (flat: the pause map shows it face on) */
       case'heal':{const s2=1+.1*Math.sin(T0*6+ph);ctx.scale(s2,s2);break;}                       /* heartbeat */
       case'magnet':ctx.rotate(Math.sin(T0*3+ph)*.28);break;
       case'dmg':case'haste':{const s2=1+.09*Math.sin(T0*9+ph);ctx.scale(s2,s2);break;}
@@ -1212,6 +1236,28 @@ this.W=1;this.H=1;this.Z=1;
     if(q.give>0)return 21;
     if(mv)return 6+((t*12)|0)%6;
     const D=[.45,.3,.18,.18,.18,.45];let u=q.t%1.74;for(let i=0;i<6;i++){if(u<D[i])return i;u-=D[i];}return 0;
+  }
+  /* v116: the "alive" layer on top of the character frames, for every character (sprites stay as they are, only the way they are drawn moves):
+     idle breathing, a squash-and-stretch on every step, the upper body leaning into the run on a spring (it overshoots when you stop, like hair and clothes),
+     a recoil squash when hit and a stretch while dashing. Scales are around the feet. */
+  life(g,t){
+    const p=g.p,A=g.pla||(g.pla={sk:0,v:0}),dt=Math.min(.05,this.fdt||.016),mv=p.mv&&!g.cast&&!g.xform;
+    if(A.fr!==this._fr){A.fr=this._fr;const tx=mv?-(p.ivx||0)*LIFE_LEAN:0;A.v+=((tx-A.sk)*LIFE_K-A.v*LIFE_D)*dt;A.sk=clamp(A.sk+A.v*dt,-.3,.3);}   /* once per frame (the hero can be drawn twice) */
+    let sx=1,sy=1;
+    if(mv){const s=Math.abs(Math.sin(t*Math.PI*5));sy=1+LIFE_STEP*s;sx=1-LIFE_STEP*.7*s;}
+    else{const b=Math.sin(t*2.6);sy=1+LIFE_BREATH*b;sx=1-LIFE_BREATH*.5*b;}
+    if(p.hurtAt!=null){const q=clamp(1-(g.t-p.hurtAt)/.2,0,1);sx*=1+.14*q;sy*=1-.12*q;}
+    if(g.dashT>0){sx*=1.16;sy*=.9;}
+    const vp=EXTRAS.pose(g,t);if(vp){sx*=vp.sx;sy*=vp.sy;return{sk:0,sx,sy,oy:vp.oy};}   /* v117: victory pose */
+    return{sk:A.sk,sx,sy};
+  }
+  /* v116: the ally who dropped in (its base sprite, the attack frame while it strikes, a glow in its weapon's colour) */
+  drawAlly(a,t,g){
+    const ctx=this.ctx,C=a.C,key=C.id+':0',fr=a.atk>0?5:a.mv?Sprites.walkFrame(key,t):0,sp=Sprites.player(key,C.cfg,fr,false,null),k=(C.u||1.95)/(sp.s||Sprites.S),col=WEAPONS[a.wid].c;
+    const fade=a.t<1?clamp(a.t,0,1):1;GLOW.at(ctx,a.x,a.y-24,40,col,.35*fade);
+    ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(a.x,a.y+1,13,4.5,0,0,TAU);ctx.fill();
+    ctx.save();ctx.globalAlpha=fade;ctx.translate(a.x,a.y);ctx.scale(a.fl*k,k);ctx.imageSmoothingEnabled=!sp.px;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;
+    ctx.save();ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillStyle=col;ctx.strokeStyle='#000';ctx.lineWidth=3;const s=Math.ceil(a.t)+'s';ctx.strokeText(s,a.x,a.y-64);ctx.fillText(s,a.x,a.y-64);ctx.restore();
   }
   drawPet(q,t,g){
     const ctx=this.ctx,d=q.d,sd=d.sp,mv=Math.abs(q.x-(q.px===undefined?q.x:q.px))>.2;
@@ -1477,6 +1523,7 @@ this.W=1;this.H=1;this.Z=1;
       this.zones.push({x:ix,y:wy,w:sz,h:sz,k:'weapon',id:w.id});
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy,sz,sz);
       ctx.strokeStyle=w.evo?'#ffd23f':'rgba(255,255,255,.25)';ctx.lineWidth=(w.evo?2.5:1.5)*U;ctx.strokeRect(ix,wy,sz,sz);
+      {const wt=PROGX.wkTier(PROGX.wkAll(g,w.id));if(wt){ctx.strokeStyle=wt.c;ctx.lineWidth=1.5*U;ctx.strokeRect(ix-2.5*U,wy-2.5*U,sz+5*U,sz+5*U);}}   /* v116: weapon diary border */
       txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       {const pw=(sz-6*U)/WMAX;for(let i=0;i<WMAX;i++){ctx.fillStyle=i<w.lv?(w.evo?'#ffd23f':'#fff'):'rgba(255,255,255,.2)';ctx.fillRect(ix+3*U+i*pw,wy+sz-5*U,pw-1.5*U,3.2*U);}}
       if(w.evo)txt(w.evo>=2?'★★':'★',ix+sz-9*U,wy+12*U,'#ffd23f','center',F(13));
@@ -1634,12 +1681,17 @@ this.W=1;this.H=1;this.Z=1;
       ctx.save();ctx.translate(W-m,by+20*U);ctx.scale(pop,pop);txt('x'+sc,0,0,col,'right',F(22,900));ctx.restore();
       ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(W-m-bw,by+25*U,bw,3*U);ctx.fillStyle=col;ctx.fillRect(W-m-bw,by+25*U,bw*clamp(g.streakT/(g.streakW||STREAK_WIN),0,1),3*U);
       by+=36*U;
+      {const ct=comboTier(sc),nx=COMBO.find(c=>c.n>sc),lo=ct?ct.n:0;   /* v116: combo multiplier + the way to the next tier */
+        txt((ct?'COMBO ×'+ct.m:'COMBO')+(nx?'  → '+nx.n:''),W-m,by,ct?ct.c:'#cfd8ff','right',F(11,800));
+        if(nx){ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(W-m-bw,by+4*U,bw,2.5*U);ctx.fillStyle=nx.c;ctx.fillRect(W-m-bw,by+4*U,bw*clamp((sc-lo)/(nx.n-lo),0,1),2.5*U);}
+        by+=14*U;}
     }
     if(g.buffs.dmg>0){txt(tt('buffDmg')+' '+Math.ceil(g.buffs.dmg)+'s',W-m,by,'#ff7b4a','right',F(12));by+=16*U;}
     if(g.buffs.haste>0){txt(tt('buffHaste')+' '+Math.ceil(g.buffs.haste)+'s',W-m,by,'#ffe24d','right',F(12));by+=16*U;}
     if(g.riskT>0){txt(tt('buffRisk')+' '+Math.ceil(g.riskT)+'s',W-m,by,'#ff7a3a','right',F(12));by+=16*U;}
     if(g.totemTag){const d=g.totemFx.storm?Math.ceil(Math.max(0,g.stormT)):g.totemFx.spirit?Math.ceil(Math.max(0,g.pulseT)):g.wealthT>0?Math.ceil(g.wealthT):0;txt(this.tr(g.totemTag)+(g.totemLuck>0?' x'+g.totemLuck:'')+(d?' '+d+'s':''),W-m,by,'#8be07a','right',F(12));by+=16*U;}
     if(g.inHeal){txt(tt('inHeal'),W-m,by,'#8be07a','right',F(12));by+=16*U;}
+    {const wt=EXTRAS.wxTag(g);if(wt){txt(tr(wt),W-m,by,'#cfeaff','right',F(12));by+=16*U;}}   /* v117 */
     if(g.bers>0){txt('BERSERK '+Math.ceil(g.bers)+'s  ·  +80% DMG  +5 ARM',W-m,by,'#8aff3a','right',F(14,900));by+=17*U;}
     else if(g.berAvail){txt(g.bersCd>0?'Berserk '+Math.ceil(g.bersCd)+'s':'['+(this.keyHints.kaioken||'R')+'] Berserk',W-m,by,g.bersCd>0?'#8a9a8a':'#b8ff8a','right',F(11));by+=15*U;}
     if(g.kai>0){txt('KAIOKEN x'+(g.kai===1?10:20)+'  -'+(Math.round(g.kaiDrain*10)/10)+' HP/s  ['+(this.keyHints.kaioken||'R')+']',W-m,by,'#ff3b2f','right',F(13,900));by+=17*U;}
@@ -1730,6 +1782,7 @@ this.W=1;this.H=1;this.Z=1;
         if(!it.sold)txt((it.price>0?'Z '+it.price:tr2('GRATIS','FREE'))+(it.disc?'  ·  −30%':'')+(aff?'':'  ·  '+tr2('monete insufficienti','not enough coins')),px+14*U,py+ph-10*U,it.free?'#ffe14a':aff?'#ffe08a':'#ff9a9a','left',F(14));
       }
     }
+    MAPX.hud(this,g);   /* v116: the Supreme Kai's mission */
     if(g.trial&&g.trial.phase==='train'){
       const tr=g.trial,rem=Math.max(0,Math.ceil(tr.dur-tr.t)),bw=Math.min(360*U,W*.5);
       txt(tt('trialTrain')+' '+rem+'s',W/2,H*.18,'#5a64c8','center',F(26,400).replace('"Rajdhani"','"Bangers"'));

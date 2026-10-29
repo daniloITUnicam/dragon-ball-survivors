@@ -20,7 +20,7 @@ const Online={
   row(g,res){
     if(!g||!res||res.sandbox||g.sandbox||g.endless)return null;
     let dmg=0;for(const k in g.dmgBy)dmg+=g.dmgBy[k]||0;
-    return{stage:g.stageIdx,diff:g.diffId,ch:g.C.id,x2:!!g.x2,win:!!res.win,t:Math.round(g.t*10)/10,kills:g.kills|0,dmg:Math.round(dmg),lvl:Math.max(1,g.lvl|0),pacts:(g.pacts||[]).length,week:g.week||null,build:this.build(g)};
+    return{stage:g.stageIdx,diff:g.diffId,ch:g.C.id,x2:!!g.x2,win:!!res.win,t:Math.round(g.t*10)/10,kills:g.kills|0,dmg:Math.round(dmg),lvl:Math.max(1,g.lvl|0),pacts:(g.pacts||[]).length,week:g.week||null,build:this.build(g),ev:COMMUNITY.runEv(g)};
   },
   fmt(metric,r){return metric==='kills'?String(r.kills):metric==='dmg'?this.big(r.dmg):fmtT(r.t);},
   big(n){n=+n||0;return n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':String(Math.round(n));},
@@ -65,7 +65,7 @@ Object.assign(Cloud.prototype,{
   async loadNick(){if(!this.enabled||!this.uid)return '';try{const t=await this.token(),j=await this.req('/rest/v1/profiles?select=nick&user_id=eq.'+encodeURIComponent(this.uid),{token:t});this.nick=j&&j[0]?j[0].nick:'';}catch(e){}this.notify({type:'nick'});return this.nick||'';},
   /* returns '' when saved, otherwise an error key: bad | taken | net */
   async setNick(n){n=String(n||'').trim();if(!NICK_RE.test(n))return 'bad';if(!this.uid)return 'net';
-    try{const t=await this.token();await this.req('/rest/v1/profiles?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{user_id:this.uid,nick:n,updated_at:new Date().toISOString()}]});this.nick=n;this.notify({type:'nick'});return '';}
+    try{const t=await this.token();await this.req('/rest/v1/profiles?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{user_id:this.uid,nick:n,updated_at:new Date().toISOString()}]});this.nick=n;this.notify({type:'nick'});if(this.sd.d.title&&this.setTitle)this.setTitle(this.sd.d.title).catch(()=>{});return '';}
     catch(e){return e.status===409||e.code==='23505'?'taken':e.net?'net':'bad';}},
   async submitScore(row){if(!row||!this.enabled||!this.uid||!this.nick)return false;const t=await this.token();
     await this.req('/rest/v1/scores',{method:'POST',token:t,headers:{Prefer:'return=minimal'},body:[Object.assign({user_id:this.uid},row)]});return true;},
@@ -74,3 +74,47 @@ Object.assign(Cloud.prototype,{
 });
 {const aa=Cloud.prototype.afterAuth;Cloud.prototype.afterAuth=function(){aa.call(this);this.loadNick();};}
 {const st=Cloud.prototype.start;Cloud.prototype.start=async function(){await st.call(this);if(this.sess)this.loadNick();};}
+/* ====== v116: community events (3 per week, totals of everybody's runs; a reached goal = a Lucky Ticket 10× for everybody), the weekly ghost, "overtaken" notices ====== */
+const COMM_POOL=[
+  {id:'k',key:'k',goal:500000,kind:0,n:g=>T6(`Sconfiggete insieme ${g.toLocaleString()} nemici`,`Defeat ${g.toLocaleString()} enemies together`,`Derrotad juntos a ${g.toLocaleString()} enemigos`,`Battez ensemble ${g.toLocaleString()} ennemis`,`Besiegt zusammen ${g.toLocaleString()} Gegner`,`Derrotem juntos ${g.toLocaleString()} inimigos`)},
+  {id:'b',key:'b',goal:2000,kind:0,n:g=>T6(`Sconfiggete insieme ${g.toLocaleString()} boss`,`Defeat ${g.toLocaleString()} bosses together`,`Derrotad juntos a ${g.toLocaleString()} jefes`,`Battez ensemble ${g.toLocaleString()} boss`,`Besiegt zusammen ${g.toLocaleString()} Bosse`,`Derrotem juntos ${g.toLocaleString()} chefes`)},
+  {id:'sai',key:'e:sai',goal:100000,kind:1,n:g=>T6(`${g.toLocaleString()} Saibaman sconfitti`,`${g.toLocaleString()} Saibamen defeated`,`${g.toLocaleString()} Saibaman derrotados`,`${g.toLocaleString()} Saibaman vaincus`,`${g.toLocaleString()} Saibaman besiegt`,`${g.toLocaleString()} Saibaman derrotados`)},
+  {id:'freezer',key:'b:freezer',goal:300,kind:1,boss:1},{id:'cell',key:'b:cell',goal:300,kind:1,boss:1},{id:'bu',key:'b:bu',goal:300,kind:1,boss:1},{id:'jiren',key:'b:jiren',goal:150,kind:1,boss:1},
+  {id:'beerus',key:'b:beerus',goal:150,kind:1,boss:1},{id:'broly',key:'b:broly',goal:100,kind:1,boss:1},{id:'kingpiccolo',key:'b:kingpiccolo',goal:300,kind:1,boss:1},
+  {id:'w',key:'w',goal:300,kind:2,n:g=>T6(`${g} desideri esauditi`,`${g} wishes granted`,`${g} deseos concedidos`,`${g} vœux exaucés`,`${g} erfüllte Wünsche`,`${g} desejos realizados`)},
+  {id:'ev',key:'ev',goal:5000,kind:2,n:g=>T6(`${g.toLocaleString()} armi evolute`,`${g.toLocaleString()} weapons evolved`,`${g.toLocaleString()} armas evolucionadas`,`${g.toLocaleString()} armes évoluées`,`${g.toLocaleString()} entwickelte Waffen`,`${g.toLocaleString()} armas evoluídas`)},
+  {id:'kc',key:'kc',goal:500,kind:2,n:g=>T6(`${g} Ki Clash vinti`,`${g} Ki Clashes won`,`${g} Choques de Ki ganados`,`${g} Chocs de Ki gagnés`,`${g} gewonnene Ki-Clashes`,`${g} Choques de Ki vencidos`)}
+];
+const COMMUNITY={
+  name(ev){if(ev.n)return ev.n(ev.goal);const b=BOSSES[ev.key.slice(2)],nm=b?b.n:{it:ev.id,en:ev.id};
+    return T6(`Sconfiggete insieme ${nm.it||nm.en} ${ev.goal} volte`,`Defeat ${nm.en||nm.it} ${ev.goal} times together`,`Derrotad juntos a ${nm.en||nm.it} ${ev.goal} veces`,`Battez ensemble ${nm.en||nm.it} ${ev.goal} fois`,`Besiegt zusammen ${nm.en||nm.it} ${ev.goal}-mal`,`Derrotem juntos ${nm.en||nm.it} ${ev.goal} vezes`);},
+  /* the week's 3 events, one per kind, the same for everybody */
+  events(week){week=week||Online.weekId();const r=Online.rng(Online.hash('dbs-comm-'+week)),out=[];for(const k of[0,1,2]){const L=COMM_POOL.filter(e=>e.kind===k);out.push(L[Math.floor(r()*L.length)]);}return out;},
+  range(){const end=Date.now()+Online.weekLeft();return[new Date(end-7*864e5).toISOString(),new Date(end).toISOString()];},
+  /* the counters a run sends (only the keys of this week's events) */
+  runEv(g){const keys=new Set(this.events().map(e=>e.key)),o={},put=(k,v)=>{if(keys.has(k)&&v>0)o[k]=Math.round(v);};
+    put('k',g.kills);put('b',g.run.bossKills);put('w',g.run.wishes);put('ev',g.run.evos);put('kc',g.run.clashes||0);for(const k in g.cev||{})put(k,g.cev[k]);return o;},
+  onKill(g,e){const k=e.boss?'b:'+(e.bid||''):'e:'+(e.def&&e.def.id||'');if(!g.cKeys)g.cKeys=new Set(this.events().map(x=>x.key));if(g.cKeys.has(k)){const C=g.cev||(g.cev={});C[k]=(C[k]||0)+1;}},
+  /* claim: once per event per week, when the community total reached the goal */
+  claimKey(ev){return Online.weekId()+':'+ev.id;},
+  claim(app,ev){const d=app.save.d,c=d.comm||(d.comm={});const k=this.claimKey(ev);if(c[k])return false;c[k]=1;d.tickets.l10=(d.tickets.l10||0)+1;app.save.write();return true;}
+};
+/* the ghost of the weekly leader: one point per second */
+const GHOST={
+  rec(g,dt){if(!g.week)return;const T=g.gtrail||(g.gtrail={t:0,p:[]});T.t-=dt;if(T.t<=0&&T.p.length<7200){T.t=1;T.p.push(Math.round(g.p.x),Math.round(g.p.y));}},
+  at(gh,t){const P=gh.path,n=P.length/2;if(n<1)return null;const i=Math.min(n-1,Math.floor(t)),j=Math.min(n-1,i+1),f=clamp(t-i,0,1);return{x:P[i*2]+(P[j*2]-P[i*2])*f,y:P[i*2+1]+(P[j*2+1]-P[i*2+1])*f,dx:P[j*2]-P[i*2]};},
+  draw(R,g,ctx,t){const gh=g.ghost;if(!gh||!gh.path||g.trial||g.tun)return;const q=this.at(gh,g.t);if(!q)return;const C=CHARS.find(c=>c.id===gh.ch)||g.C,key=C.id+':0';
+    const sp=Sprites.player(key,C.cfg,Math.abs(q.dx)>2?Sprites.walkFrame(key,t):0,false,null),k=(C.u||1.95)/(sp.s||Sprites.S);
+    ctx.save();ctx.globalAlpha=.35;ctx.translate(q.x,q.y);ctx.scale((q.dx<0?-1:1)*k,k);ctx.imageSmoothingEnabled=!sp.px;ctx.drawImage(Sprites.flashOf?Sprites.player(key,C.cfg,0,true,null).c:sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;
+    ctx.save();ctx.globalAlpha=.75;ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillStyle='#cfeaff';ctx.strokeStyle='#000';ctx.lineWidth=3;const s='👻 '+gh.nick;ctx.strokeText(s,q.x,q.y-60);ctx.fillText(s,q.x,q.y-60);ctx.restore();}
+};
+Object.assign(Cloud.prototype,{
+  async community(){if(!this.enabled)throw new Error('offline');const[f,t]=COMMUNITY.range();const rows=await this.req('/rest/v1/rpc/community',{method:'POST',body:{p_from:f,p_to:t}})||[];const o={};for(const r of rows)o[r.k]=+r.v||0;return o;},
+  async ghostSubmit(week,score,ch,path){if(!this.uid||!this.nick||!path||path.length<4)return false;const t=await this.token();await this.req('/rest/v1/rpc/ghost_submit',{method:'POST',token:t,body:{p_week:week,p_score:score,p_ch:ch,p_path:path}});return true;},
+  async weeklyGhost(week){if(!this.enabled)return null;let t=null;if(this.uid)try{t=await this.token();}catch(e){}const j=await this.req('/rest/v1/rpc/weekly_ghost',{method:'POST',token:t||undefined,body:{p_week:week}});return j&&j[0]||null;},
+  /* "X overtook you": checked once per session after sign-in; the first check only sets the starting point */
+  async checkOvertaken(){if(!this.enabled||!this.uid||!this.nick||this._ovt)return[];this._ovt=1;const K='dbs-ovt-'+this.uid;let since=null;try{since=localStorage.getItem(K);}catch(e){}
+    const now=new Date().toISOString();try{localStorage.setItem(K,now);}catch(e){}if(!since)return[];
+    try{const t=await this.token(),j=await this.req('/rest/v1/rpc/overtaken',{method:'POST',token:t,body:{p_since:since}})||[];if(j.length)this.notify({type:'overtaken',list:j});return j;}catch(e){return[];}}
+});
+{const ln=Cloud.prototype.loadNick;Cloud.prototype.loadNick=async function(){const n=await ln.call(this);if(n)this.checkOvertaken();return n;};}

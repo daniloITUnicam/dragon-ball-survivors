@@ -12,9 +12,9 @@ class SaveData{
       zenny:0,unlocked:['goku','vegeta','piccolo','krillin'],clears:new Array(11).fill(0),x2:new Array(11).fill(0),xc:new Array(11).fill(0),
       updated:0,cloud:{uid:''},patchSeen:'',
       tickets:{t1:0,t10:0,l10:0},bag:[],equip:null,equips:[null,null,null],banned:[],sball:[],gacha:{pulls:0,mythics:0,legend:0},
-      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},hints:{},pacts:[],mastery:{},
+      dq:null,diff:'normal',pet:'dende',lastChar:'goku',lastStage:5,best:{},ach:{},shop:{},shopOff:{},testBuys:{},trin:{},wu:{ki:1},we:{},wc:{},evoRule:2,seen:{},maxForm:{},hints:{},pacts:[],mastery:{},wk:{},comm:{},album:{},bk:{},sk:{},title:'',
       stats:{kills:0,bosses:0,runs:0,zenny:0,chests:0,balls:0,wishes:0,shopBuys:0,shopMax:0,perfect:0,hardClears:0,x2Clears:0,extremeClears:0,zeno:0,zbuys:0,rec:{},maxLevel:0,maxTime:0},
-      settings:{lang,hints:true,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
+      settings:{lang,hints:true,hitstop:true,master:.8,music:.6,sfx:.8,res:'native',scale:1,shake:true,dmgNum:true,fps:false,reduceFx:false,fxAlpha:100,ambient:true,weather:true,dayNight:true,dnDay:60,dnLen:'300',streamer:false,sandbox:false,fullscreen:false,trinRefuse:false,tkAuto:false,objF:{hide:false,near:false,q:''},achF:{hide:false,near:false,q:'',sec:'all'},tele:true,pauseTab:'map',lvAuto:false,lvPrio:[],weapons:5,tgt:0,zAuto:false},
       binds:{
         kb:{up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],confirm:['Enter','Space'],cancel:['Escape','Backspace'],pause:['Escape','KeyP'],interact:['KeyE','KeyF'],pet:['KeyQ'],kaioken:['KeyR','KeyX'],senzu:['KeyH'],dash:['ShiftLeft','ShiftRight'],target:['Tab'],debug:['F2','Backquote']},
         pad:{up:[12],down:[13],left:[14],right:[15],confirm:[0],cancel:[1],pause:[9],interact:[0],pet:[2],kaioken:[3],senzu:[4],dash:[5],target:[10],debug:[8]}
@@ -78,7 +78,7 @@ class Progress{
   }
   statsView(g){
     const s=this.d.stats,b=g?g.bank:null,r=g?g.run:null,bk=k=>(b&&b[k])||0,rk=k=>(r&&r[k])||0;
-    const run=g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,ui:g.C.id==='goku'?g.formsUnlocked:0,evos:r.evos,trinkets:r.tpicks||0,legendary:r.legendary,bosses:r.bossKills,coins:r.coins,mythic:rk('mythic'),k20:rk('k20'),streak:rk('streak')}
+    const run=g?{kills:g.kills,t:g.t,lvl:g.lvl,form:g.formsUnlocked,ui:g.C.id==='goku'?g.formsUnlocked:0,evos:r.evos,trinkets:r.tpicks||0,legendary:r.legendary,bosses:r.bossKills,coins:r.coins,mythic:rk('mythic'),k20:rk('k20'),streak:rk('streak'),lastStand:rk('lastStand'),clashes:rk('clashes')}
            :{kills:0,t:0,lvl:0,form:0,ui:0,evos:0,trinkets:0,legendary:0,bosses:0,coins:0,mythic:0,k20:0,streak:0};
     /* personal records (all-time best of a single run), used for the progress bars of the "in one run" achievements */
     const sr=s.rec||{},mx=o=>Math.max(0,...Object.values(o||{}).map(v=>+(v&&v.kills!==undefined?v.kills:v)||0));
@@ -178,7 +178,8 @@ class Progress{
       const a=d.wc[id]||(d.wc[id]=[]);if(!a.includes(idx))a.push(idx);
       if(!d.we[id]&&STAGES.every((_,i)=>a.includes(i))){d.we[id]=1;this.notify({type:'weapon',id,evo2:true});}
     }
-    const mast=Mastery.gain(d,g,win,b);   /* v115: character mastery */
+    const mast=Mastery.gain(d,g,win,b);PROGX.commit(d,g);
+    {const B=d.bk||(d.bk={});for(const k in g.bkills||{})B[k]=(B[k]||0)+g.bkills[k];g.bkills={};const S=d.sk||(d.sk={});S[idx]=(S[idx]||0)+Math.max(0,g.kills-(b.kills||0));}   /* v117: career stats */   /* v115: character mastery */
     const unlocked=this.checkUnlocks(this.runCtx(g,win));
     const ach=this.checkAch(g);
     this.save.write();

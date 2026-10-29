@@ -108,7 +108,7 @@ const st=await pg.evaluate(()=>{const A=__app,d=A.save.d,out={};d.sball=[];
   g.en=[];g.p.x=l.x-200;g.p.y=l.y;g.update(1/30);out.guard=g.en.filter(e=>e.tama).length;out.near=!!l.lock;
   g.p.x=l.x;g.p.y=l.y;g.update(1/30);out.lockedStill=!l.dead;
   const tb=g.en.find(e=>e.tama);if(tb){tb.hp=1;g.damageEnemy(tb,99999,0,0,false);}
-  g.p.x=l.x;g.p.y=l.y;g.update(1/30);g.update(1/30);out.saved=d.sball.slice();out.gone=!!l.dead;out.ownedHud=[...g.ballOwned()];
+  g.p.x=l.x;g.p.y=l.y;for(let i=0;i<8;i++)g.update(1/30);out.saved=d.sball.slice();out.gone=!!l.dead;out.ownedHud=[...g.ballOwned()];
   g=trySt(norm);g.ballAt=0;g.t=g.ballEvery+10;g.updateBallPlan();out.ballNormal=g.loot.some(l=>l.k==='ball');out.supNormal=!!g.supPlan;
   return out;});
 ok(st.planLow&&!st.planHigh&&st.chance>=.4&&st.chance<=.7,'a Super Ball is planned only by chance ('+Math.round(st.chance*100)+'% of the runs in those stages)');

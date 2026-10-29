@@ -969,6 +969,8 @@ const ACHIEVEMENTS=[
  A('runs50','Veterano','Veteran','Gioca 50 partite.','Play 50 runs.',600,s=>s.runs>=50,PG(s=>s.runs,50)),
  A('ros10','Squadra al completo','Full Squad','Sblocca 10 personaggi.','Unlock 10 characters.',300,s=>s.unlocked>=10,PG(s=>s.unlocked,10)),
  A('ros20','Esercito di guerrieri','Army of Warriors','Sblocca 20 personaggi.','Unlock 20 characters.',800,s=>s.unlocked>=20,PG(s=>s.unlocked,20)),
+ A('lstand','Ultimo respiro','Last Stand','Sopravvivi a un Ultimo respiro (sotto il 10% di vita).','Survive a Last Stand (under 10% health).',300,s=>(s.run.lastStand||0)>=1,PG(s=>s.run.lastStand,1)),
+ A('kclash','Scontro di Ki','Ki Clash','Vinci un Ki Clash contro un boss.','Win a Ki Clash against a boss.',250,s=>(s.run.clashes||0)>=1,PG(s=>s.run.clashes,1)),
  A('roster','Tutti in campo','Full Roster','Sblocca tutti i personaggi.','Unlock all characters.',1500,s=>s.unlocked>=CHARS.length,PG(s=>s.unlocked,CHARS.length))
 ];
 /* one achievement per stage (the index is the STAGES index, not the display order) */

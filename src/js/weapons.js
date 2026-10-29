@@ -198,7 +198,9 @@ class KameWeapon extends Weapon{
     const dur=this.fireDur;
     g.fireT=Math.max(g.fireT||0,dur);   /* arm extended while the beam is out */
     g.armAct('kamef',a,{w:0,h:dur,r:.22,col:this.color});
-    for(const ang of angs)this.beams.push({a:ang,t:0,dur,ext:0,tk:0,dmg:s.dmg[L]*this.dm,wid:s.wid[L]*A*WM,len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
+    const B=EXTRAS.takeBoost(g),bd=dur*(1+.2*B);   /* v117: a charged beam (held ability key) */
+    if(B>0){g.fireT=Math.max(g.fireT,bd);g.shake=Math.max(g.shake,.3+.5*B);g.flash=.25*B;g.flashC=this.color;if(B>.6)g.hitStop(.05,.04);}
+    for(const ang of angs)this.beams.push({a:ang,t:0,dur:bd,ext:0,tk:0,dmg:s.dmg[L]*this.dm*(1+1.5*B),wid:s.wid[L]*A*WM*(1+.8*B),len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
   }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;

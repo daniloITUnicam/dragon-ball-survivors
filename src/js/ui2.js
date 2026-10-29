@@ -64,6 +64,7 @@ Object.assign(UI.prototype,{
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
         toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
         toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
+        toggle(this.tr(T6('Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop')),'hitstop',this.tr(T6('Un attimo di pausa e uno zoom sui colpi grossi (evoluzioni, boss, critici enormi, combo).','A split-second freeze and a zoom on big hits (evolutions, bosses, huge crits, combos).','Una pausa breve y un zoom en los golpes grandes (evoluciones, jefes, críticos enormes, combos).','Une micro-pause et un zoom sur les gros coups (évolutions, boss, critiques énormes, combos).','Ein kurzer Stopp und ein Zoom bei großen Treffern (Entwicklungen, Bosse, riesige Krits, Combos).','Uma pausa rápida e um zoom nos golpes grandes (evoluções, chefes, críticos enormes, combos).'))),
         toggle(this.tr(T6('Suggerimenti','Hints','Consejos','Astuces','Tipps','Dicas')),'hints',this.tr(T6('Brevi consigli la prima volta che incontri qualcosa di nuovo.','Short tips the first time you meet something new.','Consejos breves la primera vez que encuentras algo nuevo.','De courts conseils la première fois que tu rencontres quelque chose de nouveau.','Kurze Tipps, wenn dir zum ersten Mal etwas Neues begegnet.','Dicas curtas na primeira vez que você encontra algo novo.'))),
         row(this.tr(T6('Rivedi i suggerimenti','Show hints again','Volver a ver los consejos','Revoir les astuces','Tipps erneut zeigen','Rever as dicas')),h('button',{class:'btn small alt','data-fid':'hintsReset',onclick:()=>{Hints.reset(this.save);this.save.settings.hints=true;this.app.save.write();this.sfx();this.toast({type:'info',msg:this.tr(T6('I suggerimenti torneranno nella prossima partita.','Hints will show again next run.','Los consejos volverán en la próxima partida.','Les astuces reviendront à la prochaine partie.','Die Tipps erscheinen in der nächsten Runde wieder.','As dicas voltarão na próxima partida.'))});this.rebuild(true);}},this.tr(T6('Ripristina','Reset','Restablecer','Réinitialiser','Zurücksetzen','Redefinir')))),
         select(this.tr(T('Scheda iniziale della pausa','Pause menu opens on')),'pauseTab',[['map',this.t('mapTab')],['run',this.t('runTab')],['last',this.tr(T('Ultima usata','Last used'))]]),
@@ -452,9 +453,9 @@ Object.assign(UI.prototype,{
     let rows,tot;
     if(tab==='dealt'){
       const dm=res.dmg||{},ids=Object.keys(dm).filter(k=>dm[k]>0).sort((a,b)=>dm[b]-dm[a]),top=dm[ids[0]]||1,ws=res.ws||{};tot=ids.reduce((s,k)=>s+dm[k],0);
-      const nm=k=>k==='other'?this.t('dmgOther'):k==='trap'?this.t('dmgTrap'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='other'?'#9aa4b8':k==='trap'?'#ff7a3a':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
+      const nm=k=>k==='ally'?this.tr(T6('Alleato','Ally','Aliado','Allié','Verbündeter','Aliado')):k==='other'?this.t('dmgOther'):k==='trap'?this.t('dmgTrap'):(WEAPONS[k]?this.tr(WEAPONS[k].n):k),cl=k=>k==='ally'?'#8be07a':k==='other'?'#9aa4b8':k==='trap'?'#ff7a3a':(WEAPONS[k]&&WEAPONS[k].c)||'#ffb13b';
       rows=ids.slice(0,10).map(k=>{const w=ws[k],lv=w?(w.evo?'★'+(w.evo>1?'★':''):'Lv'+w.lv)+(w.xl?' Lv'+(w.lv+w.xl):''):'';
-        return bar(cl(k),dm[k],top,tot||1,k==='other'?'気':k==='trap'?'罠':(WEAPONS[k]?WEAPONS[k].k:'?'),nm(k),lv);});
+        return bar(cl(k),dm[k],top,tot||1,k==='ally'?'友':k==='other'?'気':k==='trap'?'罠':(WEAPONS[k]?WEAPONS[k].k:'?'),nm(k),lv);});
     }else{
       const tk=res.taken||{},ids=Object.keys(tk).filter(k=>tk[k]&&tk[k].v>0).sort((a,b)=>tk[b].v-tk[a].v),top=ids.length?tk[ids[0]].v:1;tot=ids.reduce((s,k)=>s+tk[k].v,0);
       const FIX={trap:['dmgTrap','罠','#ff7a3a'],lava:['dmgLava','炎','#ff5a1a'],boss:['dmgBossAtk','王','#ff3b5a'],other:['dmgEnv','?','#9aa4b8']};
@@ -496,6 +497,7 @@ Object.assign(UI.prototype,{
         h('button',{class:'btn primary','data-focus':!canEnd?true:null,onclick:()=>{this.sfx();this.app.retry();}},this.t('retry')),
         h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.toMenu();}},this.t('toMenu')),
         this.shareBtn(res),
+        res.sandbox?null:this.codeBtn(),
         showEnd?h('span',{class:'endwrap'},
           h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',
             onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')),

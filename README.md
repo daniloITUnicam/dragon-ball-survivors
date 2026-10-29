@@ -55,6 +55,21 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 3 (debolezze, meteo e carriera)
+
+- Debolezze dei boss (+15% da un tipo di arma), Kamehameha caricato tenendo premuto il tasto dell'abilità, Saibaman d'oro che scappa col bottino.
+- Meteo: pioggia e temporale +10% agli attacchi elettrici, tempesta di sabbia gemme +20%.
+- Album dei nemici con premi, pose di vittoria (Maestria 3/6/9), Carriera, titoli in classifica, codici delle build. Lato server: riesegui `supabase/online.sql` (titoli).
+
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 2 (momenti da anime)
+
+- **Sensazioni:** hit-stop e zoom sui colpi grossi, combo con moltiplicatore (×1,1 → ×2 su Zenny ed Esperienza), overkill che esplode, personaggi che respirano, rimbalzano e si inclinano.
+- **Combattimenti:** Ki Clash contro i raggi dei boss, guardia dei boss da rompere, cinematica delle trasformazioni, nome del colpo finale, boss a sorpresa da altre saghe.
+- **Momenti:** Ultimo respiro sotto il 10% di vita, alleati che arrivano nei momenti difficili, fusioni Potara e Metamoran con la Maestria 5.
+- **Mappa:** cerchio di allenamento, navicella Capsule Corp (1 cimelio su 3), missioni del Kaiohshin.
+- **Progressi:** diario delle armi, record in diretta, mutatore del giorno.
+- **Online:** eventi della comunità con Ticket 10× Fortunato, fantasma del primo nella Sfida settimanale, avvisi quando qualcuno ti supera. Lato server: riesegui `supabase/online.sql`.
+
 ### 🆕 Aggiornamento del 29 ottobre 2026 (Patti, Maestria e Classifiche)
 
 - **Desideri:** Shenron offre 4 desideri su 7; nuovi Immortalità (20 s senza danni), Trasformazione (subito la forma successiva) e Cimelio leggendario (1 Leggendario su 3).

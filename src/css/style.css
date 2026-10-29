@@ -644,3 +644,12 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .brow i{font-style:normal;opacity:.7}.brow .bval{text-align:right;color:var(--gold);font-weight:800}.brow .bmeta,.brow .bch{opacity:.8;font-size:13px}
 .brow.me{background:rgba(255,210,63,.14)}.brow.top1 i{color:#ffd23f}.brow.top2 i{color:#d8e0ea}.brow.top3 i{color:#e0a060}
 @media (max-width:600px){.brow{grid-template-columns:40px 1fr 70px;}.brow .bch,.brow .bmeta{display:none}}
+.fzrows{margin-top:6px;display:flex;flex-direction:column;gap:4px}.fzrow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;opacity:.65}.fzrow.open{opacity:1;color:#ffe9a0}.fzrow i{font-style:normal;opacity:.8}
+.card.stage .dtag{margin-top:4px;font-size:12px;font-weight:800;color:#ffe24d;text-shadow:0 1px 2px #000}
+.clist{max-width:640px;margin:8px auto;display:flex;flex-direction:column;gap:10px}.crow{padding:10px 12px;border-radius:8px;background:rgba(10,14,30,.6);border:1px solid rgba(255,255,255,.12)}.crow.done{border-color:var(--gold)}
+.crow .cfoot{display:flex;justify-content:space-between;align-items:center;font-size:13px}.crow .crew{opacity:.75}
+/* v117: career */
+.career{max-width:980px;margin:0 auto}.cargrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:left}.carcol h3{margin:8px 0 4px}
+.srow{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;font-size:13px}.srow b{text-align:right}
+@media (max-width:700px){.cargrid{grid-template-columns:1fr}}
+.btitle{opacity:.75;font-weight:600;font-size:11px}.bview{max-width:760px;margin:10px auto;text-align:left}.row.album{gap:6px;justify-content:center}

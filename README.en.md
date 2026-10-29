@@ -47,6 +47,21 @@ All keys can be rebound in **Settings → Controls**.
 
 ## What's new
 
+### 🆕 October 29, 2026 update, part 3 (weaknesses, weather and career)
+
+- Boss weaknesses (+15% from one kind of weapon), charged Kamehameha by holding the ability key, a golden Saibaman running off with loot.
+- Weather: rain and storms +10% to electric attacks, sandstorms +20% gems.
+- Enemy album rewards, victory poses (Mastery 3/6/9), Career screen, titles on the leaderboards, build codes. Server side: run `supabase/online.sql` again (titles).
+
+### 🆕 October 29, 2026 update, part 2 (anime moments)
+
+- **Game feel:** hit-stop and zoom on big hits, combo multiplier (×1.1 → ×2 on Zenny and Experience), bursting overkills, characters that breathe, bounce and lean.
+- **Fights:** Ki Clash against boss beams, breakable boss guard, transformation cinematics, finishing move name, surprise bosses from other sagas.
+- **Moments:** Last Stand under 10% health, allies who drop in when things look bad, Potara and Metamoran fusions at Mastery 5.
+- **Map:** training circle, Capsule Corp pod (1 trinket out of 3), Supreme Kai missions.
+- **Progress:** weapon diary, live records, daily mutator.
+- **Online:** community events with a Lucky Ticket 10×, the Weekly challenge leader's ghost, notices when someone overtakes you. Server side: run `supabase/online.sql` again.
+
 ### 🆕 October 29, 2026 update (Pacts, Mastery and Leaderboards)
 
 - **Wishes:** Shenron offers 4 wishes out of 7; new Immortality (20 s without damage), Transformation (your next form at once) and Legendary trinket (1 Legendary out of 3).

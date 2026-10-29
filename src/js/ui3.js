@@ -60,6 +60,8 @@ Object.assign(UI.prototype,{
     return h('span',{class:'winfo',tabindex:'0','data-fid':'wi'+w.id,'aria-label':this.tr(T('Statistiche','Stats'))},'i',
       h('div',{class:'wtip',style:'--c:'+w.color},h('div',{class:'wth'},h('b',null,this.tr(w.evo?w.evoName:w.def.n)),h('i',null,lv)),
         h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
+        (()=>{const n=PROGX.wkAll(g,w.id),wt=PROGX.wkTier(n),nx=WD_TIERS.find(x=>x.n>n);   /* v116: the weapon diary */
+          return h('p',{class:'fzline',style:'color:'+(wt?wt.c:'#cfd8ff')},'📖 '+this.tr(T6('Diario: ','Diary: ','Diario: ','Journal : ','Tagebuch: ','Diário: '))+n.toLocaleString()+' '+this.tr(T6('sconfitti','defeated','derrotados','vaincus','besiegt','derrotados'))+(wt?' · '+this.tr(wt.t):'')+(nx?' (→ '+nx.n.toLocaleString()+')':''));})(),
         (()=>{const f=FUSIONS.find(x=>x.a===w.id||x.b===w.id);if(!f)return null;const o=WEAPONS[f.a===w.id?f.b:f.a];   /* v115: its double-evolution partner */
           return h('p',{class:'fzline',style:'color:'+f.c},'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla'))+(w.fz?' ✓':'')+': '+this.tr(f.n)+' — '+this.tr(T6('con ','with ','con ','avec ','mit ','com '))+this.tr(o.n)+(w.fz?'':' ('+this.tr(T6('entrambe evolute al massimo','both fully evolved','ambas evolucionadas al máximo','les deux évoluées au maximum','beide voll entwickelt','ambas totalmente evoluídas'))+')'));})(),
         h('div',{class:'wtr'},rows.map(r=>{

@@ -49,10 +49,8 @@ Object.assign(Renderer.prototype,{
       for(const l of g.loot){
         if(l.dead||l.held)continue;
         const s=l.k==='sball'?.32:l.k==='ball'?.55:.85;
-        draw(l.x,l.y,s,()=>this.drawLoot({k:l.k,x:0,y:0,t:9,v:l.v,star:l.star,tama:l.tama,ttl:0,lock:l.lock},9));
+        draw(l.x,l.y,s,()=>this.drawLoot({k:l.k,x:0,y:0,t:9,v:l.v,star:l.star,tama:l.tama,ttl:0,lock:l.lock,flat:1},9));
       }
-      /* the red gem (the XP that piled up just off screen) */
-      if(g.rg)draw(g.rg.x,g.rg.y,1,()=>{c2.fillStyle='#ff4a5a';c2.strokeStyle='#fff';c2.lineWidth=1.5;c2.beginPath();c2.moveTo(0,-8);c2.lineTo(6,0);c2.lineTo(0,8);c2.lineTo(-6,0);c2.closePath();c2.fill();c2.stroke();});
       c2.font='700 11px sans-serif';c2.textAlign='right';c2.fillStyle='rgba(255,255,255,.5)';c2.fillText(this.tr(T('centrata su di te · riquadro tratteggiato = ciò che vede lo schermo · 1 m = 10 px','centred on you · dashed box = what the screen shows · 1 m = 10 px')),W-10,H-9);c2.textAlign='left';
       /* the hero: a pulsing marker */
       const pu=.5+.5*Math.sin(performance.now()/260);

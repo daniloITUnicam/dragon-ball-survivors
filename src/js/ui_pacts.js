@@ -40,7 +40,17 @@ Object.assign(UI.prototype,{
         rw(MAST_PASS_LV,T_(T6('Passiva: ','Passive: ','Pasiva: ','Passif : ','Passiv: ','Passiva: '))+T_(Mastery.passiveText(C.id))),
         rw(MAST_SKIN_LV[2],T_(T6('Colori alternativi B','Alternative colours B','Colores alternativos B','Couleurs alternatives B','Alternative Farben B','Cores alternativas B'))),
         rw(MAST_TITLE_LV,T_(T6('Titolo: ','Title: ','Título: ','Titre : ','Titel: ','Título: '))+T_(Mastery.title(C.id)))),
-      h('div',{class:'row mskins'},skinBtns));
+      h('div',{class:'row mskins'},skinBtns),
+      h('div',{class:'row mskins'},h('span',{class:'lbl'},T_(T6('Posa di vittoria','Victory pose','Pose de victoria','Pose de victoire','Siegespose','Pose de vitória'))),VPOSES.map((v,i)=>{const open=L.lv>=VPOSE_LV[i],on=open&&(EXTRAS.poseOf(d,C.id)||{}).id===v.id;   /* v117 */
+        return h('button',{class:'btn small'+(on?'':' alt'),disabled:!open,'data-fid':'vp'+v.id,title:open?'':this.t('lv')+' '+VPOSE_LV[i],onclick:()=>{this.sfx();Mastery.rec(d,C.id).pose=v.id;this.app.save.write();this.rebuild(true);}},open?T_(v.n):'🔒 '+this.t('lv')+' '+VPOSE_LV[i]);})),
+      this.fusionRows(C));
+  },
+  /* v116: the fusions this character is a parent of */
+  fusionRows(C){const d=this.save,L=CHAR_FUSIONS.filter(f=>f.a===C.id||f.b===C.id);if(!L.length)return null;
+    return h('div',{class:'fzrows'},L.map(f=>{const F=CHARS.find(c=>c.id===f.id),o=CHARS.find(c=>c.id===(f.a===C.id?f.b:f.a)),open=Mastery.fuseOpen(d,f)||this.testAll();
+      return h('div',{class:'fzrow'+(open?' open':'')},h('span',null,(open?'♾ ':'🔒 ')+this.tr(F.n)+' · '+this.tr(fuseKind(f.k))+' '+this.tr(T6('con ','with ','con ','avec ','mit ','com '))+this.tr(o.n)),
+        open?h('button',{class:'btn small primary','data-fid':'fz'+f.id,onclick:()=>{this.sfx('uiStart');const s=this.sel;this.app.startGame({stage:s.stage,char:f.id,diff:s.diff,x2:s.x2,sandbox:false,pet:d.pet,pacts:this.pactsOpen()?d.pacts:[],fusion:f.id});}},'▶ '+this.tr(T6('Fondi','Fuse','Fusionar','Fusionner','Fusionieren','Fundir')))
+          :h('i',null,this.tr(T6('Maestria '+FUSE_LV+' per entrambi','Mastery '+FUSE_LV+' for both','Maestría '+FUSE_LV+' para ambos','Maîtrise '+FUSE_LV+' pour les deux','Meisterschaft '+FUSE_LV+' für beide','Maestria '+FUSE_LV+' para ambos'))));}));
   },
   /* end screen: XP gained, level-up */
   masteryLine(m){if(!m)return null;const C=CHARS.find(c=>c.id===m.id),up=m.l1>m.l0;

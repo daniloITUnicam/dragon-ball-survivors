@@ -144,6 +144,7 @@ class UI{
         this.btn('unl',()=>this.push('unl')),
         this.btn('ach',()=>this.push('ach')),
         this.boardsBtn(),
+        this.careerBtn(),
         this.btn('settings',()=>this.push('settings',{tab:'general'})),
         this.testAll()?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null),
       h('div',{class:'foot'},
@@ -166,6 +167,7 @@ class UI{
         h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
         h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+bossPlan(s,DIFF[sel.diff].dur,sel.diff).length),
         this.stageStats(i),
+        (()=>{const dm=PROGX.daily();return dm.stage===i?h('div',{class:'dtag'},'☀ '+this.tr(T6('Oggi: ','Today: ','Hoy: ','Aujourd\'hui : ','Heute: ','Hoje: '))+this.tr(dm.m.n)):null;})(),   /* v116: today's mutator */
         locked?h('div',{class:'cl bad'},this.t('stageLocked',{n:STAGES[STAGE_ORDER[s.pos-1]].no})):
           h('div',{class:'cl'},(d.clears[i]?'★ '+this.t('clears')+': '+d.clears[i]:this.t('notCleared'))+(b?' · '+this.t('best')+': '+b.kills+' '+this.t('kills'):'')));
     });
@@ -238,7 +240,7 @@ class UI{
         line.map((f,i)=>i<((d.maxForm||{})[C.id]||0)?h('div',{class:'frm',style:'--c:'+f.aura},h('i',null,this.t('lv')+' '+FORM_TIERS[i].lvl),this.tr(f.n)):h('div',{class:'frm',style:'--c:#6a7a90'},h('i',null,'???'),this.t('formHidden')))),
       this.petPicker());
     /* Glossary and Grimoire live here (top right of the character screen) instead of the main menu */
-    const refBtns=[this.gearBtn(),h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
+    const refBtns=[this.gearBtn(),this.pasteBtn(),h('button',{class:'btn small alt','data-fid':'cgloss',onclick:()=>{this.sfx();this.push('glossary');}},'📚 '+this.t('glossary')),
       h('button',{class:'btn small alt','data-fid':'cgrim',onclick:()=>{this.sfx();this.push('grimoire');}},'📖 '+this.t('grimoire')),
       h('button',{class:'btn small alt','data-fid':'cbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn')),
       h('button',{class:'btn small alt','data-fid':'cunl',onclick:()=>{this.sfx();this.push('unl');}},'🏆 '+this.t('unl')),
@@ -333,11 +335,15 @@ class UI{
       h('div',{class:'krow'},h('span',null,this.t('glossHp')),h('b',null,fmtN(def.hp))),
       h('div',{class:'krow'},h('span',null,this.t('glossDmg')),h('b',null,def.dmg)),
       h('div',{class:'krow'},h('span',null,this.t('glossSpeed')),h('b',null,def.spd)),
-      h('div',{class:'krow'},h('span',null,this.t('glossStages')),h('b',null,stages))
+      h('div',{class:'krow'},h('span',null,this.t('glossStages')),h('b',null,stages)),
+      tab==='bosses'?h('div',{class:'krow'},h('span',null,this.tr(T6('Debolezza','Weakness','Debilidad','Faiblesse','Schwäche','Fraqueza'))),h('b',null,this.tr(WEAK_N[EXTRAS.weak(cur)])+' +15%')):null   /* v117 */
     ]:[h('p',null,this.t('glossHint'))];
     const tabs=['enemies','bosses'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'gt'+k,onclick:()=>{this.sfx('uiTab');this.top.args={tab:k};this.rebuild();}},this.t(k==='enemies'?'glossEnemies':'glossBosses')));
     return h('div',null,this.header('glossary'),
       h('div',{class:'row tabs'},tabs),h('p',{class:'sub'},this.t('glossSeen',{a:got,b:ids.length})),
+      tab==='enemies'?h('div',{class:'row album'},ALBUM_STEPS.map((st,i)=>{const n=EXTRAS.albumN(this.save),got2=!!(this.save.album||{})[st.n],can=n>=st.n&&!got2;   /* v117: album rewards */
+        return h('button',{class:'btn small'+(can?' primary':' alt'),disabled:!can,'data-fid':'alb'+st.n,onclick:()=>{if(EXTRAS.albumClaim(this.app,i)){this.sfx('buy');this.toast({type:'info',msg:'+'+this.tr(EXTRAS.albumLabel(st))});this.rebuild(true);}}},
+          (got2?'✓ ':n>=st.n?'🎁 ':'🔒 ')+st.n+' · '+this.tr(EXTRAS.albumLabel(st)));})):null,
       h('div',{class:'split'},h('div',{class:'grid chars gl'},cards),
         h('div',{class:'detail'},h('div',{class:'row'},big),h('h3',null,isSeen?this.tr(def.n):'???'),info)));
   }

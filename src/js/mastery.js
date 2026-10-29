@@ -8,7 +8,12 @@ const MAST_PASS={kaioken:{might:.05},beam:{cd:.04},sbc:{might:.05},blind:{spd:.0
   absorb:{regen:.4},regen:{regen:.5},ghosts:{cd:.04},jackpot:{magnet:.15},buff:{might:.04},sphere:{cd:.04},timestop:{cd:.05},erase:{might:.05},rewind:{hp:15}};
 /* skins: hue rotation in degrees (skin tones, whites, greys and blacks are kept) */
 const MAST_SKINS=[0,140,235];
+/* v116: Potara / Metamoran fusions — with both parents at Mastery Lv FUSE_LV you can play the fused warrior for a run, with the parents' weapons too */
+const FUSE_LV=5,FUSE_MIGHT=.15,FUSE_HP=20,CHAR_FUSIONS=[{id:'vegito',a:'goku',b:'vegeta',k:'potara'},{id:'gogeta',a:'goku',b:'vegeta',k:'meta'},{id:'gotenks',a:'goten',b:'trunks',k:'meta'},
+  {id:'kefla',a:'kale',b:'caulifla',k:'potara'},{id:'fzamasu',a:'zamasu',b:'black',k:'potara'}];
+const fuseKind=k=>k==='potara'?T6('Orecchini Potara','Potara earrings','Pendientes Potara','Boucles Potara','Potara-Ohrringe','Brincos Potara'):T6('Danza di Metamor','Metamoran dance','Danza Metamor','Danse Métamor','Metamor-Tanz','Dança Metamor');
 const Mastery={
+  fuseOpen(save,f){return this.lv(save,f.a)>=FUSE_LV&&this.lv(save,f.b)>=FUSE_LV;},
   rec(save,id){const m=save.mastery||(save.mastery={});return m[id]||(m[id]={xp:0,skin:0});},
   lvOf(xp){let l=1;while(l<MAST_MAX&&xp>=mastNeed(l)){xp-=mastNeed(l);l++;}return{lv:l,into:xp,need:l<MAST_MAX?mastNeed(l):0};},
   skinOf(save,id){const r=(save.mastery||{})[id];return r&&r.skin&&this.lv(save,id)>=MAST_SKIN_LV[r.skin]?r.skin:0;},
@@ -17,7 +22,8 @@ const Mastery={
   runXp(g,win,b){const kills=g.kills-(b.kills||0),bosses=g.run.bossKills-(b.bossKills||0),min=Math.max(0,g.t-(b.t||0))/60;
     return Math.round(kills*.1+min*15+bosses*25+(win&&!b.cleared?120:0)+(g.pacts?g.pacts.length*20:0));},
   gain(save,g,win,b){
-    const r=this.rec(save,g.C.id),l0=this.lvOf(r.xp).lv,x=this.runXp(g,win,b||{});r.xp+=x;const l1=this.lvOf(r.xp).lv;
+    const r=this.rec(save,g.C.id),l0=this.lvOf(r.xp).lv,x=this.runXp(g,win,b||{});r.xp+=x;if(g.fz)for(const pid of g.fz.parents)this.rec(save,pid).xp+=x;   /* a fusion run trains both parents */
+    const l1=this.lvOf(r.xp).lv;
     return{id:g.C.id,xp:x,l0,l1,...this.lvOf(r.xp)};
   },
   passive(id){const a=ABIL[id];return a&&MAST_PASS[a.m]||{might:.03};},

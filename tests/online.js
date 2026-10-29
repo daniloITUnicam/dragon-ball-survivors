@@ -30,10 +30,32 @@ const r=await pg.evaluate(async()=>{const A=__app,cl=A.cloud,d=A.save.d,o={};con
   /* Test mode runs never go on a board */
   const gs=new Game({stage:0,char:'goku',diff:'normal',x2:false,sandbox:true},g.env);o.sbRow=Online.row(gs,{sandbox:true});
   return o;});
+/* v116: community events, the weekly ghost, overtaken */
+mock.profiles.set('u-rival','Vegeta_IV');
+const r2=await pg.evaluate(async()=>{const A=__app,cl=A.cloud,o={},w8=ms=>new Promise(r=>setTimeout(r,ms));
+  const evs=COMMUNITY.events();o.three=evs.length===3&&new Set(evs.map(e=>e.kind)).size===3;
+  const W=Online.weekly();A.startGame({stage:W.stage,char:W.char,diff:W.diff,x2:false,sandbox:false,week:W.id,seed:W.seed});let g=A.game;g.sb.god=true;
+  for(let i=0;i<60*5;i++)g.update(1/60);g.kills=120;g.run.bossKills=3;g.t=90;o.trail=g.gtrail&&g.gtrail.p.length>=8;
+  const res=A.progress.finishRun(g,false,{});A.onEnd(res,g);await w8(500);
+  const tot=await cl.community();o.comm=evs.some(e=>(tot[e.key]||0)>0)||Object.keys(tot).length>0;o.tot=JSON.stringify(tot);
+  A.startGame({stage:W.stage,char:W.char,diff:W.diff,x2:false,sandbox:false,week:W.id,seed:W.seed});await w8(400);g=A.game;o.ghost=!!(g.ghost&&g.ghost.path&&g.ghost.nick==='Kakarot_99');A.renderer.draw(g,1/60);
+  A.toMenu();A.ui.bsel={tab:'comm',stage:0,diff:'normal',metric:'t'};A.ui.push('boards',{});await w8(400);o.list=document.querySelectorAll('.crow').length;
+  try{localStorage.setItem('dbs-ovt-'+cl.uid,new Date(Date.now()-60000).toISOString());}catch(e){}cl._ovt=0;
+  window.__ovt=null;return o;});
+mock.scores.push({user_id:'u-rival',stage:0,diff:'normal',ch:'vegeta',t:999,kills:999,dmg:1,lvl:9,win:true,pacts:0,week:null,created_at:Date.now()+5000});
+const r3=await pg.evaluate(async()=>{const A=__app,cl=A.cloud,w8=ms=>new Promise(r=>setTimeout(r,ms));const L=await cl.checkOvertaken();
+  A.save.d.wk={kame:1000};await cl.setTitle('w:kame:0');A.ui.show('main');A.ui.bsel={tab:'stage',stage:0,diff:'normal',metric:'kills'};A.ui.push('boards',{});await w8(400);
+  return{n:L.length,nick:L[0]&&L[0].nick,title:(document.querySelector('.brow.me .btitle')||{}).textContent||''};});
+ok(/Kamehameha/.test(r3.title),'the chosen title shows next to the nickname on the boards: '+r3.title);
+ok(r2.three,'3 community events this week, one of each kind');
+ok(r2.trail&&r2.comm,'a run adds to the community totals '+r2.tot);
+ok(r2.ghost,'the weekly leader comes back as a ghost on the next try');
+ok(r2.list===3,'the Community tab lists the 3 events');
+ok(r3.n===1&&r3.nick==='Vegeta_IV','"overtaken": a rival who passes your best is announced');
 ok(r.wk&&r.same,'weekly challenge: same stage/character/difficulty/seed for a week, same map layout on every try');
 ok(r.anon,'the boards open without an account and ask to sign in');
 ok(r.uid&&r.bad==='bad'&&r.set===''&&r.nick==='Kakarot_99','nickname: a bad one is refused, a good one saved');
-ok(r.row&&r.row.kills===321&&r.row.dmg===12345&&mock.scores.length===1&&mock.scores[0].ch==='goku','a finished run is posted (time, kills, damage, build)');
+ok(r.row&&r.row.kills===321&&r.row.dmg===12345&&mock.scores.some(x=>x.ch==='goku'&&x.kills===321),'a finished run is posted (time, kills, damage, build)');
 ok(/Kakarot_99/.test(r.list)&&/321/.test(r.list)&&r.me,'the stage board lists it, marked as mine: '+r.list.slice(0,60));
 ok(r.wPacts&&r.wrow&&/^\d{4}-W\d\d$/.test(r.wrow.week),'weekly runs carry their week and no pacts');
 ok(r.card,'share card 1200×630');

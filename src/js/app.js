@@ -86,6 +86,7 @@ class App{
     if(ev.type==='conflict'){if(this.state==='menu'&&top!=='cloudConflict')ui.push('cloudConflict');return;}
     if(ev.type==='recovery'){if(top!=='account')ui.push('account');else ui.rebuild(true);return;}
     if(ev.type==='hashError'){if(this.cloud.resetOn&&/otp_expired|access_denied/.test(this.cloud.hashCode||'')&&!this.cloud.signedIn){ui.openReset('clErrLink');return;}ui.toast({type:'info',msg:this.cloud.hashCode==='oauth_state'?ui.t('clErrState'):this.cloud.hashErr});return;}
+    if(ev.type==='overtaken'){for(const r of ev.list.slice(0,3)){const S=STAGES[r.stage];ui.toast({type:'info',msg:ui.tr(T6(`${r.nick} ti ha superato`,`${r.nick} overtook you`,`${r.nick} te ha superado`,`${r.nick} t'a dépassé`,`${r.nick} hat dich überholt`,`${r.nick} te superou`))+': '+(r.week?ui.tr(OT.weekly)+' '+r.week:(S?ui.tr(S.n):'')+' · '+ui.tr((DIFF[r.diff]||DIFF.normal).n))});}return;}   /* v116 */
     if(ev.type==='prov'){if(top==='main'||top==='account')ui.rebuild(true);return;}
     if(ev.type==='applied')this.applySettings();
     if(ev.type==='auth'||ev.type==='tester'||ev.type==='applied')this.enforceTest();
@@ -114,10 +115,13 @@ class App{
   makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g)};}
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
-    Online.unseed();if(o.week&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
-    this.game=new Game(o,this.makeEnv());this.state='play';
+    Online.unseed();CLASH.unbind();if(o.week&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
+    this.game=new Game(o,this.makeEnv());
+    if(o.week&&this.cloud.enabled)this.cloud.weeklyGhost(o.week).then(gh=>{if(gh&&this.game&&this.game.week===o.week)this.game.ghost=gh;}).catch(()=>{});   /* v116: the weekly leader's ghost */this.state='play';
     this.audio.unlock();if(this.audio.slowMusic)this.audio.slowMusic(1);this.audio.play('stage'+STAGES[o.stage].id);
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
+    {const g=this.game;if(g.fz){const p=g.p,c=g.formColor||'#ffd23f';g.say(this.i18n.t(T6('FUSIONE!','FUSION!','¡FUSIÓN!','FUSION !','FUSION!','FUSÃO!')),c,2.6,this.i18n.t(fuseKind(g.fz.k))+' · '+g.fz.parents.map(id=>this.i18n.t(CHARS.find(x=>x.id===id).n)).join(' + '));
+      g.ring(p.x,p.y,220,c,.9);g.pillar(p.x,p.y,c,1.4);g.flash=.6;g.flashC='#ffffff';this.audio.sfx('transform');}}   /* v116 */
     this.joy.on=false;
     const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
     {const ids=new Set(bossPlan(st,(DIFF[o.diff]||DIFF.normal).dur,o.diff).map(b=>b[0]));for(const b of st.bosses)ids.add(b[0]);
@@ -133,7 +137,8 @@ class App{
   }
   onEnd(res,g){
     this.state='end';this.lastRes=res;this.ui.closeModal();this.ui.hideSandbox();Online.unseed();
-    {const row=Online.row(g||this.game,res),cl=this.cloud;if(row&&cl.uid&&cl.nick)cl.submitScore(row).then(ok=>{if(ok)this.ui.toast({type:'info',msg:this.ui.tr(OT.sent)});}).catch(()=>{});}   /* v115: leaderboards */
+    {const row=Online.row(g||this.game,res),cl=this.cloud;if(row&&cl.uid&&cl.nick){const gg=g||this.game;cl.submitScore(row).then(ok=>{if(ok)this.ui.toast({type:'info',msg:this.ui.tr(OT.sent)});}).catch(()=>{});
+      if(gg.week&&gg.gtrail)cl.ghostSubmit(gg.week,row.t*1e7+row.kills,gg.C.id,gg.gtrail.p).catch(()=>{});}}   /* v115: leaderboards */
     this.audio.play('menu');this.ui.show('end',res);
   }
   /* used by the update watcher (update.js): ends the run in progress right now and keeps EVERY coin (no 25% defeat penalty);
@@ -149,7 +154,7 @@ class App{
   endRunManually(){const g=this.game;this.ui.clear();if(g&&!g.ended)g.finish(false);else this.toMenu();}
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
   retry(){if(this.lastOpts)this.startGame(this.lastOpts);}
-  toMenu(){Online.unseed();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
+  toMenu(){Online.unseed();CLASH.unbind();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');}
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
     for(const a of['interact','pet','kaioken','senzu','dash','target'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
@@ -173,6 +178,7 @@ class App{
         if(I.pressed('interact'))g.input.interact=true;
         if(I.pressed('pet'))g.usePet();
         if(I.pressed('kaioken'))g.toggleKaioken();
+        EXTRAS.hold(g,I.held('kaioken'),dt);   /* v117: holding it charges the next Kamehameha */
         if(I.pressed('senzu'))g.useSenzu();
         if(I.pressed('dash'))g.dash();
         if(I.pressed('target'))g.cycleTarget();

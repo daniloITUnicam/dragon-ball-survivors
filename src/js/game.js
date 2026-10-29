@@ -3,6 +3,11 @@
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
 const FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+/* v116: game feel — hit-stop (s) and camera punch (fraction of zoom), combo tiers (streak -> Zenny/XP multiplier), overkill */
+const HS_EVO=.08,HS_BOSS=.1,HS_CRIT=.05,HS_CRIT_CD=1.5,ZP_EVO=.07,ZP_BOSS=.09,ZP_CRIT=.035,OVK_K=4,OVK_R=70,OVK_CD=.3,OVK_PUSH=9;
+const COMBO=[{n:50,m:1.1,t:T6('COMBO!','COMBO!','¡COMBO!','COMBO !','COMBO!','COMBO!'),c:'#ffb13b'},{n:100,m:1.25,t:T6('SUPER COMBO!','SUPER COMBO!','¡SÚPER COMBO!','SUPER COMBO !','SUPER-COMBO!','SUPER COMBO!'),c:'#ff7b4a'},
+  {n:250,m:1.5,t:T6('ULTRA COMBO!','ULTRA COMBO!','¡ULTRA COMBO!','ULTRA COMBO !','ULTRA-COMBO!','ULTRA COMBO!'),c:'#ff3b6b'},{n:500,m:2,t:T6('COMBO DIVINO!','GODLY COMBO!','¡COMBO DIVINO!','COMBO DIVIN !','GÖTTLICHES COMBO!','COMBO DIVINO!'),c:'#d86bff'}];
+const comboTier=n=>{let r=null;for(const c of COMBO)if(n>=c.n)r=c;return r;};
 const POST_T=15,ALT_PICK_R=30,SUP_PICK_R=34,SUP_CHANCE=.55,BALL_PICK_R=11,DEATH_T=2.0,TRANS_K=1.2,TRANS_HEAL=.5,VIC_T=4.2,ESC_EVERY=600,ESC_EVERY_EASY=60,ESC_E={hp:.01,dmg:.01,arm:0,xp:.05},ESC_N={hp:.10,dmg:.02,arm:0,xp:.05},ESC_X={hp:.15,dmg:.05,arm:.15,xp:.08},X_SPAWN_STEP=30,X_SPAWN_K=.02,X_CAP_K=.01;
 const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   /* boss signature moves: Dodoria's warning, Gero's drain (easy / normal / hard / extreme), Super Buu's number of balls */
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
@@ -39,6 +44,7 @@ class Game{
     {const ml=Mastery.lv(this.save,o.char),mr=(this.save.mastery||{})[o.char]||{};this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(o.char):null;this.skin=Mastery.skinOf(this.save,o.char);}
     this.spdK*=this.pk.espd;   /* v115: Pacts */
     if(this.pacts.length)this.D=Object.assign({},this.D,{hp:this.D.hp*this.pk.hp,dmg:this.D.dmg*this.pk.dmg,spawn:this.D.spawn*this.pk.spawn});
+    {const m=o.week||o.sandbox?null:PROGX.forStage(o.stage);this.dmut=m?m.fx:{};this.dmutN=m?m.n:null;if(this.dmut.ehp)this.D=Object.assign({},this.D,{hp:this.D.hp*this.dmut.ehp});}   /* v116: today's mutator */
 this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
@@ -50,7 +56,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
     this.run={minC:Infinity,bossKills:0,evos:0,legendary:0,coins:0,chests:0,perfect:0,balls:0,wishes:0,zeno:0,zbuy:0,mythic:0,k20:0,streak:0,tk:{t1:0,t10:0,l10:0}};
     this.bank={kills:0,bossKills:0,chests:0,balls:0,wishes:0,perfect:0,coins:0,zeno:0,zbuy:0,evos:0,elites:0,t:0,counted:false,cleared:false,tk:{t1:0,t10:0,l10:0}};
-    this.balls=0;this.ballSet=[];this.senzu=this.pk.nosenzu?0:Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.immT=0;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
+    this.balls=0;this.ballSet=[];this.senzu=this.pk.nosenzu?0:Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.immT=0;this.hs=0;this.zoomP=0;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
     this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
@@ -67,7 +73,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
     this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.takenBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
-    for(const id of this.C.start.slice(0,this.maxW))this.addWeapon(id);
+    {const F=o.fusion&&CHAR_FUSIONS.find(f=>f.id===o.fusion&&f.id===o.char);this.fz=F?{id:F.id,k:F.k,parents:[F.a,F.b]}:null;   /* v116: a fusion run */
+      const st=F?[...new Set([...this.C.start,...CHARS.find(c=>c.id===F.a).start,...CHARS.find(c=>c.id===F.b).start])]:this.C.start;for(const id of st.slice(0,this.maxW))this.addWeapon(id);}
     this.revives=this.shopLv('revive');
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
@@ -75,7 +82,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&TRINKETS.find(x=>x.id===eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
         if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
       if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
-    this.recalc();this.p.hp=this.p.maxHp;
+    this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
   get maxW(){return this.sandbox?MAX_WEAPONS:clamp(Math.round(this.save.settings.weapons)||MAX_WEAPONS,1,MAX_WEAPONS);}
@@ -107,7 +114,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(last&&last.txt===txt&&t-last.t<3){last.n=(last.n||1)+1;return;}
     L.push({t,txt,col:col||'#ffffff',sub:sub||null});if(L.length>400)L.splice(0,L.length-400);
   }
-  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(!dm&&c!==4&&typeof s==='string')this.logEv(s,c===1?'#ffd23f':c===2?'#ffb0b0':c===3?'#9fe8ff':'#ffffff');if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
+  /* v116: freeze the world for d s and punch the camera in by z (Settings > Gameplay > Hit-stop) */
+  hitStop(d,z){if(this.save.settings&&this.save.settings.hitstop===false)return;this.hs=Math.max(this.hs||0,d);this.zoomP=Math.max(this.zoomP||0,z||0);}
+  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(!dm&&c!==4&&c!==7&&typeof s==='string')this.logEv(s,c===1?'#ffd23f':c===2?'#ffb0b0':c===3?'#9fe8ff':'#ffffff');if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
 
   /* ---------- stats ---------- */
   tMods(){
@@ -119,7 +128,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
-    if(this.mastP)for(const k in this.mastP)sh[k]+=this.mastP[k];   /* v115: the character's mastery passive (Lv 5) */
+    if(this.mastP)for(const k in this.mastP)sh[k]+=this.mastP[k];
+    if(this.fz){sh.might+=FUSE_MIGHT;sh.hp+=FUSE_HP;}
+    if(this.dmut){sh.spd+=this.dmut.spd||0;sh.magnet+=this.dmut.magnet||0;}   /* v116: a fused warrior is stronger than either parent */   /* v115: the character's mastery passive (Lv 5) */
     const S={};
     S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
@@ -200,14 +211,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const f=FUSIONS.find(x=>x.id===fid),a=f&&this.weapons.get(f.a),b=f&&this.weapons.get(f.b);if(!a||!b||a.fz||b.fz)return false;
     a.fz=b.fz=f.id;b.fzB=true;this.run.fusions=(this.run.fusions||0)+1;this.audio.sfx('evolve');
     this.say(this.env.tr(f.n)+'!',f.c,3.4,this.env.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')));
-    this.flash=.6;this.flashC=f.c;this.ring(this.p.x,this.p.y,260,f.c,.8);this.ring(this.p.x,this.p.y,180,WEAPONS[f.b].c,.7);
+    this.flash=.6;this.flashC=f.c;this.hitStop(HS_EVO*1.4,ZP_EVO*1.4);this.ring(this.p.x,this.p.y,260,f.c,.8);this.ring(this.p.x,this.p.y,180,WEAPONS[f.b].c,.7);
     this.burst(this.p.x,this.p.y-20,56,f.c);this.pillar(this.p.x,this.p.y,f.c,1.2);this.bolt(this.p.x,this.p.y-20,200,f.c,8);
     this.recalc();return true;
   }
   evolveWeapon(id){
     const w=this.weapons.get(id);if(!w||w.evo>=this.maxEvo(id))return false;
     w.evolve();this.run.evos++;this.audio.sfx('evolve');
-    this.say(this.env.tr(w.evoName)+'!',w.def.c,3);this.flash=.5;this.flashC=w.def.c;
+    this.say(this.env.tr(w.evoName)+'!',w.def.c,3);this.flash=.5;this.flashC=w.def.c;this.hitStop(HS_EVO,ZP_EVO);
     this.ring(this.p.x,this.p.y,220,w.def.c,.7);this.burst(this.p.x,this.p.y-20,40,w.def.c);
     this.pillar(this.p.x,this.p.y,w.def.c,1);this.bolt(this.p.x,this.p.y-20,160,w.def.c,6);
     this.recalc();return true;
@@ -290,7 +301,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   heal(v){if(this.trial&&this.trial.zeno)return;this.p.hp=Math.min(this.p.maxHp,this.p.hp+v);}
   /* Endless: the coin income shrinks by 10% every 15 s (the +100 of a milestone is exempt, it goes straight to run.coins) */
   coinK(){return this.endless?Math.pow(ENDLESS_COIN_K,Math.floor(Math.max(0,this.t-this.en0.t)/ENDLESS_COIN_T)):1;}
-  addZenny(v){this.run.coins+=this.endless?Math.round(v*this.coinK()):v;}
+  addZenny(v,raw){if(!raw)v=Math.round(v*this.comboMul*(this.dmut.zenny||1));   /* raw: the coin streak's own payouts are not multiplied again */this.run.coins+=this.endless?Math.round(v*this.coinK()):v;}
   /* money spent (Zeno's Shop, the trial shop): remembers the lowest balance since the last payout, so coins that were already paid are never paid twice */
   spendCoins(n){this.run.coins-=n;this.run.minC=Math.min(this.run.minC,this.run.coins);}
   cdMin(v){return this.endless?Math.min(v,ENDLESS_CD_MIN):v;}   /* Endless: cooldown multiplier floor 0.2 */
@@ -800,7 +811,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     }
   }
   /* ---------- progression ---------- */
-  addXp(v){const a=v*this.S.xp*this.pk.xp;this.xp+=a;this.xpAcc+=a;}
+  get comboMul(){const c=comboTier(this.streak);return c?c.m:1;}
+  addXp(v){const a=v*this.S.xp*this.pk.xp*this.comboMul*(this.dmut.xp||1);this.xp+=a;this.xpAcc+=a;}
   levelUp(){
     this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('levelup');
     if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
@@ -959,7 +971,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(e.armor)d=Math.max(d*.3,d-e.armor);
     if(e.bar>0){d*=.12;if(Math.random()<.35)this.ring(e.x,e.y-e.r,e.r*1.6,'#8ad8ff',.2);}   /* boss barrier */
     {const dd=Math.min(d,Math.max(0,e.hp)),k=this.curW||'other';this.dmgBy[k]=(this.dmgBy[k]||0)+dd;}
-    e.hp-=d;e.fl=.07;
+    if(e.boss)d*=EXTRAS.dmgMul(this,e);   /* v117: boss weakness */
+    d*=EXTRAS.wxDmg(this);   /* v117: rain / storm: electric attacks +10% */
+    if(e.gd)d*=BOSSX.onHit(this,e,d);
+    const hp0=e.hp;e.hp-=d;e.fl=.07;
+    if(crit&&(e.boss||e.elite)&&d>=e.max*.08&&!(this.hsCd>this.t)){this.hsCd=this.t+HS_CRIT_CD;this.hitStop(HS_CRIT,ZP_CRIT);}   /* v116: a huge critical on a boss / elite */
+    if(e.hp<=0&&!e.boss&&hp0>0&&d>=e.max*OVK_K&&e.max>=8&&!(this.ovkCd>this.t))this.overkill(e,d);
     if(!e.boss&&kx!==undefined){const k=e.elite?.2:e.ai==='tank'?.3:1;e.kx+=kx*k;e.ky+=ky*k;}
     if(this.showNums)this.floatText(e.x+rnd(-6,6),e.y-e.r*1.7,Math.round(d),crit?6:0);
     if(crit&&this.has('critboom')&&!this._boom){
@@ -969,9 +986,16 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     }
     if(e.hp<=0)this.killEnemy(e);else this.audio.sfx('hit');
   }
+  /* v116: overkill — far more damage than needed: the enemy bursts, the ones around are pushed away, a golden number */
+  overkill(e,d){
+    this.ovkCd=this.t+OVK_CD;this.burst(e.x,e.y-8,14,'#ffd23f');this.ring(e.x,e.y-6,OVK_R*.8,'#ffd23f',.35);
+    for(const o of this.en){if(o.dead||o===e||o.boss)continue;const dx=o.x-e.x,dy=o.y-e.y,q=dx*dx+dy*dy;if(q<OVK_R*OVK_R&&q>1){const l=Math.sqrt(q),k=OVK_PUSH*(1-l/OVK_R)*(o.elite?.3:1);o.kx+=dx/l*k;o.ky+=dy/l*k;}}
+    if(this.showNums)this.floatText(e.x,e.y-e.r*2.2,'OVERKILL '+Math.round(d),7);
+  }
   killEnemy(e){
     if(e.sparring){e.dead=true;this.burst(e.x,e.y-8,30,'#aab4ff');this.audio.sfx('boom');if(this.trial)this.trial.killed=true;return;}
-    e.dead=true;this.kills++;this.bumpStreak();this.addCorpse(e);   /* it stays and dissolves (corpse.js) */
+    e.dead=true;this.kills++;PROGX.onKill(this);COMMUNITY.onKill(this,e);this.bumpStreak();this.addCorpse(e);   /* it stays and dissolves (corpse.js) */
+    if(e.goldS){EXTRAS.onKill(this,e);return;}   /* v117: the golden Saibaman */
     if(e.tun){this.burst(e.x,e.y-8,45,e.bd.c);this.audio.sfx('boom');this.bossAlive--;this.bossShock(e);this.tunBossDown(e);return;}   /* the tunnel's boss drops nothing: its prize is the three chests */
     if(e.bd&&e.bd.sig==='rain')this.rain=[];
     this.burst(e.x,e.y-8,e.boss?45:6,e.boss?e.bd.c:'#ffffff');this.audio.sfx(e.boss?'boom':'pop');
@@ -985,16 +1009,16 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       return;
     }
     if(e.boss){
-      this.run.bossKills++;this.bossAlive--;
+      this.run.bossKills++;this.bossAlive--;{const B=this.bkills||(this.bkills={});B[e.bid]=(B[e.bid]||0)+1;}   /* v117: career: bosses by id */
       if(e.tama){e.tama.lock=false;e.tama.beaten=true;this.ring(e.tama.x,e.tama.y-30,140,'#ffd23f',.8);this.say(this.env.tr(T('Il Tamagami cede la Super Sfera: prendila!','The Tamagami yields the Super Dragon Ball: take it!')),'#ffd23f',3.2);}
       const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
-      {this.chests.push({...this.landAt(e.x,e.y,30),final:e.final,t:0,boss:true,rar:this.rollChestRar()});}
+      {this.chests.push({...this.landAt(e.x,e.y,30),final:e.final,t:0,boss:true,rar:BOSSX.chestRar(this,e)});}
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
-      this.shake=.7;this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
+      this.shake=.7;this.hitStop(HS_BOSS,ZP_BOSS);this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
-      if(e.final){this.startVictory(e);}
+      if(e.final){const fn=BOSSX.finisherName(this,this.curW);if(fn)this.finisher={n:fn,c:(this.curW&&WEAPONS[this.curW]&&WEAPONS[this.curW].c)||'#ffd23f'};this.startVictory(e);}   /* v116: the named finishing move */
       return;
     }
     if(e.elite)this.eliteDown(e);
@@ -1009,7 +1033,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   bumpStreak(){
     const n=++this.streak;this.streakW=this.streakWin(n);this.streakT=this.streakW;this.streakPop=.28;if(n>(this.run.streak||0))this.run.streak=n;
     /* coin streak: a hidden bar refilled by every kill and drained 1% every 0.5 s; every CK_EVERY kills in a row pay CK_COINS coins */
-    this.cstk++;this.cstkT=1;if(this.cstk%CK_EVERY===0){this.addZenny(CK_COINS);this.run.cstkPaid=(this.run.cstkPaid||0)+CK_COINS;this.audio.sfx('coin');this.floatText(this.p.x,this.p.y-46,'+Z '+CK_COINS,1);}
+    this.cstk++;this.cstkT=1;if(this.cstk%CK_EVERY===0){this.addZenny(CK_COINS,1);this.run.cstkPaid=(this.run.cstkPaid||0)+CK_COINS;this.audio.sfx('coin');this.floatText(this.p.x,this.p.y-46,'+Z '+CK_COINS,1);}
+    {const ct=COMBO.find(c=>c.n===n);if(ct){const p=this.p,pct=Math.round((ct.m-1)*100);   /* v116: a combo tier starts: big banner, the multiplier holds while the streak lives */
+      this.say(this.env.tr(ct.t),ct.c,2.2,this.env.tr(T6('+'+pct+'% Zenny ed esperienza finché la serie dura','+'+pct+'% Zenny and experience while the streak lasts','+'+pct+'% de Zenny y experiencia mientras dure la racha','+'+pct+' % de Zenny et d\'expérience tant que la série dure','+'+pct+' % Zenny und Erfahrung, solange die Serie hält','+'+pct+'% de Zenny e experiência enquanto a sequência durar')));
+      this.ring(p.x,p.y,160,ct.c,.7);this.burst(p.x,p.y-16,40,ct.c);this.flash=Math.max(this.flash||0,.2);this.flashC=ct.c;this.audio.sfx('evolve');this.hitStop(.05,.05);this.addXp(this.need*.05);return;}}
     const ix=STREAK_MS.indexOf(n);if(ix<0&&!(n>2000&&n%500===0))return;
     const p=this.p,t=ix<0?5:ix,col=STREAK_COL[Math.min(5,Math.floor(t*.6+.4))],xp=this.need*(.03+.008*Math.min(8,t));
     this.addXp(xp);this.audio.sfx('pkxp');
@@ -1017,7 +1044,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.ring(p.x,p.y,70+Math.min(110,t*14),col,.5);this.burst(p.x,p.y-16,10+t*3,col);
     if(t>=3){this.flash=Math.max(this.flash||0,.14);this.flashC=col;}
   }
-  dropGem(x,y,v){if(this.tun){this.addXp(v);return;}   /* tunnel: the experience goes straight to you */
+  dropGem(x,y,v){v*=EXTRAS.wxGem(this);if(this.tun){this.addXp(v);return;}   /* tunnel: the experience goes straight to you */
     [x,y]=this.dryPos(x,y);if(this.gm.length>GEM_CAP*1.7){this.rgAdd(v,x,y);return;}this.gm.push({x,y,v,att:false});}
   /* distance from the player to the screen edge along an angle (just off screen = this + a small margin) */
   edgeDist(a){const hw=this.vw/2+30,hh=this.vh/2+30,c=Math.abs(Math.cos(a))||1e-6,s=Math.abs(Math.sin(a))||1e-6;return Math.min(hw/c,hh/s);}
@@ -1181,8 +1208,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     d=Math.max(1,Math.round((src&&src.pct?d:d-this.S.armor)*this.S.taken));   /* a percentage hit (Super Buu's rain) ignores armor */
     d=Math.min(d,Math.ceil(p.maxHp*(src&&src.trap?TRAP_P:src&&(src.boss||src.bs)?.4:.26)));
     this.emote(p.hp-d<p.maxHp*.3?'pain':'hurt',.8);
-    p.hp-=d;p.inv=.5;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);this.logTaken(d,src);
+    p.hp-=d;p.inv=.5;p.hurtAt=this.t;this.shake=Math.max(this.shake,.18);this.audio.sfx('hurt');this.floatText(p.x,p.y-40,d,4);this.logTaken(d,src);
     if(this.bossAlive>0)this.bossHit=true;
+    MOMENTS.checkLastStand(this);MAPX.onHurt(this);   /* v116 */
     if(p.hp<=0)this.lethal();
   }
   /* v109: damage taken, by source (end screen "Danni subiti"): an enemy or boss (bullets, ground circles and rain carry their owner in .o), traps, lava, other */
@@ -1251,7 +1279,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.tickBanner(dt);
     if(v.t>=v.dur){   /* then POST_T seconds to pick up the loot (no enemies, still invulnerable) before the stage-complete menu */
       this.vic=null;if(this.audio.slowMusic)this.audio.slowMusic(1);this.post=POST_T;
-      this.say(this.env.tr(T('RACCOGLI IL BOTTINO!','COLLECT THE LOOT!')),'#ffd23f',3,this.env.tr(T('30 secondi prima della fine dello stage','30 seconds before the end of the stage')));
+      this.say(this.env.tr(T('RACCOGLI IL BOTTINO!','COLLECT THE LOOT!')),'#ffd23f',3,this.env.tr(T(POST_T+' secondi prima della fine dello stage',POST_T+' seconds before the end of the stage')));
     }
   }
   /* tickets for the Gacha shop: kept in the run and added to the save when the run ends (like the zenny) */
@@ -1475,7 +1503,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
     Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
     if(at&&at.tama)e.tama=at.tama;
-    this.en.push(e);this.bossAlive++;this.bossHit=false;
+    this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
     this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
   }
@@ -1770,6 +1798,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       b.x=e.x;b.y=e.y-e.r*.6;
       if(b.t<b.charge){const ta=Math.atan2(p.y-14-b.y,p.x-b.x);let d=ta-b.a;while(d>Math.PI)d-=TAU;while(d<-Math.PI)d+=TAU;b.a+=d*Math.min(1,dt*3);}
       else{
+        if(!b.shot&&!b.cp&&!b.kc&&CLASH.maybe(this,b))return;
         if(!b.shot){b.shot=true;this.shake=Math.max(this.shake,.5);this.flash=.25;this.flashC=b.col;this.audio.sfx('boom');this.burst(b.x+Math.cos(b.a)*30,b.y+Math.sin(b.a)*30,18,b.col);}
         b.hcd=(b.hcd||0)-dt;
         const dx=p.x-b.x,dy=p.y-14-b.y,c=Math.cos(b.a),s2=Math.sin(b.a),al=dx*c+dy*s2,pe=Math.abs(-dx*s2+dy*c);
@@ -1829,6 +1858,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.flash=.7;this.flashC=nb.c;this.shake=.8;this.audio.sfx('transform');this.eb=[];
     this.say(this.env.tr(nb.n).toUpperCase()+'!',nb.c,3.4,this.env.tr(T('Recupera il 50% della vita, statistiche +20%','Recovers 50% health, stats +20%')));
     this.floatText(e.x,e.y-e.r*2.4,'+50% HP',1);
+    MOMENTS.bossCine(this,e,nb.n,nb.c);   /* v116 */
   }
   explode(e){
     const p=this.p,rad=e.def.rad;
@@ -1844,8 +1874,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}
     if(this.post>0){this.post-=rdt;if(this.post<=0||(!this.chests.length&&!this.loot.length&&!this.gm.length&&!this.trial&&!this.tun)){this.post=0;this.finish(true);return;}}   /* loot time after the final boss: ends early once everything is picked up */
     dt*=this.timeScale;
+    if(this.hs>0){this.hs-=rdt;return;}
+    if(this.clash){CLASH.update(this,rdt);return;}
+    if(MOMENTS.tickCine(this,rdt))return;   /* v116: a boss transformation cinematic */   /* v116: Ki Clash: everything else waits */   /* v116: hit-stop: the world holds still, the frame is still drawn */
     if(this.summon){SUMMON.update(this,rdt);if(this.summon)dt*=this.summon.ts;if(this.modal)return;}   /* v113: the dragon is coming: the world almost stops */
     Hints.tick(this,rdt);   /* v115: guided first run */
+    if(!this.modal&&!this.dying){MOMENTS.tickLastStand(this,dt);MOMENTS.tickAlly(this,dt);MAPX.tick(this,dt);GHOST.rec(this,dt);BOSSX.tick(this,dt);EXTRAS.tick(this,dt);if((this._alT=(this._alT||0)-dt)<=0){this._alT=.5;MOMENTS.checkAlly(this);PROGX.tickRec(this);}}   /* v116 */
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
@@ -1865,7 +1899,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 
     let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
-    const ox0=p.x,oy0=p.y;p.mv=il>.05;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
+    const ox0=p.x,oy0=p.y;p.mv=il>.05;p.ivx=ix;p.ivy=iy;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!frozen){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
     if(!(this.trial&&this.trial.zeno))p.hp=Math.min(p.maxHp,p.hp+S.regen*dt);   /* no passive regeneration inside Zeno's Shop */

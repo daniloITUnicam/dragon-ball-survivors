@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','game','telemetry','skills','events','summon','hints','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_account','pausemap','grimoire','patches','ui_patch','update','app']
+ORDER = ['util','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_account','pausemap','grimoire','patches','ui_patch','update','app']
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
