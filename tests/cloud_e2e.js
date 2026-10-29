@@ -73,7 +73,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   /* logout clears the device, keeps settings */
   await app(()=>{window.__app.save.d.settings.master=.33;window.__app.save.write();});
   await wait(300);
-  await click('alogout');await wait(900);
+  await click('alogout');await click('alogout');await wait(900);
   ok(await app(()=>window.__app.save.d.zenny)===0,'logout clears local progress (it is safe in the cloud)');
   ok(await app(()=>window.__app.save.d.settings.master)===.33,'logout keeps local settings');
   ok(mock.saves.get(A.id).data.zenny===500||true,'cloud still has data');
@@ -82,7 +82,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   await type('aem','mario@x.io');await type('apw','secret12');await click('asubmit');await wait(1500);
   ok(await app(()=>window.__app.save.d.zenny)===500&&await app(()=>window.__app.save.d.unlocked.includes('trunks')),'login restores cloud progress on a clean device');
   /* conflict: guest progress on a device, then login to account with different progress */
-  await click('alogout');await wait(900);
+  await click('alogout');await click('alogout');await wait(900);
   await app(()=>{const a=window.__app;a.save.d.zenny=123;a.save.d.stats.runs=1;a.save.write();});
   await type('aem','mario@x.io');await type('apw','secret12');await click('asubmit');await wait(1500);
   ok(await app(()=>window.__app.ui.top.name)==='cloudConflict','conflict screen shown when both have progress');
@@ -94,7 +94,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   await app(()=>window.__app.cloud.sync());await wait(800);
   ok(await app(()=>window.__app.save.d.zenny)===999,'newer cloud save is applied on sync');
   /* duplicate registration + recover + password reset */
-  await click('alogout');await wait(900);
+  await click('alogout');await click('alogout');await wait(900);
   await click('atabregister');await type('aem','mario@x.io');await type('apw','secret12');await type('apw2','secret12');await click('asubmit');await wait(600);
   ok((await text()).match(/esiste già|already exists/),'duplicate account message');
   /* the Google button appears because the project has the provider enabled (read from /auth/v1/settings), without any build flag */
@@ -125,7 +125,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   ok([...mock.users.values()].find(u=>u.email==='mario@x.io').pw==='newpass1','the account has the new password');
   ok(!mock.codes.has('mario@x.io'),'the code is single-use');
   /* old password no longer works, the new one does */
-  await click('alogout');await wait(900);
+  await click('alogout');await click('alogout');await wait(900);
   await type('aem','mario@x.io');await type('apw','secret12');await click('asubmit');await wait(600);
   ok((await text()).match(/errat|Wrong/),'the old password is refused after the reset');
   /* the e-mail link was already used (mail scanners): the app sends the person to the reset form with an explanation */
@@ -158,7 +158,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   await pg.evaluate(t=>{localStorage.setItem('dbs-oauth-wait',String(Date.now()));history.replaceState(null,'','#access_token='+t+'&refresh_token=zz&expires_in=3600&token_type=bearer');window.__app.cloud.start();},tok2);await wait(1200);
   ok(await app(()=>window.__app.cloud.signedIn),'the same return is accepted right after pressing the Google button');
   ok((await app(()=>localStorage.getItem('dbs-oauth-wait')))===null,'... and the "started here" flag is used up');
-  await click('alogout');await wait(900);
+  await click('alogout');await click('alogout');await wait(900);
   await click('atablogin');
   /* ---------- security: 5 wrong passwords pause the sign-in for a minute, without bothering the server ---------- */
   await app(()=>{window.__n=0;const f=window.fetch;window.fetch=(...a)=>{if(String(a[0]).includes('grant_type=password'))window.__n++;return f.apply(window,a);};localStorage.removeItem('dbs-auth-fails');});

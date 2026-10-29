@@ -79,21 +79,41 @@ Object.assign(UI.prototype,{
         field('apw','password',this.t('clPass'),'pw','new-password'),field('apw2','password',this.t('clPass2'),'pw2','new-password'),msg,
         h('div',{class:'row'},h('button',{class:'btn primary',disabled:st.busy,'data-fid':'asubmit',onclick:()=>{this.sfx();go();}},this.t('clSave'))));
     }
-    /* ----- signed in ----- */
+    /* ----- signed in (v122): profile card with the sync state, a grid of career numbers, the actions, and "Disconnect account" (two taps) apart ----- */
     if(c.signedIn){
-      const cf=c.status==='conflict';
-      return h('div',{class:'acct acctscr'},this.header('clAccount'),
-        h('div',{class:'accard'},
-          h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'aemail'},'☁ '+this.maskEmail(c.email)),
-          h('div',{class:'ast '+c.status},this.cloudIcon()+' '+this.cloudStatusText()),
-          c.lastSync?h('div',{class:'lbl'},this.t('clLast',{t:new Date(c.lastSync).toLocaleTimeString()})):null,
-          h('p',{class:'sub'},this.t('clAutoNote'))),
+      const cf=c.status==='conflict',d=this.save,s=d.stats||{},T_=x=>this.tr(x);
+      const hm=sec=>{sec=Math.floor(sec||0);return Math.floor(sec/3600)+'h '+String(Math.floor(sec%3600/60)).padStart(2,'0')+'m';};
+      const tot=[0,1,2,3,4].reduce((n,r)=>n+gachaPool(r).length,0),ach=Object.keys(d.ach||{}).length;
+      const tile=(ic,l,v,sub)=>h('div',{class:'astile'},h('i',null,ic),h('b',null,v),h('span',null,T_(l)),sub?h('small',null,sub):null);
+      const av=h('div',{class:'aav'},this.coopChar?this.coopChar(d.lastChar||'goku',64,64):null);
+      const nick=c.nick||'—',title=d.title&&typeof TITLES!=='undefined'?T_(TITLES.text(d.title)):'';
+      const lo=st.lo&&Date.now()-st.lo<3500;   /* the first tap arms the button for 3.5 s */
+      return h('div',{class:'acct acctscr acct2'},this.header('clAccount'),
+        h('div',{class:'accard aprof'},av,
+          h('div',{class:'apinfo'},h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'anick'},nick,title?h('span',{class:'atitle'},title):null),
+            h('div',{class:'aemail'},'☁ '+this.maskEmail(c.email))),
+          h('div',{class:'apsync'},h('div',{class:'ast pill '+c.status},this.cloudIcon()+' '+this.cloudStatusText()),
+            c.lastSync?h('small',null,this.t('clLast',{t:new Date(c.lastSync).toLocaleTimeString()})):null),
+          h('p',{class:'sub anote'},this.t('clAutoNote'))),
         msg,
-        h('div',{class:'row'},
-          cf?h('button',{class:'btn primary','data-fid':'aresolve',onclick:()=>{this.sfx();this.push('cloudConflict');}},this.t('clResolve'))
-            :h('button',{class:'btn','data-fid':'async',disabled:c.status==='syncing',onclick:()=>{this.sfx();c.sync();}},this.t('clSyncNow')),
-          h('button',{class:'btn alt','data-fid':'alogout',onclick:async()=>{this.sfx();st.msg=null;await c.signOut();}},this.t('clLogout'))),
-        h('div',{class:'row'},this.streamerToggle()));
+        h('div',{class:'astats'},
+          tile('💰',T6('Zenny','Zenny','Zenny','Zenny','Zenny','Zenny'),fmtN(d.zenny||0)),
+          tile('🎮',T6('Partite','Runs','Partidas','Parties','Runden','Partidas'),String(s.runs||0)),
+          tile('⏱',T6('Tempo di gioco','Play time','Tiempo de juego','Temps de jeu','Spielzeit','Tempo de jogo'),hm(s.playT)),
+          tile('💀',T6('Nemici sconfitti','Enemies defeated','Enemigos derrotados','Ennemis vaincus','Besiegte Gegner','Inimigos derrotados'),fmtN(s.kills||0)),
+          tile('👥',T6('Personaggi','Characters','Personajes','Personnages','Figuren','Personagens'),(d.unlocked||[]).length+' / '+CHARS.length),
+          tile('🏅',T6('Achievement','Achievements','Logros','Succès','Erfolge','Conquistas'),ach+' / '+ACHIEVEMENTS.length),
+          tile('💎',T6('Cimeli','Trinkets','Reliquias','Reliques','Relikte','Relíquias'),(d.bag||[]).length+' / '+tot),
+          tile('🏆',T6('Vittorie','Wins','Victorias','Victoires','Siege','Vitórias'),String(s.wins||0))),
+        h('div',{class:'aacts'},
+          cf?h('button',{class:'btn primary','data-fid':'aresolve',onclick:()=>{this.sfx();this.push('cloudConflict');}},'❗ '+this.t('clResolve'))
+            :h('button',{class:'btn primary','data-fid':'async',disabled:c.status==='syncing',onclick:()=>{this.sfx();c.sync();}},'🔄 '+this.t('clSyncNow')),
+          this.streamerToggle()),
+        h('div',{class:'adanger'},
+          h('button',{class:'btn small bad'+(lo?' armed':''),'data-fid':'alogout',onclick:async()=>{this.sfx();
+            if(!lo){st.lo=Date.now();this.rebuild(true);setTimeout(()=>{if(this.top&&this.top.name==='account')this.rebuild(true);},3600);return;}
+            st.lo=0;st.msg=null;await c.signOut();}},'⛓ '+this.t(lo?'clLogoutSure':'clLogout')),
+          h('small',null,this.t('clLogoutNote'))));
     }
     /* ----- signed out ----- */
     const tabBtn=(id,key)=>h('button',{class:'btn small tab'+(st.tab===id?'':' alt'),'data-fid':'atab'+id,onclick:()=>{this.sfx('uiTab');st.tab=id;st.step=1;st.msg=null;st.pw2='';st.code='';this.rebuild(true);}},this.t(key));
