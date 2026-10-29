@@ -10,7 +10,15 @@ Sprites.warm=function(defs){
   const q=Sprites._wq||(Sprites._wq=[]);
   for(const sp of defs){if(!sp)continue;for(let f=0;f<7;f++)q.push([sp,f,false]);for(let f=1;f<=4;f++)q.push([sp,f,true]);}
 };
-Sprites.warmStep=function(){const q=Sprites._wq;if(!q||!q.length)return;const w=q.shift();Sprites.forSp(w[0],w[1],w[2]);};
+/* v121: the warming runs in the browser's idle time between frames (several sprites when there is room, none while frames are busy);
+   the per-frame step stays as the fallback where idle callbacks do not exist */
+Sprites.warmStep=function(){const q=Sprites._wq;if(!q||!q.length)return;
+  if(typeof requestIdleCallback==='function'){if(!Sprites._wi){Sprites._wi=1;requestIdleCallback(Sprites.warmIdle,{timeout:500});}return;}
+  const w=q.shift();Sprites.forSp(w[0],w[1],w[2]);};
+Sprites.warmIdle=function(dl){const q=Sprites._wq;Sprites._wi=0;
+  if(dl.didTimeout&&q&&q.length){const w=q.shift();Sprites.forSp(w[0],w[1],w[2]);}   /* a busy page: one at a time still */
+  while(q&&q.length&&dl.timeRemaining()>3){const w=q.shift();Sprites.forSp(w[0],w[1],w[2]);}
+  if(q&&q.length){Sprites._wi=1;requestIdleCallback(Sprites.warmIdle,{timeout:500});}};
 
 Sprites.paintHD=function(W,H,ox,oy,draw,S){
   const pad=Math.max(2,Math.round(S*.42)),w=W*S,h=H*S;

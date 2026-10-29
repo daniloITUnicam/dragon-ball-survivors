@@ -35,6 +35,24 @@ const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
+/* v121: keep only the items for which f holds, in place (order kept) */
+function keepIf(a,f){let j=0;for(let i=0;i<a.length;i++){const x=a[i];if(f(x))a[j++]=x;}a.length=j;return a;}
+/* v121: spatial hash of the enemies, rebuilt each frame without allocations: buckets of 40-unit cells chained through typed arrays.
+   Used for the crowd push-apart and for the shots (which then only test the enemies near them, in the original array order). */
+const EGRID={S:40,M:4095,head:new Int32Array(4096),next:new Int32Array(512),mark:new Int32Array(512),cand:new Int32Array(512),stamp:0,en:null,boss:[],maxR:0,maxZ:0,
+  key(cx,cy){return (Math.imul(cx,73856093)^Math.imul(cy,19349663))&this.M;},
+  build(en){const n=en.length;if(this.next.length<n){this.next=new Int32Array(n*2);this.mark=new Int32Array(n*2);this.cand=new Int32Array(n*2);}
+    this.head.fill(-1);this.en=en;this.boss.length=0;let mr=0,mz=0;
+    for(let i=0;i<n;i++){const e=en[i];if(e.dead)continue;if(e.boss){this.boss.push(i);continue;}
+      const h=this.key(Math.floor(e.x/40),Math.floor(e.y/40));this.next[i]=this.head[h];this.head[h]=i;if(e.r>mr)mr=e.r;if(e.zoff>mz)mz=e.zoff;}
+    this.maxR=mr;this.maxZ=mz;},
+  /* indices of the enemies whose cell touches the box (plus every boss), sorted; returns how many are in this.cand */
+  box(x0,y0,x1,y1){const S=this.S,cx0=Math.floor(x0/S),cy0=Math.floor(y0/S),cx1=Math.floor(x1/S),cy1=Math.floor(y1/S),st=++this.stamp,C=this.cand,M=this.mark;let n=0;
+    if((cx1-cx0+1)*(cy1-cy0+1)>this.M)return -1;   /* (a box this large: test everyone) */
+    for(let cx=cx0;cx<=cx1;cx++)for(let cy=cy0;cy<=cy1;cy++)for(let i=this.head[this.key(cx,cy)];i>=0;i=this.next[i])if(M[i]!==st){M[i]=st;C[n++]=i;}
+    for(const i of this.boss)if(M[i]!==st){M[i]=st;C[n++]=i;}
+    if(n>1)C.subarray(0,n).sort();return n;}
+};
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
@@ -1952,7 +1970,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.seenT-=dt;
     if(this.seenT<=0){
       this.seenT=.5;
-      if(!this.sandbox){const vr=this.viewR*1.1,p0=this.p;for(const e of this.en){const id=e.boss?e.bd.id:e.def.id;if(id&&!this.save.seen[id]&&Math.hypot(e.x-p0.x,e.y-p0.y)<vr){this.save.seen[id]=1;this.newSeen=true;}}}
+      if(!this.sandbox&&(this._seenT=(this._seenT||0)-dt)<=0){this._seenT=.25;const vr=this.viewR*1.1,p0=this.p;for(const e of this.en){const id=e.boss?e.bd.id:e.def.id;if(id&&!this.save.seen[id]&&Math.hypot(e.x-p0.x,e.y-p0.y)<vr){this.save.seen[id]=1;this.newSeen=true;}}}
       if(this.newSeen){this.newSeen=false;this.progress.save.write();}
     }
 
@@ -1971,11 +1989,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}
-    this.fx=this.fx.filter(f=>f.l>0);this.updateCorpses(dt);
+    keepIf(this.fx,f=>f.l>0);this.updateCorpses(dt);
     for(const t of this.tx)t.t+=dt;
-    this.tx=this.tx.filter(t=>t.t<t.l);
-    this.en=this.en.filter(e=>!e.dead);this.pr=this.pr.filter(b=>!b.dead);this.eb=this.eb.filter(b=>!b.dead);
-    this.gm=this.gm.filter(g=>!g.dead);this.loot=this.loot.filter(l=>!l.dead);this.chests=this.chests.filter(c=>!c.dead);
+    keepIf(this.tx,t=>t.t<t.l);   /* v121: the lists are compacted in place (no new arrays every frame) */
+    keepIf(this.en,e=>!e.dead);keepIf(this.pr,b=>!b.dead);keepIf(this.eb,b=>!b.dead);
+    keepIf(this.gm,g=>!g.dead);keepIf(this.loot,l=>!l.dead);keepIf(this.chests,c=>!c.dead);
 
     if(inTrial&&this.trial){
       const tr=this.trial,cl=o=>{const dx=o.x-tr.cx,dy=o.y-tr.cy,d=Math.hypot(dx,dy);if(d>tr.R){o.x=tr.cx+dx/d*tr.R;o.y=tr.cy+dy/d*tr.R;}};
@@ -2204,6 +2222,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     for(const o of this.en){if(o.dead||o===skip)continue;const dx=o.x-x,dy=o.y-8-y,rr=rad+o.r;if(dx*dx+dy*dy<rr*rr)this.hit(o,dmg,dx*.4,dy*.4);}
   }
   updateProjectiles(dt){
+    if(this.pr.length)EGRID.build(this.en);
     for(const b of this.pr){
       this.curW=b.wid||null;
       if(b.home){
@@ -2219,7 +2238,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
       if(b.life<=0){b.dead=true;continue;}
       if(this.eb.length)this.cutC(b.x,b.y,b.r);   /* a ki shot cancels the enemy bullet it meets (and keeps flying) */
-      for(const e of this.en){
+      const G=EGRID,EN=this.en,R=G.maxR,nc=G.box(b.x-R*1.2-b.r-4,b.y-R-b.r-4,b.x+R*1.2+b.r+4,b.y+G.maxZ+R*4.3+b.r+12);
+      for(let ci=0,ne=nc<0?EN.length:nc;ci<ne;ci++){const e=EN[nc<0?ci:G.cand[ci]];
         if(e.dead||b.hit.includes(e))continue;
         const dx=e.x-b.x,dy=e.y-8-b.y,rr=e.r+b.r;
         if(b.kb?KiWeapon.hits(b,e):dx*dx+dy*dy<rr*rr){
@@ -2232,12 +2252,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
 
   updateEnemies(dt){
-    let p=this.p;const grid=new Map();this.shotRefill(dt);
-    for(const e of this.en){
-      if(e.dead)continue;
-      const k=(Math.floor(e.x/40)+5000)*10000+(Math.floor(e.y/40)+5000);
-      let c=grid.get(k);if(!c){c=[];grid.set(k,c);}c.push(e);
-    }
+    let p=this.p;this.shotRefill(dt);EGRID.build(this.en);
     const vr=this.viewR*1.3,tslow=this.slowT>0;
     /* v109: what an enemy fires during its turn (bullets, ground circles, rain) remembers who fired it (.o), for the "damage taken" summary */
     let ow=null,nb=this.eb.length,nz=this.bz.length,nr=(this.rain||[]).length;
@@ -2248,8 +2263,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(e.atk>0)e.atk-=dt;
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
-      const dx=p.x-e.x,dy=p.y-e.y,dist=Math.hypot(dx,dy)||1;
-      if(!e.boss&&Math.hypot(dx,dy>0?dy/TOP_K:dy)>vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
+      const dx=p.x-e.x,dy=p.y-e.y,dist=Math.sqrt(dx*dx+dy*dy)||1,dyk=dy>0?dy/TOP_K:dy;
+      if(!e.boss&&dx*dx+dyk*dyk>vr*vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
         const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
       const ux=dx/dist,uy=dy/dist;
       let mx=0,my=0,sp=e.spd*(e.slow>0?.6:1)*(tslow?(e.boss?.75:.55):1);
@@ -2333,21 +2348,25 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       e.x+=e.kx*dt;e.y+=e.ky*dt;e.kx*=.88;e.ky*=.88;
       if(!e.boss&&!e.def.fly&&e.ai!=='hover'&&!this.trial&&!this.tun)World.resolve(this.stage.theme,e,e.r*.55);
       else if(e.boss&&this.stage.theme==='snake')Snake.clamp(e,e.r*.3);
-      if(!e.boss&&e.ai!=='hover'){
-        const cx=Math.floor(e.x/40)+5000,cy=Math.floor(e.y/40)+5000;
-        for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){
-          const c=grid.get(gx*10000+gy);if(!c)continue;
-          for(const o of c){
-            if(o===e||o.dead)continue;
-            const ox=e.x-o.x,oy=e.y-o.y,rr=(e.r+o.r)*.75,d2=ox*ox+oy*oy;
-            if(d2<rr*rr&&d2>.01){const d=Math.sqrt(d2),push=(rr-d)*.5*(o.boss?2:1);e.x+=ox/d*push;e.y+=oy/d*push;}
-          }
-        }
-      }
       if(this.stage.theme==='void'&&!this.trial)TOPARENA.clamp(e,e.r*.3);   /* flyers, hoverers and bosses too */
       if(e.ai!=='explode'&&!e.under&&dist<e.r+8){if(this.coop)this.hurtP(p,e.dmg,e);else this.hurt(e.dmg,e);}
     }
     tag();
+    this.crowdApart();
+  }
+  /* v121: the crowd pushes itself apart - every touching pair once (each side moves half the overlap; a boss or a hovering enemy is not moved,
+     an enemy touching a boss moves the whole overlap), using the grid built at the start of the frame */
+  crowdApart(){
+    const G=EGRID,EN=this.en,n=EN.length,KB=[0,0,0,0,0,0,0,0,0],vd=this.stage.theme==='void'&&!this.trial;
+    for(let a=0;a<n;a++){const e=EN[a];if(e.dead||e.boss)continue;const se=e.ai!=='hover';
+      const cx=Math.floor(e.x/40),cy=Math.floor(e.y/40);let nk=0;
+      for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){const k=G.key(gx,gy);let dup=false;for(let q=0;q<nk;q++)if(KB[q]===k){dup=true;break;}if(dup)continue;KB[nk++]=k;   /* (two cells in one bucket: walk it once) */
+        for(let b=G.head[k];b>=0;b=G.next[b]){if(b<=a)continue;const o=EN[b];if(o.dead)continue;const so=o.ai!=='hover';if(!se&&!so)continue;
+          const ox=e.x-o.x,oy=e.y-o.y,rr=(e.r+o.r)*.75,d2=ox*ox+oy*oy;
+          if(d2<rr*rr&&d2>.01){const d=Math.sqrt(d2),push=(rr-d)*.5,ux=ox/d*push,uy=oy/d*push;if(se){e.x+=ux;e.y+=uy;}if(so){o.x-=ux;o.y-=uy;}}}}
+      if(se)for(const bi of G.boss){const o=EN[bi];if(o.dead)continue;const ox=e.x-o.x,oy=e.y-o.y,rr=(e.r+o.r)*.75,d2=ox*ox+oy*oy;
+        if(d2<rr*rr&&d2>.01){const d=Math.sqrt(d2),push=rr-d;e.x+=ox/d*push;e.y+=oy/d*push;}}
+      if(vd)TOPARENA.clamp(e,e.r*.3);}
   }
   /* ---- enemy fire budget (see SHOT_* above) ---- */
   shotN(n){return Math.max(1,Math.round(n*SHOT_N_K));}

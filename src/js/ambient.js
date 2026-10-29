@@ -124,8 +124,8 @@ const Ambient={
       const f=Math.round((.3+.2*Math.sin(t*2+tx+ty*1.3))*10)/10,o=2*Math.sin(t*1.5+tx*2+ty);
       let drawn=false;
       const e1=!this.isW(tx,ty-1),e2=!this.isW(tx,ty+1),e3=!this.isW(tx-1,ty),e4=!this.isW(tx+1,ty);
-      if(e1||e2||e3||e4){ctx.fillStyle='rgba(255,255,255,'+f+')';
-        if(e1)ctx.fillRect(X,Y+o+2,TS,3);if(e2)ctx.fillRect(X,Y+TS-5-o,TS,3);if(e3)ctx.fillRect(X+o+2,Y,3,TS);if(e4)ctx.fillRect(X+TS-5-o,Y,3,TS);}
+      if(e1||e2||e3||e4){const fc='rgba(255,255,255,'+f+')',R=RB.on?(x,y,w,h)=>RB.add(fc,x,y,w,h):(x,y,w,h)=>{ctx.fillStyle=fc;ctx.fillRect(x,y,w,h);};
+        if(e1)R(X,Y+o+2,TS,3);if(e2)R(X,Y+TS-5-o,TS,3);if(e3)R(X+o+2,Y,3,TS);if(e4)R(X+TS-5-o,Y,3,TS);}
     }
     if(!this.on||this.lod<.5)return;
     const h=hash(tx+5,ty+11);
@@ -137,12 +137,13 @@ const Ambient={
       }
       return;
     }
+    const R=RB.on?(c,x,y,w,hh)=>RB.add(c,x,y,w,hh):(c,x,y,w,hh)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,hh);};   /* batched when the renderer collects them (one fill per colour) */
     if(theme==='plains'){
       if(lv>=3&&h>.3){for(let i=0;i<3;i++){const fx=X+8+hash(tx*3+i,ty)*46,fy=Y+10+hash(tx,ty*3+i)*42,s=Math.sin(t*2+fx*.1)*1.3;
-        ctx.fillStyle='#2f8a3a';ctx.fillRect(fx+s*.5,fy+3,1.4,4);ctx.fillStyle=FLOWC[(hash(tx+i,ty*7)*4)|0];ctx.fillRect(fx+s-1.5,fy-1,3.5,3.5);ctx.fillStyle='#fff6a8';ctx.fillRect(fx+s-.5,fy,1.2,1.2);}}
-      else if(lv<=1&&h>.6){ctx.fillStyle='#2f6a22';for(let i=0;i<3;i++){const gx=X+6+hash(tx+i,ty*5)*50,gy=Y+10+hash(tx*5,ty+i)*44,s=Math.sin(t*2.3+gx*.2)*1.6;ctx.fillRect(gx+s,gy,1.2,5);ctx.fillRect(gx+s*.6+2,gy+1,1.2,4);}}
+        R('#2f8a3a',fx+s*.5,fy+3,1.4,4);R(FLOWC[(hash(tx+i,ty*7)*4)|0],fx+s-1.5,fy-1,3.5,3.5);R('#fff6a8',fx+s-.5,fy,1.2,1.2);}}
+      else if(lv<=1&&h>.6){for(let i=0;i<3;i++){const gx=X+6+hash(tx+i,ty*5)*50,gy=Y+10+hash(tx*5,ty+i)*44,s=Math.sin(t*2.3+gx*.2)*1.6;R('#2f6a22',gx+s,gy,1.2,5);R('#2f6a22',gx+s*.6+2,gy+1,1.2,4);}}
     }else if((theme==='waste'||theme==='redrock')&&h>.75){
-      ctx.fillStyle=theme==='waste'?'rgba(255,240,200,.08)':'rgba(255,200,150,.08)';ctx.fillRect(X+h*20,Y+((t*10+h*80)%64),30,1.5);
+      R(theme==='waste'?'rgba(255,240,200,.08)':'rgba(255,200,150,.08)',X+h*20,Y+((t*10+h*80)%64),30,1.5);
     }
   },
   /* additive pass (glowing cracks, bulbs, glitter) */

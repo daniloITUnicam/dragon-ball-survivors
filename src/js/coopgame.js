@@ -5,7 +5,7 @@
    to whoever picks it up; a hero who falls is down until a teammate stands next to them for 3 s; everybody down = the run is lost.
    The host sends each client a snapshot of what is around them (~11 per second) plus the effects and sounds; the client draws it
    with its own copy of the Game (never simulated) and sends back its stick, its buttons and its choices in the windows. ====== */
-const COOP_SNAP=.09,COOP_IN=.05,COOP_R=1050,COOP_LEASH=620,COOP_REV=3,COOP_REV_R=46,COOP_REV_HP=.4,COOP_MAXPR=260,COOP_MAXGM=260;
+const COOP_PICK_T=6,COOP_SNAP=.09,COOP_IN=.05,COOP_R=1050,COOP_LEASH=620,COOP_REV=3,COOP_REV_R=46,COOP_REV_HP=.4,COOP_MAXPR=260,COOP_MAXGM=260;
 /* fields of the Game that belong to the world (everything else is per hero) */
 const COOP_WORLD=new Set(('env audio progress stageIdx stage sd spdK diffId D week pacts pk dmut dmutN x2 sandbox t kills lvl xp need en pr eb gm rg loot lootCd feat chests fx tx corpses '+
   'endless enMile en0 xpAcc xpRate balls ballSet summon hs zoomP rain vw vh streak streakT streakPop streakW cstk cstkT TS CR evK rt dur trialN spAcc hordeT packT bossQ hordePlan wave '+
@@ -15,7 +15,7 @@ const COOP_WORLD=new Set(('env audio progress stageIdx stage sd spdK diffId D we
 Object.assign(Game.prototype,{
   /* ---------- host ---------- */
   coopInit(o){
-    this.coop={me:o.me,code:o.code,mates:[],mq:[],mqId:0,ev:[],paused:false,over:false,names:[o.me]};
+    this.coop={me:o.me,code:o.code,mates:[],mq:[],mqId:0,hostQ:[],ev:[],paused:false,over:false,names:[o.me]};
     this.p.nick=o.me;
     const rec=this.coop.ev,self=this;
     for(const k of['ring','burst','bolt','pillar']){const f=Game.prototype[k];this[k]=function(...a){f.apply(self,a);rec.push([k,...a]);};}
@@ -85,8 +85,12 @@ Object.assign(Game.prototype,{
       const lm={type:'level',options:this.levelOptions()};const rc=this.recommend(lm.options);if(rc){lm.rec=rc.i;lm.recWhy=rc.why;}
       if(lm.options.every(o=>o.type==='z')){lm.maxed=true;}
       this.coopQueue(m,lm);});},
-  coopQueue(m,modal){const id=++this.coop.mqId,q={id,nick:m.nick,modal};this.coop.mq.push(q);this.coopSendModal(m,q);},
-  coopSendModal(m,q){const H=m.in?this:m.h;COOPG.send(m.nick,{t:'modal',id:q.id,m:q.modal,lv:this.lvl,ru:H.ru,ru0:H.ru0});},
+  /* a mate's windows wait in line: one is shown at a time, and it has COOP_PICK_T seconds before a card is taken for them */
+  coopQueue(m,modal,first){const id=++this.coop.mqId,q={id,nick:m.nick,modal,sent:false,left:COOP_PICK_T};if(first)this.coop.mq.unshift(q);else this.coop.mq.push(q);this.coopNext(m);},
+  coopNext(m){if(this.coop.mq.some(x=>x.nick===m.nick&&x.sent))return;const q=this.coop.mq.find(x=>x.nick===m.nick);if(!q)return;q.sent=true;q.left=COOP_PICK_T;this.coopSendModal(m,q);},
+  coopSendModal(m,q){const H=m.in?this:m.h;COOPG.send(m.nick,{t:'modal',id:q.id,m:q.modal,lv:this.lvl,ru:H.ru,ru0:H.ru0,left:q.left});},
+  /* somebody is choosing: the hero of that nick (the host included) */
+  coopChoosing(nick){return nick===this.coop.me?!!(this.coopOwn||this.modal):this.coop.mq.some(x=>x.nick===nick&&x.sent);},
   /* the level window's tools (reroll / skip / ban), used by a mate: applied to their hero, the window goes back redrawn */
   coopLvTool(nick,id,k,i){const q=this.coop.mq.find(x=>x.id===id&&x.nick===nick),m=this.coopMate(nick);if(!q||!m||q.modal.type!=='level')return;
     this.withHero(m,()=>{const keep=this.modal;this.modal=q.modal;try{if(k==='rr')this.rerollLevel();else if(k==='sk')this.skipLevel();else if(k==='bn')this.banLevel(i|0);}finally{this.modal=keep;}});
@@ -95,11 +99,11 @@ Object.assign(Game.prototype,{
   coopAnswer(nick,id,i){const q=this.coop.mq.find(x=>x.id===id&&x.nick===nick),m=this.coopMate(nick);if(!q||!m)return;
     this.coop.mq=this.coop.mq.filter(x=>x!==q);let follow=null;
     this.withHero(m,()=>{const keep=this.modal;this.modal=q.modal;try{this.resolveModal(i);}catch(e){console.error(e);}follow=this.modal;this.modal=keep;});
-    if(follow)this.coopQueue(m,follow);},
+    if(follow)this.coopQueue(m,follow,true);else this.coopNext(m);},
   /* a chest opened by a mate: its rewards are rolled for them */
   coopChest(c,nick){const m=this.coopMate(nick);if(!m)return false;c.dead=true;
     this.withHero(m,()=>{this.run.chests++;const md={type:'chest',rar:c.rar||0,rewards:this.chestRewards(c.final,c.boss,c.elite,c.rar)};this.coopQueue(m,md);});return true;},
-  coopPaused(){return this.coop.mq.length>0||this.coop.paused;},
+  coopPaused(){return this.coop.paused;},
   /* the part of update() that belongs to one hero (movement, regeneration, ability, weapons, pick-ups) */
   coopHeroUpdate(dt){
     const p=this.p,S=this.S;
@@ -109,7 +113,8 @@ Object.assign(Game.prototype,{
     for(const k of['riskT','luckT','petLuckT']){if(this[k]>0){this[k]-=dt;if(this[k]<=0)this.recalc();}}
     if(this.emoT>0){this.emoT-=dt;if(this.emoT<=0)this.emo=null;}if(this.immT>0)this.immT-=dt;
     for(const k of['dmg','haste'])if(this.buffs[k]>0){this.buffs[k]-=dt;if(this.buffs[k]<=0)this.recalc();}
-    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+    const busy=this.coopChoosing(p.nick);if(busy)p.inv=Math.max(p.inv,.15);   /* choosing a card: standing still, untouchable */
+    let ix=busy?0:this.input.x,iy=busy?0:this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;p.ivx=ix;p.ivy=iy;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}
     if(!this.trial&&!this.tun){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);}
@@ -142,6 +147,8 @@ Object.assign(Game.prototype,{
   },
   /* after the host's own update: the mates act, the fallen get up, the run may be over */
   coopAfterUpdate(dt){const C=this.coop;C.hostP=this.p;
+    /* time is up for a window: a random card (or the default answer) is taken, the client's window closes */
+    for(const q of C.mq.slice()){if(!q.sent)continue;q.left-=dt;if(q.left<=0){COOPG.send(q.nick,{t:'close',id:q.id});this.coopAnswer(q.nick,q.id,coopRandPick(q.modal));}}
     for(const m of C.mates)this.withHero(m,()=>{const md=this.modal;this.coopHeroUpdate(dt);if(this.modal&&this.modal!==md){const nm=this.modal;this.modal=md;this.coopQueue(m,nm);}});
     /* reviving: a standing hero next to a fallen one */
     const H=this.coopHeroes();for(const q of H){if(!q.down)continue;const near=H.some(o=>!o.down&&Math.hypot(o.x-q.x,o.y-q.y)<COOP_REV_R);
@@ -167,11 +174,11 @@ Object.assign(Game.prototype,{
     return{t:'s',T:rd(this.t),k:this.kills,l:this.lvl,xp:Math.round(this.xp),nd:this.need,ba:this.bossAlive,sh:rd(this.shake||0),fl:rd(this.flash||0),fc:this.flashC,st:this.streak,
       bn:b?[b.txt,b.col,rd(b.t),rd(b.dur),b.sub||null]:null,h:heroes,e:E,pr:P,eb:EB,gm:GM,lo:LO,ch:CH,
       bz:this.bz.filter(near).map(z=>this.coopPlain(z,null,['o'])),jb:this.jbeams.map(j=>Object.assign(this.coopPlain(j,null,['e']),{ex:rd(j.e?j.e.x:j.x),ey:rd(j.e?j.e.y:j.y)})),
-      md:this.modal?{ty:this.modal.type,who:this.coop.me}:this.coop.mq.length?{ty:'wait',who:this.coop.mq[0].nick}:null,dy:this.dying?rd(this.dying.t):null,vic:this.vic?rd(this.vic.t):null,post:rd(this.post||0)};
+      md:this.coop.names.filter(n=>this.coopChoosing(n)),dy:this.dying?rd(this.dying.t):null,vic:this.vic?rd(this.vic.t):null,post:rd(this.post||0)};
   },
   /* one hero: where, how, what it holds; the full HUD only for the client's own hero */
   coopHeroSnap(m,to){const read=()=>{const p=this.p,mine=p.nick===to,rd=v=>Math.round(v*10)/10;
-      const o={n:p.nick,ch:this.C.id,x:rd(p.x),y:rd(p.y),f:p.face|0,mv:p.mv?1:0,hp:Math.round(p.hp),mh:Math.round(p.maxHp),inv:rd(p.inv||0),dn:p.down?1:0,rv:rd(p.rev||0),atk:rd(p.atk||0),
+      const o={n:p.nick,cz:this.coopChoosing(p.nick)?1:0,ch:this.C.id,x:rd(p.x),y:rd(p.y),f:p.face|0,mv:p.mv?1:0,hp:Math.round(p.hp),mh:Math.round(p.maxHp),inv:rd(p.inv||0),dn:p.down?1:0,rv:rd(p.rev||0),atk:rd(p.atk||0),
         fi:this.formIdx,pt:this.pet?[this.pet.d.id,rd(this.pet.x),rd(this.pet.y),this.pet.face|0,rd(this.pet.cd||0)]:null,fu:this.formsUnlocked,dsh:rd(this.dashT||0),sk:this.skin|0,ca:this.cast?this.coopPlain(this.cast):null,fT:rd(this.fireT||0),
         w:[...this.weapons.values()].map(w=>[w.id,w.lv,w.evo|0,w.fz||0,w.xl|0,this.coopWState(w)])};
       if(mine)Object.assign(o,{pa:this.pass,tr:this.trinkets.map(id=>[id,this.tRar[id]|0]),co:Math.round(this.run.coins),tk:this.run.tk,sz:this.senzu,ab:rd(this.abCd||0),dc:rd(this.dashCd||0),kai:this.kai|0,bers:rd(this.bers||0),rvs:this.revives|0,sp:rd(this.S.spd)});
@@ -185,7 +192,16 @@ Object.assign(Game.prototype,{
 /* the host's own Game: the original lethal / levelUp / update get a co-op branch */
 {const L=Game.prototype.lethal;Game.prototype.lethal=function(){return this.coop?this.coopLethal():L.call(this);};}
 {const U=Game.prototype.levelUp;Game.prototype.levelUp=function(){const r=U.call(this);if(this.coop)this.coopLevel();return r;};}
-{const U=Game.prototype.update;Game.prototype.update=function(dt){if(this.coop&&this.coopPaused())return;const r0=this.rt;U.call(this,dt);if(this.coop&&!this.ended&&!this.dying&&this.rt>r0)this.coopAfterUpdate(this.rt-r0);};}   /* the mates move only when the world did (rt: the world's own clock) */
+/* co-op: nobody's window stops the world. While the host chooses, its window is set aside for the update (the host stands still and cannot be hit),
+   windows that open meanwhile wait in hostQ; after COOP_PICK_T seconds a card is taken for them. The mates move only when the world did (rt: the world's own clock) */
+{const U=Game.prototype.update;Game.prototype.update=function(dt){
+  if(!this.coop)return U.call(this,dt);if(this.coopPaused())return;
+  if(!this.modal&&this.coop.hostQ.length&&!this.dying&&!this.ended){this.modal=this.coop.hostQ.shift();this.modal.coopLeft=COOP_PICK_T;}
+  const own=this.dying||this.ended?null:this.modal;
+  if(own){if(own.coopLeft==null)own.coopLeft=COOP_PICK_T;own.coopLeft-=dt;if(own.coopLeft<=0){COOPG.autoPick(this);return;}
+    this.coopOwn=own;this.modal=null;this.input.x=0;this.input.y=0;this.p.inv=Math.max(this.p.inv,.15);}
+  const r0=this.rt;try{U.call(this,dt);}finally{if(own){if(this.modal&&this.modal!==own)this.coop.hostQ.push(this.modal);this.modal=own;this.coopOwn=null;}}
+  if(!this.ended&&!this.dying&&this.rt>r0)this.coopAfterUpdate(this.rt-r0);};}
 {const B=Game.prototype.bossTransform;Game.prototype.bossTransform=function(e){const k=e.bd&&e.bd.p2;B.call(this,e);if(k)e.bdk=k;};}
 
 /* ====== the session: host and client sides, messages, the client's view ====== */
@@ -218,7 +234,8 @@ const COOPG={
     if(m.t==='start')this.clientStart(m);
     else if(m.t==='s'){this.snap=m;this.lastSnap=performance.now();if(this.view)COOPV.apply(this.view,m,this.me);}
     else if(m.t==='fx'&&this.view)COOPV.events(this.view,m.ev);
-    else if(m.t==='modal'&&this.view){const v=this.view;v.lvl=Math.max(v.lvl,m.lv|0);if(m.ru){v.ru=m.ru;v.ru0=m.ru0||v.ru0;}v.modal=Object.assign({coopId:m.id},m.m);this.app.ui.openModal(v.modal,v);this.app.state='modal';}
+    else if(m.t==='modal'&&this.view){const v=this.view;v.lvl=Math.max(v.lvl,m.lv|0);if(m.ru){v.ru=m.ru;v.ru0=m.ru0||v.ru0;}v.modal=Object.assign({coopId:m.id,coopLeft:m.left||COOP_PICK_T},m.m);this.app.ui.openModal(v.modal,v);this.app.state='modal';}
+    else if(m.t==='close'&&this.view){const v=this.view;if(v.modal&&v.modal.coopId===m.id){v.modal=null;this.app.ui.closeModal();this.app.state='play';}}
     else if(m.t==='end')this.clientEnd(m);
   },
   /* ---- host ---- */
@@ -242,6 +259,7 @@ const COOPG={
     if(this.role==='host'){
       if(!this.started){const open=this.net.openPeers.length,hello=this.ready.size;if((hello>=this.peersWanted&&this.peersWanted>0)||performance.now()-this.t0>20000)this.hostStart();return;}
       if(!g||!g.coop)return;
+      this.timer(g.modal,dt);
       this.snapT-=dt;if(this.snapT<=0){this.snapT=COOP_SNAP;
         const ev=g.coop.ev.splice(0);
         for(const m of g.coop.mates){const s=g.coopSnap(m.nick);if(s)this.send(m.nick,s,true);
@@ -250,14 +268,21 @@ const COOPG={
         app_post(this.app,g);setTimeout(()=>this.stop(),1500);}
       return;}
     /* client: stick at 20 Hz, local movement until the next snapshot */
-    if(this.view&&!this.view.ended){COOPV.local(this.view,dt,this.app);this.inT-=dt;if(this.inT<=0){this.inT=COOP_IN;const I=this.app.state==='play'?this.view.input:{x:0,y:0};this.send(this.host,{t:'in',x:Math.round(I.x*100)/100,y:Math.round(I.y*100)/100},true);}
+    if(this.view&&!this.view.ended){this.timer(this.view.modal,dt);COOPV.local(this.view,dt,this.app);this.inT-=dt;if(this.inT<=0){this.inT=COOP_IN;const I=this.app.state==='play'?this.view.input:{x:0,y:0};this.send(this.host,{t:'in',x:Math.round(I.x*100)/100,y:Math.round(I.y*100)/100},true);}
       if(this.started&&performance.now()-this.lastSnap>8000&&this.lastSnap)this.hostLost();}
   },
+  autoPick(g){this.app.resolveModal(coopRandPick(g.modal));},
+  /* the 6-second bar inside an open co-op window */
+  timer(m,dt){const el=this.app.ui.modalEl;if(!el||!m||m.coopLeft==null)return;if(this.role==='client')m.coopLeft=Math.max(0,m.coopLeft-dt);
+    let b=el.querySelector('.ctimer');if(!b){b=h('div',{class:'ctimer'},h('i'),h('span'));el.prepend(b);}
+    const k=clamp(m.coopLeft/COOP_PICK_T,0,1);b.firstChild.style.width=(k*100)+'%';b.lastChild.textContent='⏳ '+Math.ceil(m.coopLeft)+' s';b.classList.toggle('low',m.coopLeft<2.5);},
   action(a){if(this.role==='client')this.send(this.host,{t:'act',a});},
   answer(i){const v=this.view;if(!v||!v.modal)return;this.send(this.host,{t:'pick',id:v.modal.coopId,i});v.modal=null;this.app.ui.closeModal();},
   stop(){if(this.net){if(this.role==='client')this.send(this.host,{t:'bye'});this.net.close();}this.net=null;this.view=null;this.started=false;this.endSent=false;
     if(this.role==='host'&&this.code&&this.app)this.app.cloud.rpc('room_playing',{p_code:this.code,p_on:false}).catch(()=>{});this.role=null;}
 };
+/* the answer taken when the time is up: a random card / trinket / offer; a swap keeps what you carry, a chest is simply opened */
+function coopRandPick(m){if(!m)return 0;if(m.type==='tswap')return (m.curs||[]).length;const L=m.options||m.opts;return L&&L.length?(Math.random()*L.length)|0:0;}
 function app_post(app,g){try{const chs=[g.C.id].concat(g.coop.mates.map(m=>m.ch));app.cloud.rpc('coop_post',{p_code:COOPG.code,p_kills:g.kills,p_t:Math.round(g.t*10)/10,p_win:!!g.cleared,p_chs:chs}).catch(()=>{});}catch(e){}}
 
 /* ====== the client's view: a Game that is drawn but never simulated ====== */
@@ -285,7 +310,7 @@ const COOPV={
   },
   /* fields of one hero (into the view itself, or into a puppet's hero dict) */
   hero(v,H,h,mine){const p=H.p;if(mine){p.tx=h.x;p.ty=h.y;if(p.x==null||Math.hypot(p.x-h.x,p.y-h.y)>160){p.x=h.x;p.y=h.y;}}else{p.tx=h.x;p.ty=h.y;if(p.x==null){p.x=h.x;p.y=h.y;}}
-    p.face=h.f||1;if(!mine)p.mv=!!h.mv;p.hp=h.hp;p.maxHp=h.mh;p.inv=h.inv;p.down=!!h.dn;p.rev=h.rv;p.atk=h.atk;p.nick=h.n;
+    p.face=h.f||1;p.cz=!!h.cz;if(!mine)p.mv=!!h.mv;p.hp=h.hp;p.maxHp=h.mh;p.inv=h.inv;p.down=!!h.dn;p.rev=h.rv;p.atk=h.atk;p.nick=h.n;
     if(H.formIdx!==h.fi||H.C.id!==h.ch){H.C=CHARS.find(c=>c.id===h.ch)||H.C;H.formIdx=h.fi;const e=H.formIdx>=0?LINES[H.C.line||'saiyan'][H.formIdx]:null;H.formColor=e?e.aura:null;H.pc=(e&&e.cfg)||H.C.cfg;H.pcKey=H.C.id+':'+H.formIdx;}
     if(h.pt){let q=H.pet;if(!q||q.d.id!==h.pt[0]){const d=PETS.find(x=>x.id===h.pt[0]);q=H.pet=d?{d,x:h.pt[1],y:h.pt[2],cd:0,t:0,face:1,fl:0,act:0}:null;}if(q){q.tx=h.pt[1];q.ty=h.pt[2];q.face=h.pt[3]||1;q.cd=h.pt[4];}}else H.pet=null;
     H.formsUnlocked=h.fu;H.dashT=h.dsh;H.skin=h.sk;H.cast=h.ca;H.fireT=h.fT;
@@ -297,7 +322,7 @@ const COOPV={
     return{nick:h.n,h:H,in:false};},
   /* the client's frame: its hero moves at once (the host corrects it), everything else slides to where the host said; effects age */
   local(v,dt,app){const p=v.p,I=v.input,spd=125*(v.coopSpd||1);
-    if(!p.down&&!v.modal&&!v.coopMd){const il=Math.hypot(I.x,I.y),ix=il>1?I.x/il:I.x,iy=il>1?I.y/il:I.y;p.x+=ix*spd*dt;p.y+=iy*spd*dt;p.mv=il>.05;p.ivx=ix;if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;}else p.mv=false;
+    if(!p.down&&!v.modal){const il=Math.hypot(I.x,I.y),ix=il>1?I.x/il:I.x,iy=il>1?I.y/il:I.y;p.x+=ix*spd*dt;p.y+=iy*spd*dt;p.mv=il>.05;p.ivx=ix;if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;}else p.mv=false;
     if(p.tx!=null){const k=Math.min(1,dt*6);p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;}
     const sm=Math.min(1,dt*14);for(const e of v.en){if(e.tx==null)continue;e.x+=(e.tx-e.x)*sm;e.y+=(e.ty-e.y)*sm;}
     const slide=q=>{if(q&&q.tx!=null){q.x+=(q.tx-q.x)*sm;q.y+=(q.ty-q.y)*sm;}};slide(v.pet);for(const P of COOPG.others.values()){slide(P.h.p);slide(P.h.pet);}
@@ -318,15 +343,16 @@ Object.assign(COOPG,{
       try{if(g.pet)R.drawPet(g.pet,t,g);}catch(e){}
       try{if(g.p.down){ctx.save();ctx.globalAlpha=.45;R.drawPlayer(g,t);ctx.restore();}else R.drawPlayer(g,t);}catch(e){}});
     const tag=p=>{if(!p||p.x==null)return;ctx.save();ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#000';ctx.fillStyle=p===g.p?'#ffd23f':'#cfeaff';
-      const s=(p.nick||'')+(p.down?' ⬇':'');ctx.strokeText(s,p.x,p.y-74);ctx.fillText(s,p.x,p.y-74);
+      const s=(p.cz?'⏳ ':'')+(p.nick||'')+(p.down?' ⬇':'');ctx.strokeText(s,p.x,p.y-74);ctx.fillText(s,p.x,p.y-74);
       if(p.down){const k=clamp((p.rev||0)/COOP_REV,0,1);ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y-20,COOP_REV_R*.6,0,TAU);ctx.stroke();
         ctx.strokeStyle='#8be07a';ctx.beginPath();ctx.arc(p.x,p.y-20,COOP_REV_R*.6,-Math.PI/2,-Math.PI/2+TAU*k);ctx.stroke();}
       ctx.restore();};
+    if(g.coop){g.p.cz=g.coopChoosing(g.coop.me);for(const m of L)m.h.p.cz=g.coopChoosing(m.nick);}
     tag(g.p);for(const m of L)tag(m.in?g.p:m.h.p);},
   /* screen space: "X is choosing" while the world waits for somebody else's window */
-  hud(R,g){let who=null;if(g.coop&&g.coopPaused&&g.coopPaused()&&!g.modal)who=g.coop.mq[0]&&g.coop.mq[0].nick;else if(g.coopView&&g.coopMd&&!g.modal)who=g.coopMd.who;
+  hud(R,g){const me=g.coop?g.coop.me:g.p.nick,L=(g.coop?g.coop.names.filter(n=>g.coopChoosing(n)):(g.coopMd||[])).filter(n=>n!==me),who=L.length?L.join(', '):null;
     if(g.coop&&g.coop.mates.length){const c=R.ctx,U=R.U;c.save();c.font='700 '+Math.round(12*U)+'px "Rajdhani",sans-serif';c.textAlign='left';c.fillStyle='#cfeaff';let y=R.H-120*U;
       for(const m of g.coop.mates){const q=m.h.p;c.fillText((q.down?'⬇ ':'● ')+m.nick+'  '+Math.max(0,Math.round(q.hp))+'/'+Math.round(q.maxHp),12*U,y);y+=15*U;}c.restore();}
-    if(!who)return;const c=R.ctx,U=R.U;c.save();c.fillStyle='rgba(5,10,20,.55)';c.fillRect(0,R.H*.42,R.W,46*U);c.textAlign='center';c.font='800 '+Math.round(20*U)+'px "Rajdhani",sans-serif';c.fillStyle='#fff';
-    c.fillText('⏳ '+who+' '+R.tr(T6('sta scegliendo…','is choosing…','está eligiendo…','choisit…','wählt…','está escolhendo…')),R.W/2,R.H*.42+30*U);c.restore();}
+    if(!who)return;const c=R.ctx,U=R.U;c.save();c.textAlign='center';c.font='800 '+Math.round(14*U)+'px "Rajdhani",sans-serif';c.lineWidth=3*U;c.strokeStyle='rgba(0,0,0,.7)';c.fillStyle='#ffe08a';
+    const s='⏳ '+who+' · '+R.tr(T6('sceglie una carta (invulnerabile)','choosing a card (invulnerable)','elige una carta (invulnerable)','choisit une carte (invulnérable)','wählt eine Karte (unverwundbar)','escolhendo uma carta (invulnerável)'));c.strokeText(s,R.W/2,96*U);c.fillText(s,R.W/2,96*U);c.restore();}
 });

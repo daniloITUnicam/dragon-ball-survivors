@@ -1,5 +1,5 @@
 /* v120: co-op run - two pages in one browser (host Alpha, client Beta), WebRTC data channels signalled through BroadcastChannel (?coopLocal=1).
-   Checks: both sides start, snapshots reach the client, the client's stick moves its hero on the host, shared level-up windows (the world waits),
+   Checks: both sides start, snapshots reach the client, the client's stick moves its hero on the host, shared level-up windows (the world keeps going, 6 s to choose),
    a fallen hero gets up next to a teammate, the end reaches the client, nothing throws while drawing. */
 const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
@@ -38,19 +38,30 @@ await H.bringToFront();await H.screenshot({path:OUT+'/coop_run_host.png'});await
 /* shared level-up */
 await H.evaluate(()=>{const g=__app.game;g.coop.mates[0].h.ru.rr=1;g.addXp(g.need+1);});
 ok(await until(C,()=>!!(__app.game.modal&&__app.ui.modalEl)),'client: own level-up window');
-const hp=await H.evaluate(()=>({mq:__app.game.coop.mq.length,modal:!!__app.game.modal,paused:__app.game.coopPaused()}));
-ok(hp.mq===1&&hp.modal&&hp.paused,'host: own window + the mate\'s pending, world paused ('+JSON.stringify(hp)+')');
-ok(await C.evaluate(()=>__app.game.modal.lvl!==0&&document.querySelector('.screen.modal h2').textContent.includes(String(__app.game.lvl))),'client window shows the shared level');
-await C.evaluate(()=>{window.__o0=JSON.stringify(__app.game.modal.options);__app.game.rerollLevel();});
+const hp=await H.evaluate(()=>{const g=__app.game,t0=g.t;return{mq:g.coop.mq.length,modal:!!g.modal,paused:g.coopPaused(),t0};});
+await wait(700);
+const hp2=await H.evaluate(()=>{const g=__app.game,m=g.coop.mates[0];return{t:g.t,inv:m.h.p.inv>0&&g.p.inv>0,ch:g.coopChoosing('Beta')&&g.coopChoosing('Alpha')};});
+ok(hp.mq===1&&hp.modal&&!hp.paused&&hp2.t>hp.t0+.12,'both windows open and the world keeps going ('+JSON.stringify(hp)+' → t '+hp2.t.toFixed(2)+')');
+ok(hp2.inv&&hp2.ch,'whoever is choosing is invulnerable');
+ok(await C.evaluate(()=>!!document.querySelector('.screen.modal .ctimer'))&&await H.evaluate(()=>!!document.querySelector('.screen.modal .ctimer')),'the 6-second bar in both windows');
+ok(await C.evaluate(()=>document.querySelector('.screen.modal h2').textContent.includes(String(__app.game.lvl))),'client window shows the shared level');
+await C.evaluate(()=>{__app.game.rerollLevel();});
 ok(await until(H,()=>__app.game.coop.mates[0].h.ru.rr===0,3000)&&await until(C,()=>__app.game.ru.rr===0&&!!__app.ui.modalEl,3000),'client reroll: done on the host, the window comes back redrawn');
-const wl0=await H.evaluate(()=>{const m=__app.game.coop.mates[0];return [...m.h.weapons.values()].reduce((s,w)=>s+w.lv,0)+Object.values(m.h.pass).reduce((s,v)=>s+v,0)+m.h.trinkets.length;});
-await H.evaluate(()=>__app.resolveModal(0));await wait(300);
-ok(await H.evaluate(()=>__app.game.coopPaused()),'host chose: still waiting for Beta');
+const wl=()=>H.evaluate(()=>{const m=__app.game.coop.mates[0];return [...m.h.weapons.values()].reduce((s,w)=>s+w.lv,0)+Object.values(m.h.pass).reduce((s,v)=>s+v,0)+m.h.trinkets.length;});
+const wl0=await wl();
+await H.evaluate(()=>__app.resolveModal(0));
 await C.screenshot({path:OUT+'/coop_run_level.png'});
+/* Beta does not answer: after 6 s a card is taken for them */
+ok(await until(H,()=>__app.game.coop.mq.length===0,9000),'time up: a card is taken for the client');
+ok(await until(C,()=>__app.state==='play'&&!__app.ui.modalEl,3000),'client window closed by the host');
+const wl1=await wl();ok(wl1>wl0,'the random card went to the client\'s hero ('+wl0+' → '+wl1+')');
+/* Beta answers at once this time; the host lets its own window run out */
+await H.evaluate(()=>{const g=__app.game;g.addXp(g.need+1);});
+ok(await until(C,()=>!!(__app.game.modal&&__app.ui.modalEl)),'second level-up reaches the client');
 await C.evaluate(()=>__app.resolveModal(0));
-ok(await until(H,()=>!__app.game.coopPaused()&&__app.game.coop.mq.length===0,4000),'client chose: the world moves again');
-const wl1=await H.evaluate(()=>{const m=__app.game.coop.mates[0];return [...m.h.weapons.values()].reduce((s,w)=>s+w.lv,0)+Object.values(m.h.pass).reduce((s,v)=>s+v,0)+m.h.trinkets.length;});
-ok(wl1>wl0,'the client\'s pick applied to its own hero ('+wl0+' → '+wl1+')');
+ok(await until(H,()=>__app.game.coop.mq.length===0,3000),'client chose in time');
+const lv2=await H.evaluate(()=>__app.game.lvl);
+ok(await until(H,()=>!__app.game.modal&&__app.state==='play',9000),'host window: a card is taken when the time is up');
 ok(await C.evaluate(()=>__app.state==='play'&&!__app.ui.modalEl),'client back in play');
 /* down + revive */
 await H.evaluate(()=>{const g=__app.game,m=g.coop.mates[0];m.h.revives=0;g.withHero(m,()=>g.coopLethal());g.p.x=m.h.p.x+10;g.p.y=m.h.p.y;});

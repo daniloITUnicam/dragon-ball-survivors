@@ -727,3 +727,75 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .screen.coop{margin:0 auto;align-items:stretch}
 .cdest{display:flex;flex-direction:column;gap:8px}
 .cconn{min-width:320px;display:flex;flex-direction:column;gap:10px}.cconnl{display:flex;flex-direction:column;gap:6px}
+.ctimer{position:relative;width:min(520px,80vw);height:22px;border-radius:11px;background:rgba(0,0,0,.55);border:2px solid #ffd23f;overflow:hidden;flex:none}
+.ctimer i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffb13b,#ffd23f);transition:width .1s linear}
+.ctimer span{position:relative;display:block;text-align:center;font:800 13px/18px var(--title,sans-serif);color:#1a0a02;letter-spacing:.06em}
+.ctimer.low{border-color:#ff5a3d}.ctimer.low i{background:linear-gradient(90deg,#ff3b2f,#ff7a3d)}
+/* v121: main menu on one page - the Play row, then three groups */
+.menu.mgrid{width:min(980px,94vw);gap:12px}
+.mgrid .mplay{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px}
+.mgrid .mplay .btn{width:100%;min-height:58px}
+.mgrid .mplay .btn.primary{font-size:24px}
+.mgroups{display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px}
+.mgroup{position:relative;display:grid;gap:8px;align-content:start;padding:24px 10px 10px;border-radius:12px;background:linear-gradient(180deg,rgba(12,22,44,.78),rgba(6,12,26,.86));border:2px solid rgba(120,170,255,.35);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.mgroup.g2{grid-template-columns:1fr 1fr}
+.mgroup .mgt{position:absolute;left:12px;top:-11px;padding:2px 12px;border-radius:999px;background:linear-gradient(180deg,#ffbe3a,#e46a10);color:#2a1000;font:900 13px/18px var(--title,sans-serif);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 2px 0 #4a1c00}
+.mgroup .btn{width:100%;font-size:16px!important;padding:8px 12px!important;min-height:44px}
+@media (max-width:760px){.mgrid .mplay{grid-template-columns:1fr 1fr}.mgrid .mplay .btn.primary{grid-column:1/-1}.mgroups{grid-template-columns:1fr 1fr}.mgroup.g2{grid-column:1/-1;order:3}.mgroup.g3{order:2}.mgroup .btn{font-size:14px!important}}
+@media (max-height:760px){.logoimg{max-height:30vh}.mgrid .mplay .btn{min-height:48px}.mgroup .btn{min-height:38px}}
+/* ===== v121: co-op skin after the new mock-ups - framed navy panels with steel corners, heavy italic headings, stone code tiles,
+   a radar for "Find a match", a slanted START button. (The menu background stays the main menu's scene.) ===== */
+.coop{--frame:#e08a2a;--steel:#aeb8c8;--navy:#14213f;--navy2:#0c1630}
+.coop .cpanel{position:relative;overflow:visible;border-radius:14px;background:linear-gradient(180deg,var(--navy),var(--navy2));border:3px solid var(--frame);box-shadow:inset 0 0 0 2px #050a16,0 6px 0 rgba(0,0,0,.4)}
+.coop .cpanel::after{content:'';position:absolute;inset:-6px;pointer-events:none;border-radius:16px;
+  background:linear-gradient(var(--steel),var(--steel)) top left/24px 6px,linear-gradient(var(--steel),var(--steel)) top left/6px 24px,
+  linear-gradient(var(--steel),var(--steel)) top right/24px 6px,linear-gradient(var(--steel),var(--steel)) top right/6px 24px,
+  linear-gradient(var(--steel),var(--steel)) bottom left/24px 6px,linear-gradient(var(--steel),var(--steel)) bottom left/6px 24px,
+  linear-gradient(var(--steel),var(--steel)) bottom right/24px 6px,linear-gradient(var(--steel),var(--steel)) bottom right/6px 24px;background-repeat:no-repeat;filter:drop-shadow(0 1px 0 #2a3446)}
+.coop .cph{border-radius:10px 10px 0 0;border-bottom:3px solid #050a16;padding:9px 14px}
+.coop .cph b,.coop .cteamh b,.coop .ctitle b,.coop .cfl h1,.coop .cbarm b,.coop .cbard b,.coop .cdname b,.coop .btn.cbig,.coop .btn.cstart{font-style:italic;text-transform:uppercase;letter-spacing:.02em;-webkit-text-stroke:1px #0a0f1a;paint-order:stroke fill}
+.coop .cpanel.green .cph{background:linear-gradient(180deg,#1d3260,#14244a);border-bottom-color:var(--frame)}
+.coop .cpanel.green .cph b{color:#fff;text-shadow:2px 2px 0 #050a16}
+.coop .ctitle{border:3px solid #ffd23f;box-shadow:0 5px 0 #8a3a00,0 0 0 3px #4a1c00}
+.coop .ctitle b{text-shadow:3px 3px 0 #7a2400}
+.coop .cblock{background:linear-gradient(180deg,#1b2b52,#13203f);border:2px solid #2c4377}
+.coop .btn.cbig.green{background:linear-gradient(#a57aff,#6a3ad0 60%,#4e24a8);border:3px solid #ffd23f;box-shadow:0 0 18px rgba(255,190,60,.55),0 5px 0 #3a1880;color:#fff}
+.coop .btn.cbig.gray,.coop .btn.cbig.gray:not(:disabled){background:linear-gradient(#ffe7a0,#e0aa40 60%,#b8801e);border:3px solid #6a4a10;box-shadow:0 5px 0 #5a3a08;color:#3a2000;text-shadow:none;-webkit-text-stroke:0}
+.coop .cbox,.coop .ccode span{border:3px solid #2e323c;background:linear-gradient(160deg,#9aa0ac,#6c727e 55%,#555a66);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -3px 0 rgba(0,0,0,.35),0 3px 0 #1a1d24;color:#fff;text-shadow:2px 2px 0 #20242c}
+.coop .cbox:focus{border-color:#ffd23f;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 0 0 3px rgba(255,210,63,.4)}
+/* Find a match: a radar screen */
+.coop .cpanel.greenfind{border-color:#7a8496;background:
+  repeating-radial-gradient(circle at 24% 58%,rgba(140,255,170,.22) 0 2px,transparent 2px 54px),
+  linear-gradient(rgba(140,255,170,.09) 1px,transparent 1px) 0 0/30px 30px,linear-gradient(90deg,rgba(140,255,170,.09) 1px,transparent 1px) 0 0/30px 30px,
+  radial-gradient(circle at 24% 58%,#239a4c,#11592c 55%,#0a3a1c)}
+.coop .cpanel.greenfind::before{content:'';position:absolute;left:24%;top:58%;width:46%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 0deg,rgba(160,255,190,.35),rgba(160,255,190,0) 22%);animation:cradar 4s linear infinite;-webkit-mask:radial-gradient(circle,#000 69%,transparent 70%);mask:radial-gradient(circle,#000 69%,transparent 70%)}
+@keyframes cradar{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.coop .cpanel.greenfind::before{animation:none}}
+.coop .cfl{position:relative}.coop .cfl h1{font-size:50px;line-height:.95;text-shadow:3px 3px 0 #0a3a1c}
+.coop .btn.cbig.red{background:linear-gradient(#ffc06a,#ff7a1c 55%,#d8460a);border:3px solid #5a1a00;box-shadow:0 0 0 3px #ff5a2a,0 6px 0 #6a2200;color:#fff}
+.coop .copts{background:rgba(8,16,30,.9);border:2px solid #24345a}
+.coop .cpanel.orange .cph,.coop .cpanel.blue .cph,.coop .cpanel.purple .cph{background-size:auto}
+.coop .chowp .cph{cursor:pointer}.coop .chowp .cpa{font-size:18px;transition:transform .2s}.coop .chowp.shut .cpa{transform:rotate(-90deg)}
+.coop .chowp.shut{flex:0 0 auto!important}.coop .chowp.shut .cpb{display:none}.coop .chowp.shut .cph{border-radius:10px;border-bottom:0}
+.coop .cempty p{max-width:240px}
+/* room */
+.coop .cmap{border:2px solid #b8503a;background:linear-gradient(180deg,#1a2648,#121b36)}
+.coop .cmap:nth-child(3n+2){border-color:#8a5ae0}.coop .cmap:nth-child(3n){border-color:#c8783a}
+.coop .cmap.on{border-color:#4ad07a;background:linear-gradient(90deg,rgba(74,208,122,.25),rgba(20,40,40,.6));color:#fff}
+.coop .cmap.locked,.coop .cmap:disabled{border-color:rgba(255,255,255,.12)}
+.coop .cslot.full{background:linear-gradient(180deg,#2a1e18,#1a1410);border:3px solid #3a2c22}
+.coop .cslot.full.me{border-color:#4ad07a}
+.coop .cslot.empty{border:3px solid #3a2c22;background:linear-gradient(180deg,rgba(42,30,24,.85),rgba(26,20,16,.85))}
+.coop .csnum{color:rgba(255,255,255,.35)}
+.coop .cslot.empty .csball{background:radial-gradient(circle,#2f5a3a,#1a2e22);border:2px solid rgba(255,255,255,.12)}
+.coop .cbar{border:3px solid var(--frame);background:linear-gradient(180deg,#14213f,#0a1226);box-shadow:inset 0 0 0 2px #050a16,0 6px 0 rgba(0,0,0,.4)}
+.coop .btn.cstart{transform:skewX(-10deg);border-radius:12px;font-size:34px;padding:12px 40px}
+.coop .btn.cstart.go{background:linear-gradient(#ffd060,#ff8a1c 55%,#e0560a);border:3px solid #4a1600;box-shadow:0 0 0 3px #ffb13b,0 7px 0 #6a2600,0 0 26px rgba(255,150,40,.6)}
+.coop .btn.csendb{background:linear-gradient(#ffc06a,#ff7a1c);border:3px solid #5a1a00}
+.coop .cmsg,.coop .cadd{border-color:#c8783a;background:rgba(20,12,8,.7)}
+.coop .btn.cbig.green{--p1:#a57aff;--p2:#6a3ad0;--p3:#4e24a8;--pl:rgba(225,205,255,.9);--ol:#24104e}
+.coop .btn.cbig.gray{--p1:#ffd970;--p2:#dca23a;--p3:#a8741a;--pl:rgba(255,245,200,.95);--ol:#4a3008}
+.coop .btn.cbig.red{--p1:#ffb04a;--p2:#ff7a1c;--p3:#d8460a;--pl:rgba(255,230,180,.9);--ol:#4a1400}
+.coop .cph b{font-size:22px;white-space:nowrap}.coop .cph .cpa{white-space:nowrap}
+.coop .btn.cbig{font-size:23px}

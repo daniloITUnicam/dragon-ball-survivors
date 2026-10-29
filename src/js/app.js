@@ -209,7 +209,8 @@ class App{
     }else if(g&&(this.state==='modal'||this.state==='pause'||this.state==='end')){
       if(this.state==='pause'&&this.ui.top&&this.ui.top.name==='pause'&&(I.pressed('pause')||I.pressed('cancel')))this.resume();
       else this.ui.update();
-      r.draw(g,0);
+      const co=this.state==='modal'&&(g.coop||g.coopView);if(co&&g.coop)g.update(dt);   /* v121: co-op: a window does not stop the world */
+      if(this.game===g)r.draw(g,co?dt:0);
     }else{
       r.drawMenuBg(dt);this.ui.update();this.ui.animate(dt);
     }

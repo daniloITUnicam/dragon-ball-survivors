@@ -81,7 +81,8 @@ Object.assign(UI.prototype,{
           h('button',{class:'btn cbig green','data-fid':'ccreate',onclick:async()=>{this.sfx('uiStart');try{await COOP.create(4,false);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'👥 '+this.tr(CO.create))),
         h('div',{class:'cor'},h('span',null,this.tr(CO.or))),
         h('div',{class:'cblock'},h('h3',null,this.tr(CO.joinC)),h('p',null,this.tr(CO.joinD)),h('div',{class:'cboxes'},boxes),jb)),
-      this.coopPanel('purple','✨',CO.how,null,h('ol',{class:'chow'},[CO.how1,CO.how2,CO.how3,CO.how4].map(x=>h('li',null,this.tr(x))))));
+      (P=>{P.classList.add('chowp','shut');P.firstChild.onclick=()=>{this.sfx();P.classList.toggle('shut');};return P;})(   /* v121: a folded bar, opens on click */
+        this.coopPanel('purple','✨',CO.how,'▾',h('ol',{class:'chow'},[CO.how1,CO.how2,CO.how3,CO.how4].map(x=>h('li',null,this.tr(x)))))));
     /* centre: find a match + leaderboard */
     const nS=h('div',{class:'csearch'},this.tr(CO.searching(COOP.searching)));
     const opts=h('div',{class:'copts'},

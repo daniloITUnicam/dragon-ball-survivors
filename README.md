@@ -55,6 +55,12 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 
 ## Novità dell'ultimo aggiornamento
 
+### 🆕 Aggiornamento del 29 ottobre 2026, parte 7 (prestazioni, menu, co-op)
+
+- Prestazioni: folle di nemici circa a metà costo, colpi che controllano solo i nemici vicini, oggetti a terra dipinti una volta, sprite preparati nei momenti liberi.
+- Menu principale in una pagina, a gruppi (Gioca · Crescita · Progressi · Opzioni); tutti i menu con lo sfondo del menu principale.
+- Co-op: scegliere una carta non ferma più gli altri (chi sceglie è invulnerabile, 6 secondi poi carta a caso); nuovo aspetto per hub e stanza.
+
 ### 🆕 Aggiornamento del 29 ottobre 2026, parte 6 (co-op: la partita insieme, BETA)
 
 - Quando l'host avvia, tutta la stanza gioca la stessa partita nello stesso mondo (fino a 4 giocatori, collegamento diretto con l'host).

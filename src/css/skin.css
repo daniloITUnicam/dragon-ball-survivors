@@ -9,12 +9,8 @@
   --drop:0 4px 0 #0e0502;
 }
 body{background:var(--night)}
-/* ---- backgrounds: dark bronze with a soft sunburst; windows over the game stay darker ---- */
-.screen{background:
-  repeating-conic-gradient(from 0deg at 50% 36%,rgba(255,140,30,.10) 0 5deg,transparent 5deg 12deg),
-  radial-gradient(ellipse at 50% 0%,rgba(255,110,20,.30),transparent 62%),
-  radial-gradient(ellipse at 50% 125%,rgba(255,70,10,.28),transparent 55%),
-  rgba(22,8,3,.93)}
+/* ---- backgrounds: the main menu's moving scene shows through every menu, under a dark bronze veil (darker at the edges) ---- */
+.screen{background:radial-gradient(ellipse at 50% 40%,rgba(16,7,3,.42),rgba(16,7,3,.78) 85%)}
 .screen.modal{background:rgba(14,5,2,.84)}
 ::-webkit-scrollbar-thumb{background:#b8651a;border:2px solid #1a0903}
 /* ---- headings: heavy italic yellow-orange lettering with a dark outline ---- */
