@@ -1607,8 +1607,8 @@ this.W=1;this.H=1;this.Z=1;
     /* weapon target (TAB): closest / most HP / least HP / boss; only the active one is shown */
     if(!g.ended){
       const mode=g.tgt|0,c=['#ffd23f','#ff6b8a','#8ad8ff','#ff5a3d'][mode],bh=26*U,bw=134*U,by2=fy+13*U,nm=[['Più vicino','Closest'],['Più Salute','Most HP'],['Meno Salute','Least HP'],['Boss','Boss']][mode];
-      if(this.tgtMode!==mode){this.tgtMode=mode;this.tgtAt=g.rt;}
-      const pw=Math.min(98*U,W*.2),dh=TgtArt.draw(ctx,mode,m,by2,pw,Math.max(0,1-(g.rt-this.tgtAt)/.28));
+      if(this.tgtMode!==mode||this.tgtG!==g){this.tgtMode=mode;this.tgtAt=g.rt;this.tgtG=g;}   /* (a new run restarts the clock: the old time made the pop huge) */
+      const pw=Math.min(98*U,W*.2),dh=TgtArt.draw(ctx,mode,m,by2,pw,clamp(1-(g.rt-this.tgtAt)/.28,0,1));
       if(dh){   /* the artwork panel of the active mode + the key hint under it */
         this.zones.push({x:m,y:by2,w:pw,h:dh,k:'target'});
         txt('['+(this.keyHints.target||'Tab')+']',m+pw/2,by2+dh+12*U,'#fff','center',F(11));

@@ -14,7 +14,7 @@ const TgtArt={
   draw(ctx,mode,x,y,w,pop){
     this.load();
     if(!this.ok)return 0;
-    const h=w*TGT_CELL[1]/TGT_CELL[0],k=1+.16*(pop||0);
+    const h=w*TGT_CELL[1]/TGT_CELL[0],k=1+.16*clamp(pop||0,0,1);
     ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.translate(x+w/2,y+h/2);ctx.scale(k,k);
     ctx.drawImage(this.img,mode*TGT_CELL[0],0,TGT_CELL[0],TGT_CELL[1],-w/2,-h/2,w,h);
