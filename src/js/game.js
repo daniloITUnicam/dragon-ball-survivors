@@ -556,7 +556,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         const ang=near?Math.atan2(near.y-8-(p.y-18),near.x-p.x):(p.face>0?0:Math.PI);
         const fire=(a2,dm,len,w)=>{const cs=Math.cos(a2),sn=Math.sin(a2);
           for(const e of this.en){if(e.dead)continue;const rx=e.x-p.x,ry=e.y-8-(p.y-18),t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<w/2+e.r)this.hit(e,dm,cs*220,sn*220);}
-          this.fx.push({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c,ab:this.C.id});};
+          this.fx.push({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c,ab:this.C.id,fol:p});};   /* fol: the beam stays on the hero who fired it */
         const dmg=(30+L*3)*v;
         if(f2){fire(ang,dmg*1.7,1020,168);fire(ang+Math.PI,dmg*1.0,720,120);}   /* final form: a huge beam, and another one behind you */
         else fire(ang,dmg,640,64);
@@ -576,7 +576,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'dash':{
         let dx=this.input.x,dy=this.input.y;const dl=Math.hypot(dx,dy);if(dl<.1){dx=p.face>0?1:-1;dy=0;}else{dx/=dl;dy/=dl;}
         this.startDash(dx,dy,v*(f2?2:1),f2?.8:.5,c);
-        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-18,a:Math.atan2(dy,dx),follow:1,R:f2?150:110,l:.5,m:.5});   /* v123: Goku Black's painted Ki Blade */
+        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-18,a:Math.atan2(dy,dx),fol:p,R:f2?150:110,l:.5,m:.5});   /* v123: Goku Black's painted Ki Blade */
         if(f2){this.bv.t=.32;this.dashT=.4;this.dashWave=true;}   /* final form: longer dash, double damage, shockwave on arrival */
         this.audio.sfx('abDash');break;}
       case'clones':{
@@ -1992,7 +1992,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
-    for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}
+    for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}else if(f.fol){f.x=f.fol.x;f.y=f.fol.y-18;}}
     keepIf(this.fx,f=>f.l>0);this.updateCorpses(dt);
     for(const t of this.tx)t.t+=dt;
     keepIf(this.tx,t=>t.t<t.l);   /* v121: the lists are compacted in place (no new arrays every frame) */

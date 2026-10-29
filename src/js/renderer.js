@@ -966,7 +966,7 @@ this.W=1;this.H=1;this.Z=1;
     const ox=p.x,oy=p.y-24;ctx.setLineDash([14,10]);ctx.lineDashOffset=-t*60;ctx.lineWidth=1.6;ctx.strokeStyle=hexA(c,.1+.3*k);
     ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+Math.cos(s.ang)*900,oy+Math.sin(s.ang)*900);ctx.stroke();ctx.setLineDash([]);
     /* glow + spirals around the fingertips */
-    if(WFX.has('absbc')){WFX.draw(ctx,'absbc',k<.6?0:1,hx,hy,40+60*k,s.ang,.6+.4*k);ctx.restore();return;}   /* v123: painted charge */
+    if(WFX.has('absbc')){WFX.draw(ctx,'absbc',k<.6?0:1,hx,hy,40+60*k,s.ang,.6+.4*k,0,'a');ctx.restore();return;}   /* v123: painted charge */
     GLOW.at(ctx,hx,hy,12+34*k,c,.5+.5*k);GLOW.at(ctx,hx,hy,6+14*k,'#ffffff',.7);
     for(let j=0;j<3;j++){
       ctx.strokeStyle=hexA(j===1?'#b46bff':c,.4+.5*k);ctx.lineWidth=1.8;ctx.beginPath();

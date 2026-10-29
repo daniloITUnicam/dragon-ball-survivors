@@ -16,6 +16,28 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-10-29l',date:'2026-10-29',
+    name:T("Fine partita più ordinata","A tidier end screen"),
+    sum:T("I fulmini passano dietro ai pannelli, i cimeli si aprono in una finestra e i pulsanti non vanno più a capo.","The lightning goes behind the panels, the trinkets open in a window and the buttons no longer wrap."),
+    new:[{g:T('Fine partita','End screen'),l:[
+      T("I fulmini sullo sfondo ora passano dietro ai pannelli e ai pulsanti, non sopra.","The lightning in the background now goes behind the panels and the buttons, not over them."),
+      T("I cimeli trovati non sono più elencati sotto le ricompense: il pulsante «🏺 Cimeli» con il loro numero apre una finestra con le schede (rarità, perfezione, nuovo o migliorato nella Borsa). Esc o ✕ la chiude.","The trinkets found are no longer listed under the rewards: the «🏺 Trinkets» button with their count opens a window with their cards (rarity, perfection, new or improved in the Bag). Esc or ✕ closes it."),
+      T("Pulsanti: Scheda da condividere, Codice build e Cimeli in una barra più piccola, sopra Riprova, Menu e Infinita. Nessun testo va più a capo su due righe.","Buttons: Share card, Build code and Trinkets in a smaller bar, above Retry, Menu and Endless. No label wraps onto two lines any more."),
+      T("Le due schede del pannello dei danni (inflitti / subiti) sono più piccole e il pannello è più alto: si vede anche il totale.","The two tabs of the damage panel (dealt / taken) are smaller and the panel is taller: the total shows too.")]},
+      {g:T('Impostazioni','Settings'),l:[
+      T("Gli interruttori Sì / No hanno una misura fissa accanto alla loro voce invece di allungarsi su tutta la riga, e le descrizioni lunghe non vengono più tagliate a sinistra.","The Yes / No switches have a fixed size next to their option instead of stretching across the whole row, and long descriptions are no longer cut off on the left.")]}]},
+  {id:'2026-10-29k',date:'2026-10-29',
+    name:T("Grafica delle armi sistemata","Weapon art fixed"),
+    sum:T("Le animazioni dipinte sono state ritagliate di nuovo, fotogramma per fotogramma: niente più pezzi ripetuti, bordi quadrati o salti.","The painted animations have been cut again, frame by frame: no more repeated pieces, square edges or jumps."),
+    new:[{g:T('Armi','Weapons'),l:[
+      T("Kamehameha: la testa del raggio non si ripete più. Prima un fotogramma conteneva pezzi di due teste; ora ognuna è al suo posto e l'animazione va avanti una sola volta, dalla formazione alla dispersione quando il raggio finisce.","Kamehameha: the head of the beam no longer repeats. Before, one frame held pieces of two heads; now each one is in its place and the animation plays once, from forming to breaking up as the beam ends."),
+      T("Kamehameha appena partita: la testa è più piccola e sempre davanti all'esplosione delle mani, non più dietro al personaggio.","A Kamehameha that has just left: the head is smaller and always in front of the burst at the hands, no longer behind the character."),
+      T("Attacco Big Bang: l'esplosione è rotonda. Prima veniva tagliata dal bordo del fotogramma e si vedeva un quadrato.","Big Bang Attack: the blast is round. Before, it was cut by the edge of its frame and showed as a square."),
+      T("Raggio Perforante: la punta resta ferma sulla fine del raggio.","Piercing Beam: the tip stays on the end of the beam."),
+      T("Taiyoken e Spada: i fotogrammi che uscivano dal loro spazio non sono più tagliati.","Solar Flare and Sword: the frames that went past their space are no longer cut.")]},
+      {g:T('Abilità','Abilities'),l:[
+      T("Final Flash, Masenko e Raggio Dodon seguono il personaggio mentre si muove, invece di restare dove sono partiti.","Final Flash, Masenko and Dodon Ray follow the character as it moves, instead of staying where they started."),
+      T("Cannone Speciale, Lama di Ki e Final Flash: i fotogrammi più larghi non sono più tagliati e la partenza del raggio resta sulle dita.","Special Beam Cannon, Ki Blade and Final Flash: the wider frames are no longer cut and the start of the beam stays on the fingers.")]}]},
   {id:'2026-10-29j',date:'2026-10-29',
     name:T("Attacco Big Bang e nuove abilità","Big Bang Attack and new abilities"),
     sum:T("Una nuova arma per Vegeta e quattro personaggi con l'abilità che gli spetta, tutte con la grafica dipinta.","A new weapon for Vegeta and four characters with the ability that belongs to them, all with painted art."),

@@ -1,4 +1,5 @@
 'use strict';
+const END_T={kept:T6('Cimeli','Trinkets','Reliquias','Reliques','Relikte','Relíquias'),keptSub:T6('Trovati in questa partita e messi nella Borsa.','Found in this run and put in the Bag.','Encontradas en esta partida y guardadas en la Bolsa.','Trouvées pendant cette partie et rangées dans le Sac.','In diesem Lauf gefunden und in die Tasche gelegt.','Encontradas nesta partida e guardadas na Bolsa.')};
 /* ====== UI part 2: settings, controls, modals, end screen, toasts, sandbox panel ====== */
 const WS_LAB={dmg:['Danno','Damage'],n:['Colpi','Shots'],cd:['Ricarica','Cooldown'],pi:['Perfora','Pierce'],rad:['Raggio','Radius'],r:['Raggio','Radius'],wid:['Spessore','Width'],len:['Gittata','Range'],stun:['Stun','Stun']};
 const _f=v=>String(Math.round(v*10)/10).replace('.',',');
@@ -466,10 +467,22 @@ Object.assign(UI.prototype,{
     return h('div',{class:'dmgsum'},tabs,
       rows.length?[rows,h('div',{class:'rline total dtot'},h('span',null,this.t('total')),h('b',null,fmt(tot)))]:h('p',{class:'sub'},'—'));
   },
+  /* the trinkets kept at the end of a run, as cards in a window over the end screen (Esc / B / the button closes it) */
+  keptList(kept,from){
+    const close=()=>{ov.remove();if(this.modalEl===ov)this.modalEl=null;if(from&&from.isConnected)from.focus({preventScroll:true});};
+    const ov=h('div',{class:'ekov',onclick:e=>{if(e.target===ov){this.sfx('uiBack');close();}}},
+      h('div',{class:'ekbox',role:'dialog','aria-label':this.tr(END_T.kept)},
+        h('div',{class:'ekh'},h('b',null,'🏺 '+this.tr(END_T.kept)),h('span',{class:'ekc'},kept.length),
+          h('button',{class:'btn small alt','data-back':true,'data-fid':'ekclose',onclick:()=>{this.sfx('uiBack');close();}},'✕')),
+        h('p',{class:'eks'},this.tr(END_T.keptSub)),
+        h('div',{class:'eklist'},kept.map(k=>h('div',{class:'ekit'},this.tcard(k.id,k.r,{p:k.p}),h('span',{class:'ektag'+(k.up?' up':'')},this.t(k.up?'trinketsUp':'trinketsKept')))))));
+    (this.top&&this.top.el||this.root).append(ov);this.modalEl=ov;
+    const b=ov.querySelector('[data-fid="ekclose"]');if(b)setTimeout(()=>b.focus({preventScroll:true}),20);
+  },
   screen_end(res){
     const g=this.app.game,labels={coins:'rw_coins',kills:'rw_kills',time:'rw_time',bosses:'rw_bosses',clear:'rw_clear'};
     const chip=(k,v,i)=>h('div',{class:'echip c'+i},h('span',null,this.t(k)),h('b',null,v));
-    const tk=!res.sandbox&&res.tickets?['t1','t10','l10'].filter(k=>res.tickets[k]):[];
+    const tk=!res.sandbox&&res.tickets?['t1','t10','l10'].filter(k=>res.tickets[k]):[],kept=!res.sandbox&&res.kept?res.kept:[];
     /* Endless: a button next to Retry / Menu, locked until this stage has been cleared on Extreme (and the stage is won in this run) */
     const canEnd=!!res.win&&!g.continued&&(!!res.sandbox||!!res.xc),showEnd=!g.continued;
     const lockWhy=!res.xc&&!res.sandbox?this.t('endlessLockX'):this.t('endlessLockW');
@@ -489,16 +502,16 @@ Object.assign(UI.prototype,{
             res.mult!==1?h('div',{class:'rline'},h('span',null,this.t('multiplier')),h('b',null,'x'+res.mult.toFixed(2))):null,
             h('div',{class:'rline total'},h('span',null,this.t('total')),h('b',null,zAmt(res.total,true)))),
           res.sandbox?null:this.masteryLine(res.mastery),
-          !res.sandbox&&res.kept&&res.kept.length?h('div',{class:'echips kept'},res.kept.map(k=>{const i=this.tinfo(k.id,k.r,k.p);return h('span',{class:'tchip tkept',style:'--c:'+i.c,title:this.t(k.up?'trinketsUp':'trinketsKept')+'\n'+i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')},glyph(i.t.k,i.c),i.name+(k.up?' ↑':''));})):null,
           tk.length||(!res.sandbox&&res.sold)?h('div',{class:'echips'},
             tk.map(k=>h('span',{class:'tchip',title:this.t('ticketsFound')},h('i',{class:'tk'}),res.tickets[k]+'× '+this.t(k==='t1'?'tkT1':k==='t10'?'tkT10':'tkL10'))),
             !res.sandbox&&res.sold?h('span',{class:'tchip',title:this.t('trinketsSold')},'💰 '+res.sold):null):null),
         h('div',{class:'endr'},this.dmgSummary(res))),
-      h('div',{class:'row'},
+      /* v126: secondary actions in a small toolbar (the trinkets of the run open in a list), the three main buttons under it */
+      h('div',{class:'row etools'},kept.length?h('button',{class:'btn alt','data-fid':'ekept',onclick:ev=>{this.sfx();this.keptList(kept,ev.currentTarget);}},'🏺 '+this.tr(END_T.kept)+' ',h('b',{class:'ekn'},kept.length)):null,
+        this.shareBtn(res),res.sandbox?null:this.codeBtn()),
+      h('div',{class:'row emain'},
         h('button',{class:'btn primary','data-focus':!canEnd?true:null,onclick:()=>{this.sfx();this.app.retry();}},this.t('retry')),
         h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.toMenu();}},this.t('toMenu')),
-        this.shareBtn(res),
-        res.sandbox?null:this.codeBtn(),
         showEnd?h('span',{class:'endwrap'},
           h('button',{class:'btn alt endless'+(canEnd?'':' locked'),disabled:!canEnd,'data-focus':canEnd?true:null,'data-fid':'endless',
             onclick:()=>{if(!canEnd)return;this.sfx();this.app.continueRun();}},canEnd?h('span',{class:'inf'},'∞ '):h('span',{class:'lk','aria-hidden':'true'}),this.t('endlessBtn')),

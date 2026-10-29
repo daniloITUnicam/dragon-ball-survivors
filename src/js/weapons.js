@@ -247,7 +247,7 @@ class KameWeapon extends Weapon{
         ctx.globalAlpha=.85*k;ctx.fillStyle=gr;ctx.fillRect(-6,-b.wid*1.1*k,L+8,b.wid*2.2*k);
         GLOW.at(ctx,0,0,b.wid*1.9,'#2a63ff',.8*k);GLOW.at(ctx,L,0,b.wid*1.6,'#2a63ff',.7*k);ctx.restore();
       }
-      if(!WFX.beam(ctx,'kame',L,b.wid*(.55+.4*k)*(b.evo?.72:1),g.rt,Math.min(1,k*2.5),3,5))VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);   /* v123: painted beam */
+      if(!WFX.beam(ctx,'kame',L,b.wid*(.55+.4*k)*(b.evo?.72:1),g.rt,Math.min(1,k*2.5),3,5,b.t/b.dur))VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);   /* v123: painted beam */
       ctx.restore();
       if(Math.random()<.9&&g.fx.length<420){const d=rnd(30,b.len),cs=Math.cos(b.a),sn=Math.sin(b.a),o=rnd(-.5,.5)*b.wid;g.fx.push({x:p.x+cs*d-sn*o,y:p.y-18+sn*d+cs*o,vx:cs*60+rnd(-40,40),vy:sn*60+rnd(-40,40)-20,l:rnd(.25,.5),m:.5,c:Math.random()<.5?'#ffffff':c,s:rnd(2,4)});}
     }
@@ -525,7 +525,7 @@ class DeathBeamWeapon extends Weapon{
     const g=this.g,p=g.p,c=this.color;
     for(const l of this.lines){
       const k=l.t/l.dur,wd=l.wid*(1-k*.45);
-      if(WFX.has('dbeam')){ctx.save();ctx.translate(p.x+Math.cos(l.a)*16,p.y-18+Math.sin(l.a)*16);ctx.rotate(l.a);WFX.beam(ctx,'dbeam',l.len,Math.max(8,wd*4),this.g.rt,1-k*.8,0,5);ctx.restore();continue;}   /* v123: painted beam */
+      if(WFX.has('dbeam')){ctx.save();ctx.translate(p.x+Math.cos(l.a)*16,p.y-18+Math.sin(l.a)*16);ctx.rotate(l.a);WFX.beam(ctx,'dbeam',l.len,Math.max(8,wd*4),this.g.rt,1-k*.8,0,5,k);ctx.restore();continue;}   /* v123: painted beam */
       ctx.save();ctx.translate(p.x,p.y-18);ctx.rotate(l.a);ctx.globalCompositeOperation='lighter';
       ctx.globalAlpha=(1-k)*.35;ctx.fillStyle=c;ctx.fillRect(0,-wd*1.8,l.len,wd*3.6);
       ctx.globalAlpha=(1-k)*.9;ctx.fillStyle=c;ctx.fillRect(0,-wd,l.len,wd*2);

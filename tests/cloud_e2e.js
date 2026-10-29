@@ -11,8 +11,10 @@ let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
   const url='file://'+(process.env.HTML||'/tmp/o/cloud.html');
   await pg.goto(url);await wait(900);
   const app=f=>pg.evaluate(f);
-  const click=async fid=>{await pg.click('[data-fid="'+fid+'"]');await wait(250);};
-  const type=async(fid,t)=>{await pg.click('[data-fid="'+fid+'"]');await pg.keyboard.down('Control');await pg.keyboard.press('KeyA');await pg.keyboard.up('Control');await pg.keyboard.press('Backspace');await pg.type('[data-fid="'+fid+'"]',t);};
+  /* the account screen redraws itself (sync status, timers): an element found a moment ago can be replaced before the click lands, so retry on a fresh one */
+  const tap=async sel=>{for(let i=0;;i++){try{await pg.click(sel);return;}catch(e){if(i>=4||!/detached|not clickable|No node/.test(e.message))throw e;await wait(150);}}};
+  const click=async fid=>{await tap('[data-fid="'+fid+'"]');await wait(250);};
+  const type=async(fid,t)=>{await tap('[data-fid="'+fid+'"]');await pg.keyboard.down('Control');await pg.keyboard.press('KeyA');await pg.keyboard.up('Control');await pg.keyboard.press('Backspace');await pg.type('[data-fid="'+fid+'"]',t);};
   const text=()=>pg.evaluate(()=>document.getElementById('ui').innerText);
   ok(await app(()=>window.__app.cloud.enabled),'cloud enabled via build config');
   ok((await text()).includes('Accedi')||(await text()).includes('Log in'),'main menu shows login button');

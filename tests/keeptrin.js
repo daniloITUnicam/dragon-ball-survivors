@@ -16,8 +16,11 @@ ok(o.held.length===2,'two trinkets carried');
 ok(/cape@2:70/.test(o.bag)&&o.n===1,'the new trinket is in the Bag ('+o.bag+')');
 ok(/boots@0:90/.test(o.bag)&&/boots↑/.test(o.kept),'a copy the Bag already has upgrades its perfection');
 await wait(600);
-const u=await pg.evaluate(()=>[...document.querySelectorAll('.tkept')].map(x=>x.textContent));
-ok(u.length===2,'the end screen lists them ('+u.join(' | ')+')');
+/* v126: the end screen has a «Trinkets (n)» button; the list opens in a window and Esc closes it */
+const u=await pg.evaluate(()=>{const b=document.querySelector('[data-fid="ekept"]');if(!b)return{n:-1};b.click();const it=[...document.querySelectorAll('.ekov .ekit')].map(x=>x.textContent);return{n:+b.querySelector('.ekn').textContent,it};});
+ok(u.n===2&&u.it.length===2&&u.it.some(x=>/improved|migliorat|mejorad|amélior|verbessert|melhorad/i.test(x)),'the end screen has a button for them and the window lists them ('+(u.it||[]).join(' | ')+')');
+await pg.keyboard.press('Escape');await wait(250);
+ok(await pg.evaluate(()=>!document.querySelector('.ekov')&&!!document.querySelector('[data-fid="ekept"]')),'Esc closes the list and stays on the end screen');
 /* every pick-up on the ground is drawn in by the player's pick-up range (not the Dragon Balls) */
 const m=await pg.evaluate(()=>{const A=__app;A.startGame({stage:0,char:'goku',diff:'normal',x2:false,sandbox:false,pet:'none'});const g=A.game;window.G=g;g.sb.nospawn=true;g.modal=null;g.p.x=0;g.p.y=0;g.S.magnet=300;
   const ks=['coin','bag','heal','magnet','dmg','haste','xp','capsule','luck','ball'];g.loot=ks.map((k,i)=>({k,x:200,y:i*4,v:0,t:1,star:0}));g.updatePickups(.05);

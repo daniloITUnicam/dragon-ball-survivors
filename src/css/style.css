@@ -83,6 +83,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .settings{display:flex;flex-direction:column;gap:8px;width:100%;max-width:760px}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px 14px}
 .sl{display:flex;flex-direction:column}.sl small{color:var(--mute);font-size:12px}
+.srow>.sl{flex:1;min-width:0;text-align:left}.srow>.btn{flex:none;width:auto;min-width:120px;justify-content:center;white-space:nowrap}   /* Yes / No switches: one fixed size, beside the label */
 .sld{display:flex;align-items:center;gap:10px}.sld input{width:180px;accent-color:var(--orange)}.val{min-width:44px;text-align:right;font-weight:700}
 select{background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:8px;padding:6px 10px;font-family:var(--body);font-size:15px}
 .tabs{margin-bottom:4px}
@@ -112,6 +113,7 @@ select{background:var(--panel2);color:var(--ink);border:2px solid var(--line);bo
   .card.shopi,.card.achi{flex-direction:row}
   .crow{grid-template-columns:1fr 1fr}.crow .an{grid-column:1/-1}.crow.head{display:none}
   .srow{flex-direction:column;align-items:flex-start}.sld input{width:140px}
+  .srow:has(>.btn){flex-direction:row;align-items:center}.srow>.btn{min-width:92px;padding-left:12px;padding-right:12px}   /* a switch stays beside its label on a phone too */
   .card.opt{width:100%;min-height:0;flex-direction:row;text-align:left;align-items:center}
   .card.opt .col{align-items:flex-start}
 }
@@ -650,7 +652,8 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .crow .cfoot{display:flex;justify-content:space-between;align-items:center;font-size:13px}.crow .crew{opacity:.75}
 /* v117: career */
 .career{max-width:980px;margin:0 auto}.cargrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:left}.carcol h3{margin:8px 0 4px}
-.srow{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;font-size:13px}.srow b{text-align:right}
+/* (scoped to the career screen: unscoped it turned every settings row into a 150 px label + a stretched button + an empty column) */
+.career .srow{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;font-size:13px}.career .srow b{text-align:right}
 @media (max-width:700px){.cargrid{grid-template-columns:1fr}}
 .btitle{opacity:.75;font-weight:600;font-size:11px}.bview{max-width:760px;margin:10px auto;text-align:left}.row.album{gap:6px;justify-content:center}
 /* ===== v119: co-op hub + room (three columns of coloured panels, bottom bar in the room) ===== */
