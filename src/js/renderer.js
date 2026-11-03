@@ -23,6 +23,8 @@ const THEMES={
 };
 /* per-theme multiply tint of the rock sprites (grey-green art: plains/beach/arena keep it as drawn) */
 /* extra share of tiles that get a ground decoration (the base is 2.5-9%) */
+/* v128: the little ground details (tufts, pebbles, flowers, bones...) were drawn by code and clashed with the painted props: off until they get painted art */
+const DECOR_ON=false;
 const DEC_DENS={beach:.03,waste:.018,redrock:.015,plains:.012,namek:.012,arena:.01,hell:.012};
 const LOOT_COL={sball:'#ffd23f',coin:'#ffd23f',bag:'#ffd23f',heal:'#8be07a',magnet:'#ff5a5a',dmg:'#ff5a3d',haste:'#ffe24d',xp:'#5ad0ff',capsule:'#ffffff',luck:'#8be07a',ball:'#ffaa28'};
 /* tiny skull (progress-bar milestones): cranium + jaw, dark outline, eye sockets and nose */
@@ -247,7 +249,7 @@ this.W=1;this.H=1;this.Z=1;
     A.glow(ctx,theme,x0,y0,x1,y1,t,TS);
     /* scenery (second pass so neighbouring tiles never clip it) */
     const k=2/Sprites.S,sea=Sea.has(theme),dn=DEC_DENS[theme]||0;
-    for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
+    if(DECOR_ON)for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
       if(water&&A.isW(tx,ty))continue;
       if(this.tDec(tx,ty)){   /* (where scenery stands is worked out once per chunk) */
         const i=(mhash(tx*3+1,ty*5+2)*dec.length)|0,d=dec[i];
@@ -400,6 +402,7 @@ this.W=1;this.H=1;this.Z=1;
     /* fx */
     this.fxBegin();
     for(const f of (FXL.a>0?g.fx:[])){
+      if(f.wfx){WFX.fxDraw(ctx,f);continue;}   /* v127: painted weapon blasts */
       if(f.abfx||(f.beam&&f.ab&&WFX.AB[f.ab])){if(WFX.abFx(ctx,f,g))continue;}   /* v123: painted character abilities */
       if(f.beam){
         const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
@@ -620,7 +623,7 @@ this.W=1;this.H=1;this.Z=1;
       if(Z&&Z.ball){hx=Z.ball.x;hy=Z.ball.y;}   /* procedural arms: the ball is held between the hands */
       else if(SB){hx=SB.x;hy=SB.y;}   /* sheet frame 10: the hand anchor of the sprite */
 
-      this.fxBegin();const wk=c.kind==='kame'&&!g.weapons.has('sweep')&&WFX.draw(ctx,'kame',Math.min(5,Math.floor(kk*6)),hx,hy,26+70*kk,0,1,0);   /* v123: the painted charge */
+      this.fxBegin();const ks=WFX.sid('kame',(g.weapons.get('kame')||{}).evo),kc=WFX.rng(ks,'ch',[0,5]),wk=c.kind==='kame'&&!g.weapons.has('sweep')&&WFX.draw(ctx,ks,kc[0]+Math.min(1,kk)*(kc[1]-kc[0]),hx,hy,26+70*kk,0,1,0);   /* v123: the painted charge */
       if(!wk)VFX.orb(ctx,hx,hy,4+9*kk,c.color,g.rt);
       if(c.kind==='kame'&&!wk){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,hx,hy,(14+26*kk)*(1+.1*Math.sin(g.rt*19)),c.color,.55*kk+.2);   /* charging ball: pulsing halo and rotating rays */
         for(let i=0;i<8;i++){const aa=g.rt*3+i*TAU/8,r0=5+9*kk,l=(10+16*kk)*(.7+.3*Math.sin(g.rt*17+i));ctx.strokeStyle=hexA('#ffffff',.25+.45*kk);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(hx+Math.cos(aa)*r0,hy+Math.sin(aa)*r0);ctx.lineTo(hx+Math.cos(aa)*(r0+l),hy+Math.sin(aa)*(r0+l));ctx.stroke();}ctx.restore();}
@@ -966,7 +969,8 @@ this.W=1;this.H=1;this.Z=1;
     const ox=p.x,oy=p.y-24;ctx.setLineDash([14,10]);ctx.lineDashOffset=-t*60;ctx.lineWidth=1.6;ctx.strokeStyle=hexA(c,.1+.3*k);
     ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+Math.cos(s.ang)*900,oy+Math.sin(s.ang)*900);ctx.stroke();ctx.setLineDash([]);
     /* glow + spirals around the fingertips */
-    if(WFX.has('absbc')){WFX.draw(ctx,'absbc',k<.6?0:1,hx,hy,40+60*k,s.ang,.6+.4*k,0,'a');ctx.restore();return;}   /* v123: painted charge */
+    const sb=WFX.abs('absbc',s.f2);if(WFX.has(sb)&&WFX.meta(sb).seq){WFX.ball(ctx,sb,clamp((k-.45)/.3,0,1),hx,hy,0,s.ang,.6+.4*k,34+60*k);ctx.restore();return;}
+    if(WFX.has(sb)){WFX.draw(ctx,sb,clamp((k-.45)/.3,0,1),hx,hy,(40+60*k)*(sb!=='absbc'?1.25:1),s.ang,.6+.4*k,0,'a');ctx.restore();return;}   /* v129: the charge grows into the burst (blended)   /* v123: painted charge */
     GLOW.at(ctx,hx,hy,12+34*k,c,.5+.5*k);GLOW.at(ctx,hx,hy,6+14*k,'#ffffff',.7);
     for(let j=0;j<3;j++){
       ctx.strokeStyle=hexA(j===1?'#b46bff':c,.4+.5*k);ctx.lineWidth=1.8;ctx.beginPath();
@@ -981,6 +985,10 @@ this.W=1;this.H=1;this.Z=1;
     for(const s of g.spheres){
       const k=s.ph?Math.min(1,s.t/s.hold):0,r=s.ph===0?15+Math.sin(t*30):s.rr;
       ctx.save();ctx.translate(s.x,s.y);
+      const mt=s.met&&WFX.abs('abmeteor',s.f2);
+      if(mt&&WFX.meta(mt).seq){   /* v129: the final form's comet: its own centre of light on the sphere, turned to where it flies */
+        if(s.ph===1){ctx.save();ctx.scale(1,.8);ctx.strokeStyle=hexA(c,.15+.35*k);ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*34;ctx.beginPath();ctx.arc(0,0,s.R,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+        GLOW.at(ctx,0,0,r*3,c,.5);WFX.ball(ctx,mt,t*12,0,0,0,s.a,1,Math.max(40,r*2.4));ctx.restore();continue;}
       if(s.met&&WFX.has('abmeteor')){   /* v124: the painted comet, head on the sphere, tail behind where it flies */
         if(s.ph===1){ctx.save();ctx.scale(1,.8);ctx.strokeStyle=hexA(c,.15+.35*k);ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*34;ctx.beginPath();ctx.arc(0,0,s.R,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
         GLOW.at(ctx,0,0,r*3,c,.5);WFX.draw(ctx,'abmeteor',t*12,0,0,clamp(r*1.7/.25,110,440),s.a,1,Math.floor(t*12/4)%2,true);ctx.restore();continue;}

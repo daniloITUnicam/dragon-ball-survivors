@@ -214,7 +214,10 @@ if _sd.is_dir():
         if _mt == 'png' and os.environ.get('DBS_WEBP') != '0':   # v121: PNG sheets go in as lossless WebP (same pixels, ~17% smaller); cached by content in dist/.cache
             _wk = _webp(raw)
             if _wk: raw, _mt = _wk, 'webp'
-        e['u'] = 'data:image/' + _mt + ';base64,' + base64.b64encode(raw).decode()
+        _ext = os.environ.get('DBS_EXT')   # DBS_EXT=<folder>: the weapon effect sheets (wfx*) go next to the page as files (s/<id>.<ext>) instead of inside it (the artifact has a page size limit)
+        if _ext and sid.startswith('wfx'):
+            _ed = pathlib.Path(_ext)/'s'; _ed.mkdir(parents=True, exist_ok=True); (_ed/(sid + '.' + _mt)).write_bytes(raw); e['u'] = 's/' + sid + '.' + _mt
+        else: e['u'] = 'data:image/' + _mt + ';base64,' + base64.b64encode(raw).decode()
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
 js = js.replace('__SPRITE_PACK__', json.dumps(_pack, separators=(',', ':')))

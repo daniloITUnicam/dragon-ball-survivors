@@ -4,17 +4,18 @@
    parallax layers and periodic weather. Toggle: settings.ambient. Adaptive LOD keeps 60 fps. ====== */
 const sstep=(a,b,x)=>{const k=clamp((x-a)/(b-a),0,1);return k*k*(3-2*k);};
 const vnoise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
-/* per-theme recipe: wt=lake threshold, tint=[dry,lush], parts=[kind,count], crit=[kind,count], ev=[kind,period,duration,offset] */
+/* per-theme recipe: wt=lake threshold, tint=[dry,lush], parts=[kind,count], crit=[kind,count], ev=[kind,period,duration,offset]
+   (v128: only the crabs of the beach are left among the ground critters: the others were drawn by code and did not match the painted maps) */
 const AMB={
-  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2],['petal',9]],crit:[['rabbit',3]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm'],flock:2,nimbus:1},
-  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1],['petal',7]],crit:[['frog',3]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog'],flock:1},
-  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2],['tumble',1]],crit:[['scorpion',3],['weed',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm'],flock:1},
+  plains:{grade:[255,160,80],wt:.74,tint:['#c9b24a','#1c7a2c'],shore:'rgba(20,40,10,.16)',parts:[['firefly',10],['butterfly',7],['seed',14],['leaf',7],['bird',2],['petal',9]],shadow:1,rays:1,mist:['#ffffff',.07],wx:['rain','fog','storm'],flock:2,nimbus:1},
+  namek:{wt:.64,tint:['#7fe0b8','#0c6652'],shore:'rgba(0,40,40,.16)',parts:[['firefly',14],['mote',8],['leaf',5],['bird',1],['petal',7]],shadow:1,rays:1,grade:[255,220,120],mist:['#a6ffd8',.1],wx:['rain','storm','fog'],flock:1},
+  waste:{tint:['#cfa868','#4e4034'],parts:[['firefly',5],['dust',14],['bird',2]],shadow:1,grade:[255,150,70],wx:['sand','sand','storm'],flock:1},
   other:{tint:['#ffc0f0','#7a58c0'],parts:[['mote',14],['sparkle',16],['feather',5],['halo',4],['petal',5]],mist:['#ffb0f0',.12],wx:['feather'],nimbus:1},
   beach:{wt:.6,tint:['#fff0b8','#c8a860'],shore:'rgba(90,60,10,.18)',parts:[['firefly',6],['bird',3],['sparkle',10],['leaf',3],['petal',4]],crit:[['crab',5]],shadow:1,rays:1,grade:[255,170,90],wx:['rain','storm','rain'],flock:3,nimbus:1},
-  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2],['tumble',1]],crit:[['lizard',3]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand'],flock:1},
-  arena:{tint:['#e8e0d0','#8a8272'],parts:[['firefly',4],['mote',10],['flash',3],['confetti',4]],crit:[['pigeon',3]],spot:1,grade:[255,200,120],mist:['#e8e0d0',.08],wx:['wind','storm','wind']},
+  redrock:{tint:['#e08a5a','#6a2a1c'],parts:[['firefly',5],['dust',12],['ember',5],['bird',2]],shadow:1,grade:[255,140,70],wx:['sand','storm','sand'],flock:1},
+  arena:{tint:['#e8e0d0','#8a8272'],parts:[['firefly',4],['mote',10],['flash',3],['confetti',4]],spot:1,grade:[255,200,120],mist:['#e8e0d0',.08],wx:['wind','storm','wind']},
   sky:{back:['#5c98e0',.9],tint:['#ffffff','#a8c8f0'],parts:[['bird',4],['wind',10],['sparkle',8],['feather',3],['cloudlet',3]],rays:1,hi:1,grade:[255,190,120],wx:['gale'],flock:2,nimbus:1},
-  hell:{back:['hell',.84],wt:.64,tint:['#ff7a2a','#12080a'],parts:[['ember',26],['ash',14],['wisp',5],['bird',3],['soul',6]],crit:[['salamander',2]],heat:1,nn:1,wx:['ashfall']},
+  hell:{back:['hell',.84],wt:.64,tint:['#ff7a2a','#12080a'],parts:[['ember',26],['ash',14],['wisp',5],['bird',3],['soul',6]],heat:1,nn:1,wx:['ashfall']},
   void:{back:['#03051a',.8],tint:['#6a4aff','#0a0e22'],parts:[['mote',14],['sparkle',14],['meteor',1],['shard',6]],stars:1,nn:1,wx:['meteor']}
 };
 const WV={plains:['#ffffff',.07,1.4],namek:['#bfffe6',.08,1.1],waste:['#fff0c8',.05,1],redrock:['#ffb080',.05,1.1],other:['#ffd0ff',.07,.8],beach:['#ffffff',.06,1.2],arena:['#ffffff',.035,.6],sky:['#8fb4ec',.09,1],void:['#6a8aff',.13,1.6],hell:['#ff4a10',.1,1.5]};

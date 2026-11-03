@@ -14,6 +14,7 @@ Object.assign(WS,{
   meteor:{cd:[3.2,3,2.8,2.6,2.4,2.1],n:[2,3,3,4,5,6],dmg:[14,16,18,21,24,28],rad:[50,54,58,64,70,80]},
   sweep:{cd:[7.5,7,6.5,6,5.5,4.8],dur:[2.2,2.3,2.4,2.5,2.6,2.8],dmg:[4.5,5,5.6,6.4,7.4,8.6],len:[300,320,340,360,390,440],wid:[26,28,30,32,35,40]},
   dyn:{cd:[1.2,1.1,1,.9,.8,.7],rad:[72,80,88,98,110,130],dmg:[13,16,19,23,27,32]},
+  galick:{cd:[3.6,3.3,3,2.8,2.5,2.2],dmg:[9,11,13,15.5,19,25],len:[340,360,380,400,430,520],wid:[40,44,48,54,60,72]},
   bigbang:{cd:[3.2,3,2.8,2.6,2.4,2.2],n:[1,1,1,1,1,2],dmg:[24,28,33,38,44,52],rad:[78,84,92,100,110,128],r:[16,17,18,19,20,23]}
 });
 /* second evolutions hit a bit softer than the classic x1.5 */
@@ -300,7 +301,7 @@ class HakaiWeapon extends NW{
     for(const b of this.sp){
       b.t+=dt;
       const t=g.nearest(b.x,b.y,620);
-      if(t){const [ux,uy]=unit(t.x-b.x,t.y-8-b.y);const sp2=Math.min(130,40+b.t*90);b.x+=ux*sp2*dt;b.y+=uy*sp2*dt;}
+      if(t){const [ux,uy]=unit(t.x-b.x,t.y-8-b.y);const sp2=Math.min(130,40+b.t*90);b.x+=ux*sp2*dt;b.y+=uy*sp2*dt;b.a=Math.atan2(uy,ux);}
       b.tk-=dt;if(g.eb.length)g.cutC(b.x,b.y,b.rad);
       for(const e of g.en){
         if(e.dead)continue;
@@ -314,8 +315,22 @@ class HakaiWeapon extends NW{
     }
     this.sp=this.sp.filter(b=>b.t<b.life);
   }
+  /* v127: the painted sphere: frames 0-2 while it forms, 3-6 while it flies (turned to where it goes), 7-9 as it bursts at the end */
+  drawSheet(ctx,id){
+    const t=this.g.rt,HK_F=.12,M=WFX.meta(id),fm=M.form||[0,2],fl=M.fly||[3,6],bm=M.boom||[7,9],nf=fm[1]-fm[0]+1,nb=bm[1]-bm[0]+1,tf=HK_F*nf*(3/nf),tb=HK_F*3;   /* forming and bursting take the same time whatever the frame count */
+    for(const b of this.sp){
+      const left=b.life-b.t,r=b.rad*.62*Math.min(1,.45+b.t/.5);
+      let f,a=0,d=r*2,al=1,lp=null;   /* d: the ball's size on screen, whatever size the AI drew it in each frame */
+      if(b.t<tf)f=fm[0]+b.t/tf*(nf-1);
+      else if(left<tb){f=bm[0]+Math.min(nb-1,(tb-left)/tb*(nb-1));d=b.rad*2.1;al=Math.min(1,left/HK_F+.35);}
+      else{f=t*10+b.x*.01;lp=fl;a=b.a||0;}
+      if(f<bm[0])GLOW.at(ctx,b.x,b.y,r*2.6,'#a040ff',.35);   /* no glow under the burst: it would fill the ring */
+      WFX.ball(ctx,id,f,b.x,b.y,0,a,al,d,lp);
+    }
+  }
   draw(ctx){
-    const g=this.g,t=g.rt;
+    const g=this.g,t=g.rt,sh=WFX.sid('hakai',this.evo);
+    if(WFX.has(sh)){this.drawSheet(ctx,sh);for(const b of this.sp)if(Math.random()<.35&&g.fx.length<420){const a=rnd(0,TAU);g.fx.push({x:b.x+Math.cos(a)*b.rad*1.1,y:b.y+Math.sin(a)*b.rad*1.1,vx:-Math.cos(a)*110,vy:-Math.sin(a)*110,l:.4,m:.4,c:'#c070ff',s:3});}return;}
     for(const b of this.sp){
       const k=Math.min(1,b.t/.4,(b.life-b.t)/.6),r=b.rad*.62*k;
       ctx.save();ctx.translate(b.x,b.y);
@@ -515,15 +530,84 @@ class BigBangWeapon extends NW{
     if(this.xs.length)keepIf(this.xs,x=>x.t<BB_XT);
   }
   draw(ctx){
-    const g=this.g,t=g.rt,c=this.color,sh=WFX.has('bigbang');
+    const g=this.g,t=g.rt,c=this.color,bid=WFX.sid('bigbang',this.evo),sh=WFX.has(bid),M=WFX.meta(bid),sq=!!M.seq,chg=M.charge||[0,3],fl=M.fly||[2,3],bm=M.boom||[4,7];
     for(const b of this.bs){
       const k=b.t<0?1+b.t/BB_CHARGE:1,r=b.r*(.35+.65*k);
-      if(sh){GLOW.at(ctx,b.x,b.y,r*3.2,c,.45);WFX.draw(ctx,'bigbang',b.t<0?Math.min(3,Math.floor(k*4)):2+Math.floor(t*10)%2,b.x,b.y,r*2.9,t*4,1,0);continue;}
+      if(sh){GLOW.at(ctx,b.x,b.y,r*3.2,c,.45);
+        if(sq){if(b.t<0)WFX.ball(ctx,bid,chg[0]+k*(chg[1]-chg[0]),b.x,b.y,0,b.a,1,r*2.2);else WFX.ball(ctx,bid,t*10,b.x,b.y,0,b.a,1,r*2.4,fl);continue;}   /* v129: the second evolution's sheet: charge, then the flying ball turned to where it goes */
+        WFX.draw(ctx,bid,b.t<0?Math.min(3,k*3):2+(t*10)%2,b.x,b.y,r*2.9,t*4,1,0,0,b.t<0?null:fl);continue;}
       GLOW.at(ctx,b.x,b.y,r*3.4,c,.7);ctx.fillStyle='#e8f8ff';ctx.beginPath();ctx.arc(b.x,b.y,r*.75,0,TAU);ctx.fill();
       ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(b.x,b.y,r,0,TAU);ctx.stroke();
     }
-    if(sh)for(const x of this.xs){const k=x.t/BB_XT;WFX.draw(ctx,'bigbang',4+Math.min(3,Math.floor(k*4)),x.x,x.y,x.R*2.2*(.8+.3*k),0,k>.75?(1-k)/.25:1,0);}
+    if(sh)for(const x of this.xs){const k=x.t/BB_XT,f=bm[0]+Math.min(1,k)*(bm[1]-bm[0]),al=k>.75?(1-k)/.25:1;
+      if(sq)WFX.ball(ctx,bid,f,x.x,x.y,0,0,al,x.R*1.9*(.8+.3*k));else WFX.draw(ctx,bid,f,x.x,x.y,x.R*2.2*(.8+.3*k),0,al,0);}
   }
 }
 const BB_XT=.5;   /* how long the painted blast lasts */
-const NEWW={javelin:JavelinWeapon,dsunday:DSundayWeapon,breaker:BreakerWeapon,spiral:SpiralWeapon,boomer:BoomerWeapon,hellzone:HellzoneWeapon,chrono:ChronoWeapon,shock:ShockWeapon,hakai:HakaiWeapon,chain:ChainWeapon,meteor:MeteorWeapon,sweep:SweepWeapon,dyn:DynWeapon,bigbang:BigBangWeapon};
+/* v130: Galick Gun (Vegeta). A purple sphere charges at the hand (GL_CH s, the aim follows the target), then a wide beam goes out toward
+   the thickest group of enemies for GL_DUR s: it hits every 0.1 s, pushes enemies back and wipes out enemy bullets. Evolutions: wider,
+   longer and harder push; the second also bursts at the end of the beam. Sheets: galick (charge), galickb (beam: loop, then end), and
+   from the second evolution galickev2 / galickbev2 / galickxev2 (the blast). Without the sheets: the code-drawn beam */
+const GL_CH=.45,GL_DUR=.6;
+class GalickWeapon extends NW{
+  constructor(g,id){super(g,id);this.bs=[];}
+  /* the direction with the most enemies inside the beam: tried toward each of the 14 nearest enemies in reach */
+  aim(len,wid){
+    const g=this.g,p=g.p,ox=p.x,oy=p.y-18,R=len*1.1,near=[];
+    for(const e of g.en){if(e.dead)continue;const d=Math.hypot(e.x-ox,e.y-8-oy);if(d<R)near.push([d,e]);}
+    if(!near.length)return null;
+    near.sort((a,b)=>a[0]-b[0]);let best=null,bn=-1;
+    for(const [,t] of near.slice(0,14)){const a=Math.atan2(t.y-8-oy,t.x-ox),cs=Math.cos(a),sn=Math.sin(a);let n=0;
+      for(const [,e] of near){const rx=e.x-ox,ry=e.y-8-oy,al=rx*cs+ry*sn;if(al>-10&&al<len&&Math.abs(-rx*sn+ry*cs)<wid/2+e.r)n++;}
+      if(n>bn){bn=n;best=t;}}
+    return best;
+  }
+  fire(t,charge){
+    const g=this.g,p=g.p,s=this.st,L=this.L,A=this.area(),ev=this.evo|0;
+    const len=s.len[L]*A*(ev>=2?1.2:ev?1.1:1),wid=s.wid[L]*A*(ev>=2?1.45:ev?1.3:1);
+    const a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit();
+    this.bs.push({t:charge?-GL_CH:0,a,tg:t,len,wid,dur:GL_DUR*(ev?1.1:1),tk:0,dmg:s.dmg[L]*this.dm,kb:ev>=2?210:ev?160:110,ev,boom:ev>=2});
+    g.audio.sfx(charge?'kameCharge':'abBeam');
+  }
+  update(dt){
+    const g=this.g,p=g.p,s=this.st,L=this.L;
+    this.tickQ(dt);
+    this.cd-=dt;
+    if(this.cd<=0){const t=this.aim(s.len[L]*this.area(),s.wid[L]*this.area());
+      if(t){this.fire(t,true);this.extras(()=>{const t2=this.aim(s.len[L]*this.area(),s.wid[L]*this.area());if(t2)this.fire(t2,false);},.5);this.cd=this.cdv();}
+      else this.cd=.2;}
+    for(const b of this.bs){
+      const was=b.t;b.t+=dt;
+      if(b.t<0){if(b.tg&&!b.tg.dead)b.a=Math.atan2(b.tg.y-8-(p.y-18),b.tg.x-p.x);continue;}   /* charging: the aim follows the target */
+      if(was<0)g.audio.sfx('abBeam');
+      const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x+cs*18,oy=p.y-18+sn*18,ext=1-Math.pow(1-Math.min(1,b.t/(b.dur*.15)),3),len=b.len*ext;
+      if(g.eb.length)g.cutBeam(ox,oy,cs,sn,len,b.wid);
+      b.tk-=dt;
+      if(b.tk<=0){b.tk=.1;
+        for(const e of g.en){if(e.dead)continue;const rx=e.x-ox,ry=e.y-8-oy,al=rx*cs+ry*sn;
+          if(al>-10&&al<len&&Math.abs(-rx*sn+ry*cs)<b.wid/2+e.r)g.hit(e,b.dmg,cs*b.kb,sn*b.kb);}}
+      if(b.boom&&b.t>=b.dur*.55){b.boom=false;const ex=ox+cs*b.len,ey=oy+sn*b.len,R=b.wid*1.6;   /* second evolution: the end of the beam bursts */
+        g.explodeAt(ex,ey,R,b.dmg*3,this.color);g.shake=Math.max(g.shake,.25);g.audio.sfx('boom');if(typeof WFX!=='undefined')WFX.boom(g,'galickxev2',ex,ey,R,0,3,.5);}
+    }
+    if(this.bs.length)keepIf(this.bs,b=>b.t<b.dur);
+  }
+  draw(ctx){
+    const g=this.g,p=g.p,t=g.rt,c=this.color,cid=WFX.sid('galick',this.evo),bid=WFX.sid('galickb',this.evo),sh=WFX.has(cid)&&WFX.has(bid),M=WFX.meta(bid);
+    for(const b of this.bs){
+      const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x+cs*18,oy=p.y-18+sn*18;
+      if(b.t<0){const k=1+b.t/GL_CH,r=b.wid*(.25+.45*k);
+        GLOW.at(ctx,ox,oy,r*1.6,c,.2+.25*k);
+        if(sh){const n=WFX.n(cid,0);WFX.ball(ctx,cid,Math.min(n-1,k*(n-1)),ox,oy,0,b.a,1,r*1.6);}
+        else{ctx.fillStyle='#f0d8ff';ctx.beginPath();ctx.arc(ox,oy,r*.5,0,TAU);ctx.fill();}
+        continue;}
+      const u=b.t/b.dur,ext=1-Math.pow(1-Math.min(1,b.t/(b.dur*.15)),3),len=b.len*ext,fa=u>.8?(1-u)/.2:1;
+      GLOW.at(ctx,ox,oy,b.wid*.9,c,.3*fa);
+      if(sh){const lp=M.loop||[0,WFX.n(bid,0)-1],en=M.end;
+        let f;if(b.t<b.dur*.12)f=b.t/(b.dur*.12)*lp[0];else if(en&&u>.72)f=en[0]+Math.min(1,(u-.72)/.28)*(en[1]-en[0]);else f=lp[0]+b.t*14;
+        WFX.strip(ctx,bid,f,ox-cs*4,oy-sn*4,b.a,len*1.06,b.wid*1.55,en?1:fa,en&&u>.72?null:(b.t<b.dur*.12?null:lp));
+        continue;}
+      ctx.save();ctx.translate(ox,oy);ctx.rotate(b.a);VFX.beam(ctx,len,b.wid,c,Math.sin(Math.min(1,u)*Math.PI),t,b.a*3,b.ev>0,true);ctx.restore();
+    }
+  }
+}
+const NEWW={javelin:JavelinWeapon,dsunday:DSundayWeapon,breaker:BreakerWeapon,spiral:SpiralWeapon,boomer:BoomerWeapon,hellzone:HellzoneWeapon,chrono:ChronoWeapon,shock:ShockWeapon,hakai:HakaiWeapon,chain:ChainWeapon,meteor:MeteorWeapon,sweep:SweepWeapon,dyn:DynWeapon,bigbang:BigBangWeapon,galick:GalickWeapon};

@@ -23,7 +23,7 @@ def save_entry(sid, entry):
     jp = SP / 'sprites.json'
     j = json.loads(jp.read_text(encoding='utf8')) if jp.exists() else {}
     j[sid] = entry
-    jp.write_text(json.dumps(j, indent=1, ensure_ascii=False) + '\n', encoding='utf8')
+    jp.write_text(json.dumps(j, separators=(',', ':'), ensure_ascii=False), encoding='utf8')   # compact, as tools/import_wfx.py writes it
 
 
 def components(alpha):
@@ -110,6 +110,30 @@ def align_frames(arg, abg, regions):
     return out
 
 
+def steady(fr):
+    """The AI animation frames redraw the whole rock each time (outline, cracks and size change: the rock seemed to melt and grow back).
+    Every frame becomes the FIRST frame with its lava glowing in a wave that runs down the cracks; only above the crater (smoke,
+    sparks: nothing of the rock there) the frame keeps its own pixels, so the smoke still drifts."""
+    b = fr[0].astype(np.float32); h, w = b.shape[:2]; n = len(fr)
+    r, g, bl, a = b[..., 0], b[..., 1], b[..., 2], b[..., 3]
+    lava = (a > 40) & (r > 140) & (r - bl > 70) & (r >= g)
+    yy, xx = np.mgrid[0:h, 0:w]; ph = yy/h*1.6 + xx/w*.35
+    ys = np.nonzero(lava.any(axis=1))[0]; top = int(ys.min()) - 2 if ys.size else 0   # the crater: highest lava row
+    body = (a > 40) & ~lava & (b[..., :3].max(axis=2) < 75)   # dark rock (the smoke is a lighter grey)
+    if top <= 4 or body[:top].sum() > .02*max(1, (a[:top] > 40).sum()): top = 0   # rock above the highest lava (a spire, a boulder): no smoke to keep, all of it stays still
+    out = [fr[0]]
+    for k in range(1, n):
+        q = np.sin(2*np.pi*(k/n - ph))   # -1..1, a wave travelling down
+        f = 1 + .28*q
+        nf = b.copy()
+        nf[..., 0] = np.where(lava, np.clip(r*np.maximum(f, .85), 0, 255), r)
+        nf[..., 1] = np.where(lava, np.clip(g*f + 40*np.maximum(q, 0), 0, 255), g)   # brighter = yellower
+        nf[..., 2] = np.where(lava, np.clip(bl*f + 30*np.maximum(q - .5, 0), 0, 255), bl)
+        if top > 4 and fr[k].shape == fr[0].shape: nf[:top] = fr[k][:top].astype(np.float32)   # the smoke above the crater keeps moving
+        out.append(nf.astype(np.uint8))
+    return out
+
+
 def lava():
     # ---- static rocks (white background)
     rgb = down2(ARC / 'lavarocks_sheet.png')
@@ -152,7 +176,7 @@ def lava():
             sprites[i] = crop(rgb, pick(d[1], d[2]))[0]
     extra, anim, pingpong, newkinds = [], {}, [], []
     for k, arg, abg, regs, pp in ANIM:
-        fr = align_frames(arg, abg, regs)
+        fr = steady(align_frames(arg, abg, regs))
         if k == 'new': k = len(sprites); sprites.append(fr[0]); newkinds.append(k)
         else: sprites[k] = fr[0]
         anim[k] = (len(extra), len(fr) - 1); extra += fr[1:]

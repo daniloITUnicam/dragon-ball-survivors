@@ -105,6 +105,94 @@ const trackUri=t=>FILE_TRACKS[t]||null;
 const FILE_SFX=/*__SFX__*/{};
 const XFADE=3.2; /* seconds of equal-power crossfade between the end and the start of a looping file track */
 const xfCurve=(up)=>{const n=48,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1);c[i]=Math.sin((up?x:1-x)*Math.PI/2);}return c;};
+/* ====== v128: 8-bit sound effects. Every sound is made of the four channels of an old console: two pulse waves (25% 'pulse',
+   50% 'square'), a triangle and the LFSR noise, with stepped pitch sweeps. A(udio) helpers: P / Q / Tr = pulse / square / triangle
+   (f Hz, d s, vol, o), Nz = noise (d, vol, rate index from, to, o). e = 1 for an evolved weapon (lower, fuller, one more layer). ====== */
+const NES_NP=[4,8,16,32,64,96,128,160,202,254,380,508,762,1016,2034,4068];   /* noise periods in CPU cycles (rate = 1789773 / period) */
+const mn=m=>440*Math.pow(2,(m-69)/12);
+const P8=(A,f,d,v,o)=>A.chip(f,d,'pulse',v,o),Q8=(A,f,d,v,o)=>A.chip(f,d,'square',v,o),T8=(A,f,d,v,o)=>A.chip(f,d,'triangle',v,o),N8=(A,d,v,i0,i1,o)=>A.nz(d,v,i0,i1,o);
+const arp8=(A,notes,step,d,v,ty,dl)=>notes.forEach((m,i)=>A.chip(mn(m),d,ty||'pulse',v,{dl:(dl||0)+i*step}));
+/* a deep 8-bit explosion: a falling noise roar, a triangle drop and a square crunch; k = size */
+const boom8=(A,k,dl)=>{k=k||1;dl=dl||0;N8(A,.38*k,.09,3,12,{dl,hold:.12});T8(A,140,.34*k,.085,{to:38,st:9,dl});Q8(A,110,.12*k,.035,{to:45,st:5,dl});};
+const SFX8={
+  hit:A=>{N8(A,.035,.028,5,8);P8(A,330,.04,.018,{to:150,st:3});},
+  kill:A=>{P8(A,mn(76+(Math.random()*5|0)),.07,.026,{to:mn(88),st:3});N8(A,.05,.02,4,7);},   /* an enemy pops */
+  gem:A=>{const k=Math.min(14,A.pitchK||0),m=84+k;Q8(A,mn(m),.04,.032);Q8(A,mn(m+7),.07,.028,{dl:.035});},   /* experience: climbs while you keep collecting */
+  coin:A=>{Q8(A,mn(83),.06,.024);Q8(A,mn(88),.22,.024,{dl:.06,hold:.5});},
+  pickup:A=>{arp8(A,[72,76,79],.04,.06,.035,'square');},
+  senzu:A=>{T8(A,mn(60),.18,.07,{to:mn(72),st:6});arp8(A,[76,79,84],.05,.1,.03,'pulse',.08);},
+  hurt:A=>{Q8(A,330,.13,.04,{to:110,st:5});N8(A,.12,.045,6,9);},
+  death:A=>{arp8(A,[76,72,69,65,64,60],.13,.18,.045,'square');T8(A,mn(48),1.0,.08,{to:mn(36),st:6,dl:.1});N8(A,.9,.07,6,14,{hold:.3});},
+  boom:A=>boom8(A,1),
+  dash:A=>{N8(A,.12,.045,2,6);P8(A,1500,.09,.025,{to:450,st:5});},
+  leap:A=>{P8(A,300,.16,.03,{to:900,st:6});N8(A,.12,.03,5,3);},
+  land:A=>{T8(A,150,.14,.08,{to:60,st:4});N8(A,.1,.05,8,11);},
+  warn:A=>{Q8(A,mn(81),.08,.035);Q8(A,mn(81),.08,.035,{dl:.14});},
+  boss:A=>{Q8(A,mn(33),.5,.06,{to:mn(36),st:3,vib:.02,vr:6});T8(A,mn(21),.7,.1);N8(A,.5,.05,9,13);},
+  lvl:A=>{arp8(A,[67,72,76,79,84,88],.055,.12,.028,'square');T8(A,mn(55),.4,.05,{to:mn(67),st:4});},
+  chest:A=>{N8(A,.15,.035,4,8);arp8(A,[72,76,79,84,88],.07,.16,.028,'square',.1);T8(A,mn(48),.5,.045,{dl:.1});},
+  evolve:A=>{arp8(A,[64,68,71,76,80,83,88],.07,.2,.026,'pulse');arp8(A,[52,56,59,64],.14,.3,.045,'triangle');N8(A,.7,.04,3,8,{dl:.1});},
+  trinket:A=>{arp8(A,[79,83,86,91],.06,.16,.035,'pulse');},
+  ach:A=>{arp8(A,[76,79,83,88],.09,.16,.04,'square');T8(A,mn(52),.4,.05);},
+  shrine:A=>{T8(A,mn(69),.35,.06,{to:mn(81),st:4});P8(A,mn(81),.3,.02,{dl:.1,vib:.02,vr:6});},
+  ball:A=>{arp8(A,[76,81,88],.09,.2,.04,'square');},
+  fuse:A=>{P8(A,mn(81),.45,.025,{to:mn(93),st:12});},
+  pkheal:A=>{arp8(A,[72,76,79,84],.06,.2,.035,'triangle');P8(A,mn(96),.2,.015,{dl:.2});},
+  pkmagnet:A=>{P8(A,110,.45,.03,{to:990,st:14});N8(A,.4,.03,8,3);},
+  pkdmg:A=>{Q8(A,150,.3,.05,{to:90,st:5});Q8(A,300,.2,.03,{to:600,st:4,dl:.03});N8(A,.2,.06,5,10);},
+  pkhaste:A=>{arp8(A,[79,86,91,98],.035,.07,.03,'square');N8(A,.15,.03,1,4,{dl:.05});},
+  pkxp:A=>{Q8(A,mn(91),.08,.035);Q8(A,mn(98),.2,.03,{dl:.07});},
+  pkluck:A=>{arp8(A,[83,86,90,95,98],.05,.12,.03,'pulse');},
+  pkcapsule:A=>{N8(A,.05,.05,3,6);arp8(A,[69,81,93],.09,.12,.04,'triangle',.05);},
+  thunder:A=>{N8(A,.5,.12,4,13,{hold:.15});T8(A,110,.4,.09,{to:40,st:8});P8(A,2000,.15,.03,{to:300,st:8});},
+  /* character abilities */
+  abBeam:A=>{Q8(A,mn(57),.55,.05,{to:mn(45),st:8,vib:.03,vr:14});P8(A,mn(81),.45,.025,{to:mn(69),st:8});N8(A,.7,.08,3,9,{hold:.4});T8(A,110,.5,.08,{to:55});},
+  abNova:A=>{boom8(A,1.6);arp8(A,[84,79,76,72],.05,.1,.03,'square');},
+  abHeal:A=>{arp8(A,[72,76,79,84,88],.08,.25,.035,'triangle');P8(A,mn(96),.3,.012,{dl:.3,vib:.02});},
+  abDash:A=>{N8(A,.2,.06,1,6);P8(A,1800,.16,.03,{to:300,st:7});},
+  abClone:A=>{[0,.07,.14].forEach((d,i)=>{P8(A,mn(84+i*4),.1,.03,{to:mn(72),st:3,dl:d});N8(A,.06,.03,2,4,{dl:d});});},
+  abPower:A=>{P8(A,mn(48),.7,.04,{to:mn(72),st:12,vib:.04,vr:10});T8(A,mn(36),.7,.07,{to:mn(48),st:6});N8(A,.6,.03,8,3,{at:.2});},
+  abBarrier:A=>{T8(A,mn(72),.6,.06,{to:mn(84),st:3});P8(A,mn(84),.5,.02,{vib:.03,vr:12,dl:.05});N8(A,.3,.025,2,2,{short:1});},
+  abAbsorb:A=>{P8(A,1400,.7,.035,{to:200,st:14});N8(A,.7,.05,10,3);},
+  abTime:A=>{Q8(A,mn(93),.06,.035);Q8(A,mn(88),.06,.035,{dl:.12});T8(A,mn(33),1.2,.09,{dl:.2,to:mn(28),st:3});},
+  abErase:A=>{boom8(A,1.4);P8(A,1900,.8,.04,{to:70,st:16});},
+  spirit:A=>{arp8(A,[60,64,67,72,76,79,84,88],.08,.12,.03,'pulse');T8(A,mn(36),.9,.06,{to:mn(48),st:8});},
+  flare:A=>{arp8(A,[84,88,91,96],.025,.12,.04,'square');N8(A,.3,.05,0,3,{short:1});},
+  slash:A=>{N8(A,.1,.05,1,5,{short:1});P8(A,2400,.08,.025,{to:600,st:6});},
+  shot:A=>{P8(A,1760,.07,.03,{to:440,st:6});N8(A,.03,.02,3);},
+  kame:A=>{P8(A,mn(100),.2,.03,{to:mn(88),st:6,vib:.03,vr:30});Q8(A,mn(88),.2,.014);},
+  kameCharge:A=>{P8(A,mn(45),.95,.035,{to:mn(69),st:16,vib:.03,vr:11,at:.05,hold:.8});T8(A,mn(33),1,.06,{to:mn(45),st:8,hold:.8});arp8(A,[81,84,88,93,96],.14,.05,.012,'square',.25);},
+  kameChargeEvo:A=>{P8(A,mn(40),1.1,.04,{to:mn(69),st:20,vib:.04,vr:12,at:.05,hold:.8});T8(A,mn(28),1.15,.07,{to:mn(45),st:10,hold:.8});N8(A,1.1,.025,9,4,{at:.4,hold:.8});arp8(A,[81,84,88,93,96,100],.13,.05,.014,'square',.2);},
+  kameFire:A=>{N8(A,1.0,.09,3,10,{hold:.4});Q8(A,mn(57),.9,.045,{to:mn(45),st:10,vib:.03,vr:14,hold:.5});T8(A,mn(33),.9,.09,{to:mn(26),st:6,hold:.5});P8(A,mn(81),.5,.02,{to:mn(69),st:6});},
+  kameFireEvo:A=>{N8(A,1.4,.11,2,11,{hold:.45});Q8(A,mn(52),1.3,.05,{to:mn(40),st:12,vib:.04,vr:15,hold:.55});T8(A,mn(28),1.3,.1,{to:mn(21),st:6,hold:.55});P8(A,mn(76),.9,.025,{to:mn(64),st:8,vib:.03,vr:22});boom8(A,.8,.02);},
+  sphere:null,levelup:null   /* the files the game ships (Dragon Ball, level-up jingle) keep playing */
+};
+for(const k in SFX8)if(!SFX8[k])delete SFX8[k];
+/* the weapons: the sound of each one when it fires (shot / slash / spirit / flare / thunder / kame / boom, whatever the weapon calls) */
+const SFX8W={
+  ki:{shot:(A,e)=>{P8(A,e?1320:1760,.07,.03,{to:e?330:440,st:6});if(e)Q8(A,660,.08,.018,{to:165,st:6});N8(A,.03,.02,3);},gap:80},
+  homing:{shot:(A,e)=>{T8(A,mn(76),.09,.05,{to:mn(88),st:4});P8(A,mn(88+(e?5:0)),.06,.018,{dl:.04,to:mn(95),st:3});},gap:90},
+  javelin:{slash:(A,e)=>{N8(A,.08,.03,2,6,{short:1});P8(A,e?900:1200,.1,.03,{to:e?200:300,st:8});}},
+  dsunday:{shot:(A,e)=>{Q8(A,mn(83),.06,.03);Q8(A,mn(88),.06,.03,{dl:.05});N8(A,.04,.02,4);}},
+  breaker:{shot:(A,e)=>{T8(A,e?180:220,.14,.045,{to:e?80:110,st:5});P8(A,440,.06,.022,{to:220,st:3});},boom:(A,e)=>boom8(A,e?1.25:1)},
+  spiral:{shot:A=>{P8(A,mn(91),.04,.016,{to:mn(96),st:2});}},
+  boomer:{slash:(A,e)=>{P8(A,600,.14,.025,{to:900,st:4,vib:.08,vr:18});N8(A,.08,.02,2,4,{short:1});}},
+  hellzone:{spirit:A=>{arp8(A,[72,74,76,79,81,84,86,88],.05,.07,.02,'pulse');},flare:A=>{arp8(A,[96,91,88],.03,.08,.03,'square');},boom:(A,e)=>{boom8(A,1.3);arp8(A,[60,55,52],.06,.12,.03,'square',.05);}},
+  chrono:{flare:A=>{Q8(A,mn(93),.05,.04);Q8(A,mn(88),.05,.04,{dl:.09});T8(A,mn(45),.45,.06,{dl:.12,to:mn(40),st:2});}},
+  shock:{thunder:(A,e)=>{T8(A,110,.28,.1,{to:45,st:6});N8(A,.32,.1,6,13,{hold:.15});Q8(A,220,.08,.035,{to:110,st:3});}},
+  hakai:{spirit:(A,e)=>{P8(A,220,.45,.03,{to:110,st:6,vib:.05,vr:9});T8(A,110,.55,.06,{to:55,st:4});N8(A,.25,.02,1,3,{short:1});}},
+  chain:{thunder:(A,e)=>{N8(A,.18,.06,1,3,{short:1});P8(A,2000,.13,.03,{to:600,st:10});}},
+  meteor:{shot:A=>{P8(A,1200,.26,.022,{to:200,st:12});}},
+  sweep:{shot:A=>{Q8(A,mn(57),.5,.03,{vib:.04,vr:12});}},
+  dyn:{slash:(A,e)=>{T8(A,180,.11,.05,{to:60,st:4});N8(A,.09,.035,5,9);}},
+  galick:{kameCharge:(A,e)=>{P8(A,mn(e?43:48),.45,.035,{to:mn(e?67:72),st:10,vib:.04,vr:12,at:.03,hold:.8});T8(A,mn(e?31:36),.45,.05,{to:mn(48),st:5,hold:.8});},
+    abBeam:(A,e)=>{N8(A,.6,.07,3,9,{hold:.4});Q8(A,mn(e?50:55),.55,.04,{to:mn(e?38:43),st:8,vib:.05,vr:16,hold:.5});P8(A,mn(e?74:79),.35,.02,{to:mn(67),st:5});if(e>=2)T8(A,mn(26),.5,.08,{to:mn(21),st:4});},gap:120},
+  bigbang:{shot:(A,e)=>{P8(A,330,.2,.035,{to:990,st:6});T8(A,165,.2,.05,{to:330,st:4});},boom:(A,e)=>{boom8(A,e?1.35:1.15);Q8(A,196,.15,.035,{to:98,st:4});}},
+  spirit:{spirit:(A,e)=>{arp8(A,e?[55,60,64,67,72,76,79,84,88]:[60,64,67,72,76,79,84,88],.08,.12,.03,'pulse');T8(A,mn(e?31:36),.9,.06,{to:mn(48),st:8});},thunder:A=>{N8(A,.4,.09,4,12);T8(A,100,.35,.08,{to:40,st:7});},boom:(A,e)=>boom8(A,e?1.6:1.3)},
+  flare:{flare:(A,e)=>{arp8(A,e?[79,84,88,91,96]:[84,88,91,96],.025,.12,.04,'square');N8(A,.3,.05,0,3,{short:1});}},
+  slash:{slash:(A,e)=>{N8(A,.1,.05,1,5,{short:1});P8(A,e?2000:2400,.08,.025,{to:e?400:600,st:6});if(e)T8(A,300,.1,.04,{to:120,st:3});}},
+  dbeam:{kame:(A,e)=>{P8(A,mn(100),.2,.03,{to:mn(88),st:6,vib:.03,vr:30});Q8(A,mn(88),.2,.014);if(e)P8(A,mn(105),.12,.015,{dl:.04});}}
+};
 class AudioSys{
   constructor(settings){this.s=settings;this.ctx=null;this.music=null;this.last={};this.wantTrack=null;}
   unlock(){
@@ -268,7 +356,9 @@ class AudioSys{
     if(!this.ctx||this.s.sfx<=0)return null;o=o||{};
     const c=this.ctx,t=c.currentTime+(o.dl||0),os=c.createOscillator(),g=c.createGain();
     if(ty==='pulse')os.setPeriodicWave(this.pulse());else os.type=ty||'square';
-    os.frequency.setValueAtTime(f,t);if(o.to)os.frequency.exponentialRampToValueAtTime(Math.max(20,o.to),t+d);
+    os.frequency.setValueAtTime(f,t);
+    if(o.to&&o.st){const n=o.st|0,r=Math.max(20,o.to)/f,dd=(o.sd||d)/n;for(let k=1;k<=n;k++)os.frequency.setValueAtTime(f*Math.pow(r,k/n),t+k*dd);}   /* st: the pitch moves in steps, like a sound chip's sweep */
+    else if(o.to)os.frequency.exponentialRampToValueAtTime(Math.max(20,o.to),t+d);
     let lfo=null;if(o.vib){lfo=c.createOscillator();const lg=c.createGain();lfo.frequency.value=o.vr||7;lg.gain.value=f*o.vib;lfo.connect(lg);lg.connect(os.frequency);lfo.start(t);lfo.stop(t+d+.05);}
     const at=o.at||.005;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+Math.max(at,d*(o.hold||.35)));g.gain.exponentialRampToValueAtTime(.0001,t+d);
     os.connect(g);g.connect(o.out||this.sfxG);os.start(t);os.stop(t+d+.05);
@@ -283,6 +373,24 @@ class AudioSys{
     const at=o.at||.01;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+d*(o.hold||.3));g.gain.exponentialRampToValueAtTime(.0001,t+d);
     if(o.trem){const l=c.createOscillator(),lg=c.createGain();l.type='square';l.frequency.value=o.trem;lg.gain.value=vol*.6;l.connect(lg);lg.connect(g.gain);l.start(t);l.stop(t+d+.05);}
     sr.connect(f);f.connect(g);g.connect(this.sfxG);sr.start(t);sr.stop(t+d+.05);
+  }
+  /* v128: the real noise channel of an 8-bit console: a 15-bit LFSR clocked at one of 16 rates (i: 0 = hiss ... 15 = low rumble);
+     short = the 93-step "metallic" mode. Buffers are made once per rate and mode, half a second each, and looped */
+  lfsr(i,short){
+    const k=(short?'s':'l')+i,B=this._lf||(this._lf={});if(B[k])return B[k];
+    const c=this.ctx,sr=c.sampleRate,n=Math.floor(sr*.5),b=c.createBuffer(1,n,sr),d=b.getChannelData(0),rate=1789773/NES_NP[i];
+    let r=1,acc=0,v=1;const step=rate/sr;
+    for(let j=0;j<n;j++){acc+=step;while(acc>=1){acc-=1;const fb=(r&1)^((r>>(short?6:1))&1);r=(r>>1)|(fb<<14);v=(r&1)?-1:1;}d[j]=v;}
+    return B[k]=b;
+  }
+  /* an 8-bit noise burst: d s, vol, i0 -> i1 (rate index, sweeps by playback rate), o: {dl, short, hold, at} */
+  nz(d,vol,i0,i1,o){
+    if(!this.ctx||this.s.sfx<=0)return;o=o||{};
+    const c=this.ctx,t=c.currentTime+(o.dl||0),sr=c.createBufferSource(),g=c.createGain();
+    sr.buffer=this.lfsr(i0,o.short);sr.loop=true;
+    if(i1!=null&&i1!==i0){sr.playbackRate.setValueAtTime(1,t);sr.playbackRate.exponentialRampToValueAtTime(Math.max(.02,NES_NP[i0]/NES_NP[i1]),t+d);}
+    const at=o.at||.004;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+d*(o.hold||.2));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    sr.connect(g);g.connect(this.sfxG);sr.start(t);sr.stop(t+d+.05);
   }
   /* step: dark, rise, ball (i = which one), burst, emerge, roar, blip, leave; deep = Porunga (lower, harsher); sp = speed (x2 setting) */
   summon(step,deep,i,sp){
@@ -335,9 +443,14 @@ class AudioSys{
   }
   sfx(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
+    if(this.s.sfx8!==false&&this.s.sfx>0){   /* v128: 8-bit sounds (Settings > Audio): the weapon that is firing has its own, then the shared ones */
+      const W=this.wctx&&SFX8W[this.wctx],f=W&&W[n];
+      if(f){const wk='w'+this.wctx+n;if(this.last[wk]&&now-this.last[wk]<(W.gap||70))return;this.last[wk]=now;f(this,this.wevo|0);return;}
+      if(SFX8[n]){SFX8[n](this,0);return;}
+    }
     const T=(f,d,ty,v,s)=>this.tone(f,d,ty,v,s);
     switch(n){
       case'shot':this.zap(2100,520,.09,.03);this.toneAt(3200,.05,'square',.012,-1800,0);this.noise(.05,.03,9000,2500,0);break;

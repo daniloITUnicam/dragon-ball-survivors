@@ -1,4 +1,5 @@
 'use strict';
+const SFX8_T={n:T6('Suoni 8-bit','8-bit sounds','Sonidos de 8 bits','Sons 8 bits','8-Bit-Sounds','Sons de 8 bits'),d:T6('Armi, colpi, raccolte e azioni con i suoni di una vecchia console. Spento: i suoni di prima.','Weapons, hits, pick-ups and actions with the sounds of an old console. Off: the previous sounds.','Armas, golpes, recogidas y acciones con los sonidos de una consola antigua. Apagado: los sonidos de antes.','Armes, coups, ramassages et actions avec les sons d\'une vieille console. Désactivé : les sons d\'avant.','Waffen, Treffer, Aufsammeln und Aktionen mit den Klängen einer alten Konsole. Aus: die bisherigen Klänge.','Armas, golpes, coletas e ações com os sons de um console antigo. Desligado: os sons de antes.')};
 const END_T={kept:T6('Cimeli','Trinkets','Reliquias','Reliques','Relikte','Relíquias'),keptSub:T6('Trovati in questa partita e messi nella Borsa.','Found in this run and put in the Bag.','Encontradas en esta partida y guardadas en la Bolsa.','Trouvées pendant cette partie et rangées dans le Sac.','In diesem Lauf gefunden und in die Tasche gelegt.','Encontradas nesta partida e guardadas na Bolsa.')};
 /* ====== UI part 2: settings, controls, modals, end screen, toasts, sandbox panel ====== */
 const WS_LAB={dmg:['Danno','Damage'],n:['Colpi','Shots'],cd:['Ricarica','Cooldown'],pi:['Perfora','Pierce'],rad:['Raggio','Radius'],r:['Raggio','Radius'],wid:['Spessore','Width'],len:['Gittata','Range'],stun:['Stun','Stun']};
@@ -75,7 +76,8 @@ Object.assign(UI.prototype,{
         toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
     }else if(tab==='audio'){
       const pc=v=>Math.round(v*100)+'%';
-      body=[slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc)];
+      body=[slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc),
+        toggle(this.tr(SFX8_T.n),'sfx8',this.tr(SFX8_T.d),()=>{this.app.audio.sfx(this.app.save.d.settings.sfx8?'coin':'pickup');})];
     }else if(tab==='video'){
       body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,

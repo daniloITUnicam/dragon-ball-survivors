@@ -12,9 +12,9 @@ ok(Object.keys(old).every(k=>cds[k]<old[k]),'every companion has a shorter coold
 ok(cds.dende===30&&cds.shenron===40&&cds.droid===40&&cds.bubbles===36&&cds.buu===28&&cds.saibaman===22,'the new values');
 /* ---------- Mini Shenron ---------- */
 await start('shenron');
-const sh=await pg.evaluate(()=>{const g=G,p=g.p;g.pet.cd=0;g.xp=0;g.need=100;g.gm=[{x:p.x+380,y:p.y,v:1,att:false},{x:p.x+450,y:p.y,v:1,att:false}];g.usePet();return{near:g.gm[0].att,far:g.gm[1].att,xp:g.xp};});
+const sh=await pg.evaluate(()=>{const g=G,p=g.p;g.pet.cd=0;g.xp=0;g.need=100;g.gm=[{x:p.x+380,y:p.y,v:1,att:false},{x:p.x+450,y:p.y,v:1,att:false}];g.usePet();return{near:g.gm[0].att,far:g.gm[1].att,xp:g.xp,k:g.pk.xp*g.comboMul*(g.dmut.xp||1)};});   /* k: the day's mutator, pacts and combo still apply on top */
 ok(sh.near&&!sh.far,'Mini Shenron pulls gems within 400 px (not 450)');
-ok(Math.abs(sh.xp-5)<.2,'and gives 5% of a level as XP ('+sh.xp.toFixed(2)+' of 100)');
+ok(Math.abs(sh.xp-5*sh.k)<.2,'and gives 5% of a level as XP ('+sh.xp.toFixed(2)+' of 100, day/combo multiplier x'+sh.k.toFixed(2)+')');
 /* ---------- Mini Droid ---------- */
 await start('droid');
 const dr=await pg.evaluate(()=>{const g=G;g.pet.cd=0;g.p.inv=0;g.usePet();return g.p.inv;});

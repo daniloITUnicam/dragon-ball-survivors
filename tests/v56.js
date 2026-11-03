@@ -51,8 +51,10 @@ r=await ev(()=>{
   ObjLife.bird=orig;return stats;});
 ok(!r.err,'ObjLife.draw runs on every theme ('+(r.err||'ok')+')');
 ok(r.beachW===0&&r.plainsW===0&&r.arenaW===0&&r.hellW===0&&r.skyW===0,'no white gull is perched on any prop any more');
-ok(r.beach<r.hell,'beach / plains / arena lose the bird that used to be a gull on crates and graves ('+r.beach+' crows left on fences vs '+r.hell+' elsewhere)');
-ok(r.hell>0||r.waste>0||r.namek>0,'crows still sit on props elsewhere ('+r.hell+' / '+r.waste+' / '+r.namek+')');
+/* v128: the code-drawn critters on props are off (OL_CRITTERS); only the beach crabs are left */
+const OLC=await ev(()=>typeof OL_CRITTERS==='undefined'||OL_CRITTERS);
+ok(OLC?r.beach<r.hell:r.beach+r.hell+r.waste+r.namek===0,'beach / plains / arena lose the bird that used to be a gull ('+r.beach+' vs '+r.hell+'); v128: no crows at all while the critters are off');
+ok(OLC?(r.hell>0||r.waste>0||r.namek>0):true,'crows still sit on props elsewhere when the critters are on ('+r.hell+' / '+r.waste+' / '+r.namek+')');
 r=await ev(()=>{
   const log=[];const ctx=new Proxy({},{get:(t,k)=>k==='canvas'?null:(...a)=>{log.push(k);},set:()=>true});
   const q={k:'bird',x:50,y:50,vx:20,vy:0,s:1,ph:1,l:3,m:40,c:'#fff'};Ambient.drawP(ctx,q,3);

@@ -2,6 +2,8 @@
 /* ====== ObjLife: small animated life on the map's props (visual only): a spider wandering over a barrel (walking, rearing up, grooming) or hanging from its lid, a crow perched on a crate,
    a candle and moths on a gravestone, flies over a heap of bones, a cat asleep on the hay, a crab scuttling at the foot of a crate, twinkling crystals, flickering lanterns,
    lava that spits sparks. Called by the renderer right after a prop is drawn. Coordinates are in art units (origin: bottom centre of the sprite), U world px each. ====== */
+/* v128: the code-drawn critters (birds, a cat, moths and a candle, flies) are off: they did not match the painted props. The spiders on barrels and crates and the crabs of the beach stay */
+const OL_CRITTERS=false;
 const ObjLife={
   /* the little critters, drawn at world scale s */
   _sm(x){x=x<0?0:x>1?1:x;return x*x*(3-2*x);},
@@ -118,7 +120,7 @@ const ObjLife={
     switch(kind){
       case'barrel':case'crate':case'crate2':{
         const top=kind==='barrel'?-16:kind==='crate2'?-22:-11,hw=kind==='barrel'?5:5.5,yb=-2.5,yt=kind==='barrel'?-13:kind==='crate2'?-20:-9;
-        const v=hb<.32?'crawl':hb<.5&&kind==='barrel'?'hang':hb<.68&&!gull?'bird':hb<.84&&theme==='beach'?'crab':'none';
+        const v=hb<.32?'crawl':hb<.5&&kind==='barrel'?'hang':OL_CRITTERS&&hb<.68&&!gull?'bird':hb<.84&&theme==='beach'?'crab':'none';   /* spiders and crabs stay, the birds only with the critters on */
         if(v==='crawl'){   /* wanders over the face of it: walks, stops, rears up, grooms, looks round, walks again */
           const o=this.crawl(t,Math.round(ph*131),hw,yt,yb),[wx,wy]=P(o.x,o.y);
           this.spider(c,wx,wy,Math.atan2(Math.sin(o.h),Math.cos(o.h)*f),2.7,o);
@@ -134,6 +136,7 @@ const ObjLife={
         }
         break;}
       case'tomb':case'tomb2':{
+        if(!OL_CRITTERS)break;
         const [cx,cy]=P(6.5,-.5);
         c.fillStyle='#e8e0cc';c.fillRect(cx-1.6,cy-4.2,3.2,4.2);c.fillStyle='#b8b09c';c.fillRect(cx+.8,cy-4.2,.8,4.2);
         this.flame(c,cx,cy-4.2,t,ph,2.6);
@@ -141,14 +144,14 @@ const ObjLife={
         if(hb<.4&&theme!=='beach'){const [wx,wy]=P(0,kind==='tomb2'?-17:-16.5);this.bird(c,wx,wy,hb<.2?1:-1,t,ph,['#26222c','#3c3846','#d0b060'],2.4);}
         break;}
       case'skullpile':{
-        const [wx,wy]=P(0,-9);for(let i=0;i<3;i++)this.fly(c,wx,wy,t,ph+i*2.1,10+i*2);
+        const [wx,wy]=P(0,-9);if(OL_CRITTERS)for(let i=0;i<3;i++)this.fly(c,wx,wy,t,ph+i*2.1,10+i*2);
         if(theme==='hell'){const e=Math.sin(t*3+ph)>.55;if(e){c.save();c.globalCompositeOperation='lighter';const [a,bb]=P(-1.6,-8),[a2,b2]=P(1.6,-8);GLOW.at(c,a,bb,5,'#ff3a1a',.9);GLOW.at(c,a2,b2,5,'#ff3a1a',.9);c.restore();}}
         break;}
       case'haybale':{
-        if(hb<.5){const [wx,wy]=P(0,-9.5);this.cat(c,wx,wy,hb<.25?1:-1,t,ph,2.5);const z=(t*.5+ph)%1;c.fillStyle='rgba(255,255,255,'+(1-z)*.9+')';c.font='900 '+(6+z*4|0)+'px sans-serif';c.fillText('z',wx+f*(8+z*6),wy-8-z*14);}
+        if(OL_CRITTERS&&hb<.5){const [wx,wy]=P(0,-9.5);this.cat(c,wx,wy,hb<.25?1:-1,t,ph,2.5);const z=(t*.5+ph)%1;c.fillStyle='rgba(255,255,255,'+(1-z)*.9+')';c.font='900 '+(6+z*4|0)+'px sans-serif';c.fillText('z',wx+f*(8+z*6),wy-8-z*14);}
         break;}
       case'fence':{
-        if(hb<.55){const [wx,wy]=P(hb<.28?-6:6,-12.5);this.bird(c,wx,wy,hb<.28?1:-1,t,ph,['#3a3030','#5a4a46','#d0b060'],2.4);}
+        if(OL_CRITTERS&&hb<.55){const [wx,wy]=P(hb<.28?-6:6,-12.5);this.bird(c,wx,wy,hb<.28?1:-1,t,ph,['#3a3030','#5a4a46','#d0b060'],2.4);}
         break;}
       case'crystalN':case'crystalV':{
         const col=kind==='crystalN'?'#bff7ff':'#d8ccff',gl=kind==='crystalN'?'#5ad8ff':'#8a6aff';
@@ -157,7 +160,7 @@ const ObjLife={
         c.restore();break;}
       case'lantern':{const [wx,wy]=P(0,-8);this.flame(c,wx,wy+2,t,ph,2.4,'#ffd86a');break;}
       case'spikes':{
-        if(hb<.5){const [wx,wy]=P(-5+hb*20,-11);this.fly(c,wx,wy,t,ph,6);}
+        if(OL_CRITTERS&&hb<.5){const [wx,wy]=P(-5+hb*20,-11);this.fly(c,wx,wy,t,ph,6);}
         break;}
       case'agave':case'cactus':{
         if(hb<.3&&theme==='beach'){const [wx,wy]=P(-8,-1);this.crab(c,wx,wy+1,1,t+ph,1.9);}   /* a crab shelters in the shade */
