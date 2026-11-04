@@ -99,6 +99,7 @@ this.W=1;this.H=1;this.Z=1;
     else if(s.res==='1080'){ih=1080;iw=Math.round(1080*cw/ch);}
     else{const sc=clamp(s.scale||1,.5,2)*Math.min(2,window.devicePixelRatio||1);iw=Math.round(cw*sc);ih=Math.round(ch*sc);}
     {const d=s.dynRes===false?1:(this.dyn||1);iw=Math.round(iw*d);ih=Math.round(ih*d);}   /* v121: dynamic resolution */
+    if(this.menuRes){iw=Math.round(iw*.5);ih=Math.round(ih*.5);}   /* v131: the menu backdrop is blurred by CSS: half the pixels each way, same picture (App.tick sets menuRes) */
     this.cv.width=iw;this.cv.height=ih;this.cv.style.width=cw+'px';this.cv.style.height=ch+'px';
     this.W=iw;this.H=ih;this.Z=clamp(Math.min(iw,ih)/560,.6,3.4);this.vign=null;
     this.U=Math.max(.8,ih/720);

@@ -15,8 +15,22 @@ class MenuBg{
   }
   /* ---- actors ---- */
   pickChar(){
-    let c;for(let i=0;i<6;i++){c=pick(CHARS);if(!this.recent.includes(c.id))break;}
-    this.recent.push(c.id);if(this.recent.length>12)this.recent.shift();return c;
+    /* v131: the next fighter is chosen one spawn ahead and its sprites are painted in the browser's idle time (warmNext), so its entrance never stutters */
+    const nq=this.nextQ||(this.nextQ=[]);
+    while(nq.length<4){const n=this.pick0();nq.push(n);this.warmNext(n);}   /* three fighters always ready ahead (a burst of entrances after a run is covered) */
+    const c=nq.shift();this.recent.push(c.id);if(this.recent.length>12)this.recent.shift();
+    const n=this.pick0();nq.push(n);this.warmNext(n);return c;
+  }
+  pick0(){let c;for(let i=0;i<8;i++){c=pick(CHARS);if(!this.recent.includes(c.id)&&!(this.nextQ||[]).includes(c))break;}return c;}
+  warmNext(c){
+    const q=this.wq||(this.wq=[]),forms=[-1].concat((LINES[c.line||'saiyan']||[]).length>=2?[0]:[]);
+    for(const fm of forms){const cfg=cfgForForm(c,fm),key='bg:'+c.id+':'+fm;for(let f=0;f<=6;f++)q.push([key,cfg,f,null]);for(const ex of['blink','happy','smug','wow','surprised'])q.push([key,cfg,0,ex]);}
+    if(this.wqOn)return;this.wqOn=true;
+    const step=dl=>{let n=0;if(typeof APP_REF!=='undefined'&&APP_REF&&APP_REF.state!=='menu'&&APP_REF.state!=='end'){idle(step);return;}   /* (only in the menus and on the end screen: a run has its own preparation) */
+      while(q.length&&(dl?dl.timeRemaining()>3:n<2)){const w=q.shift();try{Sprites.player(w[0],w[1],w[2],false,w[3]);}catch(e){}n++;}
+      if(q.length)idle(step);else this.wqOn=false;};
+    const idle=fn=>typeof requestIdleCallback==='function'?requestIdleCallback(fn,{timeout:700}):setTimeout(()=>fn(null),30);
+    idle(step);
   }
   spawn(vw,vh){
     const c=this.pickChar(),line=LINES[c.line||'saiyan'],ab=ABIL[c.id],sc=this.sc;

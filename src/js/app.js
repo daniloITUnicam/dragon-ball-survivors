@@ -181,6 +181,7 @@ class App{
     I.poll(dt);
     try{COOPG.tick(dt);}catch(e){console.error('coop',e);}   /* v120: co-op connections, snapshots, inputs */
     this.canvas.classList.toggle('bgblur',this.state==='menu');I.noTab=this.state==='play';
+    {const mr=this.state==='menu';if(r.menuRes!==mr){r.menuRes=mr;r.resize();}}   /* v131: menus draw their blurred backdrop at half resolution */
     this.hintT-=dt;if(this.hintT<=0){this.hintT=.5;this.keyHints();}
     if(this.state==='play'&&g){
       if(I.pressed('pause')){this.pause();}
@@ -212,7 +213,8 @@ class App{
       const co=this.state==='modal'&&(g.coop||g.coopView);if(co&&g.coop)g.update(dt);   /* v121: co-op: a window does not stop the world */
       if(this.game===g)r.draw(g,co?dt:0);
     }else{
-      r.drawMenuBg(dt);this.ui.update();this.ui.animate(dt);
+      const boot=typeof BOOT!=='undefined'&&BOOT.on;   /* v131: while the loading screen covers everything, nothing is drawn under it */
+      if(!boot)r.drawMenuBg(dt);this.ui.update();this.ui.animate(dt);   /* (animate runs: the loading screen opens the character / stage screens behind itself to prepare them) */
     }
   }
 }

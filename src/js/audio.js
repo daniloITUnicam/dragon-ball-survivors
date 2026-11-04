@@ -101,6 +101,8 @@ class MusicEngine{
    Values are data: URIs (embedded) or relative URLs (link mode). Without any file the synth music plays. */
 const FILE_TRACKS=/*__TRACKS__*/{};
 const trackUri=t=>FILE_TRACKS[t]||null;
+/* output gain of the menu themes (the stage tracks: 1.05). menu2 ("Survive 8-bit") is mastered 1.1 dB louder than menu: -1.1 dB here, same loudness */
+const MENU_GAIN={menu:1.15,menu2:1.15*.88};
 /* sound effects taken from files in assets/ (build.py: SFX_FILES) - key 'sphere' = the Dragon Ball pick-up sound, 'levelup' = the level-up sound. Decoded once, played as buffers. */
 const FILE_SFX=/*__SFX__*/{};
 const XFADE=3.2; /* seconds of equal-power crossfade between the end and the start of a looping file track */
@@ -253,6 +255,9 @@ class AudioSys{
     for(const k in this.files||{}){const f=this.files[k];for(const w of['a','b'])try{if(f[w]&&f[w].el)f[w].el.playbackRate=rate;}catch(e){}}
   }
   play(track){
+    /* v131: the main menu has more than one theme (menu, menu2...): one is drawn at every new visit of the menus and kept while you move
+       between menu screens (the end screen already counts as the visit). Equal loudness: MENU_GAIN below */
+    if(track==='menu'){const vs=['menu','menu2','menu3'].filter(k=>trackUri(k));if(vs.length>1)track=vs.includes(this.wantTrack)?this.wantTrack:vs[(Math.random()*vs.length)|0];}
     this.wantTrack=track;
     const uri=trackUri(track);
     if(this.music)this.music.play(uri?null:track);
@@ -282,7 +287,7 @@ class AudioSys{
       clearTimeout(f.stop);
       if(!f.on){
         const cu=f[f.cur];if(cu.g){cu.g.gain.cancelScheduledValues(c.currentTime);cu.g.gain.value=1;}
-        f.out.gain.cancelScheduledValues(c.currentTime);f.out.gain.setTargetAtTime(name==='menu'?1.15:1.05,c.currentTime,.35);
+        f.out.gain.cancelScheduledValues(c.currentTime);f.out.gain.setTargetAtTime(MENU_GAIN[name]||1.05,c.currentTime,.35);
       }
       f.on=true;for(const w of['a','b'])try{f[w].el.playbackRate=this.slow||1;}catch(e){}   /* a file created while the music is slowed starts at the same speed */
       const pr=f[f.cur].el.play();if(pr&&pr.catch)pr.catch(()=>{});

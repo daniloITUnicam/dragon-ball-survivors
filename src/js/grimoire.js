@@ -33,7 +33,12 @@ Object.assign(UI.prototype,{
     const cards=ids.map(id=>{
       const w=WEAPONS[id],ok=open.includes(id),e2=this.grimEvo2Open(id,g),wp=g&&g.weapons.get(id);
       return h('button',{class:'wcard'+(id===cur?' sel':'')+(ok?'':' locked'),'data-fid':'gw'+id,title:ok?this.tr(w.n):this.t('grimHidden'),
-        onclick:()=>{this.sfx();this.grimSel=id;this.rebuild(true);}},
+        onclick:ev=>{this.sfx();if(this.grimSel===id)return;this.grimSel=id;
+          /* v131: only the selection and the detail panel change (a short fade), the rest of the screen stays: no rebuild, no jump, the scroll is kept */
+          const root=ev.currentTarget.closest('.grimbody'),old=root&&root.querySelector('.grimdetail');
+          if(!old){this.rebuild(true);return;}
+          for(const c of root.querySelectorAll('.wcard'))c.classList.toggle('sel',c.dataset.fid==='gw'+id);
+          const nd=this.grimBody().querySelector('.grimdetail');nd.classList.add('gfade');nd.scrollTop=0;old.replaceWith(nd);}},
         ok?glyph(w.k,w.c):h('span',{class:'glyph cens',style:'--c:#33465e'},'？'),
         h('b',null,ok?this.tr(w.n):'???'),
         h('span',{class:'wst'},ok?(wp?'● ':'')+'★'+(e2?'★':'☆'):''));

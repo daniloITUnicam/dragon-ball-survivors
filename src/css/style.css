@@ -272,6 +272,9 @@ select{border:3px solid var(--ink2);font-weight:700}
 .glyph.cens{text-shadow:none;opacity:.8}
 .grimdetail{max-height:calc(100vh - 32px);overflow:auto;gap:10px}
 .split>.grimdetail{flex:0 0 460px}
+.grimdetail.gfade{animation:grimIn .2s ease-out both}@keyframes grimIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wgrid .wcard{transition:border-color .15s,box-shadow .15s,transform .15s}
+@media (prefers-reduced-motion:reduce){.grimdetail.gfade{animation:none}}
 .grimbody .split{width:100%;max-width:none}
 .grimbody .wgrid{flex:1 1 auto;min-width:0;grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}
 .tier{display:flex;gap:10px;align-items:flex-start;padding:8px;border:2px solid var(--line);border-radius:10px;background:var(--panel2)}

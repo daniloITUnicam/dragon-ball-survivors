@@ -198,9 +198,13 @@ class UI{
     const peekId=sel.peek&&!this.charOpen(sel.peek)?sel.peek:null;
     const C=CHARS.find(c=>c.id===(peekId||sel.char));
     this.anim=[];
+    /* v131: the canvas of each card is kept between rebuilds (selecting a character used to redraw all 58 sprites from scratch) */
+    const CC=this.cardCv||(this.cardCv={});
     const mk=(c,ci)=>{
-      const open=this.charOpen(c.id),cv=document.createElement('canvas');cv.width=78;cv.height=96;
-      this.anim.push({cv,c,open,seed:hash(ci,7),key:'',w:78,h:96,base:90,k:(c.u||1.95)/Sprites.S*1.1,card:true});
+      const open=this.charOpen(c.id);let a=CC[c.id];
+      if(!a||a.open!==open||a.ci!==ci){const cv0=document.createElement('canvas');cv0.width=78;cv0.height=96;a=CC[c.id]={cv:cv0,c,open,ci,seed:hash(ci,7),key:'',w:78,h:96,base:90,k:(c.u||1.95)/Sprites.S*1.1,card:true};}
+      if(a.ns!==Sprites.nSheets){a.ns=Sprites.nSheets;a.key='';}   /* a sheet decoded since: draw it again */
+      this.anim.push(a);const cv=a.cv;
       const isSel=peekId?c.id===peekId:c.id===sel.char;
       return h('button',{class:'char'+(isSel?' sel':'')+(open?'':' locked'),'data-fid':'c'+c.id,onclick:()=>{this.sfx();if(open){sel.char=c.id;sel.peek=null;}else sel.peek=c.id;this.rebuild(true);}},
         cv,h('b',null,open?this.tr(c.n):'???'));
@@ -274,7 +278,12 @@ class UI{
   animStages(dt){
     this.pvAcc=(this.pvAcc||0)+dt;if(this.pvAcc<1/24)return;const step=this.pvAcc;this.pvAcc=0;
     const r=this.app.renderer,old=r.ctx,S=.4,W=240,H=96,t=this.animT;
-    for(const cv of document.querySelectorAll('canvas.stprev')){
+    /* v131: a preview paints the real terrain renderer: only the ones on screen, the selected / hovered one every tick, the others in turn (3 per tick) */
+    const all=[...document.querySelectorAll('canvas.stprev')],vis=[];
+    for(const cv of all){if(!cv._io){cv._io=1;this.visObs().observe(cv);}if(cv._vis!==false)vis.push(cv);}
+    const hot=vis.filter(cv=>{const p=cv.parentElement;return !cv._done||(p&&(p.classList.contains('sel')||p.matches(':hover')||p===document.activeElement));}),rest=vis.filter(cv=>!hot.includes(cv));
+    const todo=hot.slice(0,6);for(let q=0;q<3&&rest.length;q++){this.stRR=((this.stRR||0)+1)%rest.length;if(!todo.includes(rest[this.stRR]))todo.push(rest[this.stRR]);}
+    for(const cv of todo){cv._done=1;
       const th=cv.dataset.theme,seed=+cv.dataset.seed||0,pc=cv.getContext('2d'),Sc=th==='void'?.2:S,vw=W/Sc,vh=H/Sc;   /* (the ring of the Tournament of Power is shown wider, so the tower fits) */
       let cx=seed*733+t*26,cy=seed*411+Math.sin(t*.25+seed)*60;
       if(th==='snake'){cx=((t*40+seed*50)%6000)-3000;cy=Snake.f(cx)-vh/2;}
@@ -285,13 +294,17 @@ class UI{
     }
     r.ctx=old;
   }
+  /* v131: one IntersectionObserver for the animated menu canvases (cards, stage previews): canvas._vis = on screen */
+  visObs(){return this._vio||(this._vio=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(es=>{for(const e of es)e.target._vis=e.isIntersecting;},{rootMargin:'60px'}):{observe(){}});}
   animate(dt){
     this.animT=(this.animT||0)+dt;
     if(this.top&&this.top.name==='stages'){this.animStages(dt);return;}
     if(this.top&&(this.top.name==='quick'||this.top.name==='coopRoom'))this.animStages(dt);   /* v119: the co-op destination card too */
     const t=this.animT,list=this.anim;if(!list||!list.length||!this.top||(this.top.name!=='chars'&&this.top.name!=='quick'))return;
+    let budget=12;   /* v131: idle (not hovered / selected) cards redrawn per frame at most; the ones off screen are skipped */
     for(const a of list){
       if(!a.cv.isConnected)continue;
+      if(a.card||a.pet){if(!a.cv._io){a.cv._io=1;this.visObs().observe(a.cv);}if(a.cv._vis===false)continue;}
       const par=a.cv.parentElement,hot=a.big||(par&&(par.matches(':hover')||par.classList.contains('sel')||par===document.activeElement));
       if(a.pet){
         const dy=Math.round(Math.sin(t*3+a.seed*9)*1.5),fr=hot?1+((t*8)|0)%4:0,key=fr+':'+dy;
@@ -308,7 +321,7 @@ class UI{
       }
       let form=-1;if(a.big&&a.forms>0)form=Math.floor(t/3.2)%(a.forms+1)-1;
       const po=charPose(t,a.seed,hot),dy=Math.round(po.dy),key=a.open?po.f+':'+(po.ex||'')+':'+dy+':'+form+(a.big&&po.fx?':'+((t*20)|0):''):'x';
-      if(key===a.key)continue;a.key=key;
+      if(key===a.key)continue;if(a.card&&!hot&&budget--<=0)continue;a.key=key;   /* (first draws too: a screen full of new cards fills in over a few frames instead of freezing one) */
       const g=a.cv.getContext('2d');g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,a.w,a.h);
       const cfg=cfgForForm(a.c,form),ck='menu:'+a.c.id+':'+form;
       if(a.big&&form>=0){const col=LINES[a.c.line||'saiyan'][form].aura;GLOW.at(g,a.w/2,a.base-60,70+Math.sin(t*9)*6,col,.55);}

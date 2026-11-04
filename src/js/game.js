@@ -1365,7 +1365,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
          Numbers start at 0 (all their uses treat 0 like "absent": >0, ||0, truthiness), the rest at undefined (exactly as before for every read) */
-      atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,
+      atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,hpK:1,
       sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined};
   }
   rosterPick(){

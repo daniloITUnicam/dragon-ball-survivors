@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
+ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -62,7 +62,7 @@ js = js.replace('__TGTART__', base64.b64encode(_tg.read_bytes()).decode() if _tg
 _db = ROOT/'assets'/'dragonballs.webp'   # the 7 Dragon Balls (1..7 stars), one 64x64 frame each, side by side
 js = js.replace('__DBALLS__', base64.b64encode(_db.read_bytes()).decode() if _db.exists() else '')
 # ---- music: assets/*.mp3 (also .ogg .m4a .wav) mapped to the menu / a stage by the FILE NAME ----
-# "menu.mp3" -> menu;  "android ruins.mp3", "Buu Dimension.mp3"... -> the stage whose name (or alias below) the file name contains.
+# "menu.mp3" -> menu; "menu 2 - <title>.mp3" -> menu2 (alternative menu theme);  "android ruins.mp3", "Buu Dimension.mp3"... -> the stage whose name (or alias below) the file name contains.
 # DBS_AUDIO=embed (default): base64 inside the HTML (single file). DBS_AUDIO=link: relative URL "assets/<file>" (the site must serve
 # the files next to index.html, see .github/workflows/deploy.yml). DBS_AUDIO_BUDGET_MB=<n>: when embedding, re-encode with ffmpeg
 # (mp3, lower bitrate) if the files total more than n MB - needed for hosts with a size cap on the single HTML file.
@@ -91,6 +91,7 @@ for f in sorted((ROOT/'assets').glob('*')):
     nm = _norm(f.stem)
     if nm in SFX_FILES: continue          # a sound effect, handled below
     if nm in ('menu', 'main menu', 'menu theme'): key = 'menu'
+    elif re.match(r'menu ?([2-9])( |$)', nm): key = 'menu' + re.match(r'menu ?([2-9])', nm).group(1)   # "menu 2 - <title>.mp3" -> menu2: more main-menu themes, one drawn at every visit (AudioSys.play)
     elif nm in GENERIC_BOSS: key = 'bossgen'
     elif any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for ks in BOSS_KEYS.values() for k in ks):
         key = 'fboss%d' % next(sid for sid, ks in BOSS_KEYS.items() if any(re.search(r'(^| )' + re.escape(k) + r'( |$)', nm) for k in ks))
@@ -221,7 +222,7 @@ if _sd.is_dir():
         _pack[sid] = e
         print(f'sprites: {sid}  {w}x{h}px, {cols} frames')
 js = js.replace('__SPRITE_PACK__', json.dumps(_pack, separators=(',', ':')))
-css = '\n'.join((ROOT/'src/css'/f).read_text(encoding='utf8') for f in ['style.css','gacha.css','skin.css','mobile.css'])
+css = '\n'.join((ROOT/'src/css'/f).read_text(encoding='utf8') for f in ['style.css','gacha.css','skin.css','loader.css','mobile.css'])
 html = (ROOT/'src/index.html').read_text(encoding='utf8')
 glyphs = re.search(r"GLYPHS='([^']+)'", js).group(1)
 html = html.replace('__GLYPHS__', urllib.parse.quote(''.join(dict.fromkeys(glyphs))))

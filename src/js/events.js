@@ -85,10 +85,10 @@ const MAP_EVENTS={
   /* Snake Way: the guardians of the afterlife march down the body, its champions ascend */
   snake:{n:T6('MARCIA DEI GUARDIANI!','MARCH OF THE GUARDIANS!','¡MARCHA DE LOS GUARDIANES!','MARCHE DES GARDIENS !','MARSCH DER WÄCHTER!','MARCHA DOS GUARDIÕES!'),
     sub:T6('Il sentiero trema sotto i loro passi.','The path trembles under their steps.','El sendero tiembla bajo sus pasos.','Le chemin tremble sous leurs pas.','Der Pfad bebt unter ihren Schritten.','O caminho treme sob os seus passos.'),col:'#ffe9a0',dur:36,first:[170,240],gap:[260,360],steps:[
-    {at:1,a:'spots',kind:'march',n:8,r:[300,330],tel:1.5,mix:[['swguard',3],['swknight',1]],per:1,line:1},
-    {at:9,a:'spots',kind:'march',n:4,r:[300,330],tel:1.5,mix:[['swwarrior',1]],per:1,line:1},
+    {at:1,a:'spots',kind:'march',n:8,r:[300,330],tel:1.5,mix:[['swguard',3],['swknight',1]],per:1,line:1,hpK:ELITE_HP},   /* v131: the guardians are as tough as elites (hpK; kamikazes excluded) */
+    {at:9,a:'spots',kind:'march',n:4,r:[300,330],tel:1.5,mix:[['swwarrior',1]],per:1,line:1,hpK:ELITE_HP},
     {at:17,a:'morph',map:{swwarrior:'swwarrior2'},max:6,col:'#ff7a3a',l:T6('Campione!','Champion!','¡Campeón!','Champion !','Champion!','Campeão!')},
-    {at:19,a:'spots',kind:'march',n:6,r:[300,330],tel:1.4,mix:[['swbomb',2],['swguard',1]],per:1,line:1}]}
+    {at:19,a:'spots',kind:'march',n:6,r:[300,330],tel:1.4,mix:[['swbomb',2],['swguard',1]],per:1,line:1,hpK:ELITE_HP}]}
 };
 const EV_COL={seed:'#8be05a',pod:'#ff7ad0',capsule:'#7aff9a',portal:'#ff9ae0',march:'#ff6a5a',chute:'#ff6a5a',egg:'#8be05a',pillar:'#ffe9a0',hakai:'#c060ff',fissure:'#ff7a2a',meteor:'#ff9a3a'};
 
@@ -142,7 +142,7 @@ Object.assign(Game.prototype,{
         if(s.line&&this.stage.theme!=='snake'){const d=rnd(s.r[0],s.r[1]),sp=(i-(n-1)/2)*46;x=p.x+Math.cos(lineA)*d-Math.sin(lineA)*sp;y=p.y+Math.sin(lineA)*d+Math.cos(lineA)*sp;}
         else{const a=a0+i/n*TAU+rnd(-.25,.25);[x,y]=this.spawnSpot(a,rnd(s.r[0],s.r[1]),i);}
         const hz=s.hz?(8+3*this.sd)*this.dmgMul()*s.hz:0;
-        ev.spots.push({x,y,t:-i*(s.line?.1:.14),tel:s.tel*rnd(.92,1.08),kind:s.kind,col:EV_COL[s.kind]||col,mix:s.mix,ids:deck.length?Array.from({length:s.per},(_,k)=>deck[(i*s.per+k)%deck.length]):null,per:s.per,hz,hzr:s.kind==='hakai'?70:56,ph:rnd(0,TAU)});
+        ev.spots.push({x,y,t:-i*(s.line?.1:.14),tel:s.tel*rnd(.92,1.08),kind:s.kind,col:EV_COL[s.kind]||col,mix:s.mix,ids:deck.length?Array.from({length:s.per},(_,k)=>deck[(i*s.per+k)%deck.length]):null,per:s.per,hpK:s.hpK||1,hz,hzr:s.kind==='hakai'?70:56,ph:rnd(0,TAU)});
       }
     }else if(s.a==='morph'){
       let k=0;const vr=this.viewR*1.2;
@@ -173,7 +173,9 @@ Object.assign(Game.prototype,{
     const cap=this.spawnCap()*1.35+16;
     for(let k=0;k<s.per&&this.en.length<cap;k++){
       const id=s.ids?s.ids[k]:wpick(s.mix,m=>m[1])[0],def=ENEMIES[id];if(!def)continue;
-      this.en.push(this.mkEnemy(def,s.x+rnd(-12,12),s.y+rnd(-8,8)));
+      const e=this.mkEnemy(def,s.x+rnd(-12,12),s.y+rnd(-8,8));
+      if(s.hpK>1&&def.ai!=='explode'){e.hpK=s.hpK;e.hp*=s.hpK;e.max=e.hp;}   /* a step with hpK (March of the Guardians): elite-level health, kept through a morph (skMorph) */
+      this.en.push(e);
     }
   }
 });

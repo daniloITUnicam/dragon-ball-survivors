@@ -14,6 +14,8 @@ const MOBILE=(()=>{
   const phone=on&&(q==='1'||Math.min(screen.width||0,screen.height||0)<=600);
   return{on,phone,keys:new Set(),latch:new Set(),z:1,app:null,ctl:null,rot:null,rotOk:false};
 })();
+/* the joystick art (assets/sprites/mobile/mobjoy.png) is decoded only when a phone asks for it (Sprites.need('mobile')): a PC never decodes it */
+if(typeof SPRITE_LAZY!=='undefined')SPRITE_LAZY.mobile=/^mobjoy$/;
 if(MOBILE.on)(()=>{
   const M=MOBILE,TS=(it,en,es,fr,de,pt)=>T6(it,en,es,fr,de,pt),tr=o=>M.app?M.app.i18n.t(o):o.it;
   const STR={
@@ -68,12 +70,48 @@ if(MOBILE.on)(()=>{
 
   /* ---------- HUD: bigger on a phone (the canvas keeps its resolution, only the HUD unit grows) ---------- */
   const rs0=Renderer.prototype.resize;
-  Renderer.prototype.resize=function(){rs0.call(this);if(M.phone){const sh=Math.max(1,Math.min(innerWidth,innerHeight));this.U=Math.max(.8,Math.min(this.W,this.H)/720)*clamp(560/sh,1,1.45);}};   /* measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
+  /* world zoom and HUD from the SCREEN's short side, not the window's: the browser bar that slides in and out (and the switch to fullscreen)
+     changes the window height by ~20%, and the zoom followed it in jumps. Now the zoom never moves: with the bar shown you just see a strip less */
+  const short=()=>{const s=Math.min(screen.width||0,screen.height||0),w=Math.min(innerWidth,innerHeight);return s>=w?s:w;};
+  Renderer.prototype.resize=function(){rs0.call(this);
+    const sh=Math.max(1,short()),sc=this.W/Math.max(1,innerWidth);   /* sc: canvas px per CSS px (device ratio, scale setting, dynamic resolution) */
+    this.Z=clamp(sh*sc/560,.6,3.4);
+    if(M.phone)this.U=Math.max(.8,sh*sc/720)*clamp(560/sh,1,1.45);   /* bigger HUD on a phone; measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
+  };
   /* a tap on the weapon target panel cycles the target (it is only a hover zone with a mouse) */
   const tapZone=e=>{
     const a=M.app;if(!a||a.state!=='play'||!a.game||e.pointerType==='mouse')return;
     const R=a.renderer,k=R.W/innerWidth,x=e.clientX*k,y=e.clientY*k,z=(R.zones||[]).find(z=>z.k==='target'&&x>=z.x&&x<=z.x+z.w&&y>=z.y&&y<=z.y+z.h);
     if(z){e.stopImmediatePropagation();a.game.cycleTarget();try{navigator.vibrate&&navigator.vibrate(8);}catch(_){}}
+  };
+
+  /* ---------- the joystick: the painted ring, the ball that follows the finger and, while moving, its flame and the small Dragon Ball
+     pointing the way; the pieces are rotated to the exact angle of the finger (any direction, not 8). tools/make_joystick.py cuts them ---------- */
+  const JOY_R=64;   /* half size of the ring art on screen, in HUD units */
+  const drawJoy=(R,j,S)=>{
+    const P=SPRITE_PACK.mobjoy,c=R.ctx,U=R.U,r=S.rects,s=JOY_R*U/(r.ring[2]/2),mag=Math.min(1,Math.hypot(j.x,j.y)),ang=Math.atan2(j.y,j.x),cs=Math.cos(ang),sn=Math.sin(ang);
+    const kx=j.ox+j.x*P.trav*s,ky=j.oy+j.y*P.trav*s,mv=clamp((mag-.1)/.35,0,1);
+    const pc=(n,x,y,a)=>{const q=r[n],w=q[2]*s,h=q[3]*s;if(a===undefined)c.drawImage(S.img,q[0],q[1],q[2],q[3],x-w/2,y-h/2,w,h);else{c.save();c.translate(x,y);c.rotate(a);c.drawImage(S.img,q[0],q[1],q[2],q[3],-w/2,-h/2,w,h);c.restore();}};
+    c.save();c.setTransform(1,0,0,1,0,0);c.imageSmoothingEnabled=true;c.globalAlpha=.92;
+    c.fillStyle='rgba(4,8,20,.28)';c.beginPath();c.arc(j.ox,j.oy,P.rin*s,0,TAU);c.fill();   /* the inside of the ring a little darker: the ball reads on any ground */
+    pc('ring',j.ox,j.oy);
+    if(mv>0){
+      c.globalAlpha=.92*mv;pc('trail',kx,ky,ang);
+      /* the arrow from the ball to the marker, then the marker */
+      const a0=P.kr*s*1.05,a1=(P.mark-P.mr*.95)*s,ex=j.ox+cs*a1,ey=j.oy+sn*a1,sx=kx+cs*a0,sy=ky+sn*a0;
+      if(a1>Math.hypot(sx-j.ox,sy-j.oy)){c.strokeStyle='rgba(255,236,190,.9)';c.lineWidth=Math.max(1.5,2.2*s);c.lineCap='round';c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();
+        const ah=5.5*s*1.6;c.fillStyle='rgba(255,236,190,.95)';c.beginPath();c.moveTo(ex+cs*ah*.4,ey+sn*ah*.4);c.lineTo(ex-cs*ah+sn*ah*.6,ey-sn*ah-cs*ah*.6);c.lineTo(ex-cs*ah-sn*ah*.6,ey-sn*ah+cs*ah*.6);c.closePath();c.fill();}
+      pc('ball',j.ox+cs*P.mark*s,j.oy+sn*P.mark*s);
+    }
+    c.globalAlpha=.95;pc('knob',kx,ky);
+    c.restore();
+  };
+  const hud0=Renderer.prototype.hud;
+  Renderer.prototype.hud=function(g,dt,cx,cy){
+    const j=this.joy,S=Sprites.sheets.mobjoy;   /* (its metrics - inner radius, travel, marker - are read from SPRITE_PACK: the loader keeps only rects) */
+    if(!j||!j.on||!S||!S.rects)return hud0.call(this,g,dt,cx,cy);   /* (until the art is decoded: the plain circles of the base game) */
+    j.on=false;try{hud0.call(this,g,dt,cx,cy);}finally{j.on=true;}   /* the base HUD without its two circles... */
+    drawJoy(this,j,S);   /* ...and the painted joystick instead */
   };
 
   /* ---------- the touch buttons ---------- */
@@ -142,6 +180,13 @@ if(MOBILE.on)(()=>{
     if(show&&!r.classList.contains('on')){rotText();if(M.app&&M.app.state==='play')M.app.pause();}
     r.classList.toggle('on',show);}
 
+  /* a phone goes fullscreen (and locks landscape where it can) when the first run of the session starts: the view is steadier and bigger.
+     Only once: if the player leaves fullscreen it is not forced again (Settings > Fullscreen still works) */
+  const sg0=App.prototype.startGame;
+  App.prototype.startGame=function(o){
+    if(M.phone&&fsOk&&!M.fsTried&&!document.fullscreenElement&&!document.webkitFullscreenElement){M.fsTried=true;goFull();}
+    return sg0.call(this,o);
+  };
   /* ---------- pause screen helpers measured in the zoomed space ---------- */
   UI.prototype.fitPause=function(root0){
     const run=(n)=>{
@@ -171,9 +216,14 @@ if(MOBILE.on)(()=>{
   document.addEventListener('DOMContentLoaded',()=>{
     M.app=APP_REF;if(!M.app)return;
     try{M.rotOk=sessionStorage.getItem('dbsRotOk')==='1';}catch(e){}
-    M.ctl=mkCtl();M.rot=mkRot();
+    M.ctl=mkCtl();M.rot=mkRot();try{Sprites.need('mobile');}catch(e){}
     M.app.input.mode=M.app.input.getPad()?'pad':'touch';
     const cv=M.app.canvas;cv.addEventListener('pointerdown',tapZone,true);
+    /* the ring stays where the finger first touched (the base game drags it along when the finger goes past the edge): the direction is
+       always measured from that point, and past the edge the push is simply full. Runs before the base handler and replaces it */
+    cv.addEventListener('pointermove',e=>{const a=M.app,j=a.joy;if(!j||!j.on||e.pointerId!==j.id)return;e.stopImmediatePropagation();
+      const k=a.renderer.W/innerWidth,m=48*a.renderer.U;let dx=e.clientX*k-j.ox,dy=e.clientY*k-j.oy;const d=Math.hypot(dx,dy);
+      if(d>m){dx=dx/d*m;dy=dy/d*m;}j.x=dx/m;j.y=dy/m;},true);
     addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,120));
     fit();M.app.renderer.resize();
     /* the button states follow the game every frame */
