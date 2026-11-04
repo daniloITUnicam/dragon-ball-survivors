@@ -50,6 +50,9 @@ const BOOT={on:true};
           (the character cards keep their canvases between openings: UI.cardCv), then back to the main menu */
     {const ui=app.ui;try{ui.push('stages');for(let i=0;i<4;i++)await frame();set(.97,L.chars);ui.push('chars');for(let i=0;i<10;i++)await frame();}catch(e){}
       try{ui.show('main');}catch(e){}}
+    /* v132: the art of the life and XP bars, decoded off the main thread and kept decoded (see Sprites.prep) */
+    for(const B of[typeof HpBar!=='undefined'?HpBar:null,typeof XpBar!=='undefined'?XpBar:null]){const im=B&&B.img;
+      if(im&&im.src&&typeof createImageBitmap==='function')fetch(im.src).then(r=>r.blob()).then(b=>createImageBitmap(b)).then(bm=>{bm.complete=true;B.img=bm;}).catch(()=>{});}
     set(1,L.ready);await frame();
     BOOT.on=false;el.classList.add('done');setTimeout(()=>el.remove(),600);
   };
@@ -60,7 +63,10 @@ const BOOT={on:true};
    (every frame, also the hit flash: Sprites.warm fills Sprites._wq at startGame, and the game used to paint them in its idle time while you
    played), the big sheets the stage needs (Snake Way islands, Tamagami statues: decoded on demand) and one whole frame (terrain, props, HUD).
    The game is held (state 'loading': App.tick neither updates nor draws it). A run with nothing left to prepare (a retry, the same stage
-   again) starts at once: the screen only shows up when the work takes longer than one frame. Co-op runs never wait. ====== */
+   again) starts at once: the screen only shows up when the work takes longer than one frame. Co-op runs never wait.
+   v132: also the sheets the run draws (the stage's ground and props, chests, landmarks, event zones, the pet, the weapons and the hero's
+   ability) are decoded off the main thread and kept decoded (Sprites.prep); while the run goes on, the sheets of the weapons owned, of the
+   next tier of a weapon about to evolve and of the weapons offered in a window are asked for ahead of time. ====== */
 (()=>{
   const TS=(it,en,es,fr,de,pt)=>T6(it,en,es,fr,de,pt);
   const PREP=TS('Preparo','Preparing','Preparando','Préparation de','Bereite vor:','Preparando'),FIGHT=TS('Pronti a combattere!','Ready to fight!','¡Listos para luchar!','Prêts au combat !','Kampfbereit!','Prontos para lutar!');
@@ -69,9 +75,36 @@ const BOOT={on:true};
     d.innerHTML='<div class="bt-logo"></div><div class="bt-ball"><i>★</i><i>★</i><i>★</i><i>★</i></div><div class="bt-bar"><div class="bt-fill" style="width:0%"></div><span class="bt-txt"></span></div><div class="bt-stage"></div>';
     if(typeof LOGO_URL!=='undefined'&&LOGO_URL){const im=new Image();im.className='bt-img';im.alt='';im.src=LOGO_URL;d.querySelector('.bt-logo').append(im);}
     document.body.append(d);return d;};
+  /* the effect sheets of weapon w at tier t (0 base, 1 evolution, 2 second evolution): wfx<w>..., not those of a longer weapon id */
+  const WS=new Map(),wfxOf=(w,t)=>{const k=w+':'+t;let L=WS.get(k);if(L)return L;L=[];const pre='wfx'+w,ws=Object.keys(WEAPONS).filter(o=>o!==w&&o.startsWith(w));
+    for(const id in SPRITE_PACK)if(id.startsWith(pre)&&!ws.some(o=>id.startsWith('wfx'+o))&&(/ev2$/.test(id)?2:/evo$/.test(id)?1:0)===t)L.push(id);WS.set(k,L);return L;};
+  const THEMES_=new Set(STAGES.map(s=>s.theme));
+  /* the sheets of a run: every decoded sheet but the ground / props of other planets, the other pets and the weapon effects, then the effects
+     of the weapons owned (the next tier too when it is close) and of the hero's ability */
+  const runSheets=g=>{const out=new Set(),th=g.stage.theme;
+    for(const id in Sprites.sheets){if(/^wfx/.test(id))continue;
+      if(/^pet/.test(id)){if(g.pet&&g.pet.d&&id==='pet'+g.pet.d.id)out.add(id);continue;}
+      const m=/^([a-z]+?)(ground|props)$/.exec(id);if(m&&THEMES_.has(m[1])&&m[1]!==th)continue;
+      out.add(id);}
+    wantW(g,out);return out;};
+  const wantW=(g,out)=>{
+    for(const [w,o] of g.weapons){const t=o.evo|0;for(const id of wfxOf(w,t))out.add(id);if(o.lv>=WMAX-1||o.maxed)for(const id of wfxOf(w,t+1))out.add(id);}
+    const ab=g.C&&WFX.AB[g.C.id];if(ab)for(const id of['wfx'+ab,'wfx'+ab+'2'])if(SPRITE_PACK[id])out.add(id);
+    const m=g.modal,L=m&&(m.opts||m.rewards||m.offers);   /* a window offers new weapons: their first sheet */
+    if(Array.isArray(L))for(const op of L){const id=op&&op.id;if(id&&WEAPONS[id]&&!g.weapons.has(id))for(const x of wfxOf(id,0))out.add(x);}
+    return out;};
+  /* while a run goes on (every 0.5 s): the sheets of the weapons it has or is offered, ahead of time; a tier a weapon has left behind goes
+     once nothing has drawn it for 10 s (WFX.S stamps the sheets it hands out with Sprites.clk) */
+  setInterval(()=>{const a=APP_REF,g=a&&a.game;if(!g||!Sprites.live||!g.weapons)return;Sprites.clk++;
+    try{const want=wantW(g,new Set());for(const id of want)Sprites.prep(id);
+      for(const [w,o] of g.weapons)for(let t=0;t<(o.evo|0);t++)for(const id of wfxOf(w,t)){const S=Sprites.sheets[id];if(S&&S.bm&&!want.has(id)&&Sprites.clk-(S.used||0)>20)Sprites.unpinOne(id);}
+    }catch(e){}},500);
+  {const tm0=App.prototype.toMenu;App.prototype.toMenu=function(){Sprites.live=false;return tm0.apply(this,arguments);};}   /* the sheets stay decoded until the next run picks its own */
   const sg0=App.prototype.startGame;
   App.prototype.startGame=function(o){
     const out=sg0.call(this,o),g=this.game;
+    if(g)Sprites.live=true;
+    if(g&&(o.coop||g.coopView||BOOT.on)){try{const keep=runSheets(g);Sprites.unpin(keep);for(const id of keep)Sprites.prep(id);}catch(e){}}   /* co-op: decoded in the background, nobody waits */
     if(!g||o.coop||g.coopView||BOOT.on)return out;
     const app=this,q=Sprites._wq||[],t0=performance.now();
     /* the hero's own frames for every form of the run (walk, attack, hurt, death, the arm-less pose bodies, the hit flash): painted when first shown otherwise */
@@ -81,10 +114,13 @@ const BOOT={on:true};
       for(const ex of['blink','pain','hurt','happy','smug','wow'])pt.push([key,cfg,0,false,ex]);}   /* the faces of the run: blink, the emotes (Game.emote), the death */
     const one=()=>{if(pt.length){const w=pt.shift();try{Sprites.player(w[0],w[1],w[2],w[3],w[4]||null);}catch(e){}}else{const w=q.shift();try{Sprites.forSp(w[0],w[1],w[2]);}catch(e){}}};
     const lazyWait=()=>{const d=Sprites._dec;if(!d)return 0;let n=0;for(const id of d)if(!Sprites.sheets[id]&&SPRITE_PACK[id])n++;return n;};
+    /* the sheets of the run, decoded off the main thread while the frames are painted (the lazy ones join once loaded, see Sprites.decode) */
+    let keep=runSheets(g);Sprites.unpin(keep);for(const id of keep)Sprites.prep(id);
+    const bmLeft=()=>{let n=0;for(const id of keep)if(!Sprites.ready(id))n++;return n;};
     /* a first slice right now: when that empties the work, the run just starts */
     /* (when the stage still decodes a big sheet, nothing is painted yet: a decoded sheet clears the sprite caches, see Sprites.decode) */
     if(!lazyWait())while((pt.length||q.length)&&performance.now()-t0<14)one();
-    if(!pt.length&&!q.length&&!lazyWait())return out;
+    if(!pt.length&&!q.length&&!lazyWait()&&!bmLeft())return out;
     const st=g.stage,tr=x=>app.i18n.t(x),total=pt.length+q.length+1;
     app.state='loading';BOOT.on=true;
     const el=mkEl(),fill=el.querySelector('.bt-fill'),txt=el.querySelector('.bt-txt');el.querySelector('.bt-stage').textContent=tr(st.n);
@@ -92,7 +128,9 @@ const BOOT={on:true};
     (async()=>{
       try{
         for(let t1=performance.now();lazyWait()&&performance.now()-t1<10000;)await frame();   /* first the big sheets of the stage (at most 10 s) */
-        while(pt.length||q.length){const s0=performance.now();while((pt.length||q.length)&&performance.now()-s0<12)one();set(.85*(1-(pt.length+q.length)/total));await frame();}
+        while(pt.length||q.length){const s0=performance.now();while((pt.length||q.length)&&performance.now()-s0<12)one();set(.8*(1-(pt.length+q.length)/total));await frame();}
+        {keep=runSheets(g);for(const id of keep)Sprites.prep(id);const n0=Math.max(1,bmLeft());   /* the sheets still decoding (at most 8 s) */
+          for(const t1=performance.now();bmLeft()&&performance.now()-t1<8000;){set(.8+.12*(1-bmLeft()/n0));await frame();}}
         set(.92);await frame();
         if(app.game===g){app.renderer.draw(g,0);set(1);txt.textContent=tr(FIGHT);await frame();}   /* one whole frame: terrain tiles, props, lakes, HUD art */
       }catch(e){console.error('prep',e);}

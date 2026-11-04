@@ -267,6 +267,36 @@ const Snake={
     }
     o.x=bx;o.y=by;
   },
+  /* ---- v132: the way across the cloud sea. An enemy that is not on the player's piece of ground (the body, an island's road, an island's top)
+     walks the island's road - body -> road -> island, or back - instead of piling up on the edge nearest to the player ---- */
+  /* index (1..n-1) of the road segment nearest to (x,y) in this._rj; returns the distance */
+  roadJ(I,x,y){let bd=1e18,bj=1;const R=I.road;
+    for(let j=1;j<R.length;j++){const ax=R[j-1][0],ay=R[j-1][1],dx=R[j][0]-ax,dy=R[j][1]-ay,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)),qx=ax+dx*t-x,qy=ay+dy*t-y,d=qx*qx+qy*qy;if(d<bd){bd=d;bj=j;}}
+    this._rj=bj;return Math.sqrt(bd);},
+  /* where (x,y) stands with respect to island I: 1 on its road (the road wins where it runs onto the island), 2 on its top, 0 elsewhere */
+  at(I,x,y){if(!I.road)return 0;
+    const b=I.bb||(I.bb=(()=>{let x0=I.x-I.r,x1=I.x+I.r,y0=I.y-I.ry,y1=I.y+I.ry;for(const q of I.road){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}const m=ISLE_RW+30;return[x0-m,y0-m,x1+m,y1+m];})());
+    if(x<b[0]||x>b[2]||y<b[1]||y>b[3])return 0;
+    if(this.roadJ(I,x,y)<=ISLE_RW+6)return 1;
+    return this.inIsle(I,x,y,0)<=1?2:0;},
+  /* the player's piece of ground, once per frame: I = the island (null: the body), k = 2 its top / 1 its road, j = road index, near = the islands around */
+  reg(px,py){const near=this.isleNear(px),R={I:null,k:0,j:0,near};for(const I of near){const k=this.at(I,px,py);if(k){R.I=I;R.k=k;R.j=this._rj;break;}}return R;},
+  /* the point an enemy at (x,y) walks to, or null (straight at the player) */
+  route(x,y,R){const I=R.I;
+    if(I){const L=I.road.length-1,k=this.at(I,x,y),j=this._rj;
+      if(k===2)return R.k===1&&R.j<L-3?I.road[L]:null;                        /* on the player's island (the player is down the road: to its head) */
+      if(k===1){if(R.k===2)return j>=L-2?null:I.road[Math.min(L,j+2)];        /* on the road: up to the island... */
+        return Math.abs(R.j-j)<=1?null:I.road[R.j>j?Math.min(L,j+2):Math.max(0,j-3)];}   /* ...or along it to the player */
+      return R.k===1&&R.j<=2?null:I.road[0];}                                  /* on the body: to the road's foot */
+    for(const J of R.near){const k=this.at(J,x,y);if(!k)continue;const j=this._rj,L=J.road.length-1;   /* the player is on the body: off the island it left */
+      return k===2?J.road[L]:j<=2?null:J.road[Math.max(0,j-3)];}
+    return null;},
+  /* a spawn point while the player is on island I: on its road, the first point (from the island down) at least d away; when the whole road is
+     nearer than that, on the body around the road's foot */
+  spotIsle(I,px,py,d){const R=I.road;
+    for(let j=R.length-2;j>=0;j--){const q=R[j];if(Math.hypot(q[0]-px,q[1]-py)>=d){const n=R[j+1],tx=n[0]-q[0],ty=n[1]-q[1],tl=Math.hypot(tx,ty)||1,w=(Math.random()*2-1)*ISLE_RW*.6;return[q[0]-ty/tl*w,q[1]+tx/tl*w];}}
+    const bx=R[0][0];for(let k=1;k<60;k++){const x=this.cx(bx+(k%2?1:-1)*Math.ceil(k/2)*50),y=this.f(x);if(Math.hypot(x-px,y-py)>=d)return[x,y+(Math.random()*2-1)*this.HW*.6];}
+    return this.spot(px,d,0);},
   /* random point on the body at about horizontal distance d from x0 (side: -1/1), spread across the width */
   spot(x0,d,side,spread){
     let sg=side||(Math.random()<.5?-1:1);if(x0>this.XMAX-d)sg=-1;else if(x0<-this.XMAX+d)sg=1;

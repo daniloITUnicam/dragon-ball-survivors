@@ -94,7 +94,7 @@ Sprites.loadPack=function(onLoad){
   for(const id of Object.keys(SPRITE_PACK))if(!Sprites.lazyOf(id))Sprites.decode(id);
 };
 Sprites.need=function(group){for(const id of Object.keys(SPRITE_PACK))if(Sprites.lazyOf(id)===group)Sprites.decode(id);};
-Sprites.drop=function(group){for(const id of Object.keys(Sprites.sheets))if(Sprites.lazyOf(id)===group){delete Sprites.sheets[id];Sprites._dec&&Sprites._dec.delete(id);}};
+Sprites.drop=function(group){for(const id of Object.keys(Sprites.sheets))if(Sprites.lazyOf(id)===group){Sprites.unpinOne(id);delete Sprites.sheets[id];Sprites._dec&&Sprites._dec.delete(id);}};
 Sprites.decode=function(id){
   const dec=Sprites._dec||(Sprites._dec=new Set());if(dec.has(id)||Sprites.sheets[id])return;dec.add(id);
   {const onLoad=Sprites._onLoad;
@@ -106,10 +106,34 @@ Sprites.decode=function(id){
       if(d.rects&&(d.kinds||d.anch)&&typeof World!=='undefined')World.cache.clear();   /* rocks are placed from the atlas: cells computed before it was decoded are redone */
       if(Sprites.pcache)Sprites.pcache.clear();if(Sprites.ecache)Sprites.ecache.clear();
       if(onLoad)onLoad(id);
+      if(Sprites.live&&Sprites.lazyOf(id))Sprites.prep(id);   /* v132: a big sheet a run asked for (the dragons of a summon, the islands): decoded off the main thread before it shows */
     };
     img.src=d.u;
   }
 };
+
+/* v132: a sheet decoded once, off the main thread, and kept decoded while a run needs it: an ImageBitmap (fetch -> blob -> createImageBitmap).
+   An <img> is decoded by the browser the first time it is drawn, inside that frame and on the main thread (~30 ms per million pixels on a
+   desktop, two or three times that on a phone: the 1-2.5 MP weapon effect sheets made the frame rate dip whenever a weapon, an evolution or
+   an ability first fired), and a phone short of memory may throw the decoded picture away and decode it again later. The bitmap takes the
+   place of S.img (S.img0 keeps the <img>, S.bm the bitmap); Sprites.unpin gives the memory back. Where fetch cannot read the sheet (the page
+   opened from disk with the sheets in s/ beside it) the sheet stays an <img>, as before. createImageBitmap(<img>) would decode on the main
+   thread too, img.decode() does not reach the canvas: only the blob route works. */
+Sprites.live=false;Sprites.clk=0;Sprites._pin=new Set();Sprites._bmP=new Map();
+Sprites.prep=function(id){
+  const S=Sprites.sheets[id],P=Sprites._bmP;if(!S)return Promise.resolve(false);if(S.bm)return Promise.resolve(true);if(P.has(id))return P.get(id);
+  const d=SPRITE_PACK[id];if(S.bmFail)return Promise.resolve(false);
+  if(!d||!d.u||typeof createImageBitmap!=='function'||typeof fetch!=='function'){S.bmFail=true;return Promise.resolve(false);}   /* no file behind it (Zeno's picture is a canvas): nothing to wait for */
+  const p=fetch(d.u).then(r=>{if(!r.ok)throw new Error(r.status);return r.blob();}).then(b=>createImageBitmap(b)).then(bm=>{
+    if(Sprites.sheets[id]!==S||P.get(id)!==p){bm.close();return false;}   /* dropped or given back meanwhile */
+    bm.complete=true;S.img0=S.img;S.img=S.bm=bm;Sprites._pin.add(id);return true;
+  }).catch(()=>{S.bmFail=true;if(P.get(id)===p)P.delete(id);return false;});
+  P.set(id,p);return p;};
+Sprites.ready=function(id){const S=Sprites.sheets[id];return!S||!!S.bm||!!S.bmFail;};
+Sprites.unpinOne=function(id){const S=Sprites.sheets[id];Sprites._bmP.delete(id);Sprites._pin.delete(id);
+  if(S&&S.bm){const b=S.bm;S.img=S.img0||S.img;S.bm=S.img0=null;try{b.close();}catch(e){}}};
+/* every pinned sheet but the ones in keep (a Set) goes back to its <img> */
+Sprites.unpin=function(keep){for(const id of new Set([...Sprites._pin,...Sprites._bmP.keys()]))if(!keep||!keep.has(id))Sprites.unpinOne(id);};
 
 /* Kamehameha beam drawn from the pack's effect frame (fxkame: muzzle burst | thin body | bulb head), along +x from the origin.
    Segments are found from the column heights of the frame, the body is stretched to `len`, the colour is tinted per weapon colour. */

@@ -14,6 +14,10 @@ const BM_DODO_WARN=3,BM_GERO_DRAIN=[.05,.15,.25,.35],BM_RAIN_N=[50,55,60,70];   
 const GHOST_K=1.5,GHOST_KIND={ki:'shot',homing:'shot',javelin:'shot',dsunday:'shot',spiral:'shot',boomer:'shot',disc:'shot',barrage:'shot',kame:'beam',dbeam:'beam',sweep:'beam',chain:'chain',bigbang:'shot',galick:'beam'};   /* Gotenks' ghosts: how each weapon is copied (anything else = a blast on the target) */
 /* enemy density: the spawn rate and the on-screen cap are lower than before (the first stage was chaos) */
 const SPAWN_K=.85,CAP_K=.78;
+/* v132: a bigger crowd on every map - ENEMY_N_K more enemies (cap, spawn rate, hordes, packs, Snake Way rings) and each regular enemy drops
+   1/ENEMY_N_K of its XP, so a player levels at the same pace. To make up for the crowd, regular enemies (not bosses) start a little tougher -
+   health, damage and armor x EARLY_K - and end softer - x LATE_HP / LATE_DMG / LATE_ARM - along a smooth step from 15% to 85% of the run (Game.crowdK) */
+const ENEMY_N_K=1.35,EARLY_K=1.1,LATE_HP=.75,LATE_DMG=.9,LATE_ARM=.7;
 /* enemy fire: a volley is smaller (x0.67), the shooters wait longer between volleys, and all of them share a "shot budget" that refills at a fixed rate,
    so a crowd of shooters can never drown the screen in bullets (Snake Way is the calmest: its shooters are the most numerous and the most dangerous) */
 const SHOT_N_K=.67,SHOT_CD_K=1.8,SHOT_CD_SNAKE=2.6,SHOT_RATE=6,SHOT_RATE_SNAKE=3.4,SHOT_BANK=12,SHOT_BANK_SNAKE=8,EB_CAP=90;
@@ -30,7 +34,8 @@ const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
 const TOP_K=1.5;
 const DMG_T=1.1;   /* seconds a damage number stays on screen (every other floating text: .8 s) */
-const SPAR_COPY_MUL=.6,SPAR_COPY_P=.7;   /* Room of Spirit and Time: the Master copies your abilities and weapons 7 attacks in 10, with 40% less damage */
+const SPAR_COPY_MUL=.6,SPAR_COPY_P=1;   /* Room of Spirit and Time: the Master copies your weapons (and now and then your ability) with every attack, with 40% less damage; his own moves only when you have nothing to copy (v132: before, 7 attacks in 10) */
+const SPAR_HP_K=1.5,SPAR_ATK_K=1.3;   /* v132: the Master has 50% more health and attacks 30% more often (his attack interval / 1.3) */
 /* how the Master reproduces each weapon (v57): his copies look like yours (orbs, spears, the Kamehameha sprite beam, tinted zones); anything not listed here uses GHOST_KIND, else a blast on you */
 const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin:'spear',breaker:'beam',hellzone:'grenade',chrono:'rewind',shock:'shock',hakai:'erase',meteor:'meteor',dyn:'kick'};
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
@@ -1097,7 +1102,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   dropLoot(e){
     const L=this.S.luck,S=this.stage;
-    this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL*this.earlyXp()*(this.wave.ph==='rest'?REST_GEM:1));
+    this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL/ENEMY_N_K*this.earlyXp()*(this.wave.ph==='rest'?REST_GEM:1));
     const r=Math.random();
     if(r<.022)this.spawnLoot('coin',e.x,e.y);
     else if(r<.022+.0075*(1+L+this.S.lootRate*.5)){const k=this.pickLoot();if(k)this.spawnLoot(k,e.x,e.y);}
@@ -1342,12 +1347,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   lateK(k){const L=this.stage.late;if(!L||this.diffId!=='extreme')return 1;return 1+(L[k]-1)*clamp((this.prog()-L.from)/(1-L.from),0,1);}   /* stage late-game ease (Tournament of Power, Extreme): 1 until L.from, then down to L[k] at the end of the run */
   /* stage tuning for x2 + Extreme only (st.x2x, Tournament of Power): regular enemies' HP / damage start at hp0 / dmg0 and reach hp / dmg at 40% of the run; bosses' HP x bhp */
   x2xK(k){const X=this.stage.x2x;if(!X||!this.x2||this.diffId!=='extreme')return 1;if(k==='bhp')return X.bhp;const f=Math.min(1,this.prog()/.4);return X[k+'0']+(X[k]-X[k+'0'])*f;}
+  crowdK(late){const u=clamp((this.prog()-.15)/.7,0,1);return EARLY_K+(late-EARLY_K)*u*u*(3-2*u);}   /* v132: see ENEMY_N_K */
   hpMul(){return this.x2xK('hp')*this.lateK('hp')*ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
   dmgMul(){return this.x2xK('dmg')*this.lateK('dmg')*ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
-  spawnRate(){return this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
+  spawnCap(){return Math.round(this.spawnCap0()*ENEMY_N_K);}
+  spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
+  spawnRate(){return ENEMY_N_K*this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -1358,9 +1365,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     return{hp:(p>=.65?1:.3+.7*Math.pow(p/.65,1.5))*(1-.12*l),dmg:(p>=.5?1:.55+.45*(p/.5))*(1-.10*l)};
   }
   mkEnemy0(def,x,y){
-    const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*xe.hp*(fb?1.35:1)*(1+F.hp*hs);   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
+    const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*this.crowdK(LATE_HP)*xe.hp*(fb?1.35:1)*(1+F.hp*hs);   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc)*this.crowdK(LATE_ARM),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*this.crowdK(LATE_DMG)*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0,
       /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
@@ -1396,7 +1403,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* a point at distance d from the player: any direction, or on the snake's body on Snake Way (i spreads group members along it) */
   spawnSpot(a,d,i){
     const p=this.p;
-    if(this.stage.theme==='snake')return Snake.spot(p.x,d+((i||0)%9)*34,Math.cos(a)>=0?1:-1);
+    if(this.stage.theme==='snake'){const R=this.snkR;   /* v132: the player on an island: on its road (or around its foot), the enemies walk up from there */
+      if(R&&R.I&&(R.k===2||R.j>3)&&!this.trial&&!this.tun)return Snake.spotIsle(R.I,p.x,p.y,d+((i||0)%9)*34);
+      return Snake.spot(p.x,d+((i||0)%9)*34,Math.cos(a)>=0?1:-1);}
     if(this.stage.theme==='void'){   /* Tournament of Power: the arena is closed, so aim at the first direction (turning either way) that lands inside it, away from the tower */
       for(let k=0;k<16;k++){
         const aa=a+(k%2?1:-1)*Math.ceil(k/2)*.42,dd=k>10?d*.6:d,dy=Math.sin(aa)*dd,x=p.x+Math.cos(aa)*dd,y=p.y+(dy<0?dy*TOP_K:dy);
@@ -1415,7 +1424,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   spawnRing(n,def,extra){
     const d=this.viewR+40;
-    if(this.stage.ringT)n=Math.min(n,this.stage.ringT[this.snakeTier()]);
+    if(this.stage.ringT)n=Math.min(n,Math.round(this.stage.ringT[this.snakeTier()]*ENEMY_N_K));
     for(let i=0;i<n;i++){const a=i/n*TAU,df=this.limitShooter(def||this.rosterPick());if(!df)continue;const[x,y]=this.spawnSpot(a,d,i),e=this.mkEnemy(df,x,y);if(extra)extra(e);this.en.push(e);}
   }
   /* ---- wave rhythm: calm -> SURGE (15 s, many more enemies) -> REST (12 s, few enemies + a shower of gems) -> calm ... ---- */
@@ -1520,11 +1529,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.say(this.env.tr(T('UNA SFERA DEL DRAGO È APPARSA! SEGUI LA FRECCIA','A DRAGON BALL HAS APPEARED! FOLLOW THE ARROW')),'#ffaa28',3);this.audio.sfx('shrine');
   }
   spawnHorde(){
-    const pr=Math.min(1,this.prog()),n=Math.round(8+this.sd*3+pr*(40+this.sd*14));
+    const pr=Math.min(1,this.prog()),n=Math.round((8+this.sd*3+pr*(40+this.sd*14))*ENEMY_N_K);
     this.spawnRing(n,null,e=>{e.hp*=1.15;e.max=e.hp;});this.hordeBoost=HORDE_BOOST_T;   /* the horde also speeds up the regular spawns for 20 s (no message) */
     this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=.4;
   }
-  spawnPack(){this.spawnRing(Math.round(5+this.sd+Math.min(1,this.prog())*(8+this.sd*2)),this.rosterPick());}
+  spawnPack(){this.spawnRing(Math.round((5+this.sd+Math.min(1,this.prog())*(8+this.sd*2))*ENEMY_N_K),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
   spawnBoss(id,final,at,hk,mini){   /* at: {x,y,k,tama} puts the boss on a given spot (Tamagami statue) with a health factor k; mini: a miniboss (small, no transformations) */
     let bd=BOSSES[id];if(mini)bd=Object.assign({},bd,{n:T(bd.n.it+' (Mini)',bd.n.en+' (Mini)'),p2:0,morph:0});
@@ -1897,7 +1906,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     e.dead=true;this.ring(e.x,e.y,rad,'#ff9d3a',.4);this.burst(e.x,e.y-6,26,'#ffb13b');this.burst(e.x,e.y-6,14,'#ffffff');
     this.audio.sfx('boom');this.shake=Math.max(this.shake,.25);
     if(this.coop)this.hitHeroes(q=>Math.hypot(q.x-e.x,q.y-e.y)<rad+8,e.dmg,{o:e});else if(Math.hypot(p.x-e.x,p.y-e.y)<rad+8)this.hurt(e.dmg,{o:e});
-    this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL*.5*this.earlyXp());
+    this.dropGem(e.x,e.y,e.def.xp*(e.xpm||1)*this.stageXp()*XP_MUL/ENEMY_N_K*.5*this.earlyXp());
   }
 
   /* ---------- main update ---------- */
@@ -2265,7 +2274,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
   updateEnemies(dt){
     let p=this.p;this.shotRefill(dt);EGRID.build(this.en);
-    const vr=this.viewR*1.3,tslow=this.slowT>0;
+    /* v132: Snake Way - the player's piece of ground (Snake.reg); enemies that are not on it walk the island's road (Snake.route), and while
+       the player is on an island they are not sent back around the player when far (they are on their way, along the road) */
+    const SR=this.snkR=this.stage.theme==='snake'&&!this.trial&&!this.tun&&!this.coop?Snake.reg(p.x,p.y):null,isl=!!(SR&&SR.I);
+    const vr=this.viewR*1.3,vrE=isl?Math.max(vr,2600):vr,tslow=this.slowT>0;
     /* v109: what an enemy fires during its turn (bullets, ground circles, rain) remembers who fired it (.o), for the "damage taken" summary */
     let ow=null,nb=this.eb.length,nz=this.bz.length,nr=(this.rain||[]).length;
     const tag=()=>{if(ow){for(let i=Math.min(nb,this.eb.length);i<this.eb.length;i++)if(!this.eb[i].o)this.eb[i].o=ow;for(let i=Math.min(nz,this.bz.length);i<this.bz.length;i++)if(!this.bz[i].o)this.bz[i].o=ow;
@@ -2276,9 +2288,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(e.dead)continue;
       if(e.fl>0)e.fl-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,dist=Math.sqrt(dx*dx+dy*dy)||1,dyk=dy>0?dy/TOP_K:dy;
-      if(!e.boss&&dx*dx+dyk*dyk>vr*vr){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
+      if(!e.boss&&dx*dx+dyk*dyk>vrE*vrE){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
         const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
-      const ux=dx/dist,uy=dy/dist;
+      let ux=dx/dist,uy=dy/dist;
+      if(SR&&!(e.def&&e.def.fly)&&e.ai!=='hover'){const w=Snake.route(e.x,e.y,SR);if(w){const wx=w[0]-e.x,wy=w[1]-e.y,wl=Math.sqrt(wx*wx+wy*wy)||1;ux=wx/wl;uy=wy/wl;}}
       let mx=0,my=0,sp=e.spd*(e.slow>0?.6:1)*(tslow?(e.boss?.75:.55):1);
       if(e.slow>0)e.slow-=dt;
       e.age+=dt;
@@ -2485,9 +2498,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p,idx=this.sd,C=this.C;
     const n=this.trialN++,big=1+.55*n;
     const sp={k:'human',u:(C.u||1.95)*big,cfg:Object.assign({},C.cfg,{skin:'#c8d0e8',outfit:'#262a46',legs:'#262a46',belt:'#6a7aff',under:'#3a4a8a',hair:'#e8eeff',eye:'#6a7aff',wrist:'#6a7aff',armor:null,emblem:0})};
-    const hp=(300+45*this.lvl*(1+.4*idx))*(1+.9*n)*2.1,dmg=(7+4*idx)*(1+.1*idx)*(1+.35*n);
+    const hp=(300+45*this.lvl*(1+.4*idx))*(1+.9*n)*2.1*SPAR_HP_K,dmg=(7+4*idx)*(1+.1*idx)*(1+.35*n);
     const def={n:n?T('Maestro dello Spirito (Furia)','Spirit Master (Fury)'):T('Maestro dello Spirito','Spirit Master'),c:'#aab4ff',xp:0,hp,r:16*big,spd:60+14*n,dmg,ai:'boss',sp};
-    const bd={id:'spar',n:def.n,c:'#aab4ff',hp,spd:60+14*n,r:16*big,u:(C.u||1.95)*big,dmg,pats:n?['tri','sweep','meteor','burst','ring','slam']:['aim','slam','tri','burst','meteor'],cd:n?1.9:2.4,sp};
+    const bd={id:'spar',n:def.n,c:'#aab4ff',hp,spd:60+14*n,r:16*big,u:(C.u||1.95)*big,dmg,pats:n?['tri','sweep','meteor','burst','ring','slam']:['aim','slam','tri','burst','meteor'],cd:(n?1.9:2.4)/SPAR_ATK_K,sp};
     const e=this.mkEnemy(def,p.x+190,p.y);
     Object.assign(e,{ai:'boss',bd,hp,max:hp,dmg,armor:0,phase:0,spin:0,dashT:0,sparring:true,sh:bd.cd});
     const cx=p.x,cy=p.y,obs=[],btn=[],trp=[];
@@ -2556,15 +2569,23 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     tr.phase='shop';this.eb=[];
     this.addXp(this.need*(tr.killed?.5:.3)/this.S.xp);
     this.audio.sfx('lvl');
-    this.modal={type:'trial',offers:this.makeOffers(),killed:tr.killed,freePick:!!tr.killed};
+    this.modal={type:'trial',offers:this.makeOffers(tr.killed),killed:tr.killed,freePick:!!tr.killed,trin:tr.killed?this.trialTrinkets():null,t0:performance.now()};
   }
-  makeOffers(){
+  /* v132: the Master defeated: one trinket out of 3 (rarity and perfection rolled as for a boss chest's choice: Luck helps) */
+  trialTrinkets(){return this.rollTrinketList(3).map(id=>({id,rar:this.rarOf(id),pf:rollPf(this.S.luck),sold:false}));}
+  pickTrialTrinket(k){
+    const m=this.modal,o=m&&m.type==='trial'&&m.trin&&m.trin[k];if(!o||o.sold)return false;
+    for(const x of m.trin)x.sold=true;
+    this.addTrinket(o.id,o.rar,{pf:o.pf});this.recalc();return true;   /* (with every slot taken the swap window comes after this one: Game.drainTQ) */
+  }
+  /* killed: the Master defeated - the free upgrade only (transformation or weapon level), no stat swaps for sale (v132) */
+  makeOffers(killed){
     const ps=(1+.6*this.sd)*(.45+.55*Math.min(1,this.t/this.dur)),offers=[];
     if(this.formsUnlocked<Math.min(6,this.formMax)&&FORM_TIERS[this.formsUnlocked].lvl-this.lvl<=10)offers.push({kind:'form',price:Math.round(170*ps*(1+.3*this.formsUnlocked))});
     const ws=[...this.weapons.values()].filter(w=>w.lv<WMAX);
     if(ws.length)offers.push({kind:'weapon',wid:pick(ws).id,price:Math.round(35*ps)});
     const st=shuffle(['might','spd','cd','hp']);
-    for(let i=0;i<2;i++)offers.push({kind:'swap',a:st[i],b:st[(i+1+Math.floor(Math.random()*2))%4]===st[i]?st[(i+2)%4]:st[(i+1+Math.floor(Math.random()*2))%4],price:Math.round(25*ps)});
+    if(!killed)for(let i=0;i<2;i++)offers.push({kind:'swap',a:st[i],b:st[(i+1+Math.floor(Math.random()*2))%4]===st[i]?st[(i+2)%4]:st[(i+1+Math.floor(Math.random()*2))%4],price:Math.round(25*ps)});
     return offers.map(o=>Object.assign(o,{sold:false}));
   }
   buyOffer(i){

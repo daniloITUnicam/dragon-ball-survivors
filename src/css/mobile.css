@@ -79,3 +79,7 @@ html.mphone .screen.end2{--u:max(.6px,min(calc(.09765625vw / var(--mz)),calc(.17
 html.mphone .logoimg{max-height:calc(30vh / var(--mz))}
 html.mphone .pleft{max-height:calc(100vh / var(--mz) - 90px)}
 html.mphone .evlog{max-height:calc(100vh / var(--mz) - 90px)}
+/* v132: a window taller than the screen scrolls from its top (centred, its top was cut off); the Master's reward: the free upgrade and the 3 trinkets side by side */
+html.mphone .screen.modal{justify-content:safe center}
+html.mphone .trrow{flex-direction:row;align-items:flex-start;gap:22px}
+html.mphone .trialcards{flex-wrap:nowrap}

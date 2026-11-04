@@ -31,10 +31,12 @@ class App{
       if(this.state!=='modal'||!m||e.repeat||e.ctrlKey||e.altKey||e.metaKey)return;
       const dg=/^(?:Digit|Numpad)(\d)$/.exec(e.code);
       if(dg){
-        const i=+dg[1]===0?9:+dg[1]-1,n={level:(m.options||[]).length,totem:(m.opts||[0,1]).length,wish:(m.options||[]).length,tswap:(m.curs||[0]).length+1,pick:(m.opts||[]).length,chest:1,trial:(m.offers||[]).length}[m.type]||0;
+        const i=+dg[1]===0?9:+dg[1]-1,n={level:(m.options||[]).length,totem:(m.opts||[0,1]).length,wish:(m.options||[]).length,tswap:(m.curs||[0]).length+1,pick:(m.opts||[]).length,chest:1,trial:(m.offers||[]).length+(m.trin?m.trin.length:0)}[m.type]||0;
         if(i<n){if((m.type==='level'&&m.banMode)||m.type==='trial'){const b=this.ui.modalEl&&this.ui.modalEl.querySelector('[data-fid="o'+i+'"]');if(b&&!b.disabled)b.click();else if(m.type==='trial')this.ui.sfx('uiErr');}else this.resolveModal(i);}   /* ban mode: the number key bans that card */
         return;
       }
+      /* v132: Room of Spirit and Time - Space leaves the room (like «Leave the room»); not in the first 0.6 s, so a Space still pressed from the fight does not throw the rewards away */
+      if(e.code==='Space'&&m.type==='trial'){e.preventDefault();if(performance.now()-(m.t0||0)>600){this.ui.sfx();this.resolveModal(0);}return;}
       if(e.code==='Space'&&m.type!=='trial'){
         const root=this.ui.modalEl&&this.ui.modalEl.isConnected?this.ui.modalEl:document,ae=document.activeElement;
         const b=m.type!=='chest'&&ae&&ae.tagName==='BUTTON'&&root.contains(ae)?ae:root.querySelector('[data-focus]');   /* chest: Space is always "Collect" (a reward card may hold the focus) */

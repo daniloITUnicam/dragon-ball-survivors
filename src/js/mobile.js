@@ -74,9 +74,9 @@ if(MOBILE.on)(()=>{
      changes the window height by ~20%, and the zoom followed it in jumps. Now the zoom never moves: with the bar shown you just see a strip less */
   const short=()=>{const s=Math.min(screen.width||0,screen.height||0),w=Math.min(innerWidth,innerHeight);return s>=w?s:w;};
   Renderer.prototype.resize=function(){rs0.call(this);
-    const sh=Math.max(1,short()),sc=this.W/Math.max(1,innerWidth);   /* sc: canvas px per CSS px (device ratio, scale setting, dynamic resolution) */
-    this.Z=clamp(sh*sc/560,.6,3.4);
-    if(M.phone)this.U=Math.max(.8,sh*sc/720)*clamp(560/sh,1,1.45);   /* bigger HUD on a phone; measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
+    const st=this.save.d.settings,d=st.dynRes===false?1:(this.dyn||1),sh=Math.max(1,short()),sc=this.W/Math.max(1,innerWidth)/d;   /* sc: canvas px per CSS px before the dynamic resolution (device ratio, scale setting) */
+    this.Z=clamp(sh*sc/560,.6,3.4)*d;   /* v132: x d after the clamp: a resolution step never moves the zoom nor the HUD */
+    if(M.phone)this.U=Math.max(.8,sh*sc/720)*clamp(560/sh,1,1.45)*d;   /* bigger HUD on a phone; measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
   };
   /* a tap on the weapon target panel cycles the target (it is only a hover zone with a mouse) */
   const tapZone=e=>{

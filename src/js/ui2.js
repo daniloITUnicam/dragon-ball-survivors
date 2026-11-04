@@ -408,12 +408,20 @@ Object.assign(UI.prototype,{
         else if(o.kind==='weapon'){const w=WEAPONS[o.wid];info={k:w.k,c:w.c,n:w.n,tag:this.t('trialWeapon'),d:T('+1 livello a quest\'arma. (Alternativa alla trasformazione)','+1 level for this weapon. (Alternative to the transformation)')};}
         else{const p=Math.round(STEP[o.a]*100*TRIAL_MALUS),q=Math.round(STEP[o.b]*135);info={k:'力',c:'#c9a0ff',n:T('Scambio statistica','Stat swap'),tag:this.t('trialSwap'),d:T('-'+p+'% '+NAMES[o.a].it+'  →  +'+q+'% '+NAMES[o.b].it,'-'+p+'% '+NAMES[o.a].en+'  →  +'+q+'% '+NAMES[o.b].en)};}
         const ok=!o.sold&&(m.freePick||g.run.coins>=o.price);
-        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('uiErr');});
+        const el=this.card(Object.assign({},info,{tag:o.sold?this.t('trialSold'):((m.freePick?this.t('trialFree'):'Z '+o.price)+' · '+info.tag)}),i,()=>{if(g.buyOffer(i)){this.sfx('buy');if(m.offers.every(x=>x.sold)&&(!m.trin||m.trin.every(x=>x.sold))){this.app.resolveModal(0);}else this.openModal(g.modal,g);}else this.sfx('uiErr');});
         el.disabled=!ok;if(!ok)el.classList.add('locked');
         return el;
       }).filter(Boolean);
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('trialShopTitle')),h('p',{class:'sub'},m.freePick?this.t('trialFreeDesc'):this.t('trialShopDesc',{n:Math.floor(g.run.coins)})),
-        h('div',{class:'cards trialcards'},cards),
+      /* v132: the Master defeated - the free upgrade and one trinket out of 3 (numbered after the upgrades: number keys 1-5) */
+      const no=m.offers.length,done=()=>m.offers.every(x=>x.sold)&&(!m.trin||m.trin.every(x=>x.sold));
+      const tcs=m.trin&&!m.trin.every(x=>x.sold)?m.trin.map((o,k)=>{const c=this.card(this.describeReward({k:'trinket',id:o.id,rar:o.rar,pf:o.pf}),no+k,()=>{if(g.pickTrialTrinket(k)){this.sfx('chest');if(done())this.app.resolveModal(0);else this.openModal(g.modal,g);}else this.sfx('uiErr');});return c;}):null;
+      const lbl=s=>h('div',{class:'trlbl'},this.tr(s));
+      el=h('div',{class:'screen modal'},h('h2',null,this.t('trialShopTitle')),
+        h('p',{class:'sub'},m.trin?this.tr(T6('Maestro sconfitto! Scegli un potenziamento gratuito e un cimelio.','Master defeated! Pick a free upgrade and a trinket.','¡Maestro derrotado! Elige una mejora gratis y una reliquia.','Maître vaincu ! Choisis une amélioration gratuite et une relique.','Meister besiegt! Wähle ein kostenloses Upgrade und ein Relikt.','Mestre derrotado! Escolha uma melhoria grátis e uma relíquia.')):m.freePick?this.t('trialFreeDesc'):this.t('trialShopDesc',{n:Math.floor(g.run.coins)})),
+        m.trin?h('div',{class:'trrow'},   /* the two groups: one under the other (PC), side by side on a phone (mobile.css) */
+          cards.length?h('div',{class:'trgrp'},lbl(T6('Potenziamento gratuito','Free upgrade','Mejora gratis','Amélioration gratuite','Kostenloses Upgrade','Melhoria grátis')),h('div',{class:'cards trialcards'},cards)):null,
+          tcs?h('div',{class:'trgrp'},lbl(T6('Cimelio: scegline uno','Trinket: pick one','Reliquia: elige una','Relique : choisis-en une','Relikt: wähle eins','Relíquia: escolha uma')),h('div',{class:'cards trialcards'},tcs)):null)
+        :h('div',{class:'cards trialcards'},cards),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(0);}},this.t('trialLeave'))));
     }else if(m.type!=='swish'){
       const WD={revive:{k:'復',c:'#8be07a',n:T('Seconda vita','Second life'),d:T('Ottieni una resurrezione.','Gain a revive.')},

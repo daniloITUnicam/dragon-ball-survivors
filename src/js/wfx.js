@@ -16,7 +16,10 @@ const WFX={
   blit(ctx,S,M,c,r,sx,sy,sw,sh,dx,dy,dw,dh){if(!sw){sw=S.fw;sh=S.fh;}let x0=sx,y0=sy,x1=sx+sw,y1=sy+sh;const B=M.cb,i=(r*(M.cols||1)+c)*4;
     if(B&&i+3<B.length){if(B[i]>x0)x0=B[i];if(B[i+1]>y0)y0=B[i+1];if(B[i+2]<x1)x1=B[i+2];if(B[i+3]<y1)y1=B[i+3];if(x1<=x0||y1<=y0)return;}
     const kx=dw/sw,ky=dh/sh;ctx.drawImage(S.img,c*S.fw+x0,r*S.fh+y0,x1-x0,y1-y0,dx+(x0-sx)*kx,dy+(y0-sy)*ky,(x1-x0)*kx,(y1-y0)*ky);},
-  S(id){const S=Sprites.sheets['wfx'+id];return S&&S.img&&S.img.complete?S:null;},
+  /* v132: during a run a sheet is drawn only once it is decoded off the main thread (Sprites.prep): until then - a few frames, usually none,
+     the loader asks for the sheets of the weapons owned and offered ahead of time - the weapon keeps the look of its lower tier or its
+     drawn-by-code one, instead of decoding 1-2.5 million pixels inside a frame */
+  S(id){const S=Sprites.sheets['wfx'+id];if(!S||!S.img||!S.img.complete)return null;if(S.bm){S.used=Sprites.clk;return S;}if(!Sprites.live||S.bmFail)return S;Sprites.prep('wfx'+id);return null;},
   has(id){return !!this.S(id);},
   meta(id){return SPRITE_PACK['wfx'+id]||{};},
   /* the sheet of a weapon: <id>ev2 from the second evolution on, <id>evo from the first, when that sheet is there */

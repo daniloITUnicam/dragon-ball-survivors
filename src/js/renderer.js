@@ -98,11 +98,13 @@ this.W=1;this.H=1;this.Z=1;
     if(s.res==='720'){ih=720;iw=Math.round(720*cw/ch);}
     else if(s.res==='1080'){ih=1080;iw=Math.round(1080*cw/ch);}
     else{const sc=clamp(s.scale||1,.5,2)*Math.min(2,window.devicePixelRatio||1);iw=Math.round(cw*sc);ih=Math.round(ch*sc);}
-    {const d=s.dynRes===false?1:(this.dyn||1);iw=Math.round(iw*d);ih=Math.round(ih*d);}   /* v121: dynamic resolution */
+    const d=s.dynRes===false?1:(this.dyn||1);iw=Math.round(iw*d);ih=Math.round(ih*d);   /* v121: dynamic resolution */
     if(this.menuRes){iw=Math.round(iw*.5);ih=Math.round(ih*.5);}   /* v131: the menu backdrop is blurred by CSS: half the pixels each way, same picture (App.tick sets menuRes) */
-    this.cv.width=iw;this.cv.height=ih;this.cv.style.width=cw+'px';this.cv.style.height=ch+'px';
-    this.W=iw;this.H=ih;this.Z=clamp(Math.min(iw,ih)/560,.6,3.4);this.vign=null;
-    this.U=Math.max(.8,ih/720);
+    if(this.cv.width!==iw||this.cv.height!==ih){this.cv.width=iw;this.cv.height=ih;}this.cv.style.width=cw+'px';this.cv.style.height=ch+'px';   /* (a new size reallocates the canvas: not when it is the same) */
+    /* v132: zoom and HUD unit are measured on the size before the dynamic resolution, then scaled by it: the world and the HUD keep their
+       size on screen at every resolution step (on a small window the clamps caught the reduced size and the HUD grew) */
+    this.W=iw;this.H=ih;this.Z=clamp(Math.min(iw,ih)/d/560,.6,3.4)*d;this.vign=null;
+    this.U=Math.max(.8,ih/d/720)*d;
   }
   /* ---------- terrain ---------- */
   getTiles(theme){
@@ -274,11 +276,11 @@ this.W=1;this.H=1;this.Z=1;
      at 57+ fps for 6 s it climbs back by 10%. If rendering smaller did not help (the game is limited by something else, or the screen runs at 30 Hz)
      the step is undone, and after two such tries it stops lowering. Settings > Video > Dynamic resolution turns it off. */
   dynTick(fd){const s=this.save.d.settings;if(s.dynRes===false){if((this.dyn||1)!==1){this.dyn=1;this.dynPend=true;}return;}
-    const D=this.dd||(this.dd={acc:0,n:0,good:0,cool:0,fail:0,down:0});if(this.dyn==null)this.dyn=1;
+    const D=this.dd||(this.dd={acc:0,n:0,good:0,cool:0,fail:0,down:0}),now=performance.now();if(this.dyn==null)this.dyn=1;
     D.acc+=fd;D.n++;D.cool-=fd;if(D.acc<1.5)return;const fps=D.n/D.acc;D.acc=0;D.n=0;if(D.cool>0)return;
     if(D.down){const gain=fps>D.down*1.04;D.down=0;if(!gain){D.fail++;this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.cool=4;return;}}
-    if(fps<50&&this.dyn>.6&&D.fail<2){D.down=fps;this.dyn=Math.max(.6,+(this.dyn-.1).toFixed(2));this.dynPend=true;D.cool=1.5;D.good=0;return;}
-    if(fps>=57){if(++D.good>=4&&this.dyn<1){this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.good=0;D.cool=1.5;}}else D.good=0;}
+    if(fps<50&&this.dyn>.6&&D.fail<2){if(now-(D.up||-1e9)<12000)D.ban=now+60000;D.down=fps;this.dyn=Math.max(.6,+(this.dyn-.1).toFixed(2));this.dynPend=true;D.cool=1.5;D.good=0;return;}
+    if(fps>=57){if(++D.good>=4&&this.dyn<1&&now>(D.ban||0)){this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.good=0;D.cool=1.5;D.up=now;}}else D.good=0;}   /* v132: a step up that has to come back down within 12 s stops the climbing for a minute (it went up and down every few seconds: a resize and a sharpness change each time) */
   /* the biome level of every tile (dry..lush, a noise lookup), kept per chunk of TCH x TCH tiles so it is not worked out again every frame */
   tChunk(c,r){const k=c*65536+r;let ch=this.tc.get(k);if(ch){ch.u=this._fr;return ch;}
     const theme=this.tcTheme,TS=64,sea=Sea.has(theme),dn=DEC_DENS[theme]||0,lv=new Uint8Array(TCH*TCH),dc=new Uint8Array(TCH*TCH);
@@ -307,9 +309,9 @@ this.W=1;this.H=1;this.Z=1;
   resetCtx(){const c=this.ctx;try{for(let i=0;i<40;i++)c.restore();}catch(e){}c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.setLineDash([]);c.lineCap='butt';c.lineJoin='miter';c.shadowBlur=0;c.filter='none';}
   /* v116: camera punch — the zoom grows for a moment and eases back (g.zoomP decays here, with the real frame time) */
   draw(g,dt){
+    if(this.dynPend){this.dynPend=false;this.resize();}   /* v132: before z0 is taken - inside, the finally below put back the zoom of the old size on the new canvas, and the view stayed zoomed in by a step until the next one */
     const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
     {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+.3*f;}   /* v116: boss cinematic camera */
-    if(this.dynPend){this.dynPend=false;this.resize();}
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
   }
   drawFrame(g,dt){
