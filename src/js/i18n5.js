@@ -25,6 +25,8 @@
     dmgLava:['Lava','Lava','Lava','Lave','Lava','Lava'],
     dmgBossAtk:['Attacchi dei boss','Boss attacks','Ataques de jefes','Attaques de boss','Boss-Angriffe','Ataques de chefes'],
     dmgEnv:['Altro (eventi, ambiente)','Other (events, surroundings)','Otros (eventos, entorno)','Autres (événements, décor)','Sonstiges (Ereignisse, Umgebung)','Outros (eventos, ambiente)'],
+    runTrinOpen:['Apri cimeli ({n})','Open trinkets ({n})','Abrir reliquias ({n})','Ouvrir les reliques ({n})','Relikte öffnen ({n})','Abrir relíquias ({n})'],
+    runTrinNone:['Nessun cimelio trovato in questa partita.','No trinkets found in this run.','No has encontrado reliquias en esta partida.','Aucune relique trouvée dans cette partie.','In diesem Lauf noch keine Relikte gefunden.','Nenhuma relíquia encontrada nesta partida.'],
     evLog:['Cronologia Eventi','Event History','Historial de eventos','Historique des événements','Ereignisverlauf','Histórico de eventos'],
     evLogEmpty:['Ancora nessun evento in questa partita.','No events in this run yet.','Aún no hay eventos en esta partida.','Aucun événement pour l\'instant dans cette partie.','Noch keine Ereignisse in dieser Runde.','Ainda não há eventos nesta partida.'],
     stProj:['Quantità','Amount','Cantidad','Quantité','Anzahl','Quantidade'],

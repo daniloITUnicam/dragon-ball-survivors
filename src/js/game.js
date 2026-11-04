@@ -1,4 +1,5 @@
-/* every ESC_EVERY seconds (600: Normal, Hard and Extreme; Easy keeps ESC_EVERY_EASY = 60) new enemies get a step of extra HP / damage (and drop more XP); Extreme also toughens their armor. Easy only gets 1%.
+/* every ESC_EVERY seconds (600: Normal, Hard and Extreme; Easy keeps ESC_EVERY_EASY = 60) new enemies drop more XP; Extreme also toughens their armor.
+   v131: the timed steps no longer add HP / damage on any difficulty (only the Endless milestones still use ESC_*.hp / .dmg).
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
@@ -1339,8 +1340,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* Extreme: 2% more enemies every 30 s (60 steps at most) */
   xSteps(){return this.diffId==='extreme'?Math.min(60,Math.floor(this.t/X_SPAWN_STEP)):0;}
   lateK(k){const L=this.stage.late;if(!L||this.diffId!=='extreme')return 1;return 1+(L[k]-1)*clamp((this.prog()-L.from)/(1-L.from),0,1);}   /* stage late-game ease (Tournament of Power, Extreme): 1 until L.from, then down to L[k] at the end of the run */
-  hpMul(){return this.lateK('hp')*ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
-  dmgMul(){return this.lateK('dmg')*ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
+  /* stage tuning for x2 + Extreme only (st.x2x, Tournament of Power): regular enemies' HP / damage start at hp0 / dmg0 and reach hp / dmg at 40% of the run; bosses' HP x bhp */
+  x2xK(k){const X=this.stage.x2x;if(!X||!this.x2||this.diffId!=='extreme')return 1;if(k==='bhp')return X.bhp;const f=Math.min(1,this.prog()/.4);return X[k+'0']+(X[k]-X[k+'0'])*f;}
+  hpMul(){return this.x2xK('hp')*this.lateK('hp')*ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
+  dmgMul(){return this.x2xK('dmg')*this.lateK('dmg')*ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   spawnCap(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
@@ -1355,10 +1358,15 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     return{hp:(p>=.65?1:.3+.7*Math.pow(p/.65,1.5))*(1-.12*l),dmg:(p>=.5?1:.55+.45*(p/.5))*(1-.10*l)};
   }
   mkEnemy0(def,x,y){
-    const fb=this.finalOn,esc=this.escSteps(),F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*xe.hp*(fb?1.35:1)*(1+F.hp*esc);   /* final boss fight: tougher crowd that hits a bit softer */
+    const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*xe.hp*(fb?1.35:1)*(1+F.hp*hs);   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*xe.dmg*(fb?.85:1)*(1+F.dmg*esc),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
-      sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0};
+    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+      sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0,
+      /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
+         4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
+         Numbers start at 0 (all their uses treat 0 like "absent": >0, ||0, truthiness), the rest at undefined (exactly as before for every read) */
+      atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,
+      sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined};
   }
   rosterPick(){
     const t=this.nt,r=this.stage.roster,w=[];
@@ -1522,7 +1530,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     let bd=BOSSES[id];if(mini)bd=Object.assign({},bd,{n:T(bd.n.it+' (Mini)',bd.n.en+' (Mini)'),p2:0,morph:0});
     const p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
-    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4:1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
+    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4*this.x2xK('bhp'):1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
     Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
@@ -1907,7 +1915,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
-    this.rt+=dt;if(!frozen){const e0=Math.floor(this.t/this.escEvery);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/this.escEvery)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(T('I nemici si rafforzano! (+'+pc(F.hp)+' vita, +'+pc(F.dmg)+' danni'+(F.arm?', +'+pc(F.arm)+' armatura':'')+' · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.hp)+' HP, +'+pc(F.dmg)+' damage'+(F.arm?', +'+pc(F.arm)+' armor':'')+' · +'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
+    this.rt+=dt;if(!frozen){const e0=Math.floor(this.t/this.escEvery);this.t+=dt*this.CR;if(!this.endless&&Math.floor(this.t/this.escEvery)>e0){const F=this.escF,pc=x=>Math.round(x*100)+'%';this.say(this.env.tr(F.arm?T('I nemici si rafforzano! (+'+pc(F.arm)+' armatura · +'+pc(F.xp)+' EXP)','Enemies grow stronger! (+'+pc(F.arm)+' armor · +'+pc(F.xp)+' XP)'):T('I nemici danno più esperienza! (+'+pc(F.xp)+' EXP)','Enemies give more experience! (+'+pc(F.xp)+' XP)')),'#ffb13b',2.4);}}
     if(dt>0)this.xpRate+=(this.xpAcc/dt-this.xpRate)*(1-Math.exp(-dt/45));this.xpAcc=0;   /* XP income per second, smoothed over ~45 s (calibrates the Endless level curve) */
     if(p.inv>0)p.inv-=dt;
     if(this.shake>0)this.shake-=dt;

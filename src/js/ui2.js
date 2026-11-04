@@ -190,41 +190,66 @@ Object.assign(UI.prototype,{
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],passMax(id)),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
       ...g.tempBuffs.map(b=>kr('tempBuffs',this.tr(BUFF_NAMES[b.k])+' ('+Math.ceil(b.t)+'s)')),
       g.luckBonus>0?kr('stLuck','+'+Math.round(g.luckBonus*100)+'%'):null];
-    const trins=g.trinkets.map(id=>{const tr=trinDef(id),rr=g.trR(id),pf=hasPf(tr)?g.trP(id):null;return h('div',{class:'prow'},glyph(tr.k,RARITY[rr].c),h('div',{class:'col'},h('div',{class:'cn',style:'color:'+RARITY[rr].c},this.tr(tr.n)+' · '+this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('div',{class:'cd'},this.tr(trinDesc(tr,rr,pf))),this.perfBar(pf)));});
+    /* v131: the trinkets of the run open in their own window (screen_runTrinkets, with the bag's filters): here only a count per rarity and the button */
+    const rc=[0,0,0,0,0];for(const id of g.trinkets)rc[g.trR(id)]++;
+    const trins=g.trinkets.length?[h('div',{class:'ptrsum'},rc.map((n,r)=>n?h('span',{class:'ptrc',style:'--c:'+RARITY[r].c},n+' '+this.tr(RARITY[r].n)):null)),
+      h('button',{class:'btn small','data-fid':'ptrin',onclick:()=>{this.sfx();this.push('runTrinkets');}},'🎒 '+this.t('runTrinOpen',{n:g.trinkets.length}))]:[];
     /* abilities of the run (character ability, dash, Senzu, pet): the same explanations as the HUD hover */
     const ablist=[];
     for(const z of [{k:'ability'},{k:'dash'},{k:'senzu'},{k:'pet'}]){const tb=this.tipFor(z,g);if(tb)ablist.push(h('div',{class:'prow'},tb.querySelector('.glyph'),h('div',{class:'col'},tb.querySelector('.tiph b'),h('div',{class:'cd'},tb.querySelector('.tiph i')?tb.querySelector('.tiph i').textContent:''),h('div',{class:'cd'},tb.querySelector('p').textContent))));}
     const wishes=[kr('balls',g.balls+' / 7'),...g.wishLog.map(w=>kr('wishLabel',this.tr(WISH_NAMES[w])))];
     const tabBtns=(
-      ['map','run','grim','log'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='map'?'🗺 '+this.t('mapTab'):k==='run'?this.t('runTab'):k==='log'?'📜 '+this.t('evLog'):'📖 '+this.t('grimoire')))),
-      tabs=h('div',{class:'row tabs'},tabBtns);
+      ['map','run','grim','log'].map(k=>h('button',{class:'btn small'+(tab===k?'':' alt'),'data-fid':'pt'+k,onclick:()=>{this.sfx('uiTab');this.lastPauseTab=k;this.top.args={tab:k};this.rebuild(true);}},k==='map'?'🗺 '+this.t('mapTab'):k==='run'?this.t('runTab'):k==='log'?'📜 '+this.t('evLog'):'📖 '+this.t('grimoire'))));
     const actBtns=[
         h('button',{class:'btn primary','data-focus':true,'data-back':true,onclick:()=>{this.sfx();this.app.resume();}},this.t('resume')),
         this.btn('glossary',()=>this.push('glossary'),'alt'),
         this.btn('unl',()=>this.push('unl'),'alt'),
         this.btn('ach',()=>this.push('ach'),'alt'),
         this.btn('settings',()=>this.push('settings',{tab:'general'}),'alt'),
-        this.btn('quitMenu',()=>this.app.endRunManually(),'alt')],
-      btns=h('div',{class:'row'},actBtns);
+        this.btn('quitMenu',()=>this.app.endRunManually(),'alt')];
+    /* v131: every tab has the same top row (tabs on the left, actions on the right), so no button moves when switching tab */
+    const top=()=>h('div',{class:'row ptop'},...tabBtns,h('span',{class:'ptsp'}),...actBtns);
     /* Map tab: the map is the main thing, at the very top, with only a small stats panel beside it. Run tab: the full character column (stats, abilities, upgrades) on the left and weapons, trinkets and wishes on the right */
     if(tab==='map'){
-      return h('div',{class:'pausescr pmapmode'},h('div',{class:'row ptop'},...tabBtns,h('span',{class:'ptsp'}),...actBtns),
+      return h('div',{class:'pausescr pmapmode'},top(),
         h('div',{class:'pbody'},h('div',{class:'pleft mini'},sec('pauseStats',stats)),h('div',{class:'pmain'},this.pauseMap(g))));
     }
     if(tab==='run'){
       /* everything on one screen: the sections flow into as many columns as fit and the whole block is scaled down (fitPause) until it fits above the HUD, so more or fewer weapons / trinkets just reshape it */
-      const el=h('div',{class:'pausescr pmapmode prunmode'},h('div',{class:'row ptop'},...tabBtns,h('span',{class:'ptsp'}),...actBtns),
+      const el=h('div',{class:'pausescr pmapmode prunmode'},top(),
         h('div',{class:'pfitwrap'},h('div',{class:'pfit'},sec('pauseStats',stats),h('div',{class:'psec'},h('h3',null,this.tr(T('Abilità','Abilities'))),ablist.length?ablist:none()),sec('pauseUpgrades',ups.filter(Boolean)),sec('pauseWeapons',weapons),sec('pauseTrinkets',trins),sec('pauseWishes',wishes))));
       this.fitPause(el);
       return el;
     }
     if(tab==='log'){   /* v109: every message of the run (banners and notices) with the run clock, newest first */
       const L=(g.evLog||[]).slice().reverse();
-      return h('div',{class:'pausescr'},h('h2',null,'📜 '+this.t('evLog')),btns,tabs,
+      return h('div',{class:'pausescr pmapmode'},top(),
         h('div',{class:'evlog psec'},L.length?L.map(e=>h('div',{class:'evrow'},h('b',{class:'evt'},fmtT(e.t)),
           h('span',{class:'evx',style:'color:'+e.col},e.txt+(e.n>1?' ×'+e.n:''),e.sub?h('small',null,e.sub):null))):h('p',{class:'sub'},this.t('evLogEmpty'))));
     }
-    return h('div',{class:'pausescr'},h('h2',null,this.t('grimoire')),btns,tabs,this.grimBody());
+    return h('div',{class:'pausescr pmapmode'},top(),this.grimBody());
+  },
+  /* v131: the trinkets found in this run, in their own window, with the same search / rarity / sort filters as the trinket bag */
+  screen_runTrinkets(){
+    const g=this.app.game,st=this.rtF||(this.rtF={q:'',rar:[1,1,1,1,1],sort:'new'});
+    const all=g?g.trinkets.map((id,n)=>{const r=g.trR(id),p=hasPf(trinDef(id))?g.trP(id):null;return{id,r,p,n,i:this.tinfo(id,r,p)};}):[];
+    const grid=h('div',{class:'baggrid'}),shown=h('span',{class:'achshown'});
+    const sorts={new:(x,y)=>y.n-x.n,old:(x,y)=>x.n-y.n,rar:(x,y)=>y.r-x.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.r-x.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.r-x.r};
+    const fill=()=>{
+      const q=RAR_NORM(st.q.trim()),list=all.filter(o=>st.rar[o.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
+      grid.replaceChildren(...(list.length?list.map(o=>this.tcard(o.id,o.r,{p:o.p})):[h('p',{class:'sub'},this.t(all.length?'bagNone':'runTrinNone'))]));
+      shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
+    };
+    const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rtc'+r,onclick:e=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;e.currentTarget.classList.toggle('on',!!st.rar[r]);fill();}},this.tr(RARITY[r].n))));
+    const search=h('input',{type:'text',class:'achsearch','data-fid':'rtq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
+    const SORT_ICON={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
+    const sortBtns=['new','old','rar','perf','name'].map(k=>{const lab=this.t('bagSort_'+k);
+      return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'rts_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,'aria-pressed':st.sort===k?'true':'false',
+        onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sortBtns){const on=b.dataset.sort===k;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}fill();}},SORT_ICON[k]);});
+    fill();
+    return h('div',{class:'rtrin'},this.header('pauseTrinkets'),
+      h('div',{class:'achtools'},search,chips,shown),
+      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},sortBtns),grid));
   },
   /* scales the Run tab down just enough to fit between the top row and the HUD; the inner block is made wider as it shrinks, so more columns appear */
   fitPause(root){

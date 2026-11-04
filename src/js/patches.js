@@ -16,6 +16,16 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-11-04a',date:'2026-11-04',
+    name:T("Più fluido nelle fasi affollate e suoni 8-bit completati","Smoother in crowded fights and completed 8-bit sounds"),
+    sum:T("Gli effetti dipinti delle armi costano molto meno da disegnare (stesso aspetto), e i suoni 8-bit di danno ed esperienza ora si sentono chiaramente.","The painted weapon effects cost far less to draw (same look), and the 8-bit damage and experience sounds are now clearly heard."),
+    new:[{g:T('Prestazioni','Performance'),l:[
+      T("Le animazioni dipinte delle armi e delle abilità disegnano solo la parte visibile di ogni fotogramma: circa il 40% di pixel in meno a parità di immagine. Con molte armi evolute (come nello scontro finale con Freezer) il gioco resta molto più fluido.","The painted animations of weapons and abilities draw only the visible part of every frame: about 40% fewer pixels for the same picture. With many evolved weapons (like in the final fight with Frieza) the game stays much smoother."),
+      T("Crateri della Genki Dama: il bagliore e le crepe vengono dipinti una volta per cratere invece che a ogni fotogramma. Con tanti crateri a terra si disegnano circa due volte più in fretta.","Spirit Bomb craters: the glow and the cracks are painted once per crater instead of every frame. With many craters on the ground they draw about twice as fast.")]},
+      {g:T('Suoni 8-bit','8-bit sounds'),l:[
+      T("Danno subito: un ronzio che scende, ben più forte dei colpi intorno, così ti accorgi subito di essere stato colpito.","Taking damage: a falling buzz, much louder than the hits around it, so you notice right away when you are hit."),
+      T("Esperienza: un doppio blip brillante che sale di tono mentre continui a raccogliere. I suoni di colpo e di nemico sconfitto sono più bassi, per non coprirlo.","Experience: a bright double blip that climbs in pitch while you keep collecting. The hit and enemy-defeated sounds are quieter so they do not cover it."),
+      T("Trasformazioni, carica e rilascio, Kaioken, Broly, desideri, biglietti e cristalli hanno ora la loro versione 8-bit (prima usavano i suoni classici).","Transformations, charge and release, Kaioken, Broly, wishes, tickets and crystals now have their 8-bit version (they used the classic sounds before).")]}]},
   {id:'2026-11-03d',date:'2026-11-03',
     name:T("Nuova arma: Cannone Garlick","New weapon: Galick Gun"),
     sum:T("L'onda viola di Vegeta entra nel gioco, con le sue animazioni dipinte e la doppia evoluzione con l'Attacco Big Bang.","Vegeta's purple wave joins the game, with its painted animations and a double evolution with the Big Bang Attack."),

@@ -226,7 +226,8 @@ this.W=1;this.H=1;this.Z=1;
     const x0=Math.floor(cx/TS),y0=Math.floor(cy/TS),x1=Math.floor((cx+vw)/TS),y1=Math.floor((cy+vh)/TS+1.6);
     const water=th.water&&tl.water.length;
     A.beginTerrain(theme,x0,y0,x1,y1);
-    const ba=A.back(ctx,cx,cy,vw,vh,t,theme);
+    const ba=A.back(ctx,cx,cy,vw,vh,t,theme),gt=Sprites.sheets[theme+'ground'];   /* painted ground (assets/sprites/terreni): one uniform texture, no per-tile colours or tints */
+    if(gt){if(ba<1)ctx.globalAlpha=ba;this.groundTex(ctx,gt.img,cx,cy,vw,vh+TS);ctx.globalAlpha=1;}
     {const key=theme+':'+MAP.nx+':'+MAP.ny;if(this.tcKey!==key){this.tc=new Map();this.tcKey=key;this.tcTheme=theme;}}
     RB.on=true;   /* v121: the small moving rectangles (flowers, grass, foam, glints) are batched: one fill per colour */
     for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
@@ -237,7 +238,7 @@ this.W=1;this.H=1;this.Z=1;
         if(ba<1)ctx.globalAlpha=1;
         if(Math.sin(t*1.5+h*30)>.55)RB.add('rgba(255,255,255,.25)',tx*TS+h*30,ty*TS+hash(ty,tx)*40,14,2);
       }else{
-        lv=this.tLv(tx,ty);ctx.drawImage(tl.lv[lv][(h*tl.ground.length)|0],tx*TS,ty*TS);
+        lv=this.tLv(tx,ty);if(!gt)ctx.drawImage(tl.lv[lv][(h*tl.ground.length)|0],tx*TS,ty*TS);   /* lv still drives the animated grass / flowers (Ambient.tile) */
         if(ba<1)ctx.globalAlpha=1;
       }
       A.tile(ctx,theme,tx,ty,t,TS,w,lv);
@@ -258,6 +259,15 @@ this.W=1;this.H=1;this.Z=1;
         if(!A.decor(ctx,theme,i,d,bx,by,kk,t))ctx.drawImage(d.c,bx-d.ox*kk,by-d.oy*kk,d.c.width*kk,d.c.height*kk);
       }
     }
+  }
+  /* painted ground: the texture (made seamless by tools/make_terrain.py, 1 art px = 2 world px) is laid in blocks; each block column is mirrored
+     left-right and each block row top-bottom at random (map seed), which breaks the repetition and keeps every join seamless */
+  groundTex(ctx,im,cx,cy,vw,vh){
+    const bw=im.width*2,bh=im.height*2,x0=Math.floor(cx/bw),x1=Math.floor((cx+vw)/bw),y0=Math.floor(cy/bh),y1=Math.floor((cy+vh)/bh);
+    for(let by=y0;by<=y1;by++){const fy=mhash(-733,by*5+1)>.5;
+      for(let bx=x0;bx<=x1;bx++){const fx=mhash(bx*7+3,-911)>.5,X=bx*bw,Y=by*bh;
+        if(!fx&&!fy){ctx.drawImage(im,X,Y,bw,bh);continue;}
+        ctx.save();ctx.translate(fx?X+bw:X,fy?Y+bh:Y);ctx.scale(fx?-1:1,fy?-1:1);ctx.drawImage(im,0,0,bw,bh);ctx.restore();}}
   }
   /* v121: dynamic resolution - every 1.5 s of play the frame rate is checked: under 50 fps the canvas renders 10% fewer pixels per side (down to 60%),
      at 57+ fps for 6 s it climbs back by 10%. If rendering smaller did not help (the game is limited by something else, or the screen runs at 30 Hz)
@@ -1628,7 +1638,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* pet ability button (bottom-left) */
     this.petBtn=null;
-    if(g.pet&&!g.ended){
+    if(g.pet&&!g.ended&&!this.mobBtns){
       const q=g.pet,d=q.d,rr=24*U,bx=m+rr+4*U,by=H-m-rr-8*U,ready=q.cd<=0;
       this.petBtn={x:bx,y:by,r:rr};this.zones.push({x:bx-rr,y:by-rr,w:rr*2,h:rr*2,k:'pet'});
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.fill();
@@ -1640,7 +1650,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* universal dash button (after the pet and ability buttons): Shift, cooldown pie */
     this.dashBtn=null;
-    if(!g.ended){
+    if(!g.ended&&!this.mobBtns){   /* mobBtns: the touch buttons of mobile.js replace the four round buttons (never set on a PC) */
       const rr=24*U,bx=m+rr+4*U+(rr*2+12*U)*((g.pet?1:0)+1),by=H-m-rr-8*U,rdy=g.dashCd<=0,act=g.dashT>0,col='#7fd4ff',prog=rdy?1:1-g.dashCd/g.dashCdMax;
       this.dashBtn={x:bx,y:by,r:rr};this.zones.push({x:bx-rr,y:by-rr,w:rr*2,h:rr*2,k:'dash'});
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.fill();
@@ -1653,7 +1663,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* Senzu bag button (after the pet, ability and dash buttons) */
     this.szBtn=null;
-    if(!g.ended){
+    if(!g.ended&&!this.mobBtns){
       const rr=24*U,bx=m+rr+4*U+(rr*2+12*U)*((g.pet?1:0)+2),by=H-m-rr-8*U,n=g.senzu,ok=n>0&&g.p.hp<g.p.maxHp-.5&&g.senzuCd<=0,col='#8be07a';
       this.szBtn={x:bx,y:by,r:rr};this.zones.push({x:bx-rr,y:by-rr,w:rr*2,h:rr*2,k:'senzu'});
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.fill();
@@ -1665,7 +1675,7 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* character ability button (next to the pet button) */
     this.abBtn=null;
-    if(!g.ended){
+    if(!g.ended&&!this.mobBtns){
       const a=g.abil,rr=24*U,bx=(g.pet?m+rr+4*U+rr*2+12*U:m+rr+4*U),by=H-m-rr-8*U,ready=g.abReady,col=a.c;
       let prog=1,label,act=false;
       if(a.m==='berserk'){act=g.bers>0;prog=act?g.bers/(g.bersMax||10):g.bersCd>0?1-g.bersCd/g.bersCdMax:1;label=act?Math.ceil(g.bers)+'s':g.bersCd>0?Math.ceil(g.bersCd)+'s':'['+(this.keyHints.kaioken||'R')+']';}

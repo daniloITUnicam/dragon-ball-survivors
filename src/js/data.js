@@ -582,7 +582,8 @@ const STAGES=[
   roster:[['gel',0,6],['majinsol',0,7,300],['rubber',30,5],['fus',70,3],['majinshot',100,3],['orbm',140,3],['majinfury',200,4],['candygolem',280,2.4],['cake',360,1.8]],
   bosses:[['dabura',230],['superbu',380],['kidbu',580],['bu',840,1]]},
  {id:5,n:T('Torneo del Potere','Tournament of Power'),theme:'void',time:1200,hp:2.1,spawn:1.25,xp:3.6,zenny:4.2,music:5,
-  late:{from:.35,dmg:.42,hp:.6,spawn:.55},   /* Extreme late game: from 35% of the run the enemies ease down linearly to these factors at the end (damage, health, spawn rate and crowd size) */
+  late:{from:.35,dmg:.42,hp:.6,spawn:.55},
+  x2x:{hp0:.4,hp:.7,dmg0:.6,dmg:.8,bhp:.45},   /* v131, x2 + Extreme only: enemies HP x0.40 -> x0.70 and damage x0.60 -> x0.80 over the first 40% of the run (bosses' damage too), bosses' HP x0.45 (runs died at 1:16 at level 2 and at 12:00 under three bosses alive at once) */   /* Extreme late game: from 35% of the run the enemies ease down linearly to these factors at the end (damage, health, spawn rate and crowd size) */
   roster:[['fighter',0,8,300],['war',20,6],['archer',40,3],['unibomb',60,3],['phantom',90,4],['messenger',120,3],['cosmberserk',150,4],['champ',260,2.4],['col',320,2.2],['silvercol',420,1.8]],
   bosses:[['dyspo',200],['bergamo',300],['basil',390],['lavender',470],['ribrianne',560],['cabba',650],['caulifla',745],['kale',840],['frost',940],['hit',1030],['toppo',1110],['jiren',1200,1]]},
  {id:6,n:T('Isola di Muten','Roshi\'s Island'),theme:'beach',time:480,dif:.4,req:0,hp:1.05,spawn:1,xp:1.3,zenny:1.2,music:6,

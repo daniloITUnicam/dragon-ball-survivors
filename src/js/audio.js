@@ -115,13 +115,13 @@ const arp8=(A,notes,step,d,v,ty,dl)=>notes.forEach((m,i)=>A.chip(mn(m),d,ty||'pu
 /* a deep 8-bit explosion: a falling noise roar, a triangle drop and a square crunch; k = size */
 const boom8=(A,k,dl)=>{k=k||1;dl=dl||0;N8(A,.38*k,.09,3,12,{dl,hold:.12});T8(A,140,.34*k,.085,{to:38,st:9,dl});Q8(A,110,.12*k,.035,{to:45,st:5,dl});};
 const SFX8={
-  hit:A=>{N8(A,.035,.028,5,8);P8(A,330,.04,.018,{to:150,st:3});},
-  kill:A=>{P8(A,mn(76+(Math.random()*5|0)),.07,.026,{to:mn(88),st:3});N8(A,.05,.02,4,7);},   /* an enemy pops */
-  gem:A=>{const k=Math.min(14,A.pitchK||0),m=84+k;Q8(A,mn(m),.04,.032);Q8(A,mn(m+7),.07,.028,{dl:.035});},   /* experience: climbs while you keep collecting */
+  hit:A=>{N8(A,.03,.018,5,8);P8(A,330,.035,.011,{to:150,st:3});},
+  kill:A=>{P8(A,mn(76+(Math.random()*5|0)),.06,.017,{to:mn(88),st:3});N8(A,.045,.013,4,7);},   /* an enemy pops (kept low: it plays all the time) */
+  gem:A=>{const k=Math.min(14,A.pitchK||0),m=79+k;P8(A,mn(m),.05,.05);T8(A,mn(m-12),.06,.06);P8(A,mn(m+7),.1,.045,{dl:.045,to:mn(m+12),st:2});},   /* experience: a bright two-note blip that climbs while you keep collecting */
   coin:A=>{Q8(A,mn(83),.06,.024);Q8(A,mn(88),.22,.024,{dl:.06,hold:.5});},
   pickup:A=>{arp8(A,[72,76,79],.04,.06,.035,'square');},
   senzu:A=>{T8(A,mn(60),.18,.07,{to:mn(72),st:6});arp8(A,[76,79,84],.05,.1,.03,'pulse',.08);},
-  hurt:A=>{Q8(A,330,.13,.04,{to:110,st:5});N8(A,.12,.045,6,9);},
+  hurt:A=>{Q8(A,620,.22,.06,{to:150,st:6});T8(A,220,.2,.075,{to:80,st:4});N8(A,.18,.06,4,10);},   /* taking damage: a falling buzz, louder than the hits around it */
   death:A=>{arp8(A,[76,72,69,65,64,60],.13,.18,.045,'square');T8(A,mn(48),1.0,.08,{to:mn(36),st:6,dl:.1});N8(A,.9,.07,6,14,{hold:.3});},
   boom:A=>boom8(A,1),
   dash:A=>{N8(A,.12,.045,2,6);P8(A,1500,.09,.025,{to:450,st:5});},
@@ -144,6 +144,17 @@ const SFX8={
   pkxp:A=>{Q8(A,mn(91),.08,.035);Q8(A,mn(98),.2,.03,{dl:.07});},
   pkluck:A=>{arp8(A,[83,86,90,95,98],.05,.12,.03,'pulse');},
   pkcapsule:A=>{N8(A,.05,.05,3,6);arp8(A,[69,81,93],.09,.12,.04,'triangle',.05);},
+  pop:A=>{P8(A,mn(70),.06,.02,{to:mn(58),st:3});},
+  transform:A=>{N8(A,.9,.07,8,2,{at:.15,hold:.5});P8(A,mn(45),.8,.045,{to:mn(81),st:16,vib:.03,vr:12});T8(A,mn(33),.9,.09,{to:mn(57),st:8});arp8(A,[69,73,76,81,85,88],.09,.14,.03,'square',.3);},
+  xcharge:A=>{P8(A,mn(40),1.2,.04,{to:mn(64),st:24,vib:.05,vr:9,at:.1,hold:.8});T8(A,mn(28),1.2,.07,{to:mn(40),st:6,hold:.8});N8(A,1.2,.035,10,4,{at:.3,hold:.8});},
+  xburst:A=>{boom8(A,1.2);arp8(A,[64,69,73,76,81],.05,.12,.03,'square');},
+  xburst2:A=>{boom8(A,1.6);arp8(A,[57,64,69,73,76,81,85],.05,.14,.035,'square');T8(A,mn(28),.8,.08,{to:mn(40),st:6});},
+  kaioken:A=>{Q8(A,mn(50),.35,.05,{to:mn(62),st:6});N8(A,.4,.06,4,9);P8(A,mn(74),.25,.025,{dl:.08,vib:.04,vr:16});},
+  kaioken2:A=>{Q8(A,mn(45),.45,.06,{to:mn(62),st:8});N8(A,.55,.075,3,10,{hold:.3});P8(A,mn(74),.35,.03,{dl:.08,vib:.05,vr:18});T8(A,mn(33),.45,.08,{to:mn(45),st:4});},
+  broly:A=>{N8(A,.9,.09,6,13,{hold:.4});Q8(A,mn(33),.9,.06,{to:mn(28),st:4,vib:.05,vr:8});T8(A,mn(26),.9,.1,{hold:.5});},
+  wish:A=>{arp8(A,[72,76,79,84,88,91,96],.08,.3,.03,'triangle');P8(A,mn(96),.6,.015,{dl:.5,vib:.03,vr:7});},
+  ticket:A=>{arp8(A,[84,88,91,96],.05,.12,.035,'square');},
+  crystal:A=>{arp8(A,[88,95,100],.06,.25,.03,'triangle');P8(A,mn(100),.3,.012,{dl:.15});},
   thunder:A=>{N8(A,.5,.12,4,13,{hold:.15});T8(A,110,.4,.09,{to:40,st:8});P8(A,2000,.15,.03,{to:300,st:8});},
   /* character abilities */
   abBeam:A=>{Q8(A,mn(57),.55,.05,{to:mn(45),st:8,vib:.03,vr:14});P8(A,mn(81),.45,.025,{to:mn(69),st:8});N8(A,.7,.08,3,9,{hold:.4});T8(A,110,.5,.08,{to:55});},

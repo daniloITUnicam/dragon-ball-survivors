@@ -11,6 +11,11 @@
    the next one fades in over the current one (WFX.blend), so 8-12 painted frames play smoothly at any frame rate. ====== */
 const WFX={
   blend:true,
+  /* v131: part (sx,sy,sw,sh) of cell (c,r) - in pixels of the cell - drawn on the box (dx,dy,dw,dh), cut to the cell's crop box (cb,
+     tools/wfx_crop.py): the transparent rest of the cell is not filled (same picture, ~40% fewer pixels). A whole cell: sw = sh = 0 */
+  blit(ctx,S,M,c,r,sx,sy,sw,sh,dx,dy,dw,dh){if(!sw){sw=S.fw;sh=S.fh;}let x0=sx,y0=sy,x1=sx+sw,y1=sy+sh;const B=M.cb,i=(r*(M.cols||1)+c)*4;
+    if(B&&i+3<B.length){if(B[i]>x0)x0=B[i];if(B[i+1]>y0)y0=B[i+1];if(B[i+2]<x1)x1=B[i+2];if(B[i+3]<y1)y1=B[i+3];if(x1<=x0||y1<=y0)return;}
+    const kx=dw/sw,ky=dh/sh;ctx.drawImage(S.img,c*S.fw+x0,r*S.fh+y0,x1-x0,y1-y0,dx+(x0-sx)*kx,dy+(y0-sy)*ky,(x1-x0)*kx,(y1-y0)*ky);},
   S(id){const S=Sprites.sheets['wfx'+id];return S&&S.img&&S.img.complete?S:null;},
   has(id){return !!this.S(id);},
   meta(id){return SPRITE_PACK['wfx'+id]||{};},
@@ -36,7 +41,7 @@ const WFX={
     ctx.save();ctx.translate(x,y);if(a)ctx.rotate(a);const G=ctx.globalAlpha*(al==null?1:al)*(FXL.m||1);ctx.imageSmoothingEnabled=true;
     const one=(fr,A)=>{if(A<=0)return;const bx=hot==='a'&&M.bx?M.bx[base+fr]:null;
       const ox=bx!=null?-bx*w:hot?-(M.hx!=null?M.hx:.5)*w:-w/2,oy=hot&&hot!=='a'?-(M.hy!=null?M.hy:.5)*h:-h/2;
-      ctx.globalAlpha=G*A;ctx.drawImage(S.img,fr*S.fw,r*S.fh,S.fw,S.fh,ox,oy,w,h);};
+      ctx.globalAlpha=G*A;this.blit(ctx,S,M,fr,r,0,0,0,0,ox,oy,w,h);};
     one(f0,A0);if(f1!==f0)one(f1,A1);ctx.restore();return true;},
   /* frame f drawn with its own centre of light (cores) on (x,y): a ball whose tail trails behind it.
      d > 0: the frame is sized so its art is d world units TALL; d < 0: |d| wide (art box); otherwise w is the frame width */
@@ -44,7 +49,7 @@ const WFX={
     ctx.save();ctx.translate(x,y);if(a)ctx.rotate(a+(M.rot||0));const G=ctx.globalAlpha*(al==null?1:al)*(FXL.m||1);ctx.imageSmoothingEnabled=true;
     const one=(fr,A)=>{if(A<=0)return;const C=M.cores&&M.cores[fr]||[.5,.5,.3],B=M.ab&&M.ab[fr];let ww=w*(M.pad||1);
       if(d>0)ww=d/Math.max(.08,C[2]||.3);else if(d<0)ww=-d/Math.max(.08,B?B[2]-B[0]:.8);const hh=ww*S.fh/S.fw;
-      ctx.globalAlpha=G*A;ctx.drawImage(S.img,fr*S.fw,0,S.fw,S.fh,-C[0]*ww,-C[1]*hh,ww,hh);};
+      ctx.globalAlpha=G*A;this.blit(ctx,S,M,fr,0,0,0,0,0,-C[0]*ww,-C[1]*hh,ww,hh);};
     one(f0,A0);if(f1!==f0)one(f1,A1);ctx.restore();return true;},
   /* a projectile of a weapon that has a sheet: turned to where it flies, the core on the shot. [size, 'r' = size x radius ('d': the ball's
      height, x radius) / 'w' = width, first frame, last frame] (no range = every frame of the row; a sheet's own 'fly' range wins) */
@@ -62,7 +67,7 @@ const WFX={
   strip(ctx,id,f,x,y,a,L,TH,al,lp){const S=this.S(id);if(!S)return false;const M=this.meta(id),n=this.n(id,0),[f0,f1,u]=this.fr(f,n,lp),[A0,A1]=this.mix(u);
     if(M._ah==null){const ab=M.ab||[];M._ah=ab.length?ab.reduce((s,b)=>s+(b[3]-b[1]),0)/ab.length:.5;}
     const hh=TH/Math.max(.05,M._ah);ctx.save();ctx.translate(x,y);if(a)ctx.rotate(a);const G=ctx.globalAlpha*(al==null?1:al)*(FXL.m||1);ctx.imageSmoothingEnabled=true;
-    const one=(fr,A)=>{if(A<=0)return;ctx.globalAlpha=G*A;ctx.drawImage(S.img,fr*S.fw,0,S.fw,S.fh,0,-hh/2,L,hh);};
+    const one=(fr,A)=>{if(A<=0)return;ctx.globalAlpha=G*A;this.blit(ctx,S,M,fr,0,0,0,0,0,0,-hh/2,L,hh);};
     one(f0,A0);if(f1!==f0)one(f1,A1);ctx.restore();return true;},
   /* a one-shot painted effect left in the world (the blast of a Break Cannon shell): frames f0..f1 over its life, R = blast radius */
   boom(g,id,x,y,R,f0,f1,life){if(!this.has(id)||g.fx.length>440)return;const bm=this.meta(id).boom;if(bm){f0=bm[0];f1=bm[1];}g.fx.push({wfx:id,x,y,R,f0,f1,l:life||.42,m:life||.42});},
@@ -78,14 +83,14 @@ const WFX={
     const o=f.fol?{x:f.fol.x,y:f.fol.y-18}:f;   /* a beam fired by a hero follows that hero while it lasts */
     /* one frame as a box w x h at (x,y) turned by a; left = where along the box the origin is (0 = the art starts there) */
     const put=(fr,x,y,a,w,h,al,left,top)=>{if(al<=0)return;const[col,row]=this.at(id,fr);ctx.save();ctx.translate(x,y);if(a)ctx.rotate(a);ctx.globalAlpha=al*(FXL.m||1);ctx.imageSmoothingEnabled=true;
-      ctx.drawImage(S.img,col*S.fw,row*S.fh,S.fw,S.fh,-w*left,-h*(top==null?.5:top),w,h);ctx.restore();};
+      this.blit(ctx,S,M,col,row,0,0,0,0,-w*left,-h*(top==null?.5:top),w,h);ctx.restore();};
     const both=fn=>{fn(i0,A0);if(i1!==i0)fn(i1,A1);};
     if(f.beam){const L=f.len*1.08/P;
       const H=sq?clamp(L*S.fh/S.fw,f.w*1.1,f.w*1.9):Math.max(f.w*2.6,L*S.fh/S.fw*.35)/P;   /* box sheets keep their proportions (within reason); the old grids are squashed */
       if(sbc&&sq){   /* v129: the final Special Beam Cannon: the painted drill travels out along the line, the base sheet's beam is its trail */
         const Hd=f.w*4.2,Wd=Hd*S.fw/S.fh,xh=Wd*.6+(L-Wd*.6)*Math.min(1,k/.7),tr=this.S('absbc');   /* the drill reaches the end of the line at 70% of the beam's life */
         if(tr&&xh>Wd*.5){const tn=this.total('absbc'),tf=Math.min(tn-1,2+Math.floor(k*(tn-2))),[c2,r2]=this.at('absbc',tf);ctx.save();ctx.translate(o.x,o.y);ctx.rotate(f.a);ctx.globalAlpha=(FXL.m||1)*(k>.75?(1-k)/.25:1);ctx.imageSmoothingEnabled=true;
-          ctx.drawImage(tr.img,c2*tr.fw,r2*tr.fh,tr.fw,tr.fh,0,-f.w*1.3,xh-Wd*.45,f.w*2.6);ctx.restore();}
+          this.blit(ctx,tr,this.meta('absbc'),c2,r2,0,0,0,0,0,-f.w*1.3,xh-Wd*.45,f.w*2.6);ctx.restore();}
         both((fr,A)=>put(fr,o.x+Math.cos(f.a)*(xh-Wd),o.y+Math.sin(f.a)*(xh-Wd),f.a,Wd,Hd,A,0));return true;}
       both((fr,A)=>put(fr,o.x,o.y,f.a,L*P,H*P,A,sq?0:M.bx?.001:.06));return true;}
     if(id.indexOf('abnova')===0){const R=f.R*(.35+.8*Math.sqrt(k)),al=k>.7?(1-k)/.3:1;
@@ -105,12 +110,12 @@ const WFX={
     ctx.save();ctx.imageSmoothingEnabled=true;const G=ctx.globalAlpha*A;
     const mw=Math.min(cw*.6,Math.max(95,ch*.8)),mh=mw*S.fh/S.fw;   /* the muzzle covers the start of a thick beam */
     for(let x=Math.min(cw*.12,mw*.45),i=0;x<len-cw*.35;x+=bw*.96,i++){const[f0,f1,u]=this.fr(ft+i,bd[1]-bd[0]+1),[A0,A1]=this.mix(u),ww=Math.min(bw,len-cw*.35-x+bw*.1),sw=tw0*Math.max(.05,ww/bw);
-      ctx.globalAlpha=G*A0;ctx.drawImage(S.img,(bd[0]+f0)*S.fw+cut,S.fh,sw,S.fh,x,-ch/2,ww,ch);
-      if(A1>0){ctx.globalAlpha=G*A1;ctx.drawImage(S.img,(bd[0]+f1)*S.fw+cut,S.fh,sw,S.fh,x,-ch/2,ww,ch);}}   /* the body, tile after tile */
+      ctx.globalAlpha=G*A0;this.blit(ctx,S,M,bd[0]+f0,1,cut,0,sw,S.fh,x,-ch/2,ww,ch);
+      if(A1>0){ctx.globalAlpha=G*A1;this.blit(ctx,S,M,bd[0]+f1,1,cut,0,sw,S.fh,x,-ch/2,ww,ch);}}   /* the body, tile after tile */
     {const L=mz[1]-mz[0],m=pr!=null?Math.min(L,pr/.3*(L+1)):(ft%(L+1)),i0=Math.floor(m),i1=Math.min(L,i0+1),[A0,A1]=this.mix(m-i0);   /* muzzle: a burst that starts at the origin, in front of the hands */
-      ctx.globalAlpha=G*A0;ctx.drawImage(S.img,(mz[0]+i0)*S.fw,0,S.fw,S.fh,-mw*.2,-mh/2,mw,mh);if(A1>0&&i1!==i0){ctx.globalAlpha=G*A1;ctx.drawImage(S.img,(mz[0]+i1)*S.fw,0,S.fw,S.fh,-mw*.2,-mh/2,mw,mh);}}
+      ctx.globalAlpha=G*A0;this.blit(ctx,S,M,mz[0]+i0,0,0,0,0,0,-mw*.2,-mh/2,mw,mh);if(A1>0&&i1!==i0){ctx.globalAlpha=G*A1;this.blit(ctx,S,M,mz[0]+i1,0,0,0,0,0,-mw*.2,-mh/2,mw,mh);}}
     if(len>mw*.4){const L=tp[1]-tp[0],m=pr!=null?Math.min(L,pr*(L+1)):((t*10)%(L+1)),i0=Math.floor(m),i1=pr!=null?Math.min(L,i0+1):(i0+1)%(L+1),[A0,A1]=this.mix(m-i0),q=Math.min(1,len/(cw*1.2)),tw=cw*q,th2=ch*(.6+.4*q);   /* tip: the head on the right edge (import_wfx 'r'), so it does not jump; */
-      ctx.globalAlpha=G*A0;ctx.drawImage(S.img,(tp[0]+i0)*S.fw,2*S.fh,S.fw,S.fh,len-tw*.8,-th2/2,tw,th2);   /* a short beam (still coming out) gets a smaller tip, always in front of the muzzle */
-      if(A1>0&&i1!==i0){ctx.globalAlpha=G*A1;ctx.drawImage(S.img,(tp[0]+i1)*S.fw,2*S.fh,S.fw,S.fh,len-tw*.8,-th2/2,tw,th2);}}
+      ctx.globalAlpha=G*A0;this.blit(ctx,S,M,tp[0]+i0,2,0,0,0,0,len-tw*.8,-th2/2,tw,th2);   /* a short beam (still coming out) gets a smaller tip, always in front of the muzzle */
+      if(A1>0&&i1!==i0){ctx.globalAlpha=G*A1;this.blit(ctx,S,M,tp[0]+i1,2,0,0,0,0,len-tw*.8,-th2/2,tw,th2);}}
     ctx.restore();return true;}
 };

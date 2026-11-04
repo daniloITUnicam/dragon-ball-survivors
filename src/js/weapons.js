@@ -297,6 +297,21 @@ class DiscWeapon extends Weapon{
 
 class SpiritWeapon extends Weapon{
   constructor(g,id){super(g,id);this.bombs=[];this.burns=[];}
+  /* the gradients of a scorched crater painted on a disc: q -1 = the dark ground, 0..16 = the glow (its centre pulses .25 .. .45) */
+  static burnG(q){const C=SpiritWeapon._bg||(SpiritWeapon._bg={});let c=C[q];if(c)return c;
+    const N=160,h=N/2;c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');let g;
+    if(q<0){g=x.createRadialGradient(h,h,h*.05,h,h,h);g.addColorStop(0,'rgba(20,8,4,.75)');g.addColorStop(.7,'rgba(40,14,6,.55)');g.addColorStop(1,'rgba(40,14,6,0)');}
+    else{g=x.createRadialGradient(h,h,h*.1,h,h,h);g.addColorStop(0,'rgba(255,200,90,'+(.25+q/80).toFixed(3)+')');g.addColorStop(.6,'rgba(255,90,30,.25)');g.addColorStop(1,'rgba(160,30,10,0)');}
+    x.fillStyle=g;x.fillRect(0,0,N,N);return C[q]=c;}
+  static cracks(ctx,cr,R,grow,tt){
+    for(const c of cr){
+      const L2=R*c.l*grow;let x=0,y=0,a=c.a;
+      ctx.strokeStyle='rgba(255,150,50,'+(tt==null?.85:.7+.3*Math.sin(tt*7+c.a*3))+')';ctx.lineWidth=2.4*c.w;ctx.beginPath();ctx.moveTo(0,0);
+      for(let k=1;k<=6;k++){a+=Math.sin(c.a*13+k*2.1)*.35;x+=Math.cos(a)*L2/6;y+=Math.sin(a)*L2/6;ctx.lineTo(x,y);}
+      ctx.stroke();ctx.strokeStyle='rgba(255,240,190,.8)';ctx.lineWidth=.9*c.w;ctx.stroke();
+    }}
+  static crackSpr(cr,R){const e=R*1.3,k=Math.min(1,256/e),N=Math.ceil(e*2*k),c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');
+    x.translate(N/2,N/2);x.scale(k,k);x.globalCompositeOperation='lighter';x.drawImage(SpiritWeapon.burnG(8),-R,-R,R*2,R*2);SpiritWeapon.cracks(x,cr,R,1,null);return{c,e};}
   /* sphere gets bigger with every level; the evolutions are much bigger still */
   get sizeK(){return(this.evo>=2?1.3:this.evo?1.15:1)*(1+.04*this.lvB);}
   update(dt){
@@ -343,17 +358,11 @@ class SpiritWeapon extends Weapon{
     for(const z of this.burns){
       const fade=Math.min(1,(z.life-z.t)/1.2),grow=Math.min(1,z.t/.25),R=z.rad*(.6+.4*grow);
       ctx.save();ctx.translate(z.x,z.y);ctx.scale(1,.8);ctx.globalAlpha=fade;
-      let gr=ctx.createRadialGradient(0,0,R*.05,0,0,R);gr.addColorStop(0,'rgba(20,8,4,.75)');gr.addColorStop(.7,'rgba(40,14,6,.55)');gr.addColorStop(1,'rgba(40,14,6,0)');
-      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();
-      ctx.globalCompositeOperation='lighter';
-      gr=ctx.createRadialGradient(0,0,R*.1,0,0,R);gr.addColorStop(0,'rgba(255,200,90,'+(.35+.1*Math.sin(tt*9))+')');gr.addColorStop(.6,'rgba(255,90,30,.25)');gr.addColorStop(1,'rgba(160,30,10,0)');
-      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();
-      for(const c of z.cr){
-        const L2=R*c.l*grow;let x=0,y=0,a=c.a;
-        ctx.strokeStyle='rgba(255,150,50,'+(.7+.3*Math.sin(tt*7+c.a*3))+')';ctx.lineWidth=2.4*c.w;ctx.beginPath();ctx.moveTo(0,0);
-        for(let k=1;k<=6;k++){a+=Math.sin(c.a*13+k*2.1)*.35;x+=Math.cos(a)*L2/6;y+=Math.sin(a)*L2/6;ctx.lineTo(x,y);}
-        ctx.stroke();ctx.strokeStyle='rgba(255,240,190,.8)';ctx.lineWidth=.9*c.w;ctx.stroke();
-      }
+      /* v131: the two gradients come from small pre-painted discs (a big gradient fill per crater per frame was the costliest thing on screen) */
+      ctx.drawImage(SpiritWeapon.burnG(-1),-R,-R,R*2,R*2);ctx.globalCompositeOperation='lighter';
+      /* the glow and the cracks: drawn live while the crater opens, then painted once on one sprite (both additive, so the sum is the same) that pulses as a whole */
+      if(grow<1){ctx.drawImage(SpiritWeapon.burnG(Math.round((Math.sin(tt*9)+1)*8)),-R,-R,R*2,R*2);SpiritWeapon.cracks(ctx,z.cr,R,grow,tt);}
+      else{if(!z.spr)z.spr=SpiritWeapon.crackSpr(z.cr,R);const S=z.spr;ctx.globalAlpha=fade*(.88+.12*Math.sin(tt*8+z.x));ctx.drawImage(S.c,-S.e,-S.e,S.e*2,S.e*2);}
       ctx.restore();
     }
     for(const b of this.bombs){

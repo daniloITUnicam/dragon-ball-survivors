@@ -29,6 +29,8 @@ pixels of row 0, as a fraction of the frame."""
 import sys, json, pathlib
 from PIL import Image
 import numpy as np
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import wfx_crop
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT/'assets'/'sprites'/'armi'
 SPEC = {   # id: (source file, columns, rows, frame width in the game sheet, options: band=(y0, y1) of the source, lay, R)
@@ -396,6 +398,7 @@ def main():
             m['cores'] = [q['k'] for q in cut_boxes.info]; m['ab'] = [q['ab'] for q in cut_boxes.info]; m['seq'] = 1
         elif opt.get('cores'): m['cores'] = cores(sheet, fw, fh, rc[0])
         m.update(opt.get('meta') or {})
+        m['cb'] = wfx_crop.boxes(sheet, fw, fh, cols, rows)
         meta[f'wfx{wid}'] = m
         print(f'wfx{wid}: {cols}x{rows} frames of {fw}x{fh}, frames per row {rc}, pad {pad:.2f}, hot spot {hx},{hy}, {(OUT/f"wfx{wid}.webp").stat().st_size//1024} KB')
     js.write_text(json.dumps(meta, separators=(',', ':')), encoding='utf8')

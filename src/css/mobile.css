@@ -1,0 +1,81 @@
+/* ====== Mobile only (js/mobile.js): every rule is under html.mob, which a PC never gets ====== */
+/* --- page: no browser gestures, no text selection, no long-press menus --- */
+html.mob,html.mob body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+html.mob body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.mob #c{touch-action:none}
+html.mob input,html.mob textarea{-webkit-user-select:text;user-select:text}
+
+/* --- touch buttons (bottom right, around the dash) and pause (top right) --- */
+#mobctl{display:none}
+html.mob #mobctl{position:fixed;inset:0;pointer-events:none;z-index:4;display:none}
+html.mob #mobctl.on{display:block}
+html.mob .mb{--c:#fff;--p:1;--s:58px;position:absolute;width:var(--s);height:var(--s);margin:0;padding:0;border-radius:50%;pointer-events:auto;touch-action:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  background:radial-gradient(circle at 50% 38%,rgba(40,52,78,.78),rgba(6,10,20,.82) 70%);
+  border:3px solid color-mix(in srgb,var(--c) 38%,rgba(255,255,255,.18));box-shadow:0 3px 0 rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.12);
+  color:var(--c);transition:transform .06s,border-color .15s;-webkit-user-select:none;user-select:none}
+html.mob .mb[hidden]{display:none}
+html.mob .mb.big{--s:80px}html.mob .mb.mid{--s:62px}html.mob .mb.sml{--s:52px}
+html.mob .mb .mpie{position:absolute;inset:3px;border-radius:50%;pointer-events:none;opacity:0;
+  background:conic-gradient(color-mix(in srgb,var(--c) 46%,transparent) calc(var(--p)*360deg),transparent 0)}
+html.mob .mb.cd .mpie{opacity:1}
+html.mob .mb .mg{position:relative;font:900 calc(var(--s)*.42)/1 "Noto Sans JP","Hiragino Sans",sans-serif;text-shadow:0 2px 0 rgba(0,0,0,.7);pointer-events:none}
+html.mob .mb .ml{position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);white-space:nowrap;font:700 12px/1 "Rajdhani",sans-serif;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;pointer-events:none}
+html.mob .mb .mdots{position:absolute;top:5px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:1px;line-height:1;color:var(--c);pointer-events:none}
+html.mob .mb.rdy,html.mob .mb.act{border-color:var(--c)}
+html.mob .mb.rdy::after,html.mob .mb.act::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--c);opacity:.5;pointer-events:none;animation:mbPulse 1.1s ease-in-out infinite}
+html.mob .mb.act::after{animation-duration:.45s}
+html.mob .mb.dn{transform:scale(.9);filter:brightness(1.35)}
+@keyframes mbPulse{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.08);opacity:.15}}
+/* the cluster: dash in the corner, ability above it, E to its left, Senzu on the diagonal, pet further left */
+html.mob .mb-dash{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+html.mob .mb-ab{right:calc(27px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px))}
+html.mob .mb-e{right:calc(118px + env(safe-area-inset-right,0px));bottom:calc(27px + env(safe-area-inset-bottom,0px))}
+html.mob .mb-sz{right:calc(110px + env(safe-area-inset-right,0px));bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+html.mob .mb-pet{right:calc(198px + env(safe-area-inset-right,0px));bottom:calc(33px + env(safe-area-inset-bottom,0px))}
+html.mob .mb-e .mg{font:400 34px/1 "Bangers","Lilita One",sans-serif;letter-spacing:1px}
+html.mob .mb-e:not(.rdy){opacity:.55}
+html.mob .mb-e.rdy{background:radial-gradient(circle at 50% 38%,#ffe27a,#ff9d1c 72%);color:#3a1a00;border-color:#fff3b8;box-shadow:0 0 18px rgba(255,190,40,.75),0 3px 0 rgba(0,0,0,.45)}
+html.mob .mb-e.rdy .mg{text-shadow:0 1px 0 rgba(255,255,255,.6)}
+html.mob .mb-e .ml{bottom:auto;top:-19px;color:#ffe9a0}
+html.mob .mb-pause{--s:44px;--c:#e8eef8;right:calc(10px + env(safe-area-inset-right,0px));top:calc(54px + env(safe-area-inset-top,0px));opacity:.8}
+html.mob .mb-pause .mg{font:900 15px/1 sans-serif;letter-spacing:-2px}
+html.mob.mport .mb{--s:50px}html.mob.mport .mb.big{--s:64px}
+
+/* --- portrait on a phone: rotate your device --- */
+#mobrot{display:none}
+html.mob #mobrot.on{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;
+  background:repeating-linear-gradient(135deg,#1a1440 0 26px,#231a55 26px 52px);color:#fff;-webkit-user-select:none;user-select:none}
+html.mob #mobrot .rbox{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:340px}
+html.mob #mobrot .rph svg{width:150px;height:150px;overflow:visible}
+html.mob #mobrot .rp{transform-origin:60px 62px;animation:rotPh 2.6s ease-in-out infinite}
+html.mob #mobrot .rp rect{fill:#0d1424;stroke:#fff;stroke-width:4}
+html.mob #mobrot .rp .scr{fill:#ff9d1c;stroke:none}html.mob #mobrot .rp .hb{fill:#fff}
+html.mob #mobrot .rar,html.mob #mobrot .rarh{fill:none;stroke:#ffd23f;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;animation:rotAr 2.6s ease-in-out infinite}
+@keyframes rotPh{0%,18%{transform:rotate(0)}48%,82%{transform:rotate(90deg)}100%{transform:rotate(0)}}
+@keyframes rotAr{0%,12%{opacity:0}22%,45%{opacity:1}55%,100%{opacity:0}}
+html.mob #mobrot h2{margin:4px 0 0;font:400 34px/1.05 "Bangers","Lilita One",sans-serif;letter-spacing:1px;color:#ffd23f;text-shadow:0 3px 0 #a33a00,0 5px 10px rgba(0,0,0,.6)}
+html.mob #mobrot p{margin:0;font:800 16px/1.3 "Nunito",sans-serif;color:#dfe6ff}
+html.mob #mobrot .rbtns{display:flex;flex-direction:column;gap:10px;margin-top:10px;width:100%;align-items:center}
+html.mob #mobrot .rbtns .btn{min-width:220px;font-size:17px;padding:10px 18px}
+@media (prefers-reduced-motion:reduce){html.mob #mobrot .rp,html.mob #mobrot .rar,html.mob #mobrot .rarh,html.mob .mb::after{animation:none!important}}
+
+/* --- menus on a phone: the PC layout zoomed (mobile.js sets #ui zoom = --mz); here only what a short screen needs --- */
+html.mphone .screen{gap:10px;padding:max(8px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+html.mphone .screen.pausescr{padding-bottom:12px}
+html.mphone .pmapmode{padding-top:6px}
+html.mob .hint{display:none}
+html.mob .btn{touch-action:manipulation}
+html.mphone .screen.main{zoom:1.12}
+/* the zoomed layout is wider than the real screen: the PC rules for narrow windows (max-width:900px) would stack panels that fit side by side */
+html.mwide .pbody{flex-direction:row}
+html.mwide .pleft{flex:0 0 300px;width:300px}
+html.mwide .pleft.mini{flex:0 0 200px;width:200px;max-height:none}
+html.mwide .split{flex-wrap:nowrap}
+html.mwide .split>.detail{flex:0 0 330px;position:sticky;top:0}
+html.mwide .split>.grimdetail{flex:0 0 460px;max-height:calc(100vh / var(--mz) - 32px)}
+/* vh / vw inside the zoomed menus are measured on the real screen and then zoomed again: put them back where it matters */
+html.mphone .screen.end2{--u:max(.6px,min(calc(.09765625vw / var(--mz)),calc(.17482517vh / var(--mz))))}
+html.mphone .logoimg{max-height:calc(30vh / var(--mz))}
+html.mphone .pleft{max-height:calc(100vh / var(--mz) - 90px)}
+html.mphone .evlog{max-height:calc(100vh / var(--mz) - 90px)}
