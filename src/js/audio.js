@@ -119,7 +119,7 @@ const boom8=(A,k,dl)=>{k=k||1;dl=dl||0;N8(A,.38*k,.09,3,12,{dl,hold:.12});T8(A,1
 const SFX8={
   hit:A=>{N8(A,.03,.018,5,8);P8(A,330,.035,.011,{to:150,st:3});},
   kill:A=>{P8(A,mn(76+(Math.random()*5|0)),.06,.017,{to:mn(88),st:3});N8(A,.045,.013,4,7);},   /* an enemy pops (kept low: it plays all the time) */
-  gem:A=>{const k=Math.min(14,A.pitchK||0),m=79+k;P8(A,mn(m),.05,.05);T8(A,mn(m-12),.06,.06);P8(A,mn(m+7),.1,.045,{dl:.045,to:mn(m+12),st:2});},   /* experience: a bright two-note blip that climbs while you keep collecting */
+  gem:A=>{const k=Math.min(12,A.pitchK||0),m=76+k;Q8(A,mn(m),.07,.08);T8(A,mn(m-12),.09,.1);P8(A,mn(m+7),.13,.07,{dl:.06,to:mn(m+12),st:2,hold:.45});},   /* v132: louder (about 2.5x), longer and a little lower: before, the fight covered it */   /* experience: a bright two-note blip that climbs while you keep collecting */
   coin:A=>{Q8(A,mn(83),.06,.024);Q8(A,mn(88),.22,.024,{dl:.06,hold:.5});},
   pickup:A=>{arp8(A,[72,76,79],.04,.06,.035,'square');},
   senzu:A=>{T8(A,mn(60),.18,.07,{to:mn(72),st:6});arp8(A,[76,79,84],.05,.1,.03,'pulse',.08);},
@@ -462,7 +462,7 @@ class AudioSys{
     const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
-    if(this.s.sfx8!==false&&this.s.sfx>0){   /* v128: 8-bit sounds (Settings > Audio): the weapon that is firing has its own, then the shared ones */
+    if(this.s.sfx>0){   /* v128: 8-bit sounds (v132: always, no setting any more): the weapon that is firing has its own, then the shared ones */
       const W=this.wctx&&SFX8W[this.wctx],f=W&&W[n];
       if(f){const wk='w'+this.wctx+n;if(this.last[wk]&&now-this.last[wk]<(W.gap||70))return;this.last[wk]=now;f(this,this.wevo|0);return;}
       if(SFX8[n]){SFX8[n](this,0);return;}

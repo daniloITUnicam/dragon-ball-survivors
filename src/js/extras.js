@@ -2,7 +2,7 @@
 /* ====== v117: boss weaknesses (+15% from one kind of weapon), the charged Kamehameha (hold the ability key), the golden Saibaman who runs off with a bag ====== */
 const WEAK_K=1.15,WEAK_KINDS=['beam','shot','blast','chain'],WEAK_FIX={cell:'beam',cellmax:'beam',bu:'blast',kidbu:'blast',superbu:'blast',freezer:'shot',cooler:'shot',jiren:'chain',beerus:'blast',broly:'beam',kingpiccolo:'chain',raditz:'beam',nappa:'shot',vegeta:'blast'};
 const WEAK_N={beam:T6('raggi','beams','rayos','rayons','Strahlen','raios'),shot:T6('colpi','shots','disparos','tirs','Schüsse','disparos'),blast:T6('esplosioni','blasts','explosiones','explosions','Explosionen','explosões'),chain:T6('fulmini','lightning','rayos eléctricos','éclairs','Blitze','relâmpagos')};
-const KCH_MIN=.25,KCH_MAX=2,GS_FIRST=70,GS_EVERY=[80,140],GS_P=.6,GS_LIFE=10;
+const KCH_MIN=.25,KCH_MAX=2,KCH_FIRE=.7,GS_FIRST=70,GS_EVERY=[80,140],GS_P=.6,GS_LIFE=10;
 const EXTRAS={
   /* ---- weaknesses ---- */
   weak(id){return WEAK_FIX[id]||WEAK_KINDS[Online.hash('weak-'+id)%WEAK_KINDS.length];},
@@ -12,7 +12,8 @@ const EXTRAS={
   /* ---- charged Kamehameha: hold the ability key (it still uses the ability on press) ---- */
   hold(g,on,dt){const k=g.weapons.get('kame');if(!k||g.modal||g.dying||g.ended){g.kch=0;return;}
     if(on){g.kch=Math.min(KCH_MAX,(g.kch||0)+dt);if(g.kch>KCH_MIN&&g.fx.length<420&&Math.random()<.5){const a=rnd(0,TAU),d=rnd(26,44);g.fx.push({x:g.p.x+Math.cos(a)*d,y:g.p.y-22+Math.sin(a)*d,vx:-Math.cos(a)*90,vy:-Math.sin(a)*90,l:.3,m:.3,c:k.color,s:3});}}
-    else if(g.kch>KCH_MIN){g.kBoost=(g.kch-KCH_MIN)/(KCH_MAX-KCH_MIN);g.kch=0;if(!k.charge)k.cd=Math.min(k.cd,.05);g.audio.sfx('kameChargeEvo');}
+    else if(g.kch>KCH_MIN){const b=(g.kch-KCH_MIN)/(KCH_MAX-KCH_MIN);g.kch=0;   /* v132: let go before KCH_FIRE (70% of the bar) and nothing fires: short holds could fire it again and again */
+      if(b>=KCH_FIRE){g.kBoost=b;if(!k.charge)k.cd=Math.min(k.cd,.05);g.audio.sfx('kameChargeEvo');}}
     else g.kch=0;},
   /* the boost of the next beam: damage ×(1+1.5b), width ×(1+.8b), it lasts 20% longer at full charge */
   takeBoost(g){const b=g.kBoost||0;g.kBoost=0;return b;},

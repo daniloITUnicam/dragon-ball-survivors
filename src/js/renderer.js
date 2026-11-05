@@ -505,7 +505,8 @@ this.W=1;this.H=1;this.Z=1;
       const pu=.5+.5*Math.sin(t*9),gr=ctx.createRadialGradient(this.W/2,this.H/2,Math.min(this.W,this.H)*.3,this.W/2,this.H/2,Math.max(this.W,this.H)*.7);gr.addColorStop(0,'rgba(255,0,0,0)');gr.addColorStop(1,'rgba(200,0,20,'+(.35+.2*pu)*f+')');ctx.fillStyle=gr;ctx.fillRect(0,0,this.W,this.H);}
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);BOSSX.draw(this,g,ctx,t);GHOST.draw(this,g,ctx,t);EXTRAS.draw(this,g,ctx,t);
     if(g.kch>KCH_MIN){const k=(g.kch-KCH_MIN)/(KCH_MAX-KCH_MIN),kw=g.weapons.get('kame'),c=kw?kw.color:'#59c8ff';GLOW.at(ctx,p.x+p.face*10,p.y-20,16+30*k,c,.5+.4*k);GLOW.at(ctx,p.x+p.face*10,p.y-20,8+10*k,'#ffffff',.8);
-      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(p.x-20,p.y+8,40,4);ctx.fillStyle=k>=1?'#ffffff':c;ctx.fillRect(p.x-20,p.y+8,40*k,4);}   /* v117: charging the Kamehameha */ctx.setTransform(1,0,0,1,0,0);   /* v116: guard bars */
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(p.x-20,p.y+8,40,4);ctx.fillStyle=k>=1?'#ffffff':k>=KCH_FIRE?c:hexA(c,.45);ctx.fillRect(p.x-20,p.y+8,40*k,4);
+      ctx.fillStyle=k>=KCH_FIRE?'#ffffff':'rgba(255,255,255,.75)';ctx.fillRect(p.x-20+40*KCH_FIRE-.5,p.y+7,1.5,6);}   /* v132: the mark at KCH_FIRE: let go after it and the beam fires */   /* v117: charging the Kamehameha */ctx.setTransform(1,0,0,1,0,0);   /* v116: guard bars */
     {const W=EXTRAS.wx(g);if(W&&W.k==='sand'){const a=.4*clamp((W.I-WX_MIN)/(1-WX_MIN),0,1)+.15,gr=ctx.createRadialGradient(this.W/2,this.H/2,Math.min(this.W,this.H)*.22,this.W/2,this.H/2,Math.max(this.W,this.H)*.6);
       gr.addColorStop(0,'rgba(200,160,90,0)');gr.addColorStop(1,'rgba(170,120,60,'+a.toFixed(3)+')');ctx.fillStyle=gr;ctx.fillRect(0,0,this.W,this.H);}}   /* v117: a sandstorm closes the view */
     if(g.bcine)MOMENTS.cineHud(this,g);
@@ -562,12 +563,12 @@ this.W=1;this.H=1;this.Z=1;
     if(dashing)this.dashTrail(g,pck,pcc,k,t);
     if(xf){
       const rt=g.rt,ch=xf.released?1:xf.t/xf.rel,ak=xf.released?1+Math.max(0,1-(xf.t-xf.rel)/(xf.dur-xf.rel))*1.7:.35+ch*2.1;
-      const col=xf.col,R0=(46+xf.idx*5)*ak;
-      GLOW.at(ctx,p.x,p.y-26,R0*1.5,col,.7);GLOW.at(ctx,p.x,p.y-26,R0*.9,'#ffffff',.35+.3*ch*(xf.released?0:1));
+      const col=xf.col,R0=(46+xf.idx*5)*ak,ao=this.auraOf(g,xf.idx),pa=!!Sprites.sheets[ao.id],gk=pa?.4:1;   /* with a painted aura the glow is softer: it washed the flames out */
+      GLOW.at(ctx,p.x,p.y-26,R0*1.5,col,.7*gk);GLOW.at(ctx,p.x,p.y-26,R0*.9,'#ffffff',(.35+.3*ch*(xf.released?0:1))*gk);
       ctx.save();ctx.globalCompositeOperation='lighter';
       ctx.strokeStyle=hexA(col,.8);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,R0*.8,R0*.26,0,0,TAU);ctx.stroke();
       ctx.strokeStyle=hexA('#ffffff',.5);ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(p.x,p.y,R0*.55,R0*.18,0,0,TAU);ctx.stroke();
-      const nF=16;
+      const nF=this.auraSprite(ao.id,p.x,p.y+8,this.heroH(g)*clamp(.95+.45*ak,1.1,2.4),.92,ao.tint)?0:16;   /* v132: the painted aura of the form (grows while charging, bursts at the release) */
       for(let i=0;i<nF;i++){
         const u=i/(nF-1)-.5,bx=p.x+u*R0*1.5,by=p.y-2-Math.abs(u)*8,h=(54+xf.idx*7)*ak*(1-Math.abs(u)*.9)*(.65+.35*Math.sin(rt*17+i*1.9)),w=7+4*ak,sw=Math.sin(rt*13+i*2.3)*6;
         ctx.fillStyle=hexA(i%3?col:'#ffffff',i%3?.38:.22);
@@ -585,7 +586,8 @@ this.W=1;this.H=1;this.Z=1;
     }else if(g.kai>0){
       this.kaiAura(g,t);
     }else if(g.formIdx>=0){
-      const f=1+Math.sin(t*14)*.07;
+      const f=1+Math.sin(t*14)*.07,ao=this.auraOf(g,g.formIdx);
+      this.auraSprite(ao.id,p.x,p.y+8,this.heroH(g)*1.75,.72,ao.tint);   /* v132: the form's painted aura stays on (it rises above the hair), a little softer than while transforming */
       GLOW.at(ctx,p.x,p.y-24,(40+g.formIdx*5)*f,g.formColor,.65);
       GLOW.at(ctx,p.x,p.y-24,(26+g.formIdx*3)*f,'#ffffff',.2);
     }
@@ -647,6 +649,32 @@ this.W=1;this.H=1;this.Z=1;
     }
     if(Z){ctx.save();lft();if(blink)ctx.globalAlpha=.55;Pose.limb(ctx,Z.A,g.pc,u,true,whiteArm);ctx.restore();}   /* the near arm in front */
   }
+  /* v132: painted auras (assets/sprites/aure, tools/make_auras.py): 8 looping frames on transparency, added as light behind the character.
+     id: sheet id ('aurassj'...); x,y: the feet; h: flame height in world units; tint: colour for the white 'aurabase' (forms without their own aura).
+     Returns false when the sheet is not there (the drawn-by-code aura stays) */
+  auraSprite(id,x,y,h,al,tint){
+    const S=Sprites.sheets[id];if(!S||!S.img)return false;
+    let img=S.img;
+    if(tint){const tc=S.tint||(S.tint={});img=tc[tint];
+      if(!img){const c=document.createElement('canvas');c.width=S.img.width;c.height=S.img.height;const x2=c.getContext('2d');
+        x2.drawImage(S.img,0,0);x2.globalCompositeOperation='multiply';x2.fillStyle=tint;x2.fillRect(0,0,c.width,c.height);
+        x2.globalCompositeOperation='destination-in';x2.drawImage(S.img,0,0);img=tc[tint]=c;}}
+    const M=SPRITE_PACK[id]||{},art=M.art||S.fh,k=h/art,f=Math.floor(performance.now()*.012)%8,ctx=this.ctx;
+    /* painted flames as they are (added only as light they washed out into a plain glow on bright ground), then a soft light pass */
+    const dx=x-S.fw/2*k,dy=y-(M.ay||S.fh)*k,dw=S.fw*k,dh=S.fh*k;
+    ctx.save();ctx.imageSmoothingEnabled=true;ctx.globalAlpha=al*.92;ctx.drawImage(img,f*S.fw,0,S.fw,S.fh,dx,dy,dw,dh);
+    ctx.globalCompositeOperation='lighter';ctx.globalAlpha=al*.4;ctx.drawImage(img,f*S.fw,0,S.fw,S.fh,dx,dy,dw,dh);
+    ctx.restore();return true;
+  }
+  /* the hero's height in world units (an aura is sized on it: about 85 for Goku) */
+  heroH(g){return 44*((g.pc&&g.pc.u)||(g.C&&g.C.u)||1.95);}
+  /* the painted aura of a form (its English name), or the white one tinted with the form's colour */
+  auraOf(g,idx){
+    const L=LINES[(g.C&&g.C.line)||'saiyan']||[],e=L[idx],n=e&&e.n&&e.n.en;
+    const id={'Kaioken':'aurakaio','Super Saiyan':'aurassj','Super Saiyan 2':'aurassj2','Super Saiyan 3':'aurassj3','Super Saiyan God':'auragod','Super Saiyan Blue':'aurablue',
+      'Ultra Instinct (Sign)':'aurauis','Mastered Ultra Instinct':'auramui'}[n];
+    return id&&Sprites.sheets[id]?{id,tint:null}:{id:'aurabase',tint:(e&&e.aura)||'#ffffff'};
+  }
   /* Kaioken: a constant, living red aura (as in the anime) - glow, wavering flame tongues in two layers, a pulsing outline halo, rising sparks and ground rings.
      Drawn with the player, i.e. above every ability effect, so it never fades into the background. */
   kaiAura(g,t){
@@ -657,6 +685,11 @@ this.W=1;this.H=1;this.Z=1;
     /* ground rings expanding outward, continuously */
     for(let i=0;i<(FXL.on?1:3);i++){const kk=(rt*(x2?1.7:1.2)+i/3)%1,rr=18+R0*1.1*kk;ctx.strokeStyle=hexA('#ff4a3a',(1-kk)*.7);ctx.lineWidth=2.6*(1-kk)+.8;ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.3,0,0,TAU);ctx.stroke();}
     /* flame tongues: back layer (wide, dark red) then front layer (narrow, orange/white), each sways and licks upward on its own phase */
+    const fo=g.formIdx>=0?this.auraOf(g,g.formIdx):null,big=fo?1.2:1;   /* transformed: the Kaioken burns around the form's own aura (Kaioken (Super Saiyan)), so it is bigger */
+    if(this.auraSprite(x2?'aurakaio2':'aurakaio',p.x,p.y+8,this.heroH(g)*(x2?2.05:1.8)*big*pul,.88)){   /* v132: the painted Kaioken aura (x20: its own, bigger sheet) */
+      if(fo)this.auraSprite(fo.id,p.x,p.y+8,this.heroH(g)*1.75,.78,fo.tint);
+      for(let i=0;i<(x2?12:7);i++){const ph=(rt*(.9+i*.13)+i*.43)%1,ex=p.x+Math.sin(i*5.1+rt*3)*R0*.55*(1-ph*.3),ey=p.y-6-ph*R0*1.5;ctx.fillStyle=hexA(i%2?'#ffe0c0':'#ff6a4a',(1-ph)*.9);ctx.fillRect(ex-1,ey-1,2,2);}
+      ctx.restore();return;}
     const layers=[[x2?20:14,1.0,'#d81408',.38,.9],[x2?16:11,.78,'#ff5a2a',.5,1.2],[x2?12:8,.55,'#ffd0a0',.42,1.55]];
     for(const [n0,hs,col,al,sp] of layers){
       const n=FXL.on?Math.ceil(n0*.4):n0;

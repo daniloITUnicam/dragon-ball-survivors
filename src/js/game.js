@@ -173,7 +173,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
     if(this.abBuf){S.might*=1+(this.abBuf.m||0);S.spd*=1+(this.abBuf.s||0);S.taken*=1+(this.abBuf.tk||0);}
-    if(this.kai>0){const f2=this.abTier>=2&&this.abil.m==='kaioken',km=f2?(this.kai===1?2.5:5):(this.kai===1?2:4);S.might*=km;S.spd*=1+.4*(km-1);S.cd=Math.max(.15,S.cd/km);}
+    if(this.kai>0){const f2=this.abTier>=2&&this.abil.m==='kaioken',km=f2?(this.kai===1?1.9:2.5):(this.kai===1?1.5:2);   /* v132: x1.5 / x2 (before x2 / x4); perfected x1.9 / x2.5 (before x2.5 / x5) */S.might*=km;S.spd*=1+.4*(km-1);S.cd=Math.max(.15,S.cd/km);}
     S.might*=1+this.swap.might;S.spd*=1+this.swap.spd;S.cd=Math.max(this.cdMin(.3),S.cd*(1-this.swap.cd));
     {const tf=this.totemFx;if(tf.might)S.might*=1+tf.might;if(tf.cd)S.cd=Math.max(this.cdMin(.3),S.cd*(1+tf.cd));if(tf.gold)S.gold+=tf.gold;if(tf.magnet)S.magnet*=1+tf.magnet;if(tf.regen)S.regen+=tf.regen;}
     this.abPassive(S);

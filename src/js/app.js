@@ -133,7 +133,7 @@ class App{
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
     {const g=this.game;if(g.fz){const p=g.p,c=g.formColor||'#ffd23f';g.say(this.i18n.t(T6('FUSIONE!','FUSION!','¡FUSIÓN!','FUSION !','FUSION!','FUSÃO!')),c,2.6,this.i18n.t(fuseKind(g.fz.k))+' · '+g.fz.parents.map(id=>this.i18n.t(CHARS.find(x=>x.id===id).n)).join(' + '));
       g.ring(p.x,p.y,220,c,.9);g.pillar(p.x,p.y,c,1.4);g.flash=.6;g.flashC='#ffffff';this.audio.sfx('transform');}}   /* v116 */
-    this.joy.on=false;
+    this.joy.on=false;this.abHold=null;
     const st=STAGES[o.stage],defs=[];for(const r of st.roster)if(ENEMIES[r[0]])defs.push(ENEMIES[r[0]].sp);
     {const ids=new Set(bossPlan(st,(DIFF[o.diff]||DIFF.normal).dur,o.diff).map(b=>b[0]));for(const b of st.bosses)ids.add(b[0]);
       for(const id of ids)for(let q=BOSSES[id],n=0;q&&n<4;q=BOSSES[q.p2],n++)defs.push(q.sp);}
@@ -195,8 +195,12 @@ class App{
         }else{
         if(I.pressed('interact'))g.input.interact=true;
         if(I.pressed('pet'))g.usePet();
-        if(I.pressed('kaioken'))g.toggleKaioken();
-        EXTRAS.hold(g,I.held('kaioken'),dt);   /* v117: holding it charges the next Kamehameha */
+        {const kh=I.held('kaioken');
+          /* v132: with the Kamehameha the key does two things: a tap (shorter than the charge threshold) uses the ability when it is let go,
+             a hold only charges the beam (before, the press also switched the Kaioken on). Without the Kamehameha the ability starts on the press */
+          if(g.weapons.has('kame')){if(I.pressed('kaioken'))this.abHold=0;if(kh&&this.abHold!=null)this.abHold+=dt;else if(!kh&&this.abHold!=null){if(this.abHold<KCH_MIN)g.toggleKaioken();this.abHold=null;}}
+          else if(I.pressed('kaioken'))g.toggleKaioken();
+          EXTRAS.hold(g,kh,dt);}   /* v117: holding it charges the next Kamehameha */
         if(I.pressed('senzu'))g.useSenzu();
         if(I.pressed('dash'))g.dash();
         if(I.pressed('target'))g.cycleTarget();

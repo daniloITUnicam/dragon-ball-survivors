@@ -16,6 +16,20 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-11-05a',date:'2026-11-05',
+    name:T("Aure dipinte e suoni 8-bit per tutti","Painted auras and 8-bit sounds for everyone"),
+    sum:T("Le aure del Kaioken e delle trasformazioni sono disegnate a mano, fotogramma per fotogramma, e i suoni 8-bit sono quelli del gioco.","The Kaioken and transformation auras are hand-painted, frame by frame, and the 8-bit sounds are the game's own."),
+    bal:[T("Kaioken: danno ×1,5 con il x10 e ×2 con il x20 (prima ×2 e ×4). Kaioken perfetto: ×1,9 / ×2,5 (prima ×2,5 / ×5).","Kaioken: damage ×1.5 with x10 and ×2 with x20 (before ×2 and ×4). Perfected Kaioken: ×1.9 / ×2.5 (before ×2.5 / ×5).")],
+    new:[{g:T('Grafica','Graphics'),l:[
+      T("Kaioken: un'aura rossa dipinta e animata al posto di quella disegnata dal gioco; Kaioken x20 ha la sua, più grande.","Kaioken: a painted, animated red aura instead of the one drawn by the game; Kaioken x20 has its own, bigger one."),
+      T("Da trasformato l'aura dipinta della forma resta sempre accesa e avvolge tutto il personaggio, capelli compresi; con il Kaioken attivo l'aura rossa brucia intorno a quella della forma, più grande.","While transformed, the form's painted aura stays on and wraps the whole character, hair included; with the Kaioken on, the red aura burns around the form's one, bigger."),
+      T("Trasformazioni: mentre ti trasformi l'aura dipinta della forma cresce e poi esplode al rilascio. Super Saiyan, Super Saiyan 2 e 3, God, Blue, Ultra Istinto (segno) e Ultra Istinto Completo hanno la loro; le altre forme usano un'aura dipinta con il colore della forma.","Transformations: while you transform, the form's painted aura grows and bursts at the release. Super Saiyan, Super Saiyan 2 and 3, God, Blue, Ultra Instinct (Sign) and Mastered Ultra Instinct have their own; the other forms use a painted aura in the form's colour.")]},
+      {g:T('Comandi','Controls'),l:[
+      T("Tenere premuto il tasto dell'abilità (R) per caricare la Kamehameha non attiva più anche il Kaioken: un tocco usa l'abilità, tenere premuto carica solo il colpo.","Holding the ability key (R) to charge the Kamehameha no longer switches the Kaioken on too: a tap uses the ability, holding only charges the beam."),
+      T("Kamehameha caricata: parte solo se lasci il tasto dopo il 70% della barra (c'è un segno sulla barra; prima della tacca è più scura). Lasciandolo prima non succede niente: niente più colpi a ripetizione con pressioni brevi.","Charged Kamehameha: it only fires if you let go of the key past 70% of the bar (there is a mark on the bar; before it the bar is darker). Letting go earlier does nothing: no more rapid fire with short presses.")]},
+      {g:T('Audio','Audio'),l:[
+      T("I suoni 8-bit sono sempre attivi: l'opzione in Impostazioni > Audio non c'è più.","The 8-bit sounds are always on: the option in Settings > Audio is gone."),
+      T("Il suono delle gemme di Esperienza (XP) è circa due volte più forte e un po' più lungo: prima i colpi e le armi lo coprivano.","The Experience (XP) gem sound is about twice as loud and a little longer: before, hits and weapons covered it.")]}]},
   {id:'2026-11-04b',date:'2026-11-04',
     name:T("Più nemici, isole raggiungibili e un Maestro più forte","More enemies, reachable islands and a stronger Master"),
     sum:T("Le mappe sono più affollate ma i nemici di fine partita sono più fragili, sulla Via del Serpente i nemici ti seguono sulle isole, il Maestro della Stanza dello Spirito e del Tempo usa sempre le tue armi e lo schermo non zooma più da solo.","Maps are more crowded but late-game enemies are frailer, on Snake Way enemies follow you onto the islands, the Master of the Room of Spirit and Time always uses your weapons and the screen no longer zooms by itself."),
