@@ -23,7 +23,10 @@ assets/sprite test/
 # archivi usati per trasferire le modifiche dal cloud al PC
 sync*.tar
 sync*.tar.old
-docs/PROMPT_GEMINI_TERRENI.md
 
 # modalita test: indirizzo del proprietario e whitelist fissa (non vanno nel repository)
 tester.config.json
+# Documentazione: resta in locale. Sul repo restano solo il logo e gli screenshot mostrati dal README.
+docs/*
+!docs/logo.png
+!docs/screens/

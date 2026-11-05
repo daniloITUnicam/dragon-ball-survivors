@@ -221,7 +221,7 @@ Dettaglio con numeri nelle **note di patch del gioco** (📜 nel menu: voce `202
 - **Ombre al posto dei gabbiani** (`Ambient.birdShadow`, `Ambient.flockShadows`, `Ambient.ground`): niente più stormi nel cielo né uccelli singoli disegnati; resta l'ombra sul terreno (alpha 0,10, ~20-30 px), in formazione a V, ancorata al mondo, che scorre a 36-50 px/s. Anche i gabbiani posati su casse, barili e lapidi (Isola di Muten, Pianura Saiyan, Arena dei Cell Game) sono stati tolti.
 - **Numeri di danno arcade** (`Renderer.dmgSpr`, `DMG_T = 1,1`, `Game.floatText` classi 0 = danno, 6 = critico): carattere Anton (Google Fonts, in coda a Impact/Arial Black), inclinato, sfumatura bianco-giallo, contorno scuro, bordo 3D e bordi a pixel; **critici rossi**, più grandi e con tremolio; restano 1,1 s (prima 0,8 s). Al massimo 46 numeri di danno insieme.
 - **Dyspo rifatto** (viola come Beerus, orecchie da coniglio `ears:'rabbit'`, tuta rossa/grigia, guanti e stivali bianchi) per personaggio e boss; **Beerus** più viola.
-- **Guida sprite per armi e abilità:** [`docs/SPRITES_ABILITA.md`](docs/SPRITES_ABILITA.md) (cosa fare per prima, formati e dimensioni).
+- **Guida sprite per armi e abilità:** `docs/SPRITES_ABILITA.md` (solo in locale) (cosa fare per prima, formati e dimensioni).
 - **🧪 Test aggiunto:** `v56` (continuità e varietà del comportamento dei ragni, niente gabbiani posati, ombre in vista ~40% del tempo e leggere, durata e classe dei numeri di danno, critici rossi, sprite dei numeri in cache e a bordi netti); `shot_v56.js` e `shot_dyspo.js` per gli screenshot.
 
 ### 🆕 Aggiornamento del 20 ottobre 2026, parte 4 (boss, nemici e personaggi)
@@ -311,7 +311,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 
 **🥋 Animazioni del personaggio per arma** (`src/js/pose.js`)
 - I personaggi procedurali sono dipinti **senza braccia** (frame `20+n`; `30+n` = faccia feroce) e le braccia sono disegnate dal gioco con la **cinematica inversa a due ossa** (`Pose.ik`): le gambe continuano a camminare. **Kamehameha**: carica con le due mani a coppa attorno alla sfera che cresce, anche in movimento; allo sparo le braccia si tendono. **Colpo di Ki**: la sfera cresce sul palmo mentre la ricarica finisce (stessa cadenza) e parte dalla mano (`Pose.tip`). Pose anche per le altre armi (`ARM_FIRE`). Il personaggio si gira verso il bersaglio durante il gesto.
-- Per chi usa **sprite propri**: frame facoltativi 10-15 nei fogli e punti `hand` in `sprites.json`; guida con i prompt per Gemini e simili in [`docs/SPRITES_AI.md`](docs/SPRITES_AI.md) e strumento `tools/sheet_from_frames.py`.
+- Per chi usa **sprite propri**: frame facoltativi 10-15 nei fogli e punti `hand` in `sprites.json`; guida con i prompt per Gemini e simili in `docs/SPRITES_AI.md` (solo in locale) e strumento `tools/sheet_from_frames.py`.
 
 **🖥️ Interfaccia e bilanciamento**
 - **Barra Esperienza** e **barra della Salute** con la nuova grafica (`xpbar.js`, `hpbar.js`; atlanti generati da `tools/gen_xpbar.py` e `tools/gen_hpbar.py` a partire da `assets/sprites/_sorgenti/barre/`). La barra della Salute mostra il **ritratto del personaggio in gioco**, aggiornato a ogni trasformazione. Sugli schermi stretti restano le barre sottili.
