@@ -19,12 +19,15 @@ and "h": <idle height in px>: the sheet is then built from that folder (idle, wa
 from the pack). "grid_use": ["power","dash"] only replaces those poses of a normal form. The extra frames go after the 10 standard columns and sprites.json gets
 "pw": [frames of the charge animation], "dh": [frames of the dash animation]. The portraits become the sheet emo<id>[_<form>].png (4 frames, used by the character screen).
 (The rock atlases rocks.png / lavarocks.png are NOT built here any more: tools/make_rocks.py makes them, see docs/SPRITES.md; this script keeps their entries in sprites.json.)
-A character may define "fx" / "power" / "dash" once at character level as defaults for its forms."""
+A character may define "fx" / "power" / "dash" once at character level as defaults for its forms.
+A form may set "recolor": [["#rrggbb", "#rrggbb"], ...]: exact colour swaps applied to its pack and walk frames (not to the streak), e.g. a hair palette for a form the pack lacks;
+"fx_recolor" does the same on the streak (a streak borrowed from another character, in the colours of this one; also allowed at character level)."""
 import sys, os, re, json, glob, argparse
 from PIL import Image, ImageDraw
 
 UP = 2            # nearest-neighbour upscale of the pack frames (so the game scale stays >= 2 px/unit)
 KEY_TOL = 24
+HOLE_MIN = 6      # enclosed background areas this big (px of the pack frame) are holes, smaller ones eye whites
 
 
 def key(im):
@@ -42,7 +45,35 @@ def key(im):
         if abs(p[0] - bg[0]) + abs(p[1] - bg[1]) + abs(p[2] - bg[2]) > KEY_TOL: continue
         seen[y * w + x] = 1; px[x, y] = (0, 0, 0, 0)
         st += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    # holes: background-coloured areas the fill cannot reach (between an arm and the body) of HOLE_MIN px or more; smaller ones are eye whites
+    # (only on a white background: on a coloured one every enclosed speck of it is a hole). A hole is ringed by the dark outline;
+    # a light patch near the background colour ringed by shading (white armour, a highlight) is part of the sprite.
+    hmin = HOLE_MIN if sum(bg) > 600 else 1
+    for y0 in range(h):
+        for x0 in range(w):
+            if seen[y0 * w + x0]: continue
+            p = px[x0, y0]
+            if p[3] == 0 or abs(p[0] - bg[0]) + abs(p[1] - bg[1]) + abs(p[2] - bg[2]) > KEY_TOL: continue
+            reg = []; st = [(x0, y0)]; seen[y0 * w + x0] = 1
+            while st:
+                x, y = st.pop(); reg.append((x, y))
+                for x2, y2 in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= x2 < w and 0 <= y2 < h and not seen[y2 * w + x2]:
+                        q = px[x2, y2]
+                        if q[3] and abs(q[0] - bg[0]) + abs(q[1] - bg[1]) + abs(q[2] - bg[2]) <= KEY_TOL: seen[y2 * w + x2] = 1; st.append((x2, y2))
+            if len(reg) >= hmin and (all(px[x, y][:3] == bg for x, y in reg) or dark_rim(px, w, h, reg)):
+                for x, y in reg: px[x, y] = (0, 0, 0, 0)
     return im
+
+
+def dark_rim(px, w, h, reg):
+    inside = set(reg); rim = dark = 0
+    for x, y in reg:
+        for x2, y2 in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if (x2, y2) in inside or not (0 <= x2 < w and 0 <= y2 < h): continue
+            q = px[x2, y2]; rim += 1
+            dark += q[3] == 0 or q[0] + q[1] + q[2] < 210
+    return rim and dark >= rim * .6
 
 
 def num(f):
@@ -53,8 +84,23 @@ def num(f):
 _cache = {}
 
 
-def load(pack, folder, n, pat=None):
-    k = (folder, n, pat)
+def hex_rgb(h):
+    h = h.lstrip('#'); return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def recolor(im, pairs):
+    if not pairs: return im
+    m = {hex_rgb(a): hex_rgb(b) for a, b in pairs}
+    out = im.copy(); px = out.load(); w, h = out.size
+    for y in range(h):
+        for x in range(w):
+            p = px[x, y]
+            if p[3] and p[:3] in m: px[x, y] = m[p[:3]] + (p[3],)
+    return out
+
+
+def load(pack, folder, n, pat=None, rc=None):
+    k = (folder, n, pat, json.dumps(rc) if rc else None)
     if k in _cache: return _cache[k]
     d = os.path.join(pack, folder)
     hit = [f for f in glob.glob(os.path.join(d, '*.png')) if num(f) == n and (not pat or pat.lower() in os.path.basename(f).lower())]
@@ -62,7 +108,7 @@ def load(pack, folder, n, pat=None):
         raise SystemExit(f'frame {n} not found in {folder}')
     im = key(Image.open(hit[0])); bb = im.getbbox()
     if not bb: raise SystemExit(f'frame {n} of {folder} is empty')
-    im = im.crop(bb)
+    im = recolor(im.crop(bb), rc)
     _cache[k] = im
     return im
 
@@ -106,10 +152,10 @@ def build_form(pack, e, base_idle_h, prev=None):
     names = ['idle', 'w1', 'w2', 'w3', 'w4', 'wind', 'thrust', 'power', 'dash', 'fx']
     grid = e.get('grid'); guse = e.get('grid_use')
     full = bool(grid) and not guse
-    fx = e.get('fx')
+    fx = e.get('fx'); rc = e.get('recolor')
     frames = []
     if full:                                  # everything but the streak comes from the grid folder
-        frames = [None] * 9 + [load(pack, fx[0], fx[1]) if fx else (prev(9) if e.get('fx_keep') and prev else None)]
+        frames = [None] * 9 + [load(pack, fx[0], fx[1], None, e.get('fx_recolor')) if fx else (prev(9) if e.get('fx_keep') and prev else None)]
     elif e.get('keep_sheet') and prev:        # the frames of the sheet already built (no pack folders needed)
         frames = [prev(i) for i in range(10)]
     else:
@@ -120,7 +166,7 @@ def build_form(pack, e, base_idle_h, prev=None):
         spec.append(('dash', src, e['dash']) if e.get('dash') else ('dash', None, None))
         spec.append(('fx', fx[0], fx[1]) if fx else ('fx', None, None))
         for nm, folder, n in spec:
-            frames.append(None if folder is None else load(pack, folder, n, ((fx[2] if len(fx) > 2 else None) if nm == 'fx' else e.get('pat'))))
+            frames.append(None if folder is None else load(pack, folder, n, (fx[2] if len(fx) > 2 else None), e.get('fx_recolor')) if nm == 'fx' else load(pack, folder, n, e.get('pat'), rc))
     idle = frames[0]
     extra = []; walk_idx = None; pw_idx = None; dh_idx = None
     if grid:
@@ -140,10 +186,10 @@ def build_form(pack, e, base_idle_h, prev=None):
             frames[8] = dh[0]; base = 10 + len(extra); extra += dh[1:]; dh_idx = [8] + [base + i for i in range(3)]
     if full: pass
     elif e.get('walk_dir'):                    # custom N-frame walk cycle replacing idle + walk (see docstring)
-        wd = e['walk_dir']; wn = e['walk_n']; ref = load(pack, wd, e.get('idle_n', wn[0]))
+        wd = e['walk_dir']; wn = e['walk_n']; ref = load(pack, wd, e.get('idle_n', wn[0]), None, rc)
         f = idle.height / ref.height
         def sc(n):
-            im = load(pack, wd, n); r = im.resize((max(1, round(im.width * f)), max(1, round(im.height * f))), Image.LANCZOS)
+            im = load(pack, wd, n, None, rc); r = im.resize((max(1, round(im.width * f)), max(1, round(im.height * f))), Image.LANCZOS)
             r.putalpha(r.getchannel('A').point(lambda v: 255 if v > 110 else 0)); return r
         frames[0] = sc(e.get('idle_n', wn[0])); wf = [sc(n) for n in wn]
         frames[1:5] = [wf[i % len(wf)] for i in range(4)]
@@ -196,7 +242,7 @@ def main():
     for cid, c in mp['chars'].items():
         if a.only and cid not in a.only: continue
         forms = c['forms']; keys = list(forms.keys())  # 'base', '0', '1' ...
-        dflt = {k: c[k] for k in ('fx', 'power', 'dash') if k in c}
+        dflt = {k: c[k] for k in ('fx', 'fx_recolor', 'power', 'dash') if k in c}
         base_idle = None; ppu = None; rev = []
         for k in keys:
             e = dict(dflt); e.update(forms[k])

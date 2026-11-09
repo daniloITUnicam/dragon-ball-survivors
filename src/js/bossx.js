@@ -1,6 +1,6 @@
 'use strict';
 /* ====== v116: boss extras — guard bar (break it: 3 s stun, +25% damage taken), the surprise boss from another saga, the named finishing move ====== */
-const GD_P=.5,GD_K=.14,GD_STUN=3,GD_TAKEN=1.25,GD_REGEN=.12,GD_WAIT=3,SB_P=.25,SB_AT=[.4,.62];
+const GD_P=.5,GD_K=.14,GD_STUN=3,GD_TAKEN=1.25,GD_REGEN=.12,GD_WAIT=3,SB_P=.25,SB_AT=[.4,.62],SB_PWR=1.15;
 const BOSSX={
   /* a boss that just spawned may get a guard (never minibosses, sparring or the tunnel boss) */
   onSpawn(g,e){if(e.mini||e.sparring||e.tun||g.trial)return;if(e.final||Math.random()<GD_P){const m=e.max*GD_K;e.gd={v:m,max:m,last:-9,brk:0};}},
@@ -16,9 +16,11 @@ const BOSSX={
       g.say(g.env.tr(T6('BOSS A SORPRESA!','SURPRISE BOSS!','¡JEFE SORPRESA!','BOSS SURPRISE !','ÜBERRASCHUNGSBOSS!','CHEFE SURPRESA!')),'#ff3b6b',3,g.env.tr(T6('Da un\'altra saga · forziere migliore','From another saga · a better chest','De otra saga · un cofre mejor','D\'une autre saga · un meilleur coffre','Aus einer anderen Saga · eine bessere Truhe','De outra saga · um baú melhor')));
       g.flash=.4;g.flashC='#ff3b6b';g.shake=.7;}}}},
   init(g){const D=(g.D&&g.D.dur)||600;g.sbx=!g.endless&&Math.random()<SB_P?{at:rnd(SB_AT[0],SB_AT[1])*D,done:false}:null;},
-  surprisePick(g){const own=new Set(g.stage.bosses.map(b=>b[0])),pool=new Set();
+  /* v133: only bosses no stronger than this stage's own (health and damage within SB_PWR of its strongest boss): no Jiren on Roshi's Island */
+  surprisePick(g){const own=new Set(g.stage.bosses.map(b=>b[0])),pool=new Set(),ob=g.stage.bosses.map(b=>BOSSES[b[0]]).filter(Boolean);
+    const mh=Math.max(0,...ob.map(b=>b.hp)),md=Math.max(0,...ob.map(b=>b.dmg)),fits=b=>b.hp<=mh*SB_PWR&&b.dmg<=md*SB_PWR;
     STAGES.forEach(s=>{if(s===g.stage)return;for(const b of s.bosses)if(b[2]&&BOSSES[b[0]]&&!own.has(b[0])&&!BOSSES[b[0]].tama)pool.add(b[0]);});
-    for(const id of['broly','cooler'])if(BOSSES[id]&&!own.has(id))pool.add(id);const L=[...pool];return L.length?L[Math.floor(Math.random()*L.length)]:null;},
+    for(const id of['broly','cooler'])if(BOSSES[id]&&!own.has(id))pool.add(id);const L=[...pool].filter(id=>fits(BOSSES[id]));return L.length?L[Math.floor(Math.random()*L.length)]:null;},
   chestRar(g,e){const r=g.rollChestRar();return e.surprise?Math.max(2,Math.min(4,r+1)):r;},
   /* the finishing move of the final boss: weapon (evolution / fusion name) or the ally */
   finisherName(g,k){const w=k&&g.weapons.get(k);if(k==='ally')return T6('Alleato','Ally','Aliado','Allié','Verbündeter','Aliado');if(!w)return null;

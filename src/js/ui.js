@@ -375,6 +375,9 @@ class UI{
     const buy=(it,all)=>{let n=0;while(this.app.progress.buy(it.id)){n++;if(!all)break;}
       if(n){this.sfx('buy');this.rebuild(true);const el=this.top.el.querySelector('[data-fid="sh'+it.id+'"]');if(el)el.closest('.card').classList.add('bought');}};
     const toggle=id=>{if(d.shopOff[id])delete d.shopOff[id];else d.shopOff[id]=1;this.app.save.write();this.sfx('uiTab');this.rebuild(true);};
+    /* v133: while Shift is held every price shows "MAX" over the cost of buying the max (in brackets) */
+    if(!this._shiftL){this._shiftL=true;const hk=e=>document.documentElement.classList.toggle('shiftmax',!!e.shiftKey);
+      addEventListener('keydown',hk);addEventListener('keyup',hk);addEventListener('mousemove',hk,{passive:true});addEventListener('blur',()=>document.documentElement.classList.remove('shiftmax'));}
     const cards=SHOP.map(it=>{
       const lv=d.shop[it.id]||0,maxed=lv>=it.max,cost=maxed?0:shopCost(it,lv),can=!maxed&&(this.testAll()||d.zenny>=cost),off=lv>0&&!!d.shopOff[it.id],mb=maxed?null:maxBuy(it);
       return h('div',{class:'card shopi'+(off?' shoff':''),style:'--c:'+it.c},
@@ -385,7 +388,8 @@ class UI{
           lv>0?h('button',{class:'btn small shtog tipabove'+(off?' alt':''),'data-fid':'sht'+it.id,'data-tip':this.t(off?'shopTogOn':'shopTogOff'),'aria-pressed':off?'false':'true',onclick:()=>toggle(it.id)},this.t(off?'shopOffL':'shopOnL')):null,
           h('button',{class:'btn small tipabove'+(can?'':' alt'),disabled:maxed||!can,'data-fid':'sh'+it.id,
             'data-tip':maxed?null:this.t('shopShiftTip',{n:mb.n,z:mb.c}),onclick:e=>buy(it,!!(e&&e.shiftKey))},
-            maxed?this.t('maxed'):(this.testAll()?'FREE':zAmt(cost)))));
+            maxed?this.t('maxed'):h('span',{class:'shpc'},h('span',{class:'shpn'},this.testAll()?'FREE':zAmt(cost)),
+              h('span',{class:'shpm'},h('b',null,'MAX'),h('small',null,'(',this.testAll()?'FREE':zAmt(mb.n?mb.c:cost),')'))))));
     });
     return h('div',null,this.header('shopTitle'),
       h('div',{class:'row shoptop'},h('button',{class:'btn small'+(allOff?' primary':' alt'),'data-fid':'shalloff',disabled:!owned.length,

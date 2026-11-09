@@ -114,7 +114,7 @@ Object.assign(Game.prototype,{
     if(this.emoT>0){this.emoT-=dt;if(this.emoT<=0)this.emo=null;}if(this.immT>0)this.immT-=dt;
     for(const k of['dmg','haste'])if(this.buffs[k]>0){this.buffs[k]-=dt;if(this.buffs[k]<=0)this.recalc();}
     const busy=this.coopChoosing(p.nick);if(busy)p.inv=Math.max(p.inv,.15);   /* choosing a card: standing still, untouchable */
-    let ix=busy?0:this.input.x,iy=busy?0:this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.held){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+    let ix=busy?0:this.input.x,iy=busy?0:this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.held||this.xLock){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;p.ivx=ix;p.ivy=iy;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}
     if(!this.trial&&!this.tun){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);}
@@ -132,7 +132,7 @@ Object.assign(Game.prototype,{
     }
     if(p.atk>0)p.atk-=dt;if(this.fireT>0)this.fireT-=dt;
     const pn=this.pr.length;
-    for(const w of this.weapons.values()){const n0=this.pr.length;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;}
+    if(!this.xLock)for(const w of this.weapons.values()){const n0=this.pr.length;this.curW=w.id;w.update(dt);for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid)this.pr[i].wid=w.id;}
     this.curW=null;if(this.pr.length>pn||this.cast)p.atk=.34;
     this.coopPickups(dt);
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor||'#ffd23f',s:rnd(2,3.5)});}}

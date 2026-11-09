@@ -51,11 +51,45 @@ Object.assign(Renderer.prototype,{
         const s=l.k==='sball'?.32:l.k==='ball'?.55:.85;
         draw(l.x,l.y,s,()=>this.drawLoot({k:l.k,x:0,y:0,t:9,v:l.v,star:l.star,tama:l.tama,ttl:0,lock:l.lock,flat:1},9));
       }
+      this.mapMarks(c2,g,W,H,sx,sy);
       c2.font='700 11px sans-serif';c2.textAlign='right';c2.fillStyle='rgba(255,255,255,.5)';c2.fillText(this.tr(T('centrata su di te · riquadro tratteggiato = ciò che vede lo schermo · 1 m = 10 px','centred on you · dashed box = what the screen shows · 1 m = 10 px')),W-10,H-9);c2.textAlign='left';
       /* the hero: a pulsing marker */
       const pu=.5+.5*Math.sin(performance.now()/260);
       c2.save();c2.translate(W/2,H/2);GLOW.at(c2,0,0,22+6*pu,'#ffe24d',.7);c2.fillStyle='#ffe24d';c2.strokeStyle='#1a1208';c2.lineWidth=2.5;c2.beginPath();c2.arc(0,0,7,0,TAU);c2.fill();c2.stroke();
       c2.fillStyle='#fff';c2.beginPath();c2.arc(0,0,2.6,0,TAU);c2.fill();c2.restore();
     }finally{this.ctx=keep;}
+  },
+  /* v133: the moving targets of the run as icons: the training circle, the Capsule Corp pod, the visitor, the golden Saibaman and a skull on every boss and miniboss.
+     Off the map they sit on its edge with a small arrow pointing at them */
+  mapMarks(c2,g,W,H,sx,sy){
+    const L=[],M=g.mx;
+    if(M){if(M.tr)L.push({x:M.tr.x,y:M.tr.y,k:'tr',c:'#8ad8ff'});if(M.pod&&!(M.pod.fall>0))L.push({x:M.pod.x,y:M.pod.y,k:'pod',c:'#59c8ff'});if(M.ks&&M.ks.go===undefined)L.push({x:M.ks.x,y:M.ks.y,k:'ks',c:KS_COL});}
+    if(g.gold&&!g.gold.dead)L.push({x:g.gold.x,y:g.gold.y,k:'gold',c:'#ffd23f'});
+    for(const e of g.en)if(e.boss&&!e.dead&&!e.sparring)L.push({x:e.x,y:e.y,k:'skull',c:e.mini?'#d9a8ff':e.final?'#ff3b3b':'#ff8a3a',s:e.mini?.8:e.final?1.25:1});
+    const pu=.5+.5*Math.sin(performance.now()/220),m=28;
+    for(const o of L){
+      let X=sx(o.x),Y=sy(o.y);const out=X<m||X>W-m||Y<m||Y>H-m-16;
+      if(out){const a=Math.atan2(Y-H/2,X-W/2),kx=(W/2-m)/Math.max(1e-3,Math.abs(Math.cos(a))),ky=(H/2-m-8)/Math.max(1e-3,Math.abs(Math.sin(a))),r=Math.min(kx,ky);X=W/2+Math.cos(a)*r;Y=H/2+Math.sin(a)*r;
+        c2.save();c2.translate(X,Y);c2.rotate(a);c2.fillStyle=o.c;c2.strokeStyle='#0a0f1c';c2.lineWidth=2;c2.beginPath();c2.moveTo(26,0);c2.lineTo(17,-6);c2.lineTo(17,6);c2.closePath();c2.stroke();c2.fill();c2.restore();}
+      const s=1.25*(o.s||1)*(1+.08*pu);
+      c2.save();c2.translate(X,Y);c2.scale(s,s);GLOW.at(c2,0,0,20,o.c,.55+.25*pu);
+      if(o.k==='skull')this.mapSkull(c2,o.c);
+      else{c2.fillStyle='rgba(10,15,28,.85)';c2.strokeStyle=o.c;c2.lineWidth=2.5;c2.beginPath();c2.arc(0,0,11,0,TAU);c2.fill();c2.stroke();
+        if(o.k==='tr'){c2.fillStyle='#ffffff';c2.font='900 9px sans-serif';c2.textAlign='center';c2.textBaseline='middle';c2.fillText('XP',0,.5);}
+        else if(o.k==='pod'){c2.fillStyle='#e8f4ff';c2.strokeStyle='#1a2a44';c2.lineWidth=1.2;c2.beginPath();c2.ellipse(0,0,4.6,7,0,0,TAU);c2.fill();c2.stroke();c2.fillStyle=o.c;c2.fillRect(-4.6,-1,9.2,2);}
+        else if(o.k==='ks'){c2.fillStyle=o.c;c2.font='900 15px sans-serif';c2.textAlign='center';c2.textBaseline='middle';c2.fillText('!',0,1);}
+        else if(o.k==='gold'){c2.fillStyle='#ffd23f';c2.strokeStyle='#5a3a00';c2.lineWidth=1.2;c2.beginPath();c2.arc(0,1.5,5.5,0,TAU);c2.fill();c2.stroke();c2.fillStyle='#5a3a00';c2.font='900 8px sans-serif';c2.textAlign='center';c2.textBaseline='middle';c2.fillText('Z',0,2);c2.fillStyle='#ffd23f';c2.beginPath();c2.moveTo(-3,-3.5);c2.lineTo(0,-7.5);c2.lineTo(3,-3.5);c2.closePath();c2.fill();}}
+      c2.restore();
+    }
+    c2.textBaseline='alphabetic';c2.textAlign='left';
+  },
+  /* a little skull: round cranium, jaw with teeth, dark eye sockets; tinted ring under it */
+  mapSkull(c2,col){
+    c2.fillStyle='rgba(10,15,28,.85)';c2.strokeStyle=col;c2.lineWidth=2.5;c2.beginPath();c2.arc(0,0,12,0,TAU);c2.fill();c2.stroke();
+    c2.fillStyle='#f4efe4';c2.strokeStyle='#1a1208';c2.lineWidth=1.2;
+    c2.beginPath();c2.arc(0,-1.8,6.6,Math.PI*.83,Math.PI*2.17);c2.lineTo(3.6,4.6);c2.lineTo(-3.6,4.6);c2.closePath();c2.fill();c2.stroke();
+    c2.fillStyle='#1a1208';for(const ex of[-2.6,2.6]){c2.beginPath();c2.ellipse(ex,-1.6,1.9,2.3,0,0,TAU);c2.fill();}
+    c2.beginPath();c2.moveTo(0,1);c2.lineTo(-1,2.8);c2.lineTo(1,2.8);c2.closePath();c2.fill();
+    c2.fillRect(-1.6,3.2,.8,1.6);c2.fillRect(.8,3.2,.8,1.6);
   }
 });

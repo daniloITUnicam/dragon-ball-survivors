@@ -832,3 +832,10 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .adanger small{color:var(--mute);font-weight:600;text-align:center;max-width:460px}
 @keyframes apulse{to{box-shadow:0 0 0 4px rgba(233,80,63,.35)}}
 @media (max-width:640px){.acct2 .aprof{grid-template-columns:auto 1fr}.acct2 .apsync{grid-column:1/-1;align-items:flex-start;text-align:left;flex-direction:row;align-items:center;gap:10px}.acct2 .anote{grid-column:1/-1}.astats{grid-template-columns:repeat(2,1fr)}.aacts{grid-template-columns:1fr}}
+/* v133: shop prices with Shift held: "MAX" over the cost of buying the max */
+.card.shopi .shpc{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05}
+.card.shopi .shpm{display:none;flex-direction:column;align-items:center;line-height:1}
+.card.shopi .shpm b{font-size:1.05em;letter-spacing:.06em;color:#fff;text-shadow:0 1px 0 #3a1a00,0 0 3px #3a1a00,0 0 1px #000}
+.card.shopi .shpm small{font-size:.82em;opacity:.95;white-space:nowrap}
+html.shiftmax .card.shopi .shpm{display:flex}
+html.shiftmax .card.shopi .shpn{display:none}

@@ -26,7 +26,10 @@ const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
 /* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
 const GEM_CAP=90,GEM_KEEP=55;
 /* companion (v54): XP gems it can fetch (px from the player), carried at once, run speed; shockwave when surrounded: enemies needed / radius they count in / radius hit / damage / cooldown (s) */
-const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
+const KAI_TICK=2;
+/* v133: a transformation stops you (no walking, no weapons) from its start until XF_LOCK s after the burst; the camera zooms in to XF_ZOOM and back out in XF_ZOUT s (Renderer.xfZoom) */
+const XF_LOCK=.6,XF_ZOOM=1.6,XF_ZOUT=.9;   /* v133: the Kaioken takes its health every KAI_TICK s, in one bite */
+const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_GIVE=130,PET_KAMI_SPD=560,PET_KAMI_T=2.6,PET_KAMI_R=620,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
@@ -929,6 +932,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.eb=[];
     this.audio.sfx(i>=4?'xburst2':'xburst');
   }
+  get xLock(){const x=this.xform;return !!x&&(!x.released||x.t<x.rel+XF_LOCK);}
   updateXform(rdt){
     const x=this.xform,p=this.p;x.t+=rdt;p.inv=Math.max(p.inv,.35);
     if(!x.released){
@@ -1939,7 +1943,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.buffs.dmg>0){this.buffs.dmg-=dt;if(this.buffs.dmg<=0)this.recalc();}
     if(this.buffs.haste>0){this.buffs.haste-=dt;if(this.buffs.haste<=0)this.recalc();}
 
-    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held||p.down){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
+    let ix=this.input.x,iy=this.input.y;if(this.bers>0){ix=-ix;iy=-iy;}if(this.dying||this.held||p.down||this.xLock){ix=0;iy=0;}const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
     const ox0=p.x,oy0=p.y;p.mv=il>.05;p.ivx=ix;p.ivy=iy;const sp=125*S.spd;p.x+=ix*sp*dt;p.y+=iy*sp*dt;
     if(this.bv&&this.bv.t>0){p.x+=this.bv.x*dt;p.y+=this.bv.y*dt;this.bv.t-=dt;}if(!frozen){World.resolve(this.stage.theme,p,9);this.blockWater(p,ox0,oy0);this.updateLava(dt);}
     if(ix>.1)p.face=1;else if(ix<-.1)p.face=-1;
@@ -1998,7 +2002,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(p.atk>0)p.atk-=dt;
     if(this.fireT>0)this.fireT-=dt;
     const pn=this.pr.length;
-    if(!this.dying&&!p.down)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;this.audio.wctx=w.id;this.audio.wevo=w.evo|0;w.update(dt);this.audio.wctx=null;for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid){this.pr[i].wid=w.id;this.pr[i].we=w.evo|0;}if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
+    if(!this.dying&&!p.down&&!this.xLock)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;this.audio.wctx=w.id;this.audio.wevo=w.evo|0;w.update(dt);this.audio.wctx=null;for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid){this.pr[i].wid=w.id;this.pr[i].we=w.evo|0;}if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
     this.curW=null;
     if(this.pr.length>pn||this.cast)p.atk=.34;
     this.updateProjectiles(dt);
@@ -2116,6 +2120,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   kaiToggle(){
     if(!this.kaiAvail||this.modal||this.ended||this.xform)return false;
     if(this.kai===0&&this.p.hp<this.p.maxHp*.2){this.floatText(this.p.x,this.p.y-56,this.env.tr(T('Troppo debole!','Too weak!')),3);return false;}
+    if(this.kai===0)this.kaiAcc=0;   /* the first bite comes KAI_TICK s after switching it on */
     this.kai=(this.kai+1)%3;if(this.kai===2)this.run.k20=(this.run.k20||0)+1;this.recalc();
     const p=this.p;
     if(this.kai>0){
@@ -2124,11 +2129,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     }else{this.say(this.env.tr(T('Kaioken disattivato','Kaioken off')),'#ffb0a0',1.4);this.audio.sfx('click');this.ring(p.x,p.y,90,'#ffb0a0',.4);}
     return true;
   }
-  /* HP lost per second: 4 (x10) / 8 (x20); middle form -30%, final form -55% */
-  get kaiDrain(){const kt=this.abil.m==='kaioken'?this.abTier:0;return(this.kai===1?4:8)*(kt>=2?.45:kt>=1?.7:1);}
+  /* HP lost per second: 8 (x10) / 16 (x20) (v133: doubled, taken every KAI_TICK s); middle form -30%, final form -55% */
+  get kaiDrain(){const kt=this.abil.m==='kaioken'?this.abTier:0;return(this.kai===1?8:16)*(kt>=2?.45:kt>=1?.7:1);}
   updateKaioken(dt){
     const p=this.p;
-    p.hp-=this.kaiDrain*dt;
+    this.kaiAcc=(this.kaiAcc||0)+dt;
+    if(this.kaiAcc>=KAI_TICK){this.kaiAcc-=KAI_TICK;const d=Math.min(this.kaiDrain*KAI_TICK,Math.max(0,p.hp-p.maxHp*.1));   /* never below 10%: there it stops */
+      p.hp-=d;if(d>0){this.floatText(p.x,p.y-52,'-'+Math.round(d),4);this.ring(p.x,p.y,46,'#ff3b2f',.35);}}
     if(this.fx.length<400&&Math.random()<dt*(this.kai===1?22:44)*(FXL.on?.3:1))this.fx.push({x:p.x+rnd(-14,14),y:p.y-rnd(0,34),vx:rnd(-20,20),vy:-rnd(60,160),l:rnd(.3,.6),m:.6,c:Math.random()<.4?'#ffb0a0':'#ff3b2f',s:rnd(2,4)});
     if(p.hp<=p.maxHp*.1){this.kai=0;this.recalc();this.say(this.env.tr(T('Kaioken interrotto: vita troppo bassa!','Kaioken stopped: HP too low!')),'#ffb0a0',2);}
   }
@@ -2155,6 +2162,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p;q.t+=dt;if(q.cd>0)q.cd-=dt;if(q.fl>0)q.fl-=dt;if(q.act>0)q.act-=dt;if(q.sw>0)q.sw-=dt;if(q.seekT>0)q.seekT-=dt;if(q.grab>0)q.grab-=dt;if(q.give>0)q.give-=dt;
     q.hold=(q.hold||[]).filter(g=>!g.dead);
     if(this.trial){if(q.hold.length)this.petRelease(q);}
+    /* v133: your real speed (dash, haste, Kaioken included), smoothed: the pet keeps up with it */
+    const pv=q.lpx===undefined?0:Math.hypot(p.x-q.lpx,p.y-q.lpy)/Math.max(dt,1e-3);q.lpx=p.x;q.lpy=p.y;q.pv=pv>2500?(q.pv||0):lerp(q.pv||0,pv,Math.min(1,dt*6));
+    const vMax=Math.max(PET_SPD,125*this.S.spd*1.3,q.pv*1.35);
+    if(q.kami){this.petKami(q,dt);return;}
     const tx=p.x-p.face*34+Math.sin(q.t*1.7)*8,ty=p.y+8+Math.cos(q.t*2.3)*5;
     const dx=tx-q.x,dy=ty-q.y,d=Math.hypot(dx,dy);
     let chase=null;
@@ -2164,15 +2175,15 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(chase&&d>PET_SEEK+160){q.tg=null;chase=null;q.seekT=1.5;}   /* too far from you: give up for a moment */
     }
     if(chase){
-      const gx=chase.x-q.x,gy=chase.y-q.y,gd=Math.hypot(gx,gy)||1,st=Math.min(gd,PET_SPD*dt);
+      const gx=chase.x-q.x,gy=chase.y-q.y,gd=Math.hypot(gx,gy)||1,st=Math.min(gd,Math.max(PET_SPD*1.3,vMax)*dt);
       q.x+=gx/gd*st;q.y+=gy/gd*st;if(Math.abs(gx)>3)q.face=gx>0?1:-1;
       if(gd<14){chase.held=true;q.hold.push(chase);q.tg=null;q.grab=.5;if(this.fx.length<380)this.fx.push({x:q.x,y:q.y-14,vx:0,vy:-30,l:.35,m:.35,c:'#9adfff',s:3});}
     }else{
       /* v109: it walks back to you (it used to jump to your side from 420 px); faster when far behind, a jump only after a teleport of yours (1800 px+) */
-      if(d>1800){q.x=tx;q.y=ty;}else if(d>0){const st=Math.min(d*Math.min(1,dt*(d>60?5:3)),Math.max(PET_SPD,125*this.S.spd*1.3)*(d>420?1.8:1)*dt);q.x+=dx/d*st;q.y+=dy/d*st;}
+      /* v133: with gems it hurries back (x1.7) and hands them over from PET_GIVE px (they fly the rest) */
+      if(d>1800){q.x=tx;q.y=ty;}else if(d>0){const st=Math.min(d*Math.min(1,dt*(d>60?6:3)),(vMax*(q.hold.length?1.7:1)+d*1.2)*(d>420?1.6:1)*dt);q.x+=dx/d*st;q.y+=dy/d*st;}
       if(Math.abs(dx)>3)q.face=dx>0?1:-1;
-      /* back at your side: hand the gems over */
-      if(q.hold.length&&Math.hypot(p.x-q.x,p.y-q.y)<58)this.petRelease(q);
+      if(q.hold.length&&Math.hypot(p.x-q.x,p.y-q.y)<PET_GIVE)this.petRelease(q);
     }
     q.hold.forEach((g,i)=>{g.x=q.x;g.y=q.y-24-i*7;});
     if(this.trial)return;
@@ -2189,6 +2200,18 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       }
     }
   }
+  petKamiTgt(q){let b=null,bd=PET_KAMI_R*PET_KAMI_R;for(const e of this.en){if(e.dead||e.under||e.goldS)continue;const dx=e.x-q.x,dy=e.y-q.y,d=dx*dx+dy*dy;if(d<bd){bd=d;b=e;}}return b;}
+  petBoom(q){this.explodeAt(q.x,q.y-6,160,12+this.lvl*.8,'#ff7a3a');this.burst(q.x,q.y-10,22,'#ffffff');this.shake=Math.max(this.shake,.35);this.audio.sfx('boom');}
+  /* the Saibaman's run: it homes in on its target (a new one if that dies), explodes on contact or after PET_KAMI_T s, then sprouts again at your side */
+  petKami(q,dt){
+    const K=q.kami;K.t+=dt;q.fl=.12;q.act=.2;
+    if(!K.tg||K.tg.dead)K.tg=this.petKamiTgt(q);
+    const tg=K.tg;
+    if(tg){const gx=tg.x-q.x,gy=tg.y-6-q.y,gd=Math.hypot(gx,gy)||1,st=Math.min(gd,PET_KAMI_SPD*Math.min(1,.45+K.t*1.6)*dt);q.x+=gx/gd*st;q.y+=gy/gd*st;if(Math.abs(gx)>2)q.face=gx>0?1:-1;
+      if(this.fx.length<400&&Math.random()<dt*30)this.fx.push({x:q.x+rnd(-5,5),y:q.y-rnd(4,18),vx:-gx/gd*60,vy:-rnd(10,40),l:.3,m:.3,c:Math.random()<.5?'#ff7a3a':'#ffd23f',s:rnd(2,4)});}
+    if(!tg||(tg&&Math.hypot(tg.x-q.x,tg.y-6-q.y)<tg.r+16)||K.t>=PET_KAMI_T){
+      this.petBoom(q);q.kami=null;const p=this.p;q.x=p.x-p.face*34;q.y=p.y+8;q.fl=.5;this.burst(q.x,q.y-12,14,'#6ac04a');this.ring(q.x,q.y,40,'#6ac04a',.4);}
+  }
   usePet(){
     if(this.abBlocked())return false;
     const q=this.pet;if(!q||q.cd>0||this.modal||this.ended)return false;
@@ -2203,9 +2226,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       this.ring(p.x,p.y,210,'#ff9ec7',.7);
       for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y;if(dx*dx+dy*dy<(210+e.r)**2)e.stun=Math.max(e.stun,e.boss?.4:1);}
       this.floatText(p.x,p.y-56,tr(T('Raggio Caramella!','Candy Beam!')),2);
-    }else if(id==='saibaman'){
-      this.explodeAt(q.x,q.y-6,160,12+this.lvl*.8,'#ff7a3a');this.shake=Math.max(this.shake,.3);this.audio.sfx('boom');
-      this.floatText(p.x,p.y-56,tr(T('Autodistruzione!','Self-Destruct!')),2);
+    }else if(id==='saibaman'){   /* v133: it runs at the nearest enemy and blows up on it (on the spot if nobody is around) */
+      const tg=this.petKamiTgt(q);this.floatText(p.x,p.y-56,tr(T('Autodistruzione!','Self-Destruct!')),2);
+      if(tg){if(q.hold.length)this.petRelease(q);q.kami={tg,t:0};this.audio.sfx('abDash');}else this.petBoom(q);
     }
     return true;
   }

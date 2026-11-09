@@ -758,7 +758,7 @@ const TOTEMS=[
 ];
 /* ---------- Character abilities: one per character, key R (or the on-screen button next to the pet) ---------- */
 const ABIL_DESC={
-  kaioken:()=>T('Kaioken x10 / x20: danno ×1,5 / ×2, ma perdi 4 / 8 salute al secondo. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×1.5 / ×2, but you lose 4 / 8 HP per second. Press again to switch or stop.'),
+  kaioken:()=>T('Kaioken x10 / x20: danno ×1,5 / ×2, ma perdi 16 / 32 salute ogni 2 secondi. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×1.5 / ×2, but you lose 16 / 32 HP every 2 seconds. Press again to switch or stop.'),
   berserk:()=>T('Berserk: 6 secondi fuori controllo (comandi invertiti, attacchi casuali, mira delle armi imprecisa, non annullabile), ma +80% danno, +5 armatura e −30% danni subiti.','Berserk: 6 seconds out of control (inverted controls, random attacks, inaccurate weapon aim, cannot be cancelled), but +80% damage, +5 armor and −30% damage taken.'),
   beam:v=>T('Raggio potente nella direzione del nemico più vicino: colpisce tutto in linea.','A powerful beam toward the nearest enemy: hits everything in line.'),
   nova:v=>T('Esplosione di ki attorno a te: danni ad area e respinge i nemici.','A ki blast around you: area damage that pushes enemies back.'),

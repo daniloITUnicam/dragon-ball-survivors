@@ -311,12 +311,17 @@ this.W=1;this.H=1;this.Z=1;
   draw(g,dt){
     if(this.dynPend){this.dynPend=false;this.resize();}   /* v132: before z0 is taken - inside, the finally below put back the zoom of the old size on the new canvas, and the view stayed zoomed in by a step until the next one */
     const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
+    {const xz=this.xfZoom(g);if(xz!==1)this.Z*=xz;}   /* v133: transformation close-up */
     {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+.3*f;}   /* v116: boss cinematic camera */
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
   }
+  /* v133: the camera closes in on the hero while he transforms (XF_ZOOM at the burst), holds through XF_LOCK and eases back out in XF_ZOUT s */
+  xfZoom(g){const x=g.xform;if(!x||typeof XF_ZOOM==='undefined')return 1;const e=v=>v*v*(3-2*v);
+    if(!x.released)return 1+(XF_ZOOM-1)*e(clamp(x.t/x.rel,0,1));
+    const a=x.t-x.rel-XF_LOCK;return a<=0?XF_ZOOM:1+(XF_ZOOM-1)*(1-e(clamp(a/XF_ZOUT,0,1)));}
   drawFrame(g,dt){
     Sprites.warmStep();this.fdt=dt;
-    const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p;
+    const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p,ta=g.rt;   /* v133: ta = real time for the sprite animations (in x2 the game clock t runs twice as fast) */
     FXL.a=s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1);FXL.m=1;
     this.resetCtx();
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
@@ -374,15 +379,15 @@ this.W=1;this.H=1;this.Z=1;
     this._snapN=0;
     list.sort((a,b)=>a.y-b.y);
     for(const e of list){
-      if(e.co){this.drawCorpse(e.co,t);continue;}
+      if(e.co){this.drawCorpse(e.co,ta);continue;}
       if(e.tw){TopArt.tower(ctx,t);continue;}
       if(e.pil){this.drawPillar(e.pil);continue;}
-      if(e.pet){this.drawPet(e.pet,t,g);continue;}
-      if(e.ally){this.drawAlly(e.ally,t,g);continue;}
+      if(e.pet){this.drawPet(e.pet,ta,g);continue;}
+      if(e.ally){this.drawAlly(e.ally,ta,g);continue;}
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
       if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
-      this.drawEnemy(e,t);
+      this.drawEnemy(e,ta);
     }
     if(g.vic)this.drawVictory(g.vic,t);
     if(g.sbc)this.drawSbc(g,t);
@@ -397,7 +402,7 @@ this.W=1;this.H=1;this.Z=1;
     const elv=ELEC.lvl(g);
     this.fxBegin();
     for(const b of (FXL.a>0?g.pr:[])){
-      if(b.wid&&WFX.proj(ctx,b,t))continue;   /* v123: painted sheet */
+      if(b.wid&&WFX.proj(ctx,b,ta))continue;   /* v123: painted sheet */
       if(b.tr)VFX.trail(ctx,b.tr,b.r*.9,b.c);
       if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
       else VFX.orb(ctx,b.x,b.y,b.r,b.c,t);
@@ -455,8 +460,8 @@ this.W=1;this.H=1;this.Z=1;
     }
     this.fxEnd();
     /* the character model (and its aura) is always on top of every ability effect */
-    this.drawPlayer(g,t);
-    if(g.coop||g.coopView)COOPG.drawOthers(this,g,t);   /* v120: the other heroes, their weapons, names, the fallen */
+    this.drawPlayer(g,ta);
+    if(g.coop||g.coopView)COOPG.drawOthers(this,g,ta);   /* v120: the other heroes, their weapons, names, the fallen */
     /* Tournament of Power: behind the tower the hero is hidden by it (the tower is painted again over him, clipped to his box so nothing else is touched) */
     /* v112: Snake Way, behind a building / tree / rock of an island the hero, the enemies and the companion are hidden by it */
     if(theme==='snake'&&!g.trial&&this._snIS&&this._snIS.length){
@@ -501,7 +506,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.xform&&!g.xform.released){const c=g.xform.t/g.xform.rel;ctx.fillStyle='rgba(2,4,18,'+(.42*c)+')';ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=.25*c;ctx.fillStyle=g.xform.col;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.lsT>0){   /* v116: Last Stand: the world loses its colours (the hero is drawn again on top, in colour), a red pulse at the edges */
       const f=Math.min(1,(LS_T-g.lsT)/.3,g.lsT/.5);ctx.save();ctx.globalAlpha=.85*f;ctx.globalCompositeOperation='saturation';ctx.fillStyle='#808080';ctx.fillRect(0,0,this.W,this.H);ctx.restore();
-      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,t);ctx.setTransform(1,0,0,1,0,0);
+      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,ta);ctx.setTransform(1,0,0,1,0,0);
       const pu=.5+.5*Math.sin(t*9),gr=ctx.createRadialGradient(this.W/2,this.H/2,Math.min(this.W,this.H)*.3,this.W/2,this.H/2,Math.max(this.W,this.H)*.7);gr.addColorStop(0,'rgba(255,0,0,0)');gr.addColorStop(1,'rgba(200,0,20,'+(.35+.2*pu)*f+')');ctx.fillStyle=gr;ctx.fillRect(0,0,this.W,this.H);}
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);BOSSX.draw(this,g,ctx,t);GHOST.draw(this,g,ctx,t);EXTRAS.draw(this,g,ctx,t);
     if(g.kch>KCH_MIN){const k=(g.kch-KCH_MIN)/(KCH_MAX-KCH_MIN),kw=g.weapons.get('kame'),c=kw?kw.color:'#59c8ff';GLOW.at(ctx,p.x+p.face*10,p.y-20,16+30*k,c,.5+.4*k);GLOW.at(ctx,p.x+p.face*10,p.y-20,8+10*k,'#ffffff',.8);
@@ -515,7 +520,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.flash>0){ctx.globalAlpha=clamp(g.flash*1.5,0,.8)*(FXL.on?.3:1);ctx.fillStyle=g.flashC;ctx.fillRect(0,0,this.W,this.H);ctx.globalAlpha=1;}
     if(g.summon){   /* v113: Shenron / Porunga (summon.js), then the hero again on top, lit by the dragon's light */
       SUMMON.draw(this,g,(p.x-cx)*this.Z,(p.y-40-cy)*this.Z);
-      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,t);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
+      ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,ta);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
       if(g.summon&&g.summon.ph!=='leave')return;   /* no HUD while the dragon is out */
     }
     this.hud(g,dt,cx,cy);
@@ -662,7 +667,7 @@ this.W=1;this.H=1;this.Z=1;
     const M=SPRITE_PACK[id]||{},art=M.art||S.fh,k=h/art,f=Math.floor(performance.now()*.012)%8,ctx=this.ctx;
     /* painted flames as they are (added only as light they washed out into a plain glow on bright ground), then a soft light pass */
     const dx=x-S.fw/2*k,dy=y-(M.ay||S.fh)*k,dw=S.fw*k,dh=S.fh*k;
-    ctx.save();ctx.imageSmoothingEnabled=true;ctx.globalAlpha=al*.92;ctx.drawImage(img,f*S.fw,0,S.fw,S.fh,dx,dy,dw,dh);
+    ctx.save();ctx.imageSmoothingEnabled=true;ctx.globalCompositeOperation='source-over';ctx.globalAlpha=al*.92;ctx.drawImage(img,f*S.fw,0,S.fw,S.fh,dx,dy,dw,dh);   /* (callers may be in 'lighter' mode: the flames must not turn into light) */
     ctx.globalCompositeOperation='lighter';ctx.globalAlpha=al*.4;ctx.drawImage(img,f*S.fw,0,S.fw,S.fh,dx,dy,dw,dh);
     ctx.restore();return true;
   }
@@ -679,15 +684,16 @@ this.W=1;this.H=1;this.Z=1;
      Drawn with the player, i.e. above every ability effect, so it never fades into the background. */
   kaiAura(g,t){
     const ctx=this.ctx,p=g.p,x2=g.kai===2,k2=x2?1.55:1,fi=g.formIdx>=0?g.formIdx:0,R0=(48+fi*4)*k2,rt=g.rt,pul=1+Math.sin(rt*11)*.07+Math.sin(rt*23)*.03;
-    const cy=p.y-24;
-    GLOW.at(ctx,p.x,cy,R0*1.85*pul,'#ff1a10',.55);GLOW.at(ctx,p.x,cy,R0*1.15*pul,'#ff4a2a',.7);GLOW.at(ctx,p.x,cy,R0*.62,'#ffc0a0',.28);
+    const cy=p.y-24,kid=x2?'aurakaio2':'aurakaio',pa=!!Sprites.sheets[kid],gk=pa?.35:1;   /* v133: with the painted aura the red glow is soft (it covered the flames) */
+    GLOW.at(ctx,p.x,cy,R0*1.85*pul,'#ff1a10',.55*gk);GLOW.at(ctx,p.x,cy,R0*1.15*pul,'#ff4a2a',.7*gk);GLOW.at(ctx,p.x,cy,R0*.62,'#ffc0a0',.28*gk);
+    /* v133: the painted Kaioken aura (x20: its own, bigger sheet), whole and opaque like the forms' auras; transformed, the form's aura burns inside it (Kaioken (Super Saiyan)) */
+    const fo=g.formIdx>=0?this.auraOf(g,g.formIdx):null,big=fo?1.2:1;
+    if(pa){this.auraSprite(kid,p.x,p.y+8,this.heroH(g)*(x2?2.05:1.8)*big*pul,1);if(fo)this.auraSprite(fo.id,p.x,p.y+8,this.heroH(g)*1.75,.78,fo.tint);}
     ctx.save();ctx.globalCompositeOperation='lighter';
     /* ground rings expanding outward, continuously */
     for(let i=0;i<(FXL.on?1:3);i++){const kk=(rt*(x2?1.7:1.2)+i/3)%1,rr=18+R0*1.1*kk;ctx.strokeStyle=hexA('#ff4a3a',(1-kk)*.7);ctx.lineWidth=2.6*(1-kk)+.8;ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.3,0,0,TAU);ctx.stroke();}
     /* flame tongues: back layer (wide, dark red) then front layer (narrow, orange/white), each sways and licks upward on its own phase */
-    const fo=g.formIdx>=0?this.auraOf(g,g.formIdx):null,big=fo?1.2:1;   /* transformed: the Kaioken burns around the form's own aura (Kaioken (Super Saiyan)), so it is bigger */
-    if(this.auraSprite(x2?'aurakaio2':'aurakaio',p.x,p.y+8,this.heroH(g)*(x2?2.05:1.8)*big*pul,.88)){   /* v132: the painted Kaioken aura (x20: its own, bigger sheet) */
-      if(fo)this.auraSprite(fo.id,p.x,p.y+8,this.heroH(g)*1.75,.78,fo.tint);
+    if(pa){
       for(let i=0;i<(x2?12:7);i++){const ph=(rt*(.9+i*.13)+i*.43)%1,ex=p.x+Math.sin(i*5.1+rt*3)*R0*.55*(1-ph*.3),ey=p.y-6-ph*R0*1.5;ctx.fillStyle=hexA(i%2?'#ffe0c0':'#ff6a4a',(1-ph)*.9);ctx.fillRect(ex-1,ey-1,2,2);}
       ctx.restore();return;}
     const layers=[[x2?20:14,1.0,'#d81408',.38,.9],[x2?16:11,.78,'#ff5a2a',.5,1.2],[x2?12:8,.55,'#ffd0a0',.42,1.55]];
@@ -1784,7 +1790,7 @@ this.W=1;this.H=1;this.Z=1;
     {const wt=EXTRAS.wxTag(g);if(wt){txt(tr(wt),W-m,by,'#cfeaff','right',F(12));by+=16*U;}}   /* v117 */
     if(g.bers>0){txt('BERSERK '+Math.ceil(g.bers)+'s  ·  +80% DMG  +5 ARM',W-m,by,'#8aff3a','right',F(14,900));by+=17*U;}
     else if(g.berAvail){txt(g.bersCd>0?'Berserk '+Math.ceil(g.bersCd)+'s':'['+(this.keyHints.kaioken||'R')+'] Berserk',W-m,by,g.bersCd>0?'#8a9a8a':'#b8ff8a','right',F(11));by+=15*U;}
-    if(g.kai>0){txt('KAIOKEN x'+(g.kai===1?10:20)+'  -'+(Math.round(g.kaiDrain*10)/10)+' HP/s  ['+(this.keyHints.kaioken||'R')+']',W-m,by,'#ff3b2f','right',F(13,900));by+=17*U;}
+    if(g.kai>0){txt('KAIOKEN x'+(g.kai===1?10:20)+'  -'+Math.round(g.kaiDrain*KAI_TICK)+' HP / '+KAI_TICK+' s  ['+(this.keyHints.kaioken||'R')+']',W-m,by,'#ff3b2f','right',F(13,900));by+=17*U;}
     else if(g.kaiAvail){txt('['+(this.keyHints.kaioken||'R')+'] Kaioken x10 / x20',W-m,by,'#d89a8a','right',F(11));by+=15*U;}
     if(g.slowT>0){txt(tt('buffSlow'),W-m,by,'#9fe8ff','right',F(12));by+=16*U;}
     if(g.x2)txt('x2',W-m,by+4*U,'#ff7ad0','right',F(16,900));
@@ -1812,6 +1818,8 @@ this.W=1;this.H=1;this.Z=1;
     /* beacons for off-screen map items */
     const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f']);
     if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a']);
+    if(g.mx){const M=g.mx;if(M.tr)tgts.push([M.tr.x,M.tr.y,'#8ad8ff']);if(M.pod&&!(M.pod.fall>0))tgts.push([M.pod.x,M.pod.y,'#59c8ff']);if(M.ks&&!M.ks.met&&M.ks.go===undefined)tgts.push([M.ks.x,M.ks.y,KS_COL]);}   /* v132: training circle, pod, visitor */
+    if(g.gold&&!g.gold.dead)tgts.push([g.gold.x,g.gold.y,'#ffd23f']);   /* v133: the golden Saibaman */
     for(const c of g.chests)if(c.op===undefined)tgts.push([c.x,c.y,RARITY[c.rar||0].c]);
     const altS=new Set();for(const l of g.loot)if(!(l.alt&&!l.dead&&(altS.has(l.isle)||!altS.add(l.isle)))&&(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag'))tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
     for(const [tx3,ty3,col] of (g.trial?[]:tgts)){

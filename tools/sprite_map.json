@@ -7,62 +7,494 @@
    ],
    "forms": {
     "base": {
-     "grid": "Goku nuovo/normal",
-     "h": 49,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku",
+     "idle": 11,
+     "walk": [
+      11,
+      11,
+      11,
+      11
+     ],
+     "wind": 38,
+     "thrust": 26,
+     "power": 13,
+     "dash": 15,
+     "walk_dir": "camminata/goku",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "0": {
-     "grid": "Goku nuovo/kaioken",
-     "keep_sheet": true,
-     "grid_use": [
-      "power",
-      "dash"
-     ]
+     "src": "GOKU fases/Goku kaioken",
+     "idle": 7,
+     "walk": [
+      7,
+      7,
+      7,
+      7
+     ],
+     "wind": 18,
+     "thrust": 32,
+     "power": 9,
+     "dash": 11,
+     "walk_dir": "camminata/goku_0",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "1": {
-     "grid": "Goku nuovo/ssj1",
-     "h": 51,
-     "fx_keep": true,
-     "fx": null
-    },
-    "2": {
-     "grid": "Goku nuovo/ssj2",
-     "h": 51,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku SSJ 1",
+     "idle": 1,
+     "walk": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "wind": 2,
+     "thrust": 11,
+     "power": 3,
+     "dash": 5,
+     "walk_dir": "camminata/goku_1",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "3": {
-     "grid": "Goku nuovo/ssj3",
-     "h": 51,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku SSJ 3",
+     "idle": 1,
+     "walk": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "wind": 2,
+     "thrust": 11,
+     "power": 3,
+     "dash": 5,
+     "walk_dir": "camminata/goku_3",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "4": {
-     "grid": "Goku nuovo/ssjgod",
-     "h": 51,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku God",
+     "idle": 3,
+     "walk": [
+      3,
+      3,
+      3,
+      3
+     ],
+     "wind": 5,
+     "thrust": 35,
+     "power": 9,
+     "dash": 32,
+     "fx": [
+      "GOKU fases/Goku God",
+      11
+     ],
+     "walk_dir": "camminata/goku_4",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "5": {
-     "grid": "Goku nuovo/ssjgodssj",
-     "h": 50,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku Blue",
+     "idle": 16,
+     "walk": [
+      16,
+      16,
+      16,
+      16
+     ],
+     "wind": 17,
+     "thrust": 56,
+     "power": 20,
+     "dash": 47,
+     "fx": [
+      "GOKU fases/Goku Blue",
+      23
+     ],
+     "walk_dir": "camminata/goku_5",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "6": {
-     "grid": "Goku nuovo/ultrainstinctsign",
-     "h": 56,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku Instinto Superior",
+     "idle": 7,
+     "walk": [
+      7,
+      7,
+      7,
+      7
+     ],
+     "wind": 47,
+     "thrust": 51,
+     "power": 12,
+     "dash": 19,
+     "fx": [
+      "GOKU fases/Goku Instinto Superior",
+      21
+     ],
+     "walk_dir": "camminata/goku_6",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     },
     "7": {
-     "grid": "Goku nuovo/ultrainstinctcomplete",
-     "h": 56,
-     "fx_keep": true,
-     "fx": null
+     "src": "GOKU fases/Goku Instinto Superior Completo",
+     "idle": 10,
+     "walk": [
+      10,
+      10,
+      10,
+      10
+     ],
+     "wind": 19,
+     "thrust": 21,
+     "power": 11,
+     "dash": 14,
+     "fx": [
+      "GOKU fases/Goku Instinto Superior Completo",
+      17
+     ],
+     "walk_dir": "camminata/goku_7",
+     "walk_n": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "idle_n": 0
     }
-   }
+   },
+   "note": "form 2 (Super Saiyan 2) has no sheet on purpose: the game falls back to goku_1 (same sprite as Super Saiyan, its own aura)"
+  },
+  "vegeta": {
+   "fx": [
+    "GOKU fases/Goku",
+    3
+   ],
+   "forms": {
+    "base": {
+     "src": "VEGETA fases/Vegeta",
+     "idle": 8,
+     "walk": [
+      8,
+      8,
+      8,
+      8
+     ],
+     "wind": 87,
+     "thrust": 60,
+     "power": 33,
+     "dash": 13
+    },
+    "0": {
+     "src": "VEGETA fases/Vegeta Sayajin Saga",
+     "idle": 1,
+     "walk": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "wind": 44,
+     "thrust": 40,
+     "power": 24,
+     "dash": 6
+    },
+    "1": {
+     "src": "VEGETA fases/Vegeta Ssj Grade",
+     "idle": 8,
+     "walk": [
+      8,
+      8,
+      8,
+      8
+     ],
+     "wind": 22,
+     "thrust": 74,
+     "power": 84,
+     "dash": 15,
+     "fx_recolor": [
+      [
+       "#fe551d",
+       "#1f3570"
+      ],
+      [
+       "#365985",
+       "#e8ecf0"
+      ],
+      [
+       "#3c6199",
+       "#c4ccd6"
+      ],
+      [
+       "#000000",
+       "#ffc83e"
+      ]
+     ]
+    },
+    "4": {
+     "src": "VEGETA fases/Vegeta Ssj God",
+     "idle": 1,
+     "walk": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "wind": 40,
+     "thrust": 51,
+     "power": 24,
+     "dash": 6,
+     "fx_recolor": [
+      [
+       "#fe551d",
+       "#1f3570"
+      ],
+      [
+       "#365985",
+       "#e8ecf0"
+      ],
+      [
+       "#3c6199",
+       "#c4ccd6"
+      ],
+      [
+       "#000000",
+       "#ee3354"
+      ]
+     ]
+    },
+    "5": {
+     "src": "VEGETA fases/Vegeta Blue",
+     "idle": 8,
+     "walk": [
+      8,
+      8,
+      8,
+      8
+     ],
+     "wind": 39,
+     "thrust": 120,
+     "power": 117,
+     "dash": 33,
+     "fx_recolor": [
+      [
+       "#fe551d",
+       "#1f3570"
+      ],
+      [
+       "#365985",
+       "#e8ecf0"
+      ],
+      [
+       "#3c6199",
+       "#c4ccd6"
+      ],
+      [
+       "#000000",
+       "#239bb1"
+      ]
+     ]
+    },
+    "6": {
+     "src": "VEGETA fases/Vegeta Blue",
+     "idle": 8,
+     "walk": [
+      8,
+      8,
+      8,
+      8
+     ],
+     "wind": 39,
+     "thrust": 120,
+     "power": 117,
+     "dash": 33,
+     "recolor": [
+      [
+       "#89dde7",
+       "#e2c8ff"
+      ],
+      [
+       "#40cdda",
+       "#b48cff"
+      ],
+      [
+       "#4ab6c1",
+       "#9a70ee"
+      ],
+      [
+       "#239bb1",
+       "#8458d8"
+      ],
+      [
+       "#006f86",
+       "#5a34a8"
+      ],
+      [
+       "#004f60",
+       "#42247e"
+      ]
+     ],
+     "fx_recolor": [
+      [
+       "#fe551d",
+       "#1f3570"
+      ],
+      [
+       "#365985",
+       "#e8ecf0"
+      ],
+      [
+       "#3c6199",
+       "#c4ccd6"
+      ],
+      [
+       "#000000",
+       "#8458d8"
+      ]
+     ]
+    },
+    "7": {
+     "src": "VEGETA fases/Vegeta Blue Full Power",
+     "idle": 12,
+     "walk": [
+      12,
+      12,
+      12,
+      12
+     ],
+     "wind": 26,
+     "thrust": 62,
+     "power": 15,
+     "dash": 20,
+     "recolor": [
+      [
+       "#eafdff",
+       "#f6dcff"
+      ],
+      [
+       "#2094d0",
+       "#c070f0"
+      ],
+      [
+       "#16368d",
+       "#7a2cc0"
+      ],
+      [
+       "#18358a",
+       "#7a2cc0"
+      ],
+      [
+       "#0d266c",
+       "#5c1f98"
+      ],
+      [
+       "#081848",
+       "#3c1066"
+      ]
+     ],
+     "fx_recolor": [
+      [
+       "#fe551d",
+       "#1f3570"
+      ],
+      [
+       "#365985",
+       "#e8ecf0"
+      ],
+      [
+       "#3c6199",
+       "#c4ccd6"
+      ],
+      [
+       "#000000",
+       "#7a2cc0"
+      ]
+     ]
+    }
+   },
+   "fx_recolor": [
+    [
+     "#fe551d",
+     "#1f3570"
+    ],
+    [
+     "#365985",
+     "#e8ecf0"
+    ],
+    [
+     "#3c6199",
+     "#c4ccd6"
+    ]
+   ],
+   "note": "pack: Dragon Ball Sagas/VEGETA fases (+ GOKU fases/Goku 3 for the streak, recoloured). Forms 2 and 3 (SSJ2/SSJ3) have no sheet: they use vegeta_1. 6 = Vegeta Blue and 7 = Blue Full Power with an Ultra Ego hair palette (recolor). Walk: synthetic until the video walks (camminata/vegeta*) are made."
   }
  },
  "weapons": {
