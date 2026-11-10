@@ -63,7 +63,16 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.retry.outputs.page_url }}
     steps:
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      # Pages a volte resta bloccato su "syncing_files" finché deploy-pages si arrende (10 minuti, non si possono aumentare):
+      # un secondo tentativo con lo stesso artifact. (Per rilanciare a mano usa "Run workflow": "Re-run all jobs" crea un
+      # secondo artifact "github-pages" nella stessa run e deploy-pages fallisce subito.)
+      - if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - id: retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
