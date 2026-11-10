@@ -17,7 +17,7 @@ canvas#c{position:fixed;inset:0;display:block;image-rendering:pixelated}
 #ui{position:fixed;inset:0;pointer-events:none}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:14px;padding:max(16px,env(safe-area-inset-top,0px)) 18px max(16px,env(safe-area-inset-bottom,0px));background:rgba(7,16,28,.82);overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
 .screen.main{justify-content:center;background:linear-gradient(180deg,rgba(7,16,28,.35),rgba(7,16,28,.85))}
-.screen.center{justify-content:center}
+.screen.center{justify-content:center;justify-content:safe center}
 .screen.modal{justify-content:center;justify-content:safe center;background:rgba(5,10,20,.78);backdrop-filter:blur(3px);z-index:5}
 h1{font-family:var(--display);font-weight:400;font-size:clamp(36px,8vw,78px);line-height:.95;margin:0;text-align:center;color:var(--orange);text-shadow:3px 3px 0 var(--orange-d),6px 6px 0 #0a1626,0 0 40px rgba(255,157,28,.35)}
 h2{font-family:var(--display);font-weight:400;font-size:clamp(22px,4.5vw,38px);margin:0;color:var(--orange);text-shadow:3px 3px 0 var(--orange-d);text-align:center}
@@ -698,6 +698,7 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .csb{border:0;background:none;color:#cfd8ea;font:800 14px var(--body);padding:7px 14px;border-radius:24px;cursor:pointer}.csb.on{background:linear-gradient(#5aa0ff,#3d76e0);color:#fff;box-shadow:0 2px 0 #24539e}.csb.locked{opacity:.45;cursor:default}
 .cchips{display:flex;flex-wrap:wrap;gap:6px}.cchip{border:2px solid rgba(255,255,255,.1);background:rgba(0,0,0,.3);color:#e6ecf8;font:800 13px var(--body);padding:5px 12px;border-radius:20px;cursor:pointer}.cchip.on{border-color:#4d96ff;background:rgba(77,150,255,.2)}.cchip.locked{opacity:.45}
 .cbtabs{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.cboard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;border-radius:14px;background:rgba(14,22,40,.88);border:2px solid rgba(255,255,255,.08)}
 .cbrows{display:flex;flex-direction:column;gap:6px;min-height:80px}
 .cbrow{display:grid;grid-template-columns:44px auto 1fr auto;gap:10px;align-items:center;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.08)}.cbrow.top1{border-color:#ffd23f;background:linear-gradient(90deg,rgba(255,210,63,.25),rgba(255,255,255,.04))}.cbrow.top2{border-color:#c8d4e4}.cbrow.top3{border-color:#e0a060}.cbrow.me{box-shadow:0 0 0 2px #4d96ff inset}
 .cbrow i{font-style:normal;font-size:22px}.cbav{display:flex}.cbav canvas{margin-right:-8px;border-radius:50%;background:rgba(0,0,0,.3)}.cbn b{display:block}.cbn small,.cbk small{opacity:.7}.cbk{text-align:right}.cbk b{font-size:22px}
@@ -735,7 +736,9 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .btn.cstart{font-family:var(--display);font-size:30px;padding:12px 34px;border-radius:30px;background:linear-gradient(#8a8f9a,#5a606c);border-color:#40465a}.btn.cstart.go{background:linear-gradient(#ffb13b,#ff7a1c);border-color:#b85f00;box-shadow:0 6px 0 #8a4400}
 .cpick{position:absolute;inset:0;background:rgba(5,10,20,.8);display:grid;place-items:center;z-index:8}.cpickb{max-width:900px;max-height:80vh;overflow:auto;padding:16px;border-radius:16px;background:#13203a;border:2px solid #3d86f0}
 .cpickg{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px}.cpk{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px;border-radius:10px;border:2px solid rgba(255,255,255,.1);background:rgba(0,0,0,.3);color:#fff;cursor:pointer;font:700 12px var(--body)}.cpk:hover{border-color:#4ad07a}
-@media (max-width:1100px){.cgrid3{grid-template-columns:1fr;overflow:auto}.cteam{grid-template-columns:repeat(2,1fr)}.cfind{flex-direction:column}.coop{overflow:auto}}
+@media (max-width:1100px){html:not(.mw11) .cgrid3{grid-template-columns:1fr;overflow:auto}html:not(.mw11) .cteam{grid-template-columns:repeat(2,1fr)}html:not(.mw11) .cfind{flex-direction:column}html:not(.mw11) .coop{overflow:auto}
+  /* stacked: every panel keeps its full height and the page scrolls (with flex:1 / min-height:0 they were squeezed to their title bars) */
+  html:not(.mw11) .cgrid3 .ccol{min-height:auto}html:not(.mw11) .cgrid3 .cpanel{flex:none!important}html:not(.mw11) .cgrid3 .cpb{overflow:visible}}
 .screen.coop{margin:0 auto;align-items:stretch}
 .cdest{display:flex;flex-direction:column;gap:8px}
 .cconn{min-width:320px;display:flex;flex-direction:column;gap:10px}.cconnl{display:flex;flex-direction:column;gap:6px}

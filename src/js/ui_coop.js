@@ -60,6 +60,21 @@ Object.assign(UI.prototype,{
   coopPanel(cls,icon,title,aside,...body){return h('div',{class:'cpanel '+cls},title?h('div',{class:'cph'},h('span',{class:'cpi'},icon),h('b',null,this.tr(title)),aside?h('span',{class:'cpa'},aside):null):null,h('div',{class:'cpb'},...body));},
   coopSeg(opts,cur,fn,fid){return h('div',{class:'cseg'},opts.map(([v,l,lock])=>h('button',{class:'csb'+(v===cur?' on':'')+(lock?' locked':''),disabled:!!lock,'data-fid':(fid||'cs')+String(v),onclick:()=>{this.sfx();fn(v);}},this.tr(l)+(lock?' 🔒':''))));},
   coopGate(){const cl=this.app.cloud;if(COOP.ready())return null;return h('div',{class:'cgate'},h('p',{class:'sub'},this.tr(T6('La co-op richiede un account e un soprannome.','Co-op needs an account and a nickname.','El modo cooperativo requiere una cuenta y un apodo.','La coop demande un compte et un pseudo.','Koop braucht ein Konto und einen Spitznamen.','O co-op precisa de uma conta e um apelido.'))),this.nickRow());},
+  /* co-op leaderboard (Leaderboards > Co-op): team size, difficulty / endless, stage */
+  coopBoard(){
+    COOP.app=this.app;const bs=this.coopBsel||(this.coopBsel={size:2,diff:'normal',stage:0});
+    const brows=h('div',{class:'cbrows'},h('p',{class:'sub'},this.tr(CO.boardSoon))),bme=h('div',{class:'cbme'},h('span',null,this.tr(CO.best)),h('b',null,this.tr(CO.noTeam)));
+    const loadB=()=>COOP.board({size:bs.size,mode:bs.diff==='endless'?'endless':'classic',stage:bs.stage,diff:bs.diff==='endless'?'normal':bs.diff}).then(L=>{if(!brows.isConnected)return;brows.innerHTML='';
+      if(!L||!L.length){brows.appendChild(h('p',{class:'sub'},this.tr(CO.noTeam)));return;}
+      for(const r of L)brows.appendChild(h('div',{class:'cbrow'+(r.rank<=3?' top'+r.rank:'')+(r.me?' me':'')},h('i',null,r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:'#'+r.rank),h('div',{class:'cbav'},(r.chs||[]).map(id=>this.coopChar(id,34,34))),
+        h('div',{class:'cbn'},h('b',null,(r.members||[]).join(' · ')),h('small',null,(r.win?'✓ ':'')+fmtT(r.t))),h('div',{class:'cbk'},h('b',null,Online.big(r.kills)),h('small',null,'KO'))));
+      const m=L.find(r=>r.me);if(m){bme.innerHTML='';bme.append(h('span',null,this.tr(CO.best)),h('b',null,'#'+m.rank+' · '+m.members.join(' · ')+' · '+Online.big(m.kills)+' KO'));}}).catch(()=>{});
+    loadB();
+    return h('div',{class:'cboard'},
+      h('div',{class:'cbtabs'},this.coopSeg([[2,CO.duo],[3,CO.trio],[4,CO.squad]],bs.size,v=>{bs.size=v;this.rebuild(true);},'bs'),
+        this.coopSeg(Object.keys(DIFF).filter(k=>k!=='easy').map(k=>[k,DIFF[k].n]).concat([['endless',CO.endless]]),bs.diff,v=>{bs.diff=v;this.rebuild(true);},'bd')),
+      h('div',{class:'cchips'},STAGE_ORDER.map(i=>h('button',{class:'cchip'+(bs.stage===i?' on':''),'data-fid':'bmap'+i,onclick:()=>{this.sfx();bs.stage=i;this.rebuild(true);}},this.tr(STAGES[i].n)))),brows,bme);
+  },
   /* ================= hub ================= */
   screen_coop(){
     COOP.app=this.app;const d=this.save,hs=this.coopHub||(this.coopHub={mode:'classic',size:0,stage:null,diff:null,bsize:2,bdiff:'normal',bstage:0});
@@ -83,7 +98,7 @@ Object.assign(UI.prototype,{
         h('div',{class:'cblock'},h('h3',null,this.tr(CO.joinC)),h('p',null,this.tr(CO.joinD)),h('div',{class:'cboxes'},boxes),jb)),
       (P=>{P.classList.add('chowp','shut');P.firstChild.onclick=()=>{this.sfx();P.classList.toggle('shut');};return P;})(   /* v121: a folded bar, opens on click */
         this.coopPanel('purple','✨',CO.how,'▾',h('ol',{class:'chow'},[CO.how1,CO.how2,CO.how3,CO.how4].map(x=>h('li',null,this.tr(x)))))));
-    /* centre: find a match + leaderboard */
+    /* centre: find a match (the co-op leaderboard is in Leaderboards > Co-op) */
     const nS=h('div',{class:'csearch'},this.tr(CO.searching(COOP.searching)));
     const opts=h('div',{class:'copts'},
       h('div',{class:'corow'},h('label',null,this.tr(CO.mode)),this.coopSeg([['classic',CO.classic],['endless',CO.endless]],hs.mode,v=>{hs.mode=v;this.rebuild(true);},'fm')),
@@ -93,18 +108,7 @@ Object.assign(UI.prototype,{
       h('div',{class:'corow'},h('label',null,this.tr(CO.diff)),this.coopSeg([[null,CO.any]].concat(Object.keys(DIFF).map(k=>[k,DIFF[k].n])),hs.diff,v=>{hs.diff=v;this.rebuild(true);},'fd')));
     const find=h('div',{class:'cfind'},h('div',{class:'cfl'},h('span',{class:'cbeta'},'BETA'),h('h1',null,this.tr(CO.find)),h('p',null,this.tr(CO.findD)),
       h('button',{class:'btn cbig red','data-fid':'cfindgo',onclick:async()=>{this.sfx('uiStart');try{await COOP.find(hs);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'🌐 '+this.tr(CO.find)),nS),opts);
-    const brows=h('div',{class:'cbrows'},h('p',{class:'sub'},this.tr(CO.boardSoon))),bme=h('div',{class:'cbme'},h('span',null,this.tr(CO.best)),h('b',null,this.tr(CO.noTeam)));
-    const loadB=()=>COOP.board({size:hs.bsize,mode:hs.bdiff==='endless'?'endless':'classic',stage:hs.bstage,diff:hs.bdiff==='endless'?'normal':hs.bdiff}).then(L=>{if(!brows.isConnected)return;brows.innerHTML='';
-      if(!L||!L.length){brows.appendChild(h('p',{class:'sub'},this.tr(CO.noTeam)));return;}
-      for(const r of L)brows.appendChild(h('div',{class:'cbrow'+(r.rank<=3?' top'+r.rank:'')+(r.me?' me':'')},h('i',null,r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:'#'+r.rank),h('div',{class:'cbav'},(r.chs||[]).map(id=>this.coopChar(id,34,34))),
-        h('div',{class:'cbn'},h('b',null,(r.members||[]).join(' · ')),h('small',null,(r.win?'✓ ':'')+fmtT(r.t))),h('div',{class:'cbk'},h('b',null,Online.big(r.kills)),h('small',null,'KO'))));
-      const m=L.find(r=>r.me);if(m){bme.innerHTML='';bme.append(h('span',null,this.tr(CO.best)),h('b',null,'#'+m.rank+' · '+m.members.join(' · ')+' · '+Online.big(m.kills)+' KO'));}}).catch(()=>{});
-    const board=this.coopPanel('orange','🏅',CO.board,null,
-      h('div',{class:'cbtabs'},this.coopSeg([[2,CO.duo],[3,CO.trio],[4,CO.squad]],hs.bsize,v=>{hs.bsize=v;this.rebuild(true);},'bs'),
-        this.coopSeg(Object.keys(DIFF).filter(k=>k!=='easy').map(k=>[k,DIFF[k].n]).concat([['endless',CO.endless]]),hs.bdiff,v=>{hs.bdiff=v;this.rebuild(true);},'bd')),
-      h('div',{class:'cchips'},STAGE_ORDER.map(i=>h('button',{class:'cchip'+(hs.bstage===i?' on':''),'data-fid':'bmap'+i,onclick:()=>{this.sfx();hs.bstage=i;this.rebuild(true);}},this.tr(STAGES[i].n)))),brows,bme);
-    loadB();
-    const centre=h('div',{class:'ccol wide'},this.coopPanel('greenfind','',null,null,find),board);
+    const centre=h('div',{class:'ccol wide'},this.coopPanel('greenfind','',null,null,find));
     /* right: invitations (and friend requests) */
     const inv=h('div',{class:'cinv'});
     const drawInv=()=>{inv.innerHTML='';const L=COOP.invites||[],R=(COOP.friends||[]).filter(f=>f.status==='incoming');

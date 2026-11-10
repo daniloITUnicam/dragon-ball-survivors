@@ -37,7 +37,7 @@ if(MOBILE.on)(()=>{
     M.z=M.phone?clamp(Math.min(h/540,w/860),.55,1):1;
     root.style.setProperty('--mz',M.z);
     for(const id of['ui','toasts','sandbox']){const el=document.getElementById(id);if(el)el.style.zoom=M.z===1?'':String(M.z);}
-    root.classList.toggle('mport',h>w);root.classList.toggle('mwide',M.phone&&w/M.z>900);
+    root.classList.toggle('mport',h>w);root.classList.toggle('mwide',M.phone&&w/M.z>900);root.classList.toggle('mw11',M.phone&&w/M.z>=1100);
     rotCheck();
   };
 

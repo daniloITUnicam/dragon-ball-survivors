@@ -83,3 +83,29 @@ html.mphone .evlog{max-height:calc(100vh / var(--mz) - 90px)}
 html.mphone .screen.modal{justify-content:safe center}
 html.mphone .trrow{flex-direction:row;align-items:flex-start;gap:22px}
 html.mphone .trialcards{flex-wrap:nowrap}
+/* co-op hub and room on a phone: the zoomed screen is wide enough for the 3 PC columns (html.mw11, the max-width:1100px rule reads the real width);
+   everything smaller so the panels fit the short height, long lists scroll inside their panel */
+html.mphone .coop{gap:6px}
+html.mphone .coop .ctitle{padding:3px 18px 5px}html.mphone .coop .ctitle b{font-size:26px}html.mphone .coop .ctitle span{font-size:12px}
+html.mphone .cgrid3{gap:10px;grid-template-columns:minmax(220px,1fr) minmax(0,2.2fr) minmax(220px,1fr)}
+html.mphone .ccol{gap:8px}
+html.mphone .coop .cph{padding:5px 10px}html.mphone .coop .cph b{font-size:17px}html.mphone .cph .cpi{font-size:16px}html.mphone .cph .cpa{font-size:11px}
+html.mphone .cpb{padding:8px;gap:6px}
+html.mphone .cblock{padding:8px 10px}html.mphone .cblock h3{font-size:16px}html.mphone .cblock p{font-size:12px;margin:0 0 6px}
+html.mphone .cboxes{gap:6px;margin-bottom:6px}html.mphone .cbox{width:40px;height:44px;font-size:22px;border-radius:9px}
+html.mphone .coop .btn.cbig{font-size:17px;padding:7px 12px;min-height:0}
+html.mphone .cfind{gap:10px}html.mphone .cfl{gap:4px;min-width:180px}html.mphone .coop .cfl h1{font-size:32px}html.mphone .cfl p{font-size:12px;margin:0}
+html.mphone .copts{padding:8px;gap:6px}html.mphone .corow label{font-size:11px}html.mphone .csb,html.mphone .cchip{font-size:11px;padding:3px 7px}
+html.mphone .cempty{padding:8px}html.mphone .cemi{font-size:24px}html.mphone .cempty p{font-size:12px}
+html.mphone .cteam{gap:6px}html.mphone .cchat{height:72px}html.mphone .cbar{padding:5px 12px;gap:10px}
+html.mphone .coop .btn.cstart{font-size:24px;padding:6px 26px}
+html.mphone .corow{grid-template-columns:76px 1fr;gap:6px}
+html.mphone .cmap{padding:5px 10px;font-size:13px}html.mphone .cmaps{gap:4px}
+html.mphone .cslot{min-height:150px}
+/* a column taller than the screen scrolls as a whole instead of squeezing its last panel to the title bar (the padding keeps the steel corners visible) */
+html.mphone .cgrid3 .ccol{overflow:hidden auto;padding:6px;margin:-6px;scrollbar-width:thin}
+html.mphone .cgrid3 .cpanel{flex-shrink:0}html.mphone .cgrid3 .ccol>.cpanel:last-child{flex:1 0 auto}
+/* main menu: the zoomed screen is wide enough for the PC layout even on a 740 px phone (the max-width:760px rule reads the real width) */
+html.mwide .mgrid .mplay{grid-template-columns:1.5fr 1fr 1fr}html.mwide .mgrid .mplay .btn.primary{grid-column:auto}
+html.mwide .mgroups{grid-template-columns:1fr 2fr 1fr}html.mwide .mgroup.g2{grid-column:auto;order:0}html.mwide .mgroup.g3{order:0}html.mwide .mgroup .btn{font-size:16px!important}
+html.mphone .menu.mgrid{width:min(980px,calc(94vw / var(--mz) / 1.12))}

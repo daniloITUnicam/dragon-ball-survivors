@@ -16,9 +16,12 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
-  {id:'2026-11-10a',date:'2026-11-10',
-    name:T("Vegeta a sprite","Vegeta sprites"),
-    new:[T("Vegeta ha sprite veri in tutte le forme: base con l'armatura, Orgoglio Saiyan con l'armatura della saga dei Saiyan, Super Saiyan (anche per SSJ2 e SSJ3), Super Saiyan God, Super Saiyan Blue e le due Ultra Ego con i capelli viola, con pose di attacco, trasformazione e scatto e la scia nei suoi colori.","Vegeta has real sprites in every form: base in his armour, Saiyan Pride in his Saiyan Saga armour, Super Saiyan (also for SSJ2 and SSJ3), Super Saiyan God, Super Saiyan Blue and both Ultra Ego forms with purple hair, with attack, transformation and dash poses and a streak in his colours.")]},
+  {id:'2026-11-10b',date:'2026-11-10',
+    name:T("Menu su telefono","Menus on phones"),
+    new:[T("La classifica co-op si sposta in Classifiche > Co-op (squadra, difficoltà o infinita, mappa); il menu Co-op resta per giocare.","The co-op leaderboard moves to Leaderboards > Co-op (team, difficulty or endless, map); the Co-op menu is just for playing.")],
+    fix:[T("Co-op e stanza su telefono: tornano le tre colonne come su PC, più compatte, con i riquadri interi (prima si schiacciavano fino al titolo e si sovrapponevano); una colonna troppo alta scorre.","Co-op and room on phones: back to the three PC columns, more compact, with whole panels (they used to be squeezed down to their title and overlap); a column that is too tall scrolls."),
+      T("Menu principale su telefoni stretti: stessa disposizione del PC invece dei pulsanti impilati che uscivano dallo schermo.","Main menu on narrow phones: the PC layout instead of stacked buttons running off the screen."),
+      T("Patti e maledizioni e le altre schermate centrate: se non entrano scorrono dall'alto invece di tagliare il titolo.","Pacts & Curses and the other centred screens: when they do not fit they scroll from the top instead of cutting off the title.")]},
   {id:'2026-11-08a',date:'2026-11-08',
     name:T("Kaioken: camminata nuova","Kaioken: new walk"),
     new:[T("Kaioken: camminata nuova di 8 fotogrammi, con passo vero, braccia che oscillano e i colori rossi del suo sprite. Ora tutte le forme di Goku camminano con le animazioni nuove (il Super Saiyan 2 usa quelle del Super Saiyan).","Kaioken: a new 8-frame walk, with a real step, swinging arms and the red colours of its sprite. Now every Goku form walks with the new animations (Super Saiyan 2 uses the Super Saiyan ones).")]},

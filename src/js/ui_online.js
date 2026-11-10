@@ -21,6 +21,7 @@ const OT={
   share:T6('Scheda da condividere','Share card','Ficha para compartir','Carte à partager','Teilen-Karte','Card para compartilhar'),
   copied:T6('Scheda copiata negli appunti e scaricata: incollala su Discord.','Card copied to the clipboard and downloaded: paste it in Discord.','Ficha copiada al portapapeles y descargada: pégala en Discord.','Carte copiée dans le presse-papiers et téléchargée : colle-la sur Discord.','Karte in die Zwischenablage kopiert und heruntergeladen: in Discord einfügen.','Card copiado para a área de transferência e baixado: cole no Discord.'),
   saved:T6('Scheda scaricata.','Card downloaded.','Ficha descargada.','Carte téléchargée.','Karte heruntergeladen.','Card baixado.'),
+  coop:T6('Co-op','Co-op','Cooperativo','Coop','Koop','Co-op'),
   comm:T6('Comunità','Community','Comunidad','Communauté','Community','Comunidade'),
   commD:T6('Obiettivi della settimana per tutti i giocatori insieme: le partite di ognuno contano. Quando un obiettivo è raggiunto, tutti riscattano un Ticket 10× Fortunato.','This week\'s goals for all players together: everybody\'s runs count. When a goal is reached, everybody claims a Lucky Ticket 10×.','Objetivos de la semana para todos los jugadores juntos: cuentan las partidas de todos. Al alcanzar un objetivo, todos reclaman un Ticket 10× de la Suerte.','Objectifs de la semaine pour tous les joueurs ensemble : les parties de chacun comptent. Quand un objectif est atteint, tout le monde récupère un Ticket 10× Chanceux.','Wochenziele für alle Spieler zusammen: jede Runde zählt. Ist ein Ziel erreicht, holt sich jeder ein Glücksticket 10×.','Metas da semana para todos os jogadores juntos: as partidas de todos contam. Quando uma meta é atingida, todos resgatam um Ticket 10× da Sorte.'),
   claim:T6('Riscatta','Claim','Reclamar','Récupérer','Abholen','Resgatar'),got:T6('Riscattato','Claimed','Reclamado','Récupéré','Abgeholt','Resgatado'),reward:T6('Ticket 10× Fortunato','Lucky Ticket 10×','Ticket 10× de la Suerte','Ticket 10× Chanceux','Glücksticket 10×','Ticket 10× da Sorte'),
@@ -56,7 +57,7 @@ Object.assign(UI.prototype,{
   },
   screen_boards(a){
     a=a||{};const st=this.bsel||(this.bsel={tab:a.tab||'weekly',stage:this.save.lastStage||0,diff:'normal',metric:'t'});if(a.tab&&!this._bInit){st.tab=a.tab;}this._bInit=true;
-    const tabs=h('div',{class:'row tabs'},[['weekly',OT.weekly],['stage',OT.byStage],['comm',OT.comm]].map(([k,l])=>h('button',{class:'btn small'+(st.tab===k?'':' alt'),'data-fid':'bt'+k,onclick:()=>{this.sfx('uiTab');st.tab=k;this.rebuild(true);}},this.tr(l))));
+    const tabs=h('div',{class:'row tabs'},[['weekly',OT.weekly],['stage',OT.byStage],['coop',OT.coop],['comm',OT.comm]].map(([k,l])=>h('button',{class:'btn small'+(st.tab===k?'':' alt'),'data-fid':'bt'+k,onclick:()=>{this.sfx('uiTab');st.tab=k;this.rebuild(true);}},this.tr(l))));
     const mets=h('div',{class:'row'},BOARD_METRICS.map(m=>h('button',{class:'btn small'+(st.metric===m?'':' alt'),'data-fid':'bm'+m,onclick:()=>{this.sfx();st.metric=m;this.rebuild(true);}},this.tr(OT['m_'+m]))));
     let body;
     if(st.tab==='weekly'){
@@ -66,6 +67,7 @@ Object.assign(UI.prototype,{
         h('p',{class:'sub'},this.tr(OT.sameFor)),
         h('button',{class:'btn primary','data-fid':'wkplay',onclick:()=>{this.sfx('uiStart');this.app.startGame({stage:w.stage,char:w.char,diff:w.diff,x2:false,sandbox:false,pet:this.save.pet,week:w.id,seed:w.seed});}},'▶ '+this.tr(OT.play))),
         mets,this.boardList(w.stage,w.diff,st.metric,w.id)];
+    }else if(st.tab==='coop'){body=[this.coopBoard()];
     }else if(st.tab==='comm'){body=[h('p',{class:'sub'},this.tr(OT.commD)),this.commList()];
     }else{
       const ss=h('select',{'data-fid':'bstage',onchange:()=>{st.stage=+ss.value;this.rebuild(true);}},STAGE_ORDER.map(i=>h('option',{value:i,selected:st.stage===i},'S'+STAGES[i].no+' '+this.tr(STAGES[i].n))));
