@@ -6,7 +6,7 @@ Object.assign(Cloud.prototype,{
   async rpc(name,args){if(!this.enabled)throw new Error('offline');const t=this.uid?await this.token():null;return await this.req('/rest/v1/rpc/'+name,{method:'POST',token:t||undefined,body:args||{}});}
 });
 const COOP={
-  app:null,code:null,st:null,after:0,msgs:[],busy:false,last:0,bgLast:0,invites:[],friends:[],searching:0,listeners:new Set(),err:'',
+  app:null,code:null,st:null,hours:null,after:0,msgs:[],busy:false,last:0,bgLast:0,invites:[],friends:[],searching:0,listeners:new Set(),err:'',
   on(f){this.listeners.add(f);return()=>this.listeners.delete(f);},
   emit(k){for(const f of this.listeners)try{f(k);}catch(e){}},
   ready(){const c=this.app&&this.app.cloud;return !!(c&&c.enabled&&c.uid&&c.nick);},
@@ -28,6 +28,11 @@ const COOP={
   async respond(n,yes){await this.rpc('friend_respond',{p_nick:n,p_accept:!!yes});return this.loadFriends();},
   async removeFriend(n){await this.rpc('friend_remove',{p_nick:n});return this.loadFriends();},
   async loadInvites(){try{const L=await this.rpc('invite_list',{})||[];const fresh=L.filter(i=>!this.invites.some(o=>o.nick===i.nick&&o.code===i.code));this.invites=L;if(fresh.length)this.emit('invite:'+fresh[0].nick+':'+fresh[0].code);this.emit('invites');}catch(e){}},
+  /* v134: average trainers per hour of the day (UTC, last 14 days; null until supabase/coop.sql v134 is installed or while there is no data) */
+  async loadHours(){try{const a=await this.rpc('coop_hours',{});this.hours=Array.isArray(a)&&a.length===24&&a.some(v=>v>0)?a.map(Number):null;}catch(e){}this.emit('hours');},
+  /* the same in local time, and the busiest 3-hour window [start hour, value] */
+  localHours(){const a=this.hours;if(!a)return null;const off=Math.round(-new Date().getTimezoneOffset()/60);return a.map((_,h)=>a[((h-off)%24+24)%24]);},
+  busiest(L){let b=0,bv=-1;for(let h=0;h<24;h++){const v=L[h]+L[(h+1)%24]+L[(h+2)%24];if(v>bv){bv=v;b=h;}}return b;},
   async loadSearching(){try{this.searching=+(await this.rpc('coop_searching',{}))||0;}catch(e){}this.emit('searching');},
   board(o){return this.rpc('coop_board',{p_size:o.size,p_mode:o.mode,p_stage:o.stage,p_diff:o.diff});},
   /* ---- the lobby state ---- */
@@ -47,7 +52,12 @@ const COOP={
   /* called every frame by the app: the lobby poll, and presence + invites in the background (menus only) */
   tick(){if(!this.ready())return;const t=performance.now();
     if(this.code)this.poll();
+    this.soloWatch();
     if(t-this.bgLast>COOP_BG*1000&&this.app.state==='menu'){this.bgLast=t;this.rpc('coop_touch',{}).catch(()=>{});this.loadInvites();}},
+  /* v134: a solo run started from an open room while waiting (game.waitRoom = the room code): the room keeps polling (presence), and when
+     somebody joins a banner offers to end the run (coins kept) and go to the room */
+  soloWatch(){const a=this.app,g=a&&a.game,on=!!(g&&g.waitRoom&&g.waitRoom===this.code&&!g.ended&&this.st&&(this.st.members||[]).length>1&&this.st.status==='lobby');
+    if(on!==!!this._soloOn){this._soloOn=on;if(a.ui&&a.ui.coopJoinBanner)a.ui.coopJoinBanner(on?(this.st.members.find(m=>!m.me)||{}).nick:null);}},
   link(code){try{if(/^https?:$/.test(location.protocol))return location.origin+location.pathname+'?room='+code;}catch(e){}return code;},
   /* ?room=ABCD in the address: join it once signed in */
   linkCode(){try{const q=new URLSearchParams(location.search).get('room');return q&&/^[A-Za-z0-9]{4}$/.test(q)?q.toUpperCase():null;}catch(e){return null;}}

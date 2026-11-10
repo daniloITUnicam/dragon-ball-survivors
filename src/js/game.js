@@ -3,7 +3,7 @@
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
-const FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+const ZENO_EVERY=200,ZENO_TTL=180,ZENO_IN=1.8,FEAT_IN=1.3,CHEST_IN=.75,FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 /* v116: game feel — hit-stop (s) and camera punch (fraction of zoom), combo tiers (streak -> Zenny/XP multiplier), overkill */
 const HS_EVO=.08,HS_BOSS=.1,HS_CRIT=.05,HS_CRIT_CD=1.5,ZP_EVO=.07,ZP_BOSS=.09,ZP_CRIT=.035,OVK_K=4,OVK_R=70,OVK_CD=.3,OVK_PUSH=9;
 const COMBO=[{n:50,m:1.1,t:T6('COMBO!','COMBO!','¡COMBO!','COMBO !','COMBO!','COMBO!'),c:'#ffb13b'},{n:100,m:1.25,t:T6('SUPER COMBO!','SUPER COMBO!','¡SÚPER COMBO!','SUPER COMBO !','SUPER-COMBO!','SUPER COMBO!'),c:'#ff7b4a'},
@@ -2643,7 +2643,9 @@ class MapDirector{
   update(dt){
     const g=this.g,p=g.p;
     for(const tr of this.trials)if(!tr.done&&g.t>=tr.t){tr.done=true;this.spawnChamber();}
-    if(!this.secretDone&&g.t>=this.secretAt&&!g.cleared){this.secretDone=true;this.spawnSecret();}
+    if(!this.secretDone&&g.t>=this.secretAt&&!g.cleared){this.secretDone=true;this.spawnSecret(ZENO_TTL);this.zenoNext=g.t+ZENO_EVERY;}
+    /* v134: Zeno's Shop more often: after the first button, another one every ZENO_EVERY s (when none is on the map) */
+    if(!g.endless&&this.secretDone&&g.t>=(this.zenoNext||1e9)&&!g.trial&&!g.cleared){this.zenoNext=g.t+ZENO_EVERY;if(!g.feat.some(f=>!f.dead&&(f.kind==='secret'||f.kind==='zenoportal')))this.spawnSecret(ZENO_TTL);}
     /* the tunnel entrance (bunker / demon portal / heavenly gate, only on the maps that have one): every TUN_EVERY s of play, TUN_EVERY_END in Endless; it never appears at random any more */
     if(g.t>=this.tunNext&&TUNNELS[g.stage.theme]&&(g.endless||!g.finalSpawned)){this.tunNext=g.t+(g.endless?TUN_EVERY_END:TUN_EVERY);if(!g.feat.some(f=>f.kind==='tunnel'&&!f.dead))this.spawnTunnel();}
     /* Endless: the red button (and so Zeno's Shop) comes back every 5 minutes, for 4 minutes */
@@ -2660,7 +2662,7 @@ class MapDirector{
       f.t+=dt;
       const d=Math.hypot(p.x-f.x,p.y-f.y);
       f.near=d<90;
-      if(f.pressed)f.pt=(f.pt||0)+dt;
+      if(f.pressed){f.pt=(f.pt||0)+dt;if(f.pt>.9&&f.fade===undefined)f.fade=0;}   /* v134: the button's altar dissolves once pressed */
       if(f.fade!==undefined){f.fade+=dt;if(f.fade>=FEAT_FADE)f.dead=true;continue;}   /* used: flash, then dissolve */
       if(f.used)continue;
       if(f.t>f.ttl){f.dead=true;continue;}

@@ -41,6 +41,7 @@ jobs:
         # Se non sono impostate il gioco funziona lo stesso, senza il pulsante Account.
         env:
           DBS_AUDIO: link   # la musica (assets/*.mp3) non viene incorporata: resta in assets/ accanto a index.html, a piena qualità
+          DBS_SHEETS: ext   # gli sprite sono file in s/ (nome = contenuto): pagina leggera, il telefono scarica solo ciò che serve e li tiene in cache (sw.js)
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           SUPABASE_GOOGLE: ${{ vars.SUPABASE_GOOGLE }}
@@ -50,6 +51,8 @@ jobs:
           mkdir site
           cp dist/dragon-ball-survivors.html site/index.html
           cp dist/version.json site/version.json   # il gioco lo legge per accorgersi di una nuova versione (src/js/update.js)
+          cp -r dist/s site/s
+          cp dist/sw.js site/sw.js
           mkdir -p site/assets
           find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' \) -exec cp {} site/assets/ \;
           [ -f CNAME ] && cp CNAME site/CNAME || true

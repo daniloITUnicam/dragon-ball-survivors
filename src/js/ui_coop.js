@@ -8,6 +8,12 @@ const CO={
   or:T6('OPPURE','OR','O','OU','ODER','OU'),joinC:T6('Entra con un codice','Join with a code','Entrar con un código','Rejoindre avec un code','Mit Code beitreten','Entrar com um código'),joinD:T6('Te lo dà chi ha creato la stanza.','The room creator gives it to you.','Te lo da quien creó la sala.','Le créateur du salon te le donne.','Der Ersteller des Raums gibt ihn dir.','Quem criou a sala te passa.'),
   join:T6('Entra','Join','Entrar','Rejoindre','Beitreten','Entrar'),how:T6('Come si gioca','How to play','Cómo se juega','Comment jouer','So wird gespielt','Como jogar'),
   find:T6('Trova una partita','Find a match','Buscar partida','Trouver une partie','Spiel finden','Encontrar partida'),findD:T6('Ti mettiamo in squadra con altri giocatori che cercano compagni.','We team you up with other players who are also looking for a team.','Te emparejamos con otros jugadores que también buscan equipo.','On t\'associe à d\'autres joueurs qui cherchent aussi une équipe.','Wir bringen dich mit anderen Spielern zusammen, die auch ein Team suchen.','Juntamos você com outros jogadores que também procuram equipe.'),
+  solo:T6('Gioca da solo mentre aspetti','Play solo while you wait','Juega solo mientras esperas','Joue en solo en attendant','Spiel solo, während du wartest','Jogue sozinho enquanto espera'),
+  soloD:T6('La stanza resta aperta: quando arriva qualcuno ti avvisiamo in partita.','The room stays open: when somebody arrives we tell you during the run.','La sala sigue abierta: cuando llegue alguien te avisamos durante la partida.','Le salon reste ouvert : quand quelqu\'un arrive, on te prévient pendant la partie.','Der Raum bleibt offen: Wenn jemand kommt, sagen wir es dir im Spiel.','A sala fica aberta: quando alguém chegar, avisamos durante a partida.'),
+  joined:n=>T6(n+' è entrato nella tua stanza!',n+' joined your room!','¡'+n+' entró en tu sala!',n+' a rejoint ton salon !',n+' ist deinem Raum beigetreten!',n+' entrou na sua sala!'),
+  joinNow:T6('Raggiungilo (tieni gli zeni)','Join them (coins kept)','Únete (conservas los zeni)','Le rejoindre (zénis gardés)','Beitreten (Zeni bleiben)','Juntar-se (zeni mantidos)'),
+  hours:(a,b)=>T6('Più giocatori di solito: '+a+'–'+b,'Usually most players: '+a+'–'+b,'Normalmente más jugadores: '+a+'–'+b,'Le plus de joueurs d\'habitude : '+a+'–'+b,'Meist die meisten Spieler: '+a+'–'+b,'Normalmente mais jogadores: '+a+'–'+b),
+  hint0:T6('Nessuno in cerca adesso: cerca lo stesso e gioca da solo mentre aspetti, ti avvisiamo quando arriva qualcuno.','Nobody is searching right now: search anyway and play solo while you wait, we tell you when somebody arrives.','Nadie busca ahora: busca igualmente y juega solo mientras esperas, te avisamos cuando llegue alguien.','Personne ne cherche en ce moment : cherche quand même et joue en solo en attendant, on te prévient quand quelqu\'un arrive.','Gerade sucht niemand: Suche trotzdem und spiel solo, während du wartest – wir sagen Bescheid, wenn jemand kommt.','Ninguém está procurando agora: procure mesmo assim e jogue sozinho enquanto espera, avisamos quando alguém chegar.'),
   searching:n=>T6(n+' giocatori in cerca ora',n+' players searching now',n+' jugadores buscando ahora',n+' joueurs en recherche',n+' Spieler suchen gerade',n+' jogadores procurando agora'),
   mode:T6('MODALITÀ','MODE','MODO','MODE','MODUS','MODO'),team:T6('SQUADRA','TEAM','EQUIPO','ÉQUIPE','TEAM','EQUIPE'),map:T6('MAPPA','MAP','MAPA','CARTE','KARTE','MAPA'),diff:T6('DIFFICOLTÀ','DIFFICULTY','DIFICULTAD','DIFFICULTÉ','SCHWIERIGKEIT','DIFICULDADE'),
   any:T6('Qualsiasi','Any','Cualquiera','Toutes','Beliebig','Qualquer'),classic:T6('Classico','Classic','Clásico','Classique','Klassisch','Clássico'),endless:T6('Infinito','Endless','Infinito','Infini','Endlos','Infinito'),
@@ -99,7 +105,12 @@ Object.assign(UI.prototype,{
       (P=>{P.classList.add('chowp','shut');P.firstChild.onclick=()=>{this.sfx();P.classList.toggle('shut');};return P;})(   /* v121: a folded bar, opens on click */
         this.coopPanel('purple','✨',CO.how,'▾',h('ol',{class:'chow'},[CO.how1,CO.how2,CO.how3,CO.how4].map(x=>h('li',null,this.tr(x)))))));
     /* centre: find a match (the co-op leaderboard is in Leaderboards > Co-op) */
-    const nS=h('div',{class:'csearch'},this.tr(CO.searching(COOP.searching)));
+    const nS=h('div',{class:'csearch'},this.tr(CO.searching(COOP.searching))),hrs=h('div',{class:'chours'}),h0=h('p',{class:'chint'});
+    /* v134: the busiest hours (local time) as 24 little bars, the current hour highlighted; a hint when nobody is searching */
+    const drawHrs=()=>{hrs.innerHTML='';h0.textContent=COOP.searching>0?'':this.tr(CO.hint0);const L=COOP.localHours();if(!L)return;
+      const mx=Math.max(...L)||1,b=COOP.busiest(L),now=new Date().getHours(),f=x=>String(x%24).padStart(2,'0')+':00';
+      hrs.append(h('small',null,'🕒 '+this.tr(CO.hours(f(b),f(b+3)))),h('div',{class:'chbars'},L.map((v,i)=>h('i',{class:(i===now?'now':'')+(((i-b+24)%24)<3?' top':''),style:'height:'+Math.max(8,Math.round(100*v/mx))+'%',title:f(i)}))));};
+    drawHrs();
     const opts=h('div',{class:'copts'},
       h('div',{class:'corow'},h('label',null,this.tr(CO.mode)),this.coopSeg([['classic',CO.classic],['endless',CO.endless]],hs.mode,v=>{hs.mode=v;this.rebuild(true);},'fm')),
       h('div',{class:'corow'},h('label',null,this.tr(CO.team)),this.coopSeg([[0,CO.any],[2,CO.duo],[3,CO.trio],[4,CO.squad]],hs.size,v=>{hs.size=v;this.rebuild(true);},'fs')),
@@ -107,7 +118,7 @@ Object.assign(UI.prototype,{
         STAGE_ORDER.map(i=>{const open=this.stageOpen(i);return h('button',{class:'cchip'+(hs.stage===i?' on':'')+(open?'':' locked'),disabled:!open,'data-fid':'fmap'+i,onclick:()=>{this.sfx();hs.stage=i;this.rebuild(true);}},this.tr(STAGES[i].n)+(open?'':' 🔒'));})))),
       h('div',{class:'corow'},h('label',null,this.tr(CO.diff)),this.coopSeg([[null,CO.any]].concat(Object.keys(DIFF).map(k=>[k,DIFF[k].n])),hs.diff,v=>{hs.diff=v;this.rebuild(true);},'fd')));
     const find=h('div',{class:'cfind'},h('div',{class:'cfl'},h('span',{class:'cbeta'},'BETA'),h('h1',null,this.tr(CO.find)),h('p',null,this.tr(CO.findD)),
-      h('button',{class:'btn cbig red','data-fid':'cfindgo',onclick:async()=>{this.sfx('uiStart');try{await COOP.find(hs);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'🌐 '+this.tr(CO.find)),nS),opts);
+      h('button',{class:'btn cbig red','data-fid':'cfindgo',onclick:async()=>{this.sfx('uiStart');try{await COOP.find(hs);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'🌐 '+this.tr(CO.find)),nS,h0,hrs),opts);
     const centre=h('div',{class:'ccol wide'},this.coopPanel('greenfind','',null,null,find));
     /* right: invitations (and friend requests) */
     const inv=h('div',{class:'cinv'});
@@ -121,8 +132,8 @@ Object.assign(UI.prototype,{
     const right=h('div',{class:'ccol'},this.coopPanel('blue','💌',CO.invites,null,inv));
     const root=h('div',{class:'coop hub'},top,inRoom,h('div',{class:'cgrid3'},left,centre,right));
     /* live parts */
-    const off=COOP.on(k=>{if(!root.isConnected){off();return;}if(k==='searching')nS.textContent=this.tr(CO.searching(COOP.searching));if(k==='invites'||k==='friends')drawInv();});
-    COOP.loadSearching();COOP.loadInvites();COOP.loadFriends();
+    const off=COOP.on(k=>{if(!root.isConnected){off();return;}if(k==='searching'){nS.textContent=this.tr(CO.searching(COOP.searching));drawHrs();}if(k==='hours')drawHrs();if(k==='invites'||k==='friends')drawInv();});
+    COOP.loadSearching();COOP.loadInvites();COOP.loadFriends();if(!COOP.hours)COOP.loadHours();
     clearInterval(this._cHubT);this._cHubT=setInterval(()=>{if(!root.isConnected){clearInterval(this._cHubT);return;}COOP.loadSearching();COOP.loadInvites();},8000);
     return root;
   },
@@ -150,6 +161,14 @@ Object.assign(UI.prototype,{
     this.coopDraw();COOP.loadFriends();COOP.poll(true);
     clearInterval(this._cFrT);this._cFrT=setInterval(()=>{if(!root.isConnected){clearInterval(this._cFrT);return;}COOP.loadFriends();},10000);
     return root;
+  },
+  /* v134: during a solo run started while waiting: somebody joined the room (nick), or null to remove the banner */
+  coopJoinBanner(nick){
+    let b=document.getElementById('cjoinb');if(!nick){if(b)b.remove();return;}
+    if(!b){b=h('div',{id:'cjoinb'});document.body.appendChild(b);}b.innerHTML='';
+    b.append(h('span',null,'👥 '+this.tr(CO.joined(nick))),h('button',{class:'btn small primary','data-fid':'cjoinnow',onclick:()=>{this.sfx('uiStart');b.remove();
+      try{this.app.endRunForUpdate();}catch(e){}this.app.toMenu();}},this.tr(CO.joinNow)));
+    try{this.app.audio.sfx('ticket');}catch(e){}
   },
   coopDraw(){const el=this.coopEl;if(!el||!el.root.isConnected)return;const s=COOP.st;
     el.title.firstChild.textContent=this.tr(CO.room)+' '+(COOP.code||'····');
@@ -205,7 +224,10 @@ Object.assign(UI.prototype,{
     const canStart=s.me_host&&M.length>=2&&all&&s.status==='lobby';
     const btn=s.me_host?h('button',{class:'btn cstart'+(canStart?' go':''),disabled:!canStart,'data-fid':'cstart',onclick:async()=>{this.sfx('uiStart');try{const r=await COOP.start();if(r!=='ok')this.coopErr(r);}catch(e){this.coopErr('net');}}},'🐉 '+this.tr(CO.start))
       :h('button',{class:'btn cstart'+(me.ready?'':' go'),'data-fid':'cready',onclick:()=>{this.sfx();COOP.me({ready:!me.ready});}},me.ready?'✕ '+this.tr(CO.notReady):'✓ '+this.tr(CO.imReady));
-    el.bar.append(av,h('div',{class:'cbarm'},h('b',null,this.tr(CO.nOfReady(nReady,M.length))),h('small',null,this.tr(msg))),h('div',{class:'cspacer'}),
+    const solo=s.open&&M.length<2&&s.status==='lobby'?h('button',{class:'btn alt csolo','data-fid':'csolo',title:this.tr(CO.soloD),onclick:()=>{this.sfx('uiStart');
+      const ch=CHARS.some(c=>c.id===me.ch)?me.ch:this.save.d.lastChar||CHARS[0].id;this.app.startGame({stage:s.stage,char:ch,diff:s.diff,x2:false,sandbox:false,pet:this.save.pet});
+      if(this.app.game)this.app.game.waitRoom=COOP.code;}},'🎮 '+this.tr(CO.solo)):null;
+    el.bar.append(av,h('div',{class:'cbarm'},h('b',null,this.tr(CO.nOfReady(nReady,M.length))),h('small',null,this.tr(msg))),h('div',{class:'cspacer'}),solo||'',
       h('div',{class:'cbard'},h('small',null,this.tr(CO.destB)),h('b',null,this.tr(st.n)),h('span',{class:'cdiff d-'+s.diff},this.tr(DIFF[s.diff].n)+(s.mode==='endless'?' · ∞':''))),btn);
 },
   /* v120: while the co-op run connects: who is in, a way out */

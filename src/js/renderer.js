@@ -1403,6 +1403,12 @@ this.W=1;this.H=1;this.Z=1;
   }
   /* a loot chest: the colour is its rarity (Common grey, Rare blue, Epic purple, Legendary gold, Mythic pink); the rarer, the bigger and brighter, with a light pillar from Legendary up */
   drawChest(c,t){
+    if(c.t<CHEST_IN&&c.op===undefined&&!c.dropping){   /* v134: a new chest falls from above, bounces and raises a puff of dust */
+      const q=c.t/CHEST_IN,ctx=this.ctx,col=RARITY[c.rar||0].c,fall=q<.55?q/.55:1,b=q<.55?0:(q-.55)/.45,dy=q<.55?-(1-fall*fall)*160:-Math.sin(b*Math.PI)*14*(1-b);
+      ctx.fillStyle='rgba(0,0,0,'+(.12+.2*fall)+')';ctx.beginPath();ctx.ellipse(c.x,c.y+3,14*(.5+.5*fall),4*(.5+.5*fall),0,0,TAU);ctx.fill();
+      if(q>.5){const d=clamp((q-.5)/.5,0,1);ctx.strokeStyle=hexA('#e8dcc0',.6*(1-d));ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(c.x,c.y+2,12+30*d,4+9*d,0,0,TAU);ctx.stroke();GLOW.at(ctx,c.x,c.y-8,40,col,.6*(1-d));}
+      ctx.save();ctx.translate(0,dy);c.dropping=1;try{this.drawChest(c,t);}finally{c.dropping=0;}ctx.restore();return;
+    }
     const ctx=this.ctx,x=c.x,y=c.y,rar=c.rar||0,col=RARITY[rar].c,s=(c.final?1.5:c.elite?1.2:1)*(1+.1*rar),pulse=.5+.5*Math.sin(t*4+x),op=c.op;
     const CS=Sprites.sheets.chests,fr=(CS&&CS.rects&&CS.rects.length>=25)?rar*5:-1;
     if(rar>=3&&op===undefined){const g=ctx.createLinearGradient(0,y-110,0,y-10);g.addColorStop(0,hexA(col,0));g.addColorStop(1,hexA(col,.45));ctx.fillStyle=g;ctx.fillRect(x-9*s,y-110,18*s,100);}
@@ -1472,6 +1478,93 @@ this.W=1;this.H=1;this.Z=1;
     for(let i=0;i<10;i++){const q=t*.6+i*.63,rr=44+16*Math.sin(t+i);ctx.fillStyle='rgba(255,233,160,'+(.5+.4*Math.sin(t*3+i))+')';ctx.fillRect(zx+Math.cos(q)*rr*1.3-1.5,zy-50+Math.sin(q)*rr-1.5,3,3);}
     ctx.textAlign='left';
   }
+  /* v134: the miniature beside a beacon arrow: a dark disc ringed in the arrow's colour with the thing itself inside (the dragon ball with its stars,
+     the chest of its rarity, the painted altar / totem / chamber, the golden Saibaman, the capsule, the zenny bag...) */
+  beaconIcon(ctx,ic,x,y,r,col,g){
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='rgba(10,15,28,.82)';ctx.strokeStyle=col;ctx.lineWidth=2.2*(r/14);ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,r-1,0,TAU);ctx.clip();
+    const fit=(c,w,h,oy)=>{const k=Math.min(1.5*r/w,1.5*r/h);ctx.imageSmoothingEnabled=true;ctx.drawImage(c,-w*k/2,-h*k/2+(oy||0)*r,w*k,h*k);};
+    const k=ic&&ic.k;
+    try{
+      if(k==='loot'){const l=ic.l,fake={k:l.k,x:0,y:6,t:9,star:l.star,flat:1,isle:l.isle};const s=r/13;ctx.scale(s,s);this.drawLoot(fake,9);}
+      else if(k==='feat'){const FS=this.getFeat(),sp=FS&&FS[ic.f.kind==='secret'&&ic.f.pressed?'secretDown':ic.f.kind];if(sp)fit(sp.c,sp.c.width,sp.c.height,.05);}
+      else if(k==='chest'){const CS=Sprites.sheets.chests,rr=CS&&CS.rects&&CS.rects[(ic.c.rar||0)*5];if(rr){const k2=Math.min(1.45*r/rr[2],1.45*r/rr[3]);ctx.imageSmoothingEnabled=true;ctx.drawImage(CS.img,rr[0],rr[1],rr[2],rr[3],-rr[2]*k2/2,-rr[3]*k2/2,rr[2]*k2,rr[3]*k2);}}
+      else if(k==='gold'){const c=this.goldIcon();if(c)fit(c,c.width,c.height,.08);}
+      else{const s=r/12;ctx.scale(s,s);ctx.textAlign='center';ctx.textBaseline='middle';
+        if(k==='tr'){ctx.fillStyle='#ffffff';ctx.font='900 9px sans-serif';ctx.fillText('XP',0,.5);}
+        else if(k==='pod'){ctx.fillStyle='#e8f4ff';ctx.strokeStyle='#1a2a44';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(0,0,4.6,7,0,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle=col;ctx.fillRect(-4.6,-1,9.2,2);}
+        else if(k==='ks'){ctx.fillStyle=col;ctx.font='900 15px sans-serif';ctx.fillText('!',0,1);}
+        else if(k==='tunnel'||k==='exit'){ctx.fillStyle='#05070c';ctx.beginPath();ctx.ellipse(0,2,8,5.5,0,0,TAU);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.stroke();
+          if(k==='exit'){ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(4,-3);ctx.lineTo(-4,-3);ctx.closePath();ctx.fill();}}
+      }
+    }catch(e){}
+    ctx.restore();ctx.imageSmoothingEnabled=false;
+  }
+  /* the golden Saibaman for the icons: its sprite with a gold coat (cached) */
+  goldIcon(){
+    if(this._goldIc)return this._goldIc;const d=ENEMIES.sai;if(!d)return null;
+    const sid=Sprites.enemySid?Sprites.enemySid({def:d,id:'sai',boss:false}):null,sp=sid?Sprites.sheetEnemy(sid,1,false):Sprites.forSp(d.sp,1,false);if(!sp||!sp.c)return null;
+    const c=document.createElement('canvas');c.width=sp.c.width;c.height=sp.c.height;const x=c.getContext('2d');x.drawImage(sp.c,0,0);
+    x.globalCompositeOperation='source-atop';x.fillStyle='rgba(255,200,40,.55)';x.fillRect(0,0,c.width,c.height);
+    if(sid)this._goldIc=c;return c;
+  }
+  /* v134: Zeno's portal tears open out of nothing: a speck of darkness swells into a spinning vortex (black core, violet spiral arms, rings that
+     ripple outwards, motes sucked into the centre), the portal itself unfurls from the middle with a twist, then a last dark pulse settles it */
+  zenoWarp(f,t,g){
+    const ctx=this.ctx,x=f.x,FS=this.getFeat(),sp=FS&&FS.zenoportal,H=sp?sp.c.height*sp.k:70,cy=f.y-H*.45,q=clamp(f.t/ZENO_IN,0,1);
+    const open=q<.55?Math.pow(q/.55,1.6):1,R=(14+H*.75)*open,rot=f.t*5.5,show=clamp((q-.35)/.5,0,1),es=1-Math.pow(1-show,3),fade=q>.8?1-(q-.8)/.2:1;
+    ctx.save();
+    /* the darkness: an elliptic hole with a violet rim */
+    {const gr=ctx.createRadialGradient(x,cy,0,x,cy,R*1.25);gr.addColorStop(0,'rgba(4,0,10,'+.95*fade+')');gr.addColorStop(.55,'rgba(20,4,40,'+.85*fade+')');gr.addColorStop(.8,'rgba(120,40,200,'+.45*fade+')');gr.addColorStop(1,'rgba(60,0,120,0)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(x,cy,R*1.25,R*1.05,0,0,TAU);ctx.fill();}
+    /* spiral arms */
+    ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+    for(let a=0;a<5;a++){ctx.beginPath();for(let i=0;i<=24;i++){const u=i/24,an=rot+a*TAU/5+u*3.4,rr=R*(1-u)*1.05;const px=x+Math.cos(an)*rr,py=cy+Math.sin(an)*rr*.82;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+      ctx.strokeStyle='rgba('+(150+a*15)+',80,255,'+.55*fade+')';ctx.lineWidth=2.4;ctx.stroke();}
+    /* ripples going out (space warping) */
+    for(let k=0;k<3;k++){const w=((f.t*1.6+k/3)%1);ctx.strokeStyle='rgba(190,120,255,'+(1-w)*.45*fade+')';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,cy,R*(1+w*1.4),R*.82*(1+w*1.4),0,0,TAU);ctx.stroke();}
+    /* motes sucked into the centre */
+    if(Ambient.on)for(let i=0;i<22;i++){const u=1-((f.t*1.3+i*.137)%1),an=i*2.39+f.t*2,rr=R*(.25+1.6*u);ctx.fillStyle='rgba('+(i%3?'200,150,255':'255,255,255')+','+(1-u)*fade+')';ctx.fillRect(x+Math.cos(an)*rr-1.5,cy+Math.sin(an)*rr*.8-1.5,3,3);}
+    ctx.restore();
+    /* the portal unfurls from the middle with a twist */
+    if(show>0&&sp){ctx.save();ctx.translate(x,f.y+2);ctx.translate(0,-H*.45);ctx.rotate((1-es)*-1.8);ctx.scale(es,es);ctx.translate(0,H*.45);ctx.globalAlpha=Math.min(1,show*1.5);
+      ctx.imageSmoothingEnabled=true;ctx.scale(sp.k,sp.k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();ctx.imageSmoothingEnabled=false;}
+    else if(show>0&&!sp)this.drawFeature(f,t,g,true);
+    if(q>.8){const d=(q-.8)/.2;ctx.save();ctx.globalAlpha=(1-d)*.6;GLOW.at(ctx,x,cy,R*(1+d*.8),'#3a0a6a',.9);ctx.restore();}
+  }
+  /* v134: a structure appearing on the map (FEAT_IN s): a column of light falls on the spot, then the structure grows out of the ground in it
+     (the painted vanishing frames played backwards for the kinds that have them: shrine, font, totem, spring, altar), with a dust ring and sparkles */
+  featSpawn(f,t,g){
+    const ctx=this.ctx,x=f.x,y=f.y,q=clamp(f.t/FEAT_IN,0,1),FS=this.getFeat(),sp=FS&&FS[f.kind],col=sp?sp.gl:'#ffffff';
+    const H=sp?sp.c.height*sp.k:60,W=sp?sp.c.width*sp.k:44,beam=q<.35?q/.35:Math.max(0,1-(q-.35)/.65),grow=clamp((q-.18)/.6,0,1),e=1-Math.pow(1-grow,3);
+    /* the column of light from the sky */
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    {const bw=(W*.7+14)*(1-.4*beam*beam),top=y-900;   /* three nested columns: soft edges, a bright core */
+      for(const [wk,ak] of [[1,.22],[.6,.32],[.28,.55]]){const gr=ctx.createLinearGradient(0,top,0,y);gr.addColorStop(0,hexA(col,0));gr.addColorStop(.7,hexA(col,ak*beam));gr.addColorStop(1,hexA('#ffffff',ak*1.6*beam));
+        ctx.fillStyle=gr;ctx.fillRect(x-bw*wk/2,top,bw*wk,y-top+2);}}
+    GLOW.at(ctx,x,y-4,(30+W*.6)*(.6+.6*beam),col,.75*beam);GLOW.at(ctx,x,y-4,24+W*.3,'#ffffff',.6*beam);
+    ctx.restore();
+    /* the structure */
+    if(grow>0){
+      const FF=Sprites.sheets.featfade,fs=FF&&FF.rects&&{shrine:[0,5],font:[5,6],totem:[11,5],spring:[16,5],altar:[21,6]}[f.kind];
+      if(fs&&sp){   /* the vanishing animation backwards: it gathers into shape */
+        const i=fs[0]+Math.max(0,fs[1]-1-Math.floor(grow*fs[1])),rc=FF.rects[i],an=FF.anch[i],k=sp.c.width*sp.k/FF.rects[fs[0]][2];
+        if(grow>=1)this.drawFeature(f,t,g,true);
+        else{ctx.save();ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2);ctx.scale(k,k);ctx.drawImage(FF.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);ctx.restore();ctx.imageSmoothingEnabled=false;}
+      }else{        /* out of the ground: clipped at the floor line, it rises into place */
+        ctx.save();ctx.beginPath();ctx.rect(x-W-60,y-H-200,2*W+120,H+200+4);ctx.clip();ctx.translate(0,(1-e)*(H+8));
+        this.drawFeature(f,t,g,true);ctx.restore();
+      }
+      if(grow<1){ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55*(1-grow);
+        GLOW.at(ctx,x,y-H*e*.5,W*.7+20,'#ffffff',.8);ctx.restore();}
+    }
+    /* dust ring on the ground and sparkles going up */
+    if(q>.15){const d=clamp((q-.15)/.85,0,1);
+      ctx.strokeStyle=hexA('#e8dcc0',.55*(1-d));ctx.lineWidth=3*(1-d)+1;ctx.beginPath();ctx.ellipse(x,y+2,(14+W*.9*d),(5+W*.28*d),0,0,TAU);ctx.stroke();
+      if(Ambient.on)for(let i=0;i<12;i++){const a=i*2.39,rr=(8+W*.5)*(.4+.6*((i*.37)%1)),h=d*(30+H*.8)*(.5+((i*.61)%1)*.5);
+        ctx.fillStyle=hexA(i%3?col:'#ffffff',(1-d)*.9);ctx.fillRect(x+Math.cos(a)*rr-1.5,y-h+Math.sin(a)*rr*.25,3,3);}}
+  }
   /* the painted structures (assets/sprites/props/featprops.png): crops of the atlas, foot at the anchor; ws = world px per sprite px, gl = colour of the soft glow behind it, [dy] = height of that glow */
   getFeat(){
     const BP=Sprites.sheets.featprops;if(!BP||!BP.anch||!BP.rects)return null;
@@ -1490,9 +1583,11 @@ this.W=1;this.H=1;this.Z=1;
       x.putImageData(im,0,0);out.secretDown={c,ox:sc.ox,oy:sc.oy,k:sc.k,gl:'#ff3b3b'};}
     this.featSp=out;return out;
   }
-  drawFeature(f,t,g){
+  drawFeature(f,t,g,inner){
     const ctx=this.ctx,x=f.x,y=f.y,pulse=.5+.5*Math.sin(t*3+x);
     if(f.kind==='tunnel'){this.drawTunnelEntrance(f,t,g);return;}   /* tunnel.js */
+    if(!inner&&f.kind==='zenoportal'&&f.t<ZENO_IN&&!f.used){this.zenoWarp(f,t,g);return;}
+    if(!inner&&f.t<FEAT_IN&&f.fade===undefined&&!f.used){this.featSpawn(f,t,g);return;}
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
     /* used (E pressed): a bright flash with a little shake and swell, then it rises a bit and dissolves in sparkles (FEAT_FADE s) */
     const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis;
@@ -1512,7 +1607,7 @@ this.W=1;this.H=1;this.Z=1;
       if(Ambient.on)for(let i=0;i<14;i++){const q=(f.fade*.9+i/14)%1,an=i*2.4,rr=10+q*46;ctx.fillStyle=hexA(i%2?gc:'#ffffff',(1-q)*(1-dis*.6));ctx.fillRect(x+Math.cos(an)*rr-1.5,y-20-q*54+Math.sin(an)*rr*.3,3,3);}
     }
     /* the red button (featfade.png frames 27-30): resting, pushed halfway, pressed with a flash, stays pressed without the question mark */
-    if(f.kind==='secret'){
+    if(f.kind==='secret'&&fq<0){
       const FF=Sprites.sheets.featfade,FS1=FF&&FF.rects&&FF.rects.length>=31&&this.getFeat(),sp1=FS1&&FS1.secret;
       if(sp1){
         const pt=f.pressed?(f.pt||0):-1,i=27+(pt<0?0:pt<.14?1:pt<.3?2:3),rc=FF.rects[i],an=FF.anch[i],k=sp1.c.width*sp1.k/FF.rects[27][2];
@@ -1816,24 +1911,26 @@ this.W=1;this.H=1;this.Z=1;
       yb+=bh+22*U;
     }
     /* beacons for off-screen map items */
-    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f']);
-    if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a']);
-    if(g.mx){const M=g.mx;if(M.tr)tgts.push([M.tr.x,M.tr.y,'#8ad8ff']);if(M.pod&&!(M.pod.fall>0))tgts.push([M.pod.x,M.pod.y,'#59c8ff']);if(M.ks&&!M.ks.met&&M.ks.go===undefined)tgts.push([M.ks.x,M.ks.y,KS_COL]);}   /* v132: training circle, pod, visitor */
-    if(g.gold&&!g.gold.dead)tgts.push([g.gold.x,g.gold.y,'#ffd23f']);   /* v133: the golden Saibaman */
-    for(const c of g.chests)if(c.op===undefined)tgts.push([c.x,c.y,RARITY[c.rar||0].c]);
-    const altS=new Set();for(const l of g.loot)if(!(l.alt&&!l.dead&&(altS.has(l.isle)||!altS.add(l.isle)))&&(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag'))tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff']);
-    for(const [tx3,ty3,col] of (g.trial?[]:tgts)){
+    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f',{k:f.kind==='tunnel'?'tunnel':'feat',f}]);
+    if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a',{k:'exit'}]);
+    if(g.mx){const M=g.mx;if(M.tr)tgts.push([M.tr.x,M.tr.y,'#8ad8ff',{k:'tr'}]);if(M.pod&&!(M.pod.fall>0))tgts.push([M.pod.x,M.pod.y,'#59c8ff',{k:'pod'}]);if(M.ks&&!M.ks.met&&M.ks.go===undefined)tgts.push([M.ks.x,M.ks.y,KS_COL,{k:'ks'}]);}   /* v132: training circle, pod, visitor */
+    if(g.gold&&!g.gold.dead)tgts.push([g.gold.x,g.gold.y,'#ffd23f',{k:'gold'}]);   /* v133: the golden Saibaman */
+    for(const c of g.chests)if(c.op===undefined)tgts.push([c.x,c.y,RARITY[c.rar||0].c,{k:'chest',c}]);
+    const altS=new Set();for(const l of g.loot)if(!(l.alt&&!l.dead&&(altS.has(l.isle)||!altS.add(l.isle)))&&(l.k==='ball'||l.k==='sball'||l.k==='capsule'||l.k==='bag'))tgts.push([l.x,l.y,l.k==='sball'?'#ffe066':l.k==='ball'?'#ff9d1c':l.k==='bag'?'#ffd23f':'#ffffff',{k:'loot',l}]);
+    for(const [tx3,ty3,col,ic] of (g.trial?[]:tgts)){
       const sxp=(tx3-cx)*this.Z,syp=(ty3-cy)*this.Z;
       if(sxp>20&&sxp<W-20&&syp>20&&syp<H-20)continue;
       const a=Math.atan2(ty3-(p.y-14),tx3-p.x),r=Math.min(W,H)/2-30*U,ex=W/2+Math.cos(a)*Math.min(r*W/H*.9,W/2-26*U),ey=H/2+Math.sin(a)*Math.min(r,H/2-26*U);
-      /* big, glowing, outlined arrow that pulses; the distance sits next to it */
+      /* big, glowing, outlined arrow that pulses; v134: a miniature of what it points at beside it (inside the screen), the distance under that */
       const pu=1+.13*Math.sin(g.rt*6+tx3*.01),k2=1.75*pu,dist=Math.hypot(tx3-p.x,ty3-p.y);
       GLOW.at(ctx,ex,ey,34*U*pu,col,.7);
       ctx.save();ctx.translate(ex,ey);ctx.rotate(a);ctx.scale(k2,k2);
       ctx.beginPath();ctx.moveTo(12*U,0);ctx.lineTo(-8*U,-9*U);ctx.lineTo(-4*U,0);ctx.lineTo(-8*U,9*U);ctx.closePath();
       ctx.lineJoin='round';ctx.lineWidth=4.5*U;ctx.strokeStyle='#0a0f1c';ctx.stroke();ctx.lineWidth=1.6*U;ctx.strokeStyle='#ffffff';ctx.stroke();
       ctx.fillStyle=col;ctx.globalAlpha=1;ctx.fill();ctx.restore();
-      txt(Math.round(dist/10)+'m',clamp(ex-Math.cos(a)*34*U,26*U,W-26*U),clamp(ey-Math.sin(a)*26*U+4*U,18*U,H-8*U),'#ffffff','center',F(12));
+      const ir=17*U,ix=clamp(ex-Math.cos(a)*46*U,ir+4*U,W-ir-4*U),iy=clamp(ey-Math.sin(a)*40*U,ir+4*U,H-ir-20*U);
+      this.beaconIcon(ctx,ic,ix,iy,ir,col,g);
+      txt(Math.round(dist/10)+'m',ix,Math.min(iy+ir+13*U,H-6*U),'#ffffff','center',F(12));
     }
     /* altar prompt */
     for(const f of g.feat)if(f.near&&!f.used&&f.fade===undefined){

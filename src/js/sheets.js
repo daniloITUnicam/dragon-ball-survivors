@@ -87,7 +87,7 @@ Sprites.sheetFrame=function(sid,frame){
 /* decode the embedded sheets; onLoad(id) fires for each one so open menus can refresh.
    v114: the big sheets only one place needs (SPRITE_LAZY: the Snake Way islands, the summoned dragons, the Tamagami statues - about 100 MB of
    decoded pixels) are not decoded at start: Sprites.need(group) decodes a group when a run needs it, Sprites.drop(group) frees it again */
-const SPRITE_LAZY={isles:/^isleo?[a-z]+$/,dragons:/^(shenron|porunga)$/,tama:/^tamas?\d+f?$/};
+const SPRITE_LAZY={isles:/^isleo?[a-z]+$/,dragons:/^(shenron|porunga)$/,tama:/^tamas?\d+f?$/,wfx:/^wfx/};   /* wfx: the weapon effects, loaded the first time a run wants them (Sprites.prep) */
 Sprites.lazyOf=function(id){for(const k in SPRITE_LAZY)if(SPRITE_LAZY[k].test(id))return k;return null;};
 Sprites.loadPack=function(onLoad){
   Sprites._onLoad=onLoad;
@@ -121,7 +121,7 @@ Sprites.decode=function(id){
    thread too, img.decode() does not reach the canvas: only the blob route works. */
 Sprites.live=false;Sprites.clk=0;Sprites._pin=new Set();Sprites._bmP=new Map();
 Sprites.prep=function(id){
-  const S=Sprites.sheets[id],P=Sprites._bmP;if(!S)return Promise.resolve(false);if(S.bm)return Promise.resolve(true);if(P.has(id))return P.get(id);
+  const S=Sprites.sheets[id],P=Sprites._bmP;if(!S){if(SPRITE_PACK[id])Sprites.decode(id);return Promise.resolve(false);}   /* a lazy sheet not loaded yet: load it (Sprites.decode preps it once it arrives) */if(S.bm)return Promise.resolve(true);if(P.has(id))return P.get(id);
   const d=SPRITE_PACK[id];if(S.bmFail)return Promise.resolve(false);
   if(!d||!d.u||typeof createImageBitmap!=='function'||typeof fetch!=='function'){S.bmFail=true;return Promise.resolve(false);}   /* no file behind it (Zeno's picture is a canvas): nothing to wait for */
   const p=fetch(d.u).then(r=>{if(!r.ok)throw new Error(r.status);return r.blob();}).then(b=>createImageBitmap(b)).then(bm=>{

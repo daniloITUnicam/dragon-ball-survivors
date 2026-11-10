@@ -2,7 +2,7 @@
 /* ====== v117: boss weaknesses (+15% from one kind of weapon), the charged Kamehameha (hold the ability key), the golden Saibaman who runs off with a bag ====== */
 const WEAK_K=1.15,WEAK_KINDS=['beam','shot','blast','chain'],WEAK_FIX={cell:'beam',cellmax:'beam',bu:'blast',kidbu:'blast',superbu:'blast',freezer:'shot',cooler:'shot',jiren:'chain',beerus:'blast',broly:'beam',kingpiccolo:'chain',raditz:'beam',nappa:'shot',vegeta:'blast'};
 const WEAK_N={beam:T6('raggi','beams','rayos','rayons','Strahlen','raios'),shot:T6('colpi','shots','disparos','tirs','Schüsse','disparos'),blast:T6('esplosioni','blasts','explosiones','explosions','Explosionen','explosões'),chain:T6('fulmini','lightning','rayos eléctricos','éclairs','Blitze','relâmpagos')};
-const KCH_MIN=.25,KCH_MAX=2,KCH_FIRE=.7,GS_FIRST=70,GS_EVERY=[80,140],GS_P=.6,GS_LIFE=10;
+const KCH_MIN=.25,KCH_MAX=2,KCH_FIRE=.7,GS_FIRST=70,GS_EVERY=[80,140],GS_P=.6,GS_LIFE=14,GS_HP=1.2,GS_TK=.4;   /* golden Saibaman: 14 s to catch it, +20% HP, 40% chance of a 1× ticket on top of the bags */
 const EXTRAS={
   /* ---- weaknesses ---- */
   weak(id){return WEAK_FIX[id]||WEAK_KINDS[Online.hash('weak-'+id)%WEAK_KINDS.length];},
@@ -26,9 +26,10 @@ const EXTRAS={
     if(g.fx.length<430&&Math.random()<.3)g.fx.push({x:e.x,y:e.y-10,vx:rnd(-20,20),vy:-40,l:.4,m:.4,c:'#ffd23f',s:3});
     if(e.glife<=0){e.dead=true;g.gold=null;g.floatText(e.x,e.y-30,g.env.tr(T6('È scappato!','Got away!','¡Se escapó!','Il s\'est enfui !','Entkommen!','Fugiu!')),3);g.burst(e.x,e.y-10,16,'#ffd23f');}},
   spawnGold(g){const a=rnd(0,TAU),d=Math.min(260,g.viewR*.7),[x,y]=g.spawnSpot(a,d,0),e=g.mkEnemy(ENEMIES.sai,x,y);
-    e.hp=e.max=Math.max(40,g.hpMul()*ENEMIES.sai.hp*6);e.spd=0;e.dmg=0;e.goldS=1;e.glife=GS_LIFE;e.ph=rnd(0,TAU);g.en.push(e);g.gold=e;
-    g.say(g.env.tr(T6('Un Saibaman d\'oro!','A golden Saibaman!','¡Un Saibaman dorado!','Un Saibaman doré !','Ein goldener Saibaman!','Um Saibaman dourado!')),'#ffd23f',2,g.env.tr(T6('Prendilo entro 10 secondi','Catch it within 10 seconds','Atrápalo en 10 segundos','Attrape-le en 10 secondes','Fang ihn in 10 Sekunden','Pegue-o em 10 segundos')));g.audio.sfx('coin');},
-  onKill(g,e){if(!e.goldS)return false;g.gold=null;g.run.golds=(g.run.golds||0)+1;g.spawnLoot('bag',e.x,e.y);g.spawnLoot('bag',e.x+16,e.y);g.dropGem(e.x,e.y,g.need*.25);
+    e.hp=e.max=Math.max(40,g.hpMul()*ENEMIES.sai.hp*6)*GS_HP;e.spd=0;e.dmg=0;e.goldS=1;e.glife=GS_LIFE;e.ph=rnd(0,TAU);g.en.push(e);g.gold=e;
+    g.burst(x,y-10,26,'#ffd23f');g.ring(x,y,80,'#ffd23f',.6);g.pillar&&g.pillar(x,y,'#ffd23f',.8);   /* v134: it appears in a golden flash */
+    g.say(g.env.tr(T6('Un Saibaman d\'oro!','A golden Saibaman!','¡Un Saibaman dorado!','Un Saibaman doré !','Ein goldener Saibaman!','Um Saibaman dourado!')),'#ffd23f',2,g.env.tr(T6('Prendilo entro '+GS_LIFE+' secondi','Catch it within '+GS_LIFE+' seconds','Atrápalo en '+GS_LIFE+' segundos','Attrape-le en '+GS_LIFE+' secondes','Fang ihn in '+GS_LIFE+' Sekunden','Pegue-o em '+GS_LIFE+' segundos')));g.audio.sfx('coin');},
+  onKill(g,e){if(!e.goldS)return false;g.gold=null;g.run.golds=(g.run.golds||0)+1;g.spawnLoot('bag',e.x,e.y);g.spawnLoot('bag',e.x+16,e.y);g.dropGem(e.x,e.y,g.need*.25);if(Math.random()<GS_TK)g.addTicket('t1',1,e);
     g.burst(e.x,e.y-10,40,'#ffd23f');g.ring(e.x,e.y,90,'#ffd23f',.6);g.audio.sfx('coin');g.floatText(e.x,e.y-36,'💰',1);return true;},
   /* gold tint over the Saibaman (world space, after the enemies) */
   draw(R,g,ctx,t){const e=g.gold;if(!e||e.dead)return;GLOW.at(ctx,e.x,e.y-12,34,'#ffd23f',.55+.2*Math.sin(t*10));

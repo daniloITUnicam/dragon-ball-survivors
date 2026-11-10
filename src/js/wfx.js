@@ -19,7 +19,7 @@ const WFX={
   /* v132: during a run a sheet is drawn only once it is decoded off the main thread (Sprites.prep): until then - a few frames, usually none,
      the loader asks for the sheets of the weapons owned and offered ahead of time - the weapon keeps the look of its lower tier or its
      drawn-by-code one, instead of decoding 1-2.5 million pixels inside a frame */
-  S(id){const S=Sprites.sheets['wfx'+id];if(!S||!S.img||!S.img.complete)return null;if(S.bm){S.used=Sprites.clk;return S;}if(!Sprites.live||S.bmFail)return S;Sprites.prep('wfx'+id);return null;},
+  S(id){const S=Sprites.sheets['wfx'+id];if(!S){if(Sprites.live&&SPRITE_PACK['wfx'+id])Sprites.decode('wfx'+id);return null;}if(!S.img||!S.img.complete)return null;if(S.bm){S.used=Sprites.clk;return S;}if(!Sprites.live||S.bmFail)return S;Sprites.prep('wfx'+id);return null;},
   has(id){return !!this.S(id);},
   meta(id){return SPRITE_PACK['wfx'+id]||{};},
   /* the sheet of a weapon: <id>ev2 from the second evolution on, <id>evo from the first, when that sheet is there */

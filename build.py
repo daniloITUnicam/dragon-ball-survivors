@@ -144,7 +144,7 @@ if _mode == 'embed' and _budget and _src and sum(f.stat().st_size for f in _src.
 for key, f in _src.items():
     g = _enc.get(key, f)
     if _mode == 'link':
-        _tracks[key] = 'assets/' + urllib.parse.quote(f.name)
+        _tracks[key] = 'assets/' + urllib.parse.quote(f.name) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]   # a new file under the same name is a new URL (the offline cache keeps URLs)
     else:
         _tracks[key] = 'data:%s;base64,%s' % (_MIME[g.suffix.lower()], base64.b64encode(g.read_bytes()).decode())
     print('music: %-8s <- %s (%s, %.1f MB)' % (key, f.name, _mode, g.stat().st_size / 1048576))
@@ -155,7 +155,7 @@ for f in sorted((ROOT/'assets').glob('*')):
     if f.suffix.lower() not in _MIME or _norm(f.stem) not in SFX_FILES: continue
     k = SFX_FILES[_norm(f.stem)]
     if k in _sfx: continue
-    _sfx[k] = ('assets/' + urllib.parse.quote(f.name)) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
+    _sfx[k] = ('assets/' + urllib.parse.quote(f.name) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
     print('sfx:   %-8s <- %s (%s, %.0f KB)' % (k, f.name, _mode, f.stat().st_size / 1024))
 js = js.replace('/*__SFX__*/{}', json.dumps(_sfx, separators=(',', ':')))
 # ---- optional sprite sheets: assets/sprites/[<folder>/]<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
@@ -175,6 +175,12 @@ def _webp(raw):
     if len(out) >= len(raw): out = b''
     cd.mkdir(parents=True, exist_ok=True); cf.write_bytes(out); return out or None
 _sd = pathlib.Path(os.environ.get('DBS_SPRITES') or (ROOT/'assets'/'sprites'))
+_out = pathlib.Path(os.environ['DBS_OUT']) if os.environ.get('DBS_OUT') else ROOT/'dist'/'dragon-ball-survivors.html'
+_shx = (os.environ.get('DBS_SHEETS') or '').strip().lower() == 'ext'
+_shd = _out.parent/'s'
+if _shx and _shd.is_dir():   # only the sheets of this build (the old content-named files go)
+    for _f in _shd.iterdir():
+        if re.fullmatch(r'[a-z0-9_]+\.[0-9a-f]{10}\.(webp|png)', _f.name): _f.unlink()
 _pack = {}
 if _sd.is_dir():
     _ov = {}
@@ -216,7 +222,11 @@ if _sd.is_dir():
             _wk = _webp(raw)
             if _wk: raw, _mt = _wk, 'webp'
         _ext = os.environ.get('DBS_EXT')   # DBS_EXT=<folder>: the weapon effect sheets (wfx*) go next to the page as files (s/<id>.<ext>) instead of inside it (the artifact has a page size limit)
-        if _ext and sid.startswith('wfx'):
+        if _shx:   # DBS_SHEETS=ext (the published site): EVERY sheet is a file beside the page, named by its content (s/<id>.<hash>.<ext>): the page is small,
+                   # a phone downloads only what the menu needs (the rest when a run asks for it) and keeps it in its cache across releases
+            _hn = sid + '.' + hashlib.sha1(raw).hexdigest()[:10] + '.' + _mt
+            _shd.mkdir(parents=True, exist_ok=True); (_shd/_hn).write_bytes(raw); e['u'] = 's/' + _hn
+        elif _ext and sid.startswith('wfx'):
             _ed = pathlib.Path(_ext)/'s'; _ed.mkdir(parents=True, exist_ok=True); (_ed/(sid + '.' + _mt)).write_bytes(raw); e['u'] = 's/' + sid + '.' + _mt
         else: e['u'] = 'data:image/' + _mt + ';base64,' + base64.b64encode(raw).decode()
         _pack[sid] = e
@@ -254,6 +264,8 @@ if _min_env == '1' or (_min_env is None and not _dev):
 print('build:', 'DEV (open, for the tests)' if _dev else 'release (closed, anti-cheat on)')
 _bid = hashlib.sha1((js + '\0' + css + '\0' + html).encode('utf8')).hexdigest()[:12]
 js = js.replace('__BUILD_ID__', _bid)
+js = js.replace("'__SW__'", "'1'" if _shx else "''")
+if _shx: shutil.copyfile(ROOT/'src'/'sw.js', _out.parent/'sw.js')   # the offline cache (src/js/update.js registers it)
 js = js.replace('</script>', '<\\/script>')
 # ---- Content-Security-Policy (a <meta> tag: GitHub Pages cannot send headers). The only inline script is the game itself and it is allowed BY HASH:
 # an injected <script> or onclick="" would not run. Default: on for link builds (the published site), off for the single-file embed build
@@ -274,7 +286,7 @@ if _csp_env == '1' or (_csp_env is None and _mode == 'link'):
 else:
     html = html.replace('<!--__CSP__-->\n', '')
 html = html.replace('/*__CSS__*/', css).replace('/*__JS__*/', js)
-out = pathlib.Path(os.environ['DBS_OUT']) if os.environ.get('DBS_OUT') else ROOT/'dist'/'dragon-ball-survivors.html'
+out = _out
 out.parent.mkdir(exist_ok=True)
 out.write_text(html, encoding='utf8')
 (out.parent/'version.json').write_text(json.dumps({'id': _bid}) + '\n', encoding='utf8')

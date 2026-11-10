@@ -842,3 +842,12 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .card.shopi .shpm small{font-size:.82em;opacity:.95;white-space:nowrap}
 html.shiftmax .card.shopi .shpm{display:flex}
 html.shiftmax .card.shopi .shpn{display:none}
+/* v134: co-op with few players: busiest hours, the empty-queue hint, play solo while waiting, the "somebody joined" banner during the solo run */
+.chint{margin:0;font-size:12px;font-weight:700;color:#e8ffe8;opacity:.9;max-width:300px}
+.chours{display:flex;flex-direction:column;gap:3px;max-width:300px}.chours small{font-weight:800;color:#eaffea;font-size:12px}
+.chbars{display:flex;align-items:flex-end;gap:2px;height:28px;padding:3px;border-radius:6px;background:rgba(0,0,0,.25)}
+.chbars i{flex:1;background:rgba(255,255,255,.35);border-radius:2px 2px 0 0;min-height:2px}.chbars i.top{background:#ffd23f}.chbars i.now{outline:2px solid #fff;outline-offset:0}
+.btn.csolo{font-size:14px;padding:8px 14px}
+#cjoinb{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;
+  background:linear-gradient(180deg,#1d3260,#0e1a36);border:3px solid #ffd23f;box-shadow:0 6px 0 rgba(0,0,0,.4),0 0 24px rgba(255,210,63,.45);color:#fff;font-weight:800;pointer-events:auto;animation:cjoin .4s ease-out}
+@keyframes cjoin{from{transform:translate(-50%,-30px);opacity:0}to{transform:translateX(-50%);opacity:1}}

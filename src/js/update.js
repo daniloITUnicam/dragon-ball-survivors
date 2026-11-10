@@ -8,6 +8,7 @@
      3. the page reloads itself with ?u=<new id> (the cache-buster that makes the browser/CDN hand out the new HTML).
    It does nothing on file:// or when version.json is missing (local builds, the claude.ai preview...). */
 const BUILD_ID='__BUILD_ID__';
+const SW_ON='__SW__'==='1';   /* the published build (sheets as files beside the page): offline cache in sw.js */
 const UPD_SECS=10;
 const updWait=ms=>new Promise(r=>setTimeout(r,ms));
 class Updater{
@@ -18,12 +19,23 @@ class Updater{
   get live(){return typeof location!=='undefined'&&/^https?:$/.test(location.protocol)&&/^[0-9a-f]{8,}$/.test(this.id);}
   start(){
     this.cleanUrl();
+    this.offline();
     if(!this.live)return;
     setTimeout(()=>this.check(),8000);
     setInterval(()=>this.check(),this.poll);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)this.check();});
     addEventListener('focus',()=>this.check());
     addEventListener('online',()=>this.check());
+  }
+  /* sw.js keeps the sheets and the music in the browser's cache: the next start (and a new release) downloads only what changed, and works offline.
+     It gets the URLs of this build, so the files of older releases are deleted */
+  offline(){
+    if(!SW_ON||typeof navigator==='undefined'||!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.ready.then(r=>{
+      const keep=[...Object.values(SPRITE_PACK).map(d=>d&&d.u),...Object.values(FILE_TRACKS),...Object.values(FILE_SFX)].filter(u=>typeof u==='string'&&!u.startsWith('data:'));
+      if(r.active)r.active.postMessage({keep});
+    }).catch(()=>{});
   }
   /* after an automatic reload: drop the ?u= cache-buster from the address bar and forget the attempt if it worked */
   cleanUrl(){

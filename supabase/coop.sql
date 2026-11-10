@@ -348,3 +348,36 @@ do $$ declare f text; begin
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;
 end $$;
+
+-- v134: when are the trainers around? One row per trainer per hour (UTC) they were seen in the menus (coop_touch, every 15 s);
+-- coop_hours() = how many trainers on average in each hour of the day over the last 14 days (the hub shows the busiest hours, in local time)
+create table if not exists public.coop_seen (
+  day     date not null,
+  hour    smallint not null check (hour between 0 and 23),
+  user_id uuid not null,
+  primary key (day, hour, user_id)
+);
+alter table public.coop_seen enable row level security;
+revoke all on public.coop_seen from anon, authenticated;
+
+create or replace function public.coop_touch() returns void language plpgsql security definer set search_path = public as $$
+declare me uuid := public.coop_me(); n timestamp := now() at time zone 'utc';
+begin update public.profiles set last_seen = now() where user_id = me;
+  delete from public.room_invites where created_at < now() - interval '10 minutes';
+  if me is not null then
+    insert into public.coop_seen (day, hour, user_id) values (n::date, extract(hour from n)::smallint, me) on conflict do nothing;
+    delete from public.coop_seen where day < n::date - 30;
+  end if; end $$;
+
+create or replace function public.coop_hours() returns real[] language sql stable security definer set search_path = public as $$
+  select array_agg(coalesce(s.n, 0) order by h.h)
+    from generate_series(0, 23) as h(h)
+    left join (select hour, count(*)::real / 14 as n from public.coop_seen
+               where day > (now() at time zone 'utc')::date - 14 group by hour) s on s.hour = h.h $$;
+
+do $$ begin
+  revoke all on function public.coop_touch() from public;
+  grant execute on function public.coop_touch() to authenticated;
+  revoke all on function public.coop_hours() from public;
+  grant execute on function public.coop_hours() to anon, authenticated;
+end $$;
