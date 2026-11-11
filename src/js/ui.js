@@ -15,6 +15,10 @@ const WIP_URL=('__WIP__'?'data:image/webp;base64,__WIP__':'');
 const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
 /* pixel-art icon (shop upgrades): a framed tile in the upgrade's colour */
 const imgGlyph=(src,c)=>h('span',{class:'glyph gimg',style:'--c:'+c},h('img',{src,alt:'',draggable:'false'}));
+/* v137: an upgrade's icon (the shop picture it shares, or its kanji) */
+const pGlyph=(pid,c)=>{const P=PASS[pid]||{},u=typeof PASS_IMG!=='undefined'&&PASS_IMG[pid]&&SHOP_IMG[PASS_IMG[pid]];return u?imgGlyph(u,c||P.c):glyph(P.k||'?',c||P.c);};
+/* v137: a weapon's icon (its picture, or its kanji while it has none) */
+const wGlyph=(id,c)=>{const u=typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];return u?imgGlyph(u,c||(WEAPONS[id]||{}).c):glyph((WEAPONS[id]||{}).k||'?',c||(WEAPONS[id]||{}).c);};
 /* zenny coin icon (replaces the plain "Z") */
 function zIcon(){
   const e=document.createElement('span');e.className='zi';
@@ -261,7 +265,7 @@ class UI{
     const detail=h('div',{class:'detail'},
       h('div',{class:'preview'},portrait?h('div',{class:'emoframe'},portrait):null,big,this.trinketSlot(),this.weaponCount()),
       h('h3',null,this.tr(C.n)),h('p',null,this.tr(C.d)),lock,
-      h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
+      h('div',{class:'chips'},h('span',{class:'lbl'},this.t('startWeapons')+': '),C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},wGlyph(id,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
       h('div',{class:'stats'},
         h('span',null,'HP '+C.hp),h('span',null,this.t('stSpeed')+' x'+C.spd),h('span',null,this.t('stPower')+' x'+C.might)),
       this.masteryBox(C),
@@ -425,7 +429,7 @@ class UI{
     const cards=ids.map(id=>{
       const w=WEAPONS[id],on=d.banned.includes(id);
       return h('button',{class:'bancard'+(on?' on':''),style:'--c:'+w.c,'data-fid':'ban'+id,onclick:()=>{if(this.app.progress.toggleBan(id)){this.sfx(on?'uiBack':'uiStart');this.rebuild(true);}else this.sfx('uiErr');}},
-        glyph(w.k,w.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(w.n)),h('div',{class:'cd'},this.t(on?'banOn':'banOff'))));
+        wGlyph(id,w.c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(w.n)),h('div',{class:'cd'},this.t(on?'banOn':'banOff'))));
     });
     return h('div',null,this.header('banTitle'),h('p',{class:'sub'},this.t('banDesc',{a:d.banned.length,b:cap})),h('div',{class:'bangrid'},cards));
   }

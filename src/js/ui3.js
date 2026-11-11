@@ -165,7 +165,7 @@ Object.assign(UI.prototype,{
     const dName=this.tr(DIFF[diff].n);
     const charCard=h('div',{class:'qscard'},h('span',{class:'lbl'},this.tr(T('Personaggio','Character'))),
       h('div',{class:'qschar'},h('div',{class:'preview qsprev'},big),h('div',{class:'qsside'},h('h3',null,this.tr(C.n)),
-        h('div',{class:'chips'},C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},glyph(WEAPONS[id].k,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
+        h('div',{class:'chips'},C.start.map(id=>h('span',{class:'chip',style:'--c:'+WEAPONS[id].c},wGlyph(id,WEAPONS[id].c),this.tr(WEAPONS[id].n)))),
         this.trinketSlot())));
     const stageCard=h('div',{class:'qscard'},h('span',{class:'lbl'},this.tr(T('Stage scelto','Chosen stage'))),
       h('div',{class:'qsstage'},pv,h('div',{class:'stnum'},'STAGE '+S.no),h('div',{class:'cn'},this.tr(S.n)),

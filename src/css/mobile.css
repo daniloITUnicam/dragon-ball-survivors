@@ -117,3 +117,8 @@ html.mphone .pausescr .ptop{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;g
 html.mphone .pausescr .ptop::-webkit-scrollbar{display:none}
 html.mphone .pausescr .ptop .btn{flex:none;white-space:nowrap;padding:5px 9px;font-size:12.5px}
 html.mphone .pausescr .ptop .ptsp{min-width:4px}
+
+/* v137: weapon tiles in the Grimoire on a phone: smaller, so 3-4 fit beside the detail panel */
+html.mphone .grimbody .wgrid:has(.wpic){grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+html.mphone .wcard.wpic{padding:4px 4px 5px;gap:4px}html.mphone .wcard.wpic b{font-size:12px}html.mphone .wcard.wpic .wst{font-size:10px;top:6px;right:7px}
+html.mphone .grimhero img{width:52px;height:52px}

@@ -53,6 +53,10 @@ _si = {}
 for _f in sorted((ROOT/'assets'/'shopicons').glob('*.webp')) if (ROOT/'assets'/'shopicons').is_dir() else []:   # shop upgrade icons, file name = shop id
     _si[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__SHOPICONS__*/{}', json.dumps(_si, separators=(',', ':')))
+_wi = {}
+for _f in sorted((ROOT/'assets'/'weaponicons').glob('*.webp')) if (ROOT/'assets'/'weaponicons').is_dir() else []:   # v137: weapon icons, file name = weapon id
+    _wi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__WEAPONICONS__*/{}', json.dumps(_wi, separators=(',', ':')))
 _xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
 js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
 _hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)

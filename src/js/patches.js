@@ -16,6 +16,12 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-11-11d',date:'2026-11-11',
+    name:T("Le armi hanno la loro immagine","Weapons get their own picture"),
+    sum:T("Al posto dei simboli giapponesi ogni arma ha un'icona disegnata: nel Grimorio, nelle carte di livello, negli scrigni, nella barra in partita e nei menu.","Instead of the Japanese symbols every weapon has a drawn icon: in the Grimoire, on the level-up cards, in chests, on the in-game bar and in the menus."),
+    new:[
+      T("Grimorio rifatto: le armi sono riquadri con la loro immagine grande e il nome sotto; quelle bloccate sono ombre con il punto di domanda; il pannello a destra mostra l'immagine dell'arma scelta.","Grimoire redone: weapons are tiles with their big picture and the name below; locked ones are shadows with a question mark; the right panel shows the picture of the chosen weapon."),
+      T("Icone delle armi anche nelle carte di livello e degli scrigni, nella barra delle armi in partita, nella pausa, nella scelta del personaggio, nella lista nera delle armi, negli sblocchi e nella carriera; i potenziamenti mostrano la loro immagine nei suggerimenti di evoluzione.","Weapon icons also on level-up and chest cards, on the in-game weapon bar, in pause, in character select, in the weapon blacklist, in unlocks and in the career; upgrades show their picture in the evolution hints.")]},
   {id:'2026-11-11c',date:'2026-11-11',
     name:T("Altari Sfida e scrigni nuovi","Challenge Altars and new chests"),
     sum:T("Altari maledetti che rendono i boss più forti in cambio di più scrigni, scrigni con potenziamenti e cimeli insieme, e la mappa che spiega ogni icona.","Cursed altars that make bosses stronger for more chests, chests with upgrades and trinkets together, and a map that explains every icon."),

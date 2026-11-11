@@ -13,7 +13,7 @@ Object.assign(UI.prototype,{
   evoHint(pid,wid,evo,ready){
     const w=WEAPONS[wid],p=PASS[pid],txt=this.tr(this.evoSentence(pid,wid,evo));
     return h('div',{class:'evohint'+(ready?' ready':''),title:txt},
-      glyph(p.k,p.c),h('span',{class:'arr'},'➜'),glyph(w.k,w.c),h('span',{class:'et'},txt+(ready?' '+this.t('evoReady'):'')));
+      pGlyph(pid,p.c),h('span',{class:'arr'},'➜'),wGlyph(wid,w.c),h('span',{class:'et'},txt+(ready?' '+this.t('evoReady'):'')));
   },
   /* weapons the player knows about (weapon unlocked in the save, or a starter of an unlocked character) */
   grimWeaponOpen(id,g){
@@ -32,14 +32,15 @@ Object.assign(UI.prototype,{
     const bar=(n)=>h('span',{class:'censor'},'█'.repeat(n||8));
     const cards=ids.map(id=>{
       const w=WEAPONS[id],ok=open.includes(id),e2=this.grimEvo2Open(id,g),wp=g&&g.weapons.get(id);
-      return h('button',{class:'wcard'+(id===cur?' sel':'')+(ok?'':' locked'),'data-fid':'gw'+id,title:ok?this.tr(w.n):this.t('grimHidden'),
+      const pic=typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];
+      return h('button',{class:'wcard'+(pic?' wpic':'')+(id===cur?' sel':'')+(ok?'':' locked'),style:'--c:'+w.c,'data-fid':'gw'+id,title:ok?this.tr(w.n):this.t('grimHidden'),
         onclick:ev=>{this.sfx();if(this.grimSel===id)return;this.grimSel=id;
           /* v131: only the selection and the detail panel change (a short fade), the rest of the screen stays: no rebuild, no jump, the scroll is kept */
           const root=ev.currentTarget.closest('.grimbody'),old=root&&root.querySelector('.grimdetail');
           if(!old){this.rebuild(true);return;}
           for(const c of root.querySelectorAll('.wcard'))c.classList.toggle('sel',c.dataset.fid==='gw'+id);
           const nd=this.grimBody().querySelector('.grimdetail');nd.classList.add('gfade');nd.scrollTop=0;old.replaceWith(nd);}},
-        ok?glyph(w.k,w.c):h('span',{class:'glyph cens',style:'--c:#33465e'},'？'),
+        pic?h('span',{class:'wpimg'},h('img',{src:pic,alt:'',draggable:'false'}),ok?null:h('i',null,'？')):ok?glyph(w.k,w.c):h('span',{class:'glyph cens',style:'--c:#33465e'},'？'),
         h('b',null,ok?this.tr(w.n):'???'),
         h('span',{class:'wst'},ok?(wp?'● ':'')+'★'+(e2?'★':'☆'):''));
     });
@@ -51,7 +52,7 @@ Object.assign(UI.prototype,{
       const wp=g&&g.weapons.get(cur);
       const state=wp?(wp.evo>i?'done':(wp.evo===i?'now':'')):'';
       const row=h('div',{class:'tier'+(shown?'':' hide')+(state?' '+state:'')},
-        shown?glyph(i?'★':W.k,i?'#ffd23f':W.c):h('span',{class:'glyph cens',style:'--c:#33465e'},'？'),
+        shown?(i?h('span',{class:'tierpic'},wGlyph(cur,'#ffd23f'),h('em',null,'★'.repeat(i))):wGlyph(cur,W.c)):h('span',{class:'glyph cens',style:'--c:#33465e'},'？'),
         h('div',{class:'col'},
           h('div',{class:'cl',style:'color:'+(i?'#ffd23f':W.c)},(i?'★'.repeat(i)+' '+label:this.t('grimWeapon'))),
           h('div',{class:'cn'},shown?this.tr(nm):bar(10)),
@@ -61,9 +62,9 @@ Object.assign(UI.prototype,{
         const ready=!!(wp2&&wp2.evo===i-1&&g.evoReady(wp2));
         row.querySelector('.col').append(
           h('div',{class:'recipe'},h('span',{class:'lbl'},this.t('grimRecipe')+': '),
-            h('span',{class:'rchip',style:'--c:'+W.c},glyph(W.k,W.c),(i>1?this.tr(W.evo):this.tr(W.n))+' · '+this.t('grimMaxLv')),
+            h('span',{class:'rchip',style:'--c:'+W.c},wGlyph(cur,W.c),(i>1?this.tr(W.evo):this.tr(W.n))+' · '+this.t('grimMaxLv')),
             h('span',{class:'plus'},'+'),
-            h('span',{class:'rchip'+(g&&owned>0?' have':''),style:'--c:'+p.c},glyph(p.k,p.c),this.tr(p.n)+(g&&wp2?(owned>0?' ✓':' ✗'):'')),
+            h('span',{class:'rchip'+(g&&owned>0?' have':''),style:'--c:'+p.c},pGlyph(pid,p.c),this.tr(p.n)+(g&&wp2?(owned>0?' ✓':' ✗'):'')),
             h('span',{class:'plus'},'➜'),
             h('span',{class:'rchip',style:'--c:#ffd23f'},glyph('★','#ffd23f'),this.tr(nm))),
           this.evoHint(pid,cur,i-1,ready));
@@ -76,7 +77,7 @@ Object.assign(UI.prototype,{
       STAGE_ORDER.map(i=>h('i',{class:cl.includes(i)||evo2?'on':'',title:'S'+STAGES[i].no+' '+this.tr(STAGES[i].n)},'S'+STAGES[i].no))):null;
     const inRun=g&&g.weapons.get(cur);
     const detail=h('div',{class:'detail grimdetail'},
-      h('h3',null,isOpen?this.tr(W.n):this.t('grimHidden')),
+      isOpen&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[cur]?h('div',{class:'grimhero',style:'--c:'+W.c},h('img',{src:WEAPON_IMG[cur],alt:'',draggable:'false'}),h('h3',null,this.tr(W.n))):h('h3',null,isOpen?this.tr(W.n):this.t('grimHidden')),
       inRun?h('div',{class:'cd gold'},this.t('grimOwned')+': '+'Lv '+inRun.lv+'/'+WMAX+(inRun.evo?' · '+'★'.repeat(inRun.evo):'')):null,
       tier(0),tier(1),tier(2),prog);
     return h('div',{class:'grimbody'},

@@ -1129,6 +1129,7 @@ this.W=1;this.H=1;this.Z=1;
     return this.stoneC[id]={c,ox:sp.ox,oy:sp.oy,s:sp.s};
   }
   /* shop / upgrade pixel-art icon as an image (null until it has decoded, or when that upgrade has none) */
+  weaponImg(id){const c=this.wImgC||(this.wImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   shopImg(id){const c=this.shopImgC||(this.shopImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof SHOP_IMG!=='undefined'&&SHOP_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}
   statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
   drawSuperBall(l){
@@ -1770,7 +1771,10 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy,sz,sz);
       ctx.strokeStyle=w.evo?'#ffd23f':'rgba(255,255,255,.25)';ctx.lineWidth=(w.evo?2.5:1.5)*U;ctx.strokeRect(ix,wy,sz,sz);
       {const wt=PROGX.wkTier(PROGX.wkAll(g,w.id));if(wt){ctx.strokeStyle=wt.c;ctx.lineWidth=1.5*U;ctx.strokeRect(ix-2.5*U,wy-2.5*U,sz+5*U,sz+5*U);}}   /* v116: weapon diary border */
-      txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      {const wim=this.weaponImg(w.id);   /* v137: the weapon's picture (its kanji until it is decoded / when it has none) */
+        if(wim){const s=sz-4*U;ctx.save();ctx.imageSmoothingEnabled=true;ctx.beginPath();ctx.rect(ix+2*U,wy+2*U,s,s-6*U);ctx.clip();ctx.drawImage(wim,ix+2*U,wy+2*U-3*U,s,s);ctx.restore();
+          ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy+sz-8*U,sz,8*U);}
+        else txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
       {const pw=(sz-6*U)/WMAX;for(let i=0;i<WMAX;i++){ctx.fillStyle=i<w.lv?(w.evo?'#ffd23f':'#fff'):'rgba(255,255,255,.2)';ctx.fillRect(ix+3*U+i*pw,wy+sz-5*U,pw-1.5*U,3.2*U);}}
       if(w.evo)txt(w.evo>=2?'★★':'★',ix+sz-9*U,wy+12*U,'#ffd23f','center',F(13));
       if(w.xl>0)txt(String(w.lvShow),ix+sz-4*U,wy+sz-9*U,'#ffd23f','right',F(12,900));   /* Endless: the level beyond 5 */

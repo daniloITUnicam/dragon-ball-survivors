@@ -121,7 +121,7 @@ Object.assign(UI.prototype,{
   prioRows(g,after){
     const list=g.enPrio(),def=k=>k[0]==='w'?WEAPONS[k.slice(2)]:PASS[k.slice(2)];
     const mv=(i,d)=>{const l=list.slice(),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];g.setPrio(l);this.sfx();after();};
-    return list.map((k,i)=>h('div',{class:'prow endprio'},h('b',{class:'epn'},i+1),glyph(def(k).k,def(k).c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(def(k).n))),
+    return list.map((k,i)=>h('div',{class:'prow endprio'},h('b',{class:'epn'},i+1),(k[0]==='w'?wGlyph(k.slice(2),def(k).c):glyph(def(k).k,def(k).c)),h('div',{class:'col'},h('div',{class:'cn'},this.tr(def(k).n))),
       h('button',{class:'btn small alt epb','data-fid':'epu'+i,title:this.t('endUp'),disabled:i===0,onclick:()=>mv(i,-1)},'▲'),
       h('button',{class:'btn small alt epb','data-fid':'epd'+i,title:this.t('endDown'),disabled:i===list.length-1,onclick:()=>mv(i,1)},'▼')));
   },
@@ -170,7 +170,7 @@ Object.assign(UI.prototype,{
     const none=()=>h('div',{class:'cd'},t('none'));
     const sec=(key,kids)=>h('div',{class:'psec'},h('h3',null,t(key)),kids&&kids.length?kids:none());
     const pips=(n,max,gold)=>h('div',{class:'pips'},Array.from({length:max},(_,i)=>h('i',{class:i<n?'on':''})));
-    const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},glyph(w.def.k,w.color),
+    const weapons=[...g.weapons.values()].map(w=>h('div',{class:'prow'},wGlyph(w.id,w.color),
       h('div',{class:'col'},h('div',{class:'cn'},(w.evo?'★'.repeat(w.evo)+' ':'')+this.tr(w.evo?w.evoName:w.def.n)+(w.xl>0?' · Lv '+w.lvShow:''),this.weaponInfo(w,g)),pips(w.lv,WMAX),
         h('div',{class:'cd'},this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')))));
     const kr=(k,v)=>h('div',{class:'krow'},h('span',null,k===null?t('passSlots').replace(/\s*[:(]?\s*\{a\}\s*\/\s*\{b\}\)?/,''):t(k)),h('b',null,v));
@@ -303,7 +303,7 @@ Object.assign(UI.prototype,{
     if(o.type==='w'){const w=WEAPONS[o.id],g=this.app.game,wp=g&&g.weapons.get(o.id),ev=wp?wp.evo:0,pid=evoPass(o.id,ev);
       const evoNow=((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo;
       const fx=o.xl!=null?[{i:'dmg',t:'+'+(XL_DMG*100).toString().replace('.',',')+'% '+this.t('xlDmg')},{i:'area',t:'+'+(XL_AREA*100).toString().replace('.',',')+'% '+this.t('xlArea')},{i:'cd',t:'−'+(XL_CD*100).toString().replace('.',',')+'% '+this.t('xlCd')}]:evoNow?[{i:'dmg',t:T('+5% danno','+5% damage')},{i:'cd',t:T('−1,5% ricarica','−1.5% cooldown')},{i:'area',t:T('+2% area','+2% area')}]:(o.lv?wsFx(o.id,o.lv-1,o.lv):null);
-      return{k:w.k,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.xl!=null?'Lv '+(o.lv+o.xl)+'→'+(o.lv+o.xl+1):o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
+      return{k:w.k,wimg:o.id,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.xl!=null?'Lv '+(o.lv+o.xl)+'→'+(o.lv+o.xl+1):o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
         hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
       const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
@@ -313,7 +313,7 @@ Object.assign(UI.prototype,{
       return{k:'豆',c:'#8be07a',cat:'hp',n:T('Fagiolo Senzu','Senzu Bean'),tag:this.t('senzuTitle'),d:T(full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}),full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}))};}
   },
   describeReward(r){
-    if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
+    if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,wimg:r.id,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
     if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
@@ -325,7 +325,7 @@ Object.assign(UI.prototype,{
     return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       info.trin?potara('pcard'):null,
-      info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
+      info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+(CAT_COL[x.i]||fc||info.c)},h('b',null,this.tr(x.t))))):null,
@@ -464,10 +464,10 @@ Object.assign(UI.prototype,{
   },
   /* tooltip content for a HUD zone (see Renderer.zones) */
   tipFor(z,g){
-    const hd=(c,glyphK,name,sub)=>h('div',{class:'tiph'},glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
+    const hd=(c,glyphK,name,sub,wid)=>h('div',{class:'tiph'},wid?wGlyph(wid,c):glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
     const T2=(it,en)=>this.tr(T(it,en)),box=kids=>h('div',{class:'tipbox'},kids);
     if(z.k==='weapon'){const w=g.weapons.get(z.id);if(!w)return null;
-      return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
+      return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX,w.id),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
         w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}

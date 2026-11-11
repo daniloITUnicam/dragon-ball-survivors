@@ -118,12 +118,12 @@ Object.assign(UI.prototype,{
         items.push({sec:'wpn',ord:Object.keys(WEAPONS).indexOf(id),ok,cur:ok?1:0,max:1,ratio:ok?1:0,id,name:T('Arma: '+w.n.it,'Weapon: '+w.n.en),
           desc:own.length?T('Vinci uno stage con '+own.map(c=>c.n.it).join(' / ')+(open?'':' (sbloccalo prima)'),'Win a stage with '+own.map(c=>c.n.en).join(' / ')+(open?'':' (unlock them first)')):a.d,
           reward:T('Sblocchi l’arma','Unlocks the weapon'),gold:a.reward,key:normQ(this.tr(w.n)+' '+who+' '+(ok?this.tr(w.d):'')),w:{id,evo:false},
-          icon:()=>glyph(w.k,ok?w.c:'#6a7a90')});}
+          icon:()=>{const e=wGlyph(id,ok?w.c:'#6a7a90');if(!ok)e.classList.add('wlock');return e;}});}
       else if(a.cat==='ach'&&/^we_/.test(a.id)){const id=a.id.slice(3),w=WEAPONS[id],ok=!!d.we[id],n=(d.wc[id]||[]).length,tot=STAGES.length;
         items.push({sec:'evo',ord:Object.keys(WEAPONS).indexOf(id),ok,cur:ok?tot:n,max:tot,ratio:ok?1:n/tot,id,name:T('Evoluzione finale: '+w.n.it,'Final evolution: '+w.n.en),
           desc:T('Completa tutti gli stage (Normale o superiore) con quest’arma nell’equipaggiamento.','Clear every stage (Normal or higher) with this weapon in your build.'),
           reward:T('Sblocchi la seconda evoluzione','Unlocks the second evolution'),gold:a.reward,key:normQ(this.tr(w.n)+' '+(ok?this.tr(w.evo2):'')),w:{id,evo:true},
-          icon:()=>glyph(w.k,ok?'#ffd23f':'#6a7a90')});}
+          icon:()=>{const e=wGlyph(id,ok?'#ffd23f':'#6a7a90');if(!ok)e.classList.add('wlock');return e;}});}
       else if(a.cat==='ach'&&a.tier){const ok=!!d.ach[a.id];let pr=[0,1];if(a.prog&&sv){try{pr=a.prog(sv);}catch(e){}}if(ok)pr=[pr[1],pr[1],pr[2]];
         items.push({sec:'chal',ord:a.tier*100,ok,cur:pr[0],max:pr[1]||1,u:pr[2],ratio:Math.min(1,(pr[0]||0)/(pr[1]||1)),id:a.id,name:a.n,desc:a.d,tier:a.tier,reward:null,gold:a.reward,tk:a.tk,key:normQ(this.tr(a.n)+' '+this.tr(a.d)),
           icon:()=>glyph(ok?'★':'☆',TIER_COL[a.tier])});}
