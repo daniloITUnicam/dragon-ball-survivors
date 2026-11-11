@@ -16,6 +16,16 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-11-11f',date:'2026-11-11',
+    name:T("Orde a tema, Élite a sorpresa e nemici più resistenti","Themed hordes, surprise Elites and sturdier enemies"),
+    sum:T("La prima orda arriva a 2 minuti e poi una ogni 5, ognuna di un solo tipo di nemico e guidata da un Élite. I nemici all'inizio hanno più Salute: non cadono più con un colpo solo.","The first horde arrives at 2 minutes, then one every 5, each made of a single kind of enemy and led by an Elite. Enemies start with more Health: they no longer fall to a single hit."),
+    new:[
+      T("Orde: la prima a 2:00, poi una ogni 5 minuti (7:00, 12:00, 17:00...). Ogni orda è di un solo tipo di nemico: la prima del primo nemico dello stage (i Saibaman nella Pianura Saiyan), le successive ogni volta del nemico più recente non ancora usato. I nemici più robusti arrivano in numero minore.","Hordes: the first at 2:00, then one every 5 minutes (7:00, 12:00, 17:00...). Each horde is a single kind of enemy: the first is the stage's first enemy (Saibamen on the Saiyan Plains), the next ones each time the newest enemy not used yet. Sturdier enemies come in smaller numbers."),
+      T("Ogni orda è guidata da almeno un Élite dello stesso tipo (due dalla quarta orda): le stelle sulla barra del tempo ora sono sotto i teschi delle orde.","Every horde is led by at least one Elite of the same kind (two from the fourth horde on): the stars on the time bar now sit under the horde skulls.")],
+    bal:[
+      T("Élite: non arrivano più a orario fisso (uno ogni 4 minuti). Oltre a quelli delle orde, ogni nemico normale ha lo 0,2% di comparire come Élite (dai 30 secondi, mai durante un boss, al massimo 3 vivi insieme). I cimeli «comparsa élite» aumentano questa probabilità.","Elites: they no longer come on a fixed clock (one every 4 minutes). Besides the horde leaders, every regular enemy has a 0.2% chance to appear as an Elite (from 30 seconds on, never during a boss, at most 3 alive at once). \"Elite spawn rate\" trinkets raise this chance."),
+      T("Salute dei nemici normali all'inizio: x2,2 (un Saibaman passa da 14 a 30), poi il bonus scende gradualmente fino a sparire a metà partita, dove la curva dello stage è già più alta. Fine partita invariata.","Regular enemies' Health at the start: x2.2 (a Saibaman goes from 14 to 30), then the bonus eases off and is gone by mid-run, where the stage curve is already higher. The end of the run is unchanged."),
+      T("Le orde sono più numerose (circa 30 nemici la prima, prima circa 18).","Hordes are bigger (about 30 enemies for the first, about 18 before).")]},
   {id:'2026-11-11e',date:'2026-11-11',
     name:T("Si parte subito, e i nemici salgono di grado","Off from the first second, and enemies rank up"),
     sum:T("La partita si anima dal primo secondo e ogni 5 minuti arrivano nemici più forti, colorati e con più Salute.","The run comes alive from the first second, and every 5 minutes stronger, recoloured enemies with more Health arrive."),

@@ -36,6 +36,10 @@ const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],W
    appear just outside the screen (not out at viewR) until EDGE_T0, blending back by EDGE_T1. Enemy ranks: every TIER_EVERY s (up to TIER_MAX) a tougher,
    recoloured variant joins the crowd (TIER_SHARE of the spawns, the newest rank most often), with a vanguard of TIER_VAN+2*rank announced by a banner.
    A rank-k enemy: HP x(1+TIER_HP*k), damage x(1+TIER_DMG*k), +TIER_ARM*k armor, speed x(1+TIER_SPD*k), drawn x(1+TIER_R*k), XP x(1+TIER_XP*k) */
+/* v139: hordes on a fixed clock (HORDE_FIRST, then every HORDE_EVERY s), each of ONE kind of enemy and led by at least one elite; apart from those, every regular
+   spawn has ELITE_CHANCE to be an elite (x(1 + "elite spawn rate" trinkets), at most ELITE_ALIVE_MAX alive, never before ELITE_FROM s or during a boss fight).
+   Regular enemies start with HP x(1+EARLY_HP), easing to x1 at EARLY_HP_P of the run, where the stage curve has taken over */
+const HORDE_FIRST=120,HORDE_EVERY=300,ELITE_CHANCE=.002,ELITE_ALIVE_MAX=3,ELITE_FROM=30,EARLY_HP=1.2,EARLY_HP_P=.5;
 const OPEN_T=.6,OPEN_N=7,EARLY_RUSH=.6,EARLY_RUSH_T=150,EDGE_T0=240,EDGE_T1=420,TIER_EVERY=300,TIER_MAX=5,TIER_HP=.7,TIER_DMG=.12,TIER_ARM=.6,TIER_SPD=.03,TIER_R=.07,TIER_XP=.5,
   TIER_SHARE=[0,.2,.27,.34,.4,.46],TIER_VAN=6,TIER_C=['','#4ab0ff','#3ddc84','#b44bff','#ff3b3b','#ff5fc8'],
   TIER_N=[null,T('Veterani','Veterans'),T('Corazzati','Armored'),T('Furiosi','Berserkers'),T('Spietati','Ruthless'),T('Divini','Divine')];
@@ -119,10 +123,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.balls=0;this.ballSet=[];this.senzu=this.pk.nosenzu?0:Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.immT=0;this.hs=0;this.zoomP=0;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
-    this.spAcc=0;this.tier=0;this.opened=false;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
+    this.spAcc=0;this.tier=0;this.opened=false;this.hordeT=HORDE_FIRST;this.hordeN=0;this.hordeUsed=new Set();this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
       this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false,k:(this.stage.abs&&ANDROID_K[b[0]])||1}));}
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
-    this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
+    this.hordePlan=[];for(let t=HORDE_FIRST;t<this.dur-20;t+=HORDE_EVERY)this.hordePlan.push(t);
     /* wave rhythm (calm -> surge -> rest), elite enemies and the guaranteed Dragon Ball: all follow the run length */
     this.wave={ph:'calm',until:rnd(WAVE_FIRST[0],WAVE_FIRST[1])*clamp(Math.sqrt(this.TS),.75,1.4)*this.evK,n:0};this.elitePlan=this.planElites();this.miniPlan=this.planMinis();this.scanK=1+.05*this.shopLv('scan');   /* shop "Scanner Sfere del Drago": +5% Dragon Ball spawn rate per level */
     this.ballEvery=clamp(this.dur*.28,100,270)/this.scanK;this.ballAt=this.ballEvery*.75;
@@ -1427,7 +1431,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     return{hp:(p>=.65?1:.3+.7*Math.pow(p/.65,1.5))*(1-.12*l),dmg:(p>=.5?1:.55+.45*(p/.5))*(1-.10*l)};
   }
   mkEnemy0(def,x,y){
-    const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*this.crowdK(LATE_HP)*xe.hp*(fb?1.35:1)*(1+F.hp*hs);   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
+    const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*this.crowdK(LATE_HP)*xe.hp*(fb?1.35:1)*(1+F.hp*hs)*(def.prop?1:this.earlyHp());   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
     return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc)*this.crowdK(LATE_ARM),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*this.crowdK(LATE_DMG)*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0,
@@ -1482,12 +1486,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   snakeTier(){return this.stage.capT?Math.min(this.stage.capT.length-1,(this.nt/150)|0):0;}
   spawnOne(){
     const a=rnd(0,TAU),d=this.spawnDist(a),def=this.limitShooter(this.rosterPick());
-    if(def){const[x,y]=this.spawnSpot(a,d,0),e=this.mkEnemy(def,x,y);if(this.tier>0&&Math.random()<TIER_SHARE[this.tier])this.rankUp(e,this.tierPick());this.en.push(e);}
+    if(def){const[x,y]=this.spawnSpot(a,d,0),e=this.mkEnemy(def,x,y);if(Math.random()<ELITE_CHANCE*(1+(this.S&&this.S.eliteRate||0))&&this.eliteOk(def)){this.toElite(e);this.eliteCry();}
+      else if(this.tier>0&&Math.random()<TIER_SHARE[this.tier])this.rankUp(e,this.tierPick());this.en.push(e);}
   }
   /* just outside the visible screen along angle a (above the player TOP_K farther, as in spawnSpot, plus room for the sprite) */
   edgeD(a){const c=Math.abs(Math.cos(a)),s=Math.sin(a),as=Math.abs(s),up=s<0,m=rnd(26,90);
     return Math.min(c>.01?(this.vw/2+m)/c:1e9,as>.01?(this.vh/2+m+(up?44:0))/(as*(up?TOP_K:1)):1e9);}
   spawnDist(a){const far=this.viewR+rnd(10,110),u=clamp((this.t-EDGE_T0)/(EDGE_T1-EDGE_T0),0,1);return u>=1?far:Math.min(far,this.edgeD(a))*(1-u)+far*u;}
+  earlyHp(){const u=clamp(this.prog()/EARLY_HP_P,0,1);return 1+EARLY_HP*(1-u*u*(3-2*u));}
   earlyRush(){return 1+EARLY_RUSH*clamp(1-this.t/EARLY_RUSH_T,0,1);}
   /* the opening group: all around, right at the screen edge, so the run is moving from the first second */
   openGroup(){const n=Math.round(OPEN_N*ENEMY_N_K*this.D.spawn),a0=rnd(0,TAU);
@@ -1529,24 +1535,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.ring(p.x,p.y,230,'#5ad0ff',.6);this.burst(p.x,p.y-16,14,'#5ad0ff');
   }
   /* ---- elite enemies: a few per run, spread between the bosses; each one is a big, tough version of a regular enemy and always drops a chest ---- */
-  planElites(){
-    const dur=this.dur,long=dur>=1200,n=long?Math.floor((dur-210)/ELITE_EVERY)+1:clamp(Math.round(dur/210),2,6),out=[],fin=this.bossQ.find(b=>b.final),lim=fin?fin.t-32:dur-60;
-    for(let i=0;i<n;i++){
-      let t=long?150+ELITE_EVERY*i:dur*(.14+.66*(i+.5)/n);   /* long runs (30 min): one elite every 4 minutes, from 2:30 on */
-      for(let k=0;k<3;k++){const b=this.bossQ.find(b=>Math.abs(b.t-t)<28);if(!b)break;t=b.t+32;}   /* step aside from a boss (a fight in progress also holds the elite back) */
-      if(t>lim||this.bossQ.some(b=>Math.abs(b.t-t)<28)||(out.length&&t-out[out.length-1].t<60))continue;
-      out.push({t,i:out.length,done:false});
-    }
-    return out;
-  }
-  updateElites(){
-    /* v137: trinkets with "elite spawn rate" add extra elites on top of the plan: +X% = X% more elites per minute than the run's planned pace (they pile up while a fight holds them back) */
-    const dt=this.t-(this.eliteLT===undefined?this.t:this.eliteLT),er=this.S&&this.S.eliteRate||0,pl=this.elitePlan;this.eliteLT=this.t;
-    if(er>0&&pl.length&&dt>0&&dt<1)this.eliteX=Math.min(2,(this.eliteX||0)+dt*er*pl.length/Math.max(60,this.dur));
-    if(this.bossAlive>0||this.finalSpawned||this.wave.ph==='surge')return;
-    for(const e of pl)if(!e.done&&this.t>=e.t){e.done=true;this.spawnElite(e.i);return;}
-    if(this.eliteX>=1&&this.t>90&&!this.en.some(e=>e.elite&&!e.dead)){const fin=this.bossQ.find(b=>b.final);if(fin&&this.t>fin.t-32)return;
-      this.eliteX-=1;this.spawnElite(pl.filter(e=>e.done).length);}
+  /* v139: the planned elites are the ones that lead the hordes (the stars on the progress bar sit under the skulls); the others come by chance, see spawnOne */
+  planElites(){return this.hordePlan.map((t,i)=>({t,i,done:false}));}
+  updateElites(){}
+  eliteOk(def){
+    if(this.t<ELITE_FROM||this.bossAlive>0||this.finalSpawned||def.prop||def.ai==='explode'||def.ai==='ranged'||def.ai==='hover')return false;
+    let n=0;for(const e of this.en)if(e.elite&&!e.dead)n++;return n<ELITE_ALIVE_MAX;
   }
   /* ---- minibosses: one every 5 minutes wherever the real bosses leave a gap (they never replace a boss); a smaller version of a stage boss, no transformations ---- */
   planMinis(){
@@ -1575,15 +1569,16 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       m.done=true;this.spawnBoss(m.id,false,undefined,MINI_HP,true);return;
     }
   }
-  spawnElite(n){
-    const t=this.nt,ok=[];
-    for(const [id,from,wt,until] of this.stage.roster){if(t<from||(until&&t>=until))continue;const d=ENEMIES[id];if(d.ai==='explode'||d.ai==='ranged'||d.ai==='hover')continue;ok.push(d);}
-    if(!ok.length)return null;
-    ok.sort((a,b)=>b.hp-a.hp);
-    const def=pick(ok.slice(0,Math.min(3,ok.length))),[x,y]=this.spawnSpot(rnd(0,TAU),this.viewR+rnd(40,90),0),e=this.mkEnemy(def,x,y),k=1+.3*n;
-    Object.assign(e,{elite:true,hp:e.hp*ELITE_HP*k,r:def.r*ELITE_R,dmg:e.dmg*1.45,armor:(e.armor||0)+1+.6*this.sd,spd:e.spd*.9,xpm:(e.xpm||1)*6});e.max=e.hp;
-    this.en.push(e);
-    this.say(this.env.tr(T('NEMICO ÉLITE!','ELITE ENEMY!')),'#ffd23f',2.4);this.audio.sfx('boss');this.shake=Math.max(this.shake,.3);
+  toElite(e){const k=1+1.8*Math.min(1,this.prog());   /* tougher as the run goes on (x1 -> x2.8, the old range) */
+    Object.assign(e,{elite:true,tier:0,hp:e.hp*ELITE_HP*k,r:e.def.r*ELITE_R,dmg:e.dmg*1.45,armor:(e.armor||0)+1+.6*this.sd,spd:e.spd*.9,xpm:(e.xpm||1)*6});e.max=e.hp;return e;}
+  eliteCry(){this.say(this.env.tr(T('NEMICO ÉLITE!','ELITE ENEMY!')),'#ffd23f',2.4);this.audio.sfx('boss');this.shake=Math.max(this.shake,.3);}
+  spawnElite(n,def,quiet){
+    if(!def){const t=this.nt,ok=[];
+      for(const [id,from,wt,until] of this.stage.roster){if(t<from||(until&&t>=until))continue;const d=ENEMIES[id];if(d.ai==='explode'||d.ai==='ranged'||d.ai==='hover')continue;ok.push(d);}
+      if(!ok.length)return null;
+      ok.sort((a,b)=>b.hp-a.hp);def=pick(ok.slice(0,Math.min(3,ok.length)));}
+    const[x,y]=this.spawnSpot(rnd(0,TAU),this.viewR+rnd(40,90),0),e=this.toElite(this.mkEnemy(def,x,y));
+    this.en.push(e);if(!quiet)this.eliteCry();
     return e;
   }
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
@@ -1612,10 +1607,19 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.spawnLoot('ball',x,y);const l=this.loot[this.loot.length-1];l.ttl=150;l.guar=true;
     this.say(this.env.tr(T('UNA SFERA DEL DRAGO È APPARSA! SEGUI LA FRECCIA','A DRAGON BALL HAS APPEARED! FOLLOW THE ARROW')),'#ffaa28',3);this.audio.sfx('shrine');
   }
+  /* the kind of enemy of the next horde: the stage's first enemy for the first one, then each time the newest melee kind that no horde has used yet */
+  hordeDef(){
+    const t=this.nt,ok=[];for(const [id,from] of this.stage.roster){const d=ENEMIES[id];if(t>=from&&d.ai!=='explode'&&d.ai!=='ranged'&&d.ai!=='hover')ok.push(d);}
+    if(!ok.length)return null;
+    const used=this.hordeUsed,d=(this.hordeN?ok.slice().reverse().find(d=>!used.has(d)):ok[0])||pick(ok);used.add(d);return d;
+  }
   spawnHorde(){
-    const pr=Math.min(1,this.prog()),n=Math.round((8+this.sd*3+pr*(40+this.sd*14))*ENEMY_N_K);
-    this.spawnRing(n,null,e=>{e.hp*=1.15;e.max=e.hp;});this.hordeBoost=HORDE_BOOST_T;   /* the horde also speeds up the regular spawns for 20 s (no message) */
-    this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6);this.audio.sfx('boss');this.shake=.4;
+    const pr=Math.min(1,this.prog()),def=this.hordeDef(),ref=ENEMIES[this.stage.roster[0][0]],hk=def?clamp(Math.sqrt(ref.hp/def.hp),.35,1):1,   /* sturdier kinds come in smaller numbers */
+      n=Math.round((16+this.sd*3+pr*(44+this.sd*14))*ENEMY_N_K*hk);
+    this.spawnRing(n,def,e=>{e.hp*=1.15;e.max=e.hp;});this.hordeBoost=HORDE_BOOST_T;   /* the horde also speeds up the regular spawns for 20 s (no message) */
+    for(let i=0,ne=this.hordeN>=3?2:1;i<ne;i++)this.spawnElite(this.hordeN,def,true);   /* its leaders: one elite, two from the fourth horde on */
+    const pl=this.elitePlan[this.hordeN];if(pl)pl.done=true;this.hordeN++;
+    this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6,def?this.env.tr(def.n)+' · '+this.env.tr(T('guidata da un Élite','led by an Elite')):null);this.audio.sfx('boss');this.shake=.4;
   }
   spawnPack(){this.spawnRing(Math.round((5+this.sd+Math.min(1,this.prog())*(8+this.sd*2))*ENEMY_N_K),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
@@ -2058,7 +2062,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
       const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
-      if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
+      if(this.t>=this.hordeT){this.hordeT+=HORDE_EVERY;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
     }
     for(const b of this.bossQ)if(!frozen&&!b.done&&this.t>=b.t){b.done=true;this.spawnBoss(b.id,b.final,undefined,b.k);}
@@ -2722,7 +2726,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
 
   /* ---------- sandbox helpers ---------- */
-  jumpTo(t){this.t=Math.max(0,t);for(const m of (this.miniPlan||[]))m.done=m.done||m.t<t-1;for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=Math.ceil(this.t/120)*120+120*0;if(this.hordeT<=this.t)this.hordeT+=120;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
+  jumpTo(t){this.t=Math.max(0,t);for(const m of (this.miniPlan||[]))m.done=m.done||m.t<t-1;for(const b of this.bossQ)b.done=b.done||b.t<t-1;this.hordeT=HORDE_FIRST+Math.max(0,Math.ceil((this.t-HORDE_FIRST)/HORDE_EVERY))*HORDE_EVERY;if(this.hordeT<=this.t)this.hordeT+=HORDE_EVERY;this.hordeN=this.hordePlan.filter(h=>h<this.t).length;this.packT=this.t+45;this.wave={ph:'calm',until:this.t+20,n:0};for(const e of this.elitePlan)e.done=e.done||e.t<this.t-1;this.ballAt=Math.max(this.ballAt,this.t+30);}
   setLevel(l){while(this.lvl<l){this.xp=this.need;this.lvl++;this.need=this.needFor(this.lvl);if(this.endless)this.checkMilestone();while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();}this.xp=0;this.recalc();}
   spawnChestHere(final){this.chests.push({...this.landAt(this.p.x+60,this.p.y,30),final:!!final,t:0,rar:this.rollChestRar()});}
 }
