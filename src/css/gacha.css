@@ -386,3 +386,25 @@ html.mphone .gfull .tkcard .cn{font-size:13px}
 @media (max-width:700px){.rrcards .tcard{width:200px}.rrrow{grid-template-columns:80px 1fr 20px 1fr;font-size:12px;padding:4px 6px}}
 .rrmp .row{position:sticky;bottom:-18px;margin:0 -20px -18px;padding:10px 12px 12px;background:var(--panel);border-top:1px solid rgba(255,255,255,.08)}
 @media (max-height:520px){.rrmp{gap:6px;padding:10px 14px}.rrmp h3{font-size:18px}.rrcards .tcard .cd,.rrcards .tcard .perf{display:none}.rrcards .tcard{width:190px;padding:5px 8px}.rrrow{padding:3px 8px;font-size:12px}.rrmp .row{bottom:-10px;margin:0 -14px -10px;padding:6px}.rrmp .row .btn{font-size:14px;padding:6px 14px}}
+
+/* v137: the Trinket Gacha title on a stormy banner: night-blue sky, violet clouds, lightning, a steel frame with red gems, big yellow-orange letters */
+.hdr .stban{position:relative;flex:0 1 auto;margin:0 auto;padding:8px clamp(26px,5vw,70px) 12px;border-radius:5px;
+  background:radial-gradient(ellipse 30% 70% at 12% 75%,rgba(110,60,190,.55),transparent 70%),radial-gradient(ellipse 34% 80% at 42% 90%,rgba(90,50,170,.5),transparent 70%),
+    radial-gradient(ellipse 30% 70% at 72% 70%,rgba(120,60,200,.5),transparent 70%),radial-gradient(ellipse 26% 60% at 94% 85%,rgba(90,40,160,.55),transparent 70%),
+    linear-gradient(180deg,#0b0e2a 0%,#151245 55%,#1c1450 100%);
+  border:4px solid #5a5c70;box-shadow:0 0 0 2px #0a0a14,inset 0 0 0 2px rgba(190,200,230,.25),inset 0 0 22px rgba(0,0,0,.8),0 10px 22px rgba(0,0,0,.55)}
+.hdr .stban::before{content:'';position:absolute;inset:-9px;pointer-events:none;
+  background:radial-gradient(circle at 40% 35%,#ff9a9a 0 1.5px,#d81e2a 3px,#6a0810 5.5px,#2a2a34 6px,#8a8c9c 7.5px,transparent 8px) top left/18px 18px no-repeat,
+    radial-gradient(circle at 40% 35%,#ff9a9a 0 1.5px,#d81e2a 3px,#6a0810 5.5px,#2a2a34 6px,#8a8c9c 7.5px,transparent 8px) top right/18px 18px no-repeat,
+    radial-gradient(circle at 40% 35%,#ff9a9a 0 1.5px,#d81e2a 3px,#6a0810 5.5px,#2a2a34 6px,#8a8c9c 7.5px,transparent 8px) bottom left/18px 18px no-repeat,
+    radial-gradient(circle at 40% 35%,#ff9a9a 0 1.5px,#d81e2a 3px,#6a0810 5.5px,#2a2a34 6px,#8a8c9c 7.5px,transparent 8px) bottom right/18px 18px no-repeat}
+.hdr .stban::after{content:'';position:absolute;inset:4px;pointer-events:none;border-radius:3px;
+  background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 80%22 preserveAspectRatio=%22none%22%3E%3Cg fill=%22none%22 stroke-linejoin=%22round%22 stroke-linecap=%22round%22%3E%3Cg stroke=%22#ffd23f%22 stroke-width=%222.2%22 opacity=%22.9%22%3E%3Cpolyline points=%2222,6 34,22 26,30 42,48 34,58 48,76%22/%3E%3Cpolyline points=%22132,4 124,18 136,26 126,40%22/%3E%3Cpolyline points=%22236,2 244,16 232,24 246,38 238,46%22/%3E%3Cpolyline points=%22352,8 340,22 354,32 344,52 358,74%22/%3E%3C/g%3E%3Cg stroke=%22#7fe8ff%22 stroke-width=%221.8%22 opacity=%22.85%22%3E%3Cpolyline points=%2288,74 98,58 90,50 104,36%22/%3E%3Cpolyline points=%22300,4 292,16 306,24 296,36 310,44%22/%3E%3Cpolyline points=%22386,40 376,52 388,60 380,76%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat,
+    radial-gradient(circle,#ffe27a 0 1.3px,transparent 2.5px) 20% 18%/6px 6px no-repeat,radial-gradient(circle,#fff3b0 0 1.5px,transparent 2.8px) 57% 80%/6px 6px no-repeat,
+    radial-gradient(circle,#ffd23f 0 1.2px,transparent 2.4px) 80% 14%/6px 6px no-repeat,radial-gradient(circle,#fff3b0 0 1.4px,transparent 2.6px) 6% 60%/6px 6px no-repeat;
+  animation:stFlash 2.6s steps(1) infinite}
+@keyframes stFlash{0%{opacity:.75}8%{opacity:1}12%{opacity:.55}16%{opacity:1}40%{opacity:.8}62%{opacity:.6}66%{opacity:1}70%{opacity:.75}}
+.hdr .stban h2{position:relative;z-index:1;margin:0;font:400 clamp(28px,4.4vw,52px)/1.05 "Lilita One",var(--title),sans-serif;letter-spacing:.02em;
+  background:none;color:#2a0c05;-webkit-text-stroke:0;text-shadow:none;transform:skewX(-6deg);white-space:nowrap;display:flex;align-items:center;gap:10px;justify-content:center}
+.hdr .stban .btx{--g:linear-gradient(180deg,#fffbb0 0%,#ffe23a 34%,#ffb21c 60%,#ff7a14 82%,#e8501a 100%);--sw:7px}
+@media (prefers-reduced-motion:reduce){.hdr .stban::after{animation:none}}

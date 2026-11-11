@@ -347,7 +347,7 @@ Object.assign(UI.prototype,{
       /* everything maxed: three bags of zenny; "Auto-choose" takes the biggest one now and on every level-up until a weapon or upgrade choice shows up again */
       if(m.maxed)tools.unshift(h('button',{class:'btn small primary','data-fid':'lvauto',title:this.tr(T('Sceglie da solo il sacco più grande finché non torna una scelta di arma o potenziamento (si può tenere sempre attiva dalle impostazioni di gioco).','Takes the biggest bag by itself until a weapon or upgrade choice shows up again (it can be kept always on in the gameplay settings).')),
         onclick:()=>{this.sfx('uiTab');g.autoZ=true;const bi=m.options.reduce((b,o,i)=>(o.v||0)>(m.options[b].v||0)?i:b,0);this.app.resolveModal(bi);}},'⚡ '+this.tr(T('Scelta automatica','Auto-choose'))));
-      el=h('div',{class:'screen modal'+(m.banMode?' banmode':'')},h('h2',null,m.banMode?this.tr(T('Scegli cosa bandire','Choose what to ban')):this.t('levelUpTitle',{n:g.lvl})),
+      el=h('div',{class:'screen modal'+(m.banMode?' banmode':'')},m.banMode?h('h2',null,this.tr(T('Scegli cosa bandire','Choose what to ban'))):h('div',{class:'lvban'},h('h2',null,bTxt(this.t('levelUpTitle',{n:g.lvl})))),   /* v137: the level-up title on its banner */
         m.banMode?h('p',{class:'sub'},this.tr(T('Clicca un\'arma o un potenziamento: non uscirà più per il resto della partita.','Click a weapon or upgrade: it will not show up again for the rest of the run.'))):null,
         m.maxed?h('p',{class:'sub'},this.tr(T('Tutto al massimo: scegli un sacco di zenny.','Everything is maxed: pick a bag of zenny.'))):null,
         h('div',{class:'cards'},m.options.map((o,i)=>{

@@ -15,6 +15,8 @@ const WIP_URL=('__WIP__'?'data:image/webp;base64,__WIP__':'');
 const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
 /* pixel-art icon (shop upgrades): a framed tile in the upgrade's colour */
 const imgGlyph=(src,c)=>h('span',{class:'glyph gimg',style:'--c:'+c},h('img',{src,alt:'',draggable:'false'}));
+/* v137: banner lettering: the dark outline is the text itself, the gradient a copy on top (a thick -webkit-text-stroke would cover a background-clip gradient) */
+const bTxt=s=>h('span',{class:'btx','data-t':s},s);
 /* v137: an upgrade's icon (the shop picture it shares, or its kanji) */
 const pGlyph=(pid,c)=>{const P=PASS[pid]||{},u=typeof PASS_IMG!=='undefined'&&PASS_IMG[pid]&&SHOP_IMG[PASS_IMG[pid]];return u?imgGlyph(u,c||P.c):glyph(P.k||'?',c||P.c);};
 /* v137: a weapon's icon (its picture, or its kanji while it has none) */

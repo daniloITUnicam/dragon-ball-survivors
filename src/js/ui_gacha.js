@@ -89,7 +89,7 @@ Object.assign(UI.prototype,{
     const hdr=this.header('gachaTitle',null,[h('button',{class:'btn small alt','data-fid':'gbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn')+' ('+d.bag.length+')'),
       h('button',{class:'btn small alt','data-fid':'greroll',onclick:()=>{this.sfx();this.push('reroll');}},'🎲 '+this.tr(T('Reroll','Reroll'))),
       h('button',{class:'btn small alt','data-fid':'gfuse',onclick:()=>{this.sfx();this.push('fuse');}},'⚗ '+this.tr(T('Fusione','Fusion')))]);
-    {const t2=hdr.querySelector('h2');if(t2)t2.prepend(potara('ph'));}
+    {const t2=hdr.querySelector('h2');if(t2){t2.prepend(potara('ph'));const b=h('div',{class:'stban'});t2.replaceWith(b);b.append(t2);for(const n of [...t2.childNodes])if(n.nodeType===3&&n.textContent.trim())n.replaceWith(bTxt(n.textContent.trim()));}}   /* v137: the title on its stormy banner */
     return h('div',{class:'gsrc gfull'},h('div',{class:'gscene','aria-hidden':'true'},h('div',{class:'gsglow'})),hdr,
       h('div',{class:'gcap'},h('span',null,this.t('gachaSub')),h('b',null,this.t('gColl',{a:d.bag.length,b:total}))),
       test?h('p',{class:'good gcap'},this.t('gTest')):null,
