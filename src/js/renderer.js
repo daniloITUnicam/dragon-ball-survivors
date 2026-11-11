@@ -1915,8 +1915,9 @@ this.W=1;this.H=1;this.Z=1;
       for(const b of g.bossQ){const x=px+pw*clamp(b.t/g.dur,0,1),past=b.done||b.t<g.t,soon=b===nextB&&b.t-g.t<30,pulse=soon?1+.18*Math.sin(g.rt*8):1,a=past?.35:1;
         if(b.final)drawShenron(ctx,x,cy-1*U,1.25*U*pulse,a);else drawSkull(ctx,x,cy-3*U,6.2*U*pulse,'#ff3b3b',a);}}
     /* right side: kills, zenny, buffs */
-    txt(g.kills+' '+tt('kills'),W-m,30*U,'#fff','right',F(15));
-    {const zs=String(Math.floor(g.run.coins));txt(zs,W-m,50*U,'#ffd23f','right',F(14));ctx.font=F(14);const zw=ctx.measureText(zs).width,cr=7*U,cx0=W-m-zw-cr-4*U,cy0=45*U;
+    const RX=W-m-(this.hudRP||0);   /* v137: phones keep the top-right corner for the menu gear */
+    txt(g.kills+' '+tt('kills'),RX,30*U,'#fff','right',F(15));
+    {const zs=String(Math.floor(g.run.coins));txt(zs,RX,50*U,'#ffd23f','right',F(14));ctx.font=F(14);const zw=ctx.measureText(zs).width,cr=7*U,cx0=RX-zw-cr-4*U,cy0=45*U;
       ctx.fillStyle='#7a4e0c';ctx.beginPath();ctx.arc(cx0,cy0,cr,0,TAU);ctx.fill();ctx.fillStyle='#f2b51c';ctx.beginPath();ctx.arc(cx0,cy0,cr*.84,0,TAU);ctx.fill();
       ctx.strokeStyle='#7a4e0c';ctx.lineWidth=1.6*U;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx0-cr*.38,cy0-cr*.38);ctx.lineTo(cx0+cr*.38,cy0-cr*.38);ctx.lineTo(cx0-cr*.38,cy0+cr*.38);ctx.lineTo(cx0+cr*.38,cy0+cr*.38);ctx.stroke();}
     let by=70*U;

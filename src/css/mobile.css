@@ -38,8 +38,10 @@ html.mob .mb-e:not(.rdy){opacity:.55}
 html.mob .mb-e.rdy{background:radial-gradient(circle at 50% 38%,#ffe27a,#ff9d1c 72%);color:#3a1a00;border-color:#fff3b8;box-shadow:0 0 18px rgba(255,190,40,.75),0 3px 0 rgba(0,0,0,.45)}
 html.mob .mb-e.rdy .mg{text-shadow:0 1px 0 rgba(255,255,255,.6)}
 html.mob .mb-e .ml{bottom:auto;top:-19px;color:#ffe9a0}
-html.mob .mb-pause{--s:44px;--c:#e8eef8;right:calc(10px + env(safe-area-inset-right,0px));top:calc(54px + env(safe-area-inset-top,0px));opacity:.8}
-html.mob .mb-pause .mg{font:900 15px/1 sans-serif;letter-spacing:-2px}
+html.mob .mb-pause{--s:32px;--c:#e8eef8;right:calc(8px + env(safe-area-inset-right,0px));top:calc(6px + env(safe-area-inset-top,0px));opacity:.72;background:rgba(10,14,26,.5);border-width:1.5px;box-shadow:0 2px 6px rgba(0,0,0,.35)}   /* v137: a small gear in the top-right corner */
+html.mob .mb-pause .mg svg{width:18px;height:18px}html.mob .mb-pause .mpie{display:none}
+html.mob .mb-pause .mg{display:flex;align-items:center;justify-content:center;color:#e8eef8;filter:drop-shadow(0 1px 0 rgba(0,0,0,.5))}
+html.mob .mb-pause .mg svg{transition:transform .35s}html.mob .mb-pause.dn .mg svg{transform:rotate(90deg)}
 html.mob.mport .mb{--s:50px}html.mob.mport .mb.big{--s:64px}
 
 /* --- portrait on a phone: rotate your device --- */
@@ -109,3 +111,9 @@ html.mphone .cgrid3 .cpanel{flex-shrink:0}html.mphone .cgrid3 .ccol>.cpanel:last
 html.mwide .mgrid .mplay{grid-template-columns:1.5fr 1fr 1fr}html.mwide .mgrid .mplay .btn.primary{grid-column:auto}
 html.mwide .mgroups{grid-template-columns:1fr 2fr 1fr}html.mwide .mgroup.g2{grid-column:auto;order:0}html.mwide .mgroup.g3{order:0}html.mwide .mgroup .btn{font-size:16px!important}
 html.mphone .menu.mgrid{width:min(980px,calc(94vw / var(--mz) / 1.12))}
+
+/* v137: the pause screen's top row on a phone: one line (it wrapped to two and pushed the map off the screen), compact buttons, scrolls sideways if needed */
+html.mphone .pausescr .ptop{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:5px;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+html.mphone .pausescr .ptop::-webkit-scrollbar{display:none}
+html.mphone .pausescr .ptop .btn{flex:none;white-space:nowrap;padding:5px 9px;font-size:12.5px}
+html.mphone .pausescr .ptop .ptsp{min-width:4px}

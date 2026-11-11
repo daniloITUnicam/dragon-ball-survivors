@@ -128,7 +128,9 @@ if(MOBILE.on)(()=>{
       b.addEventListener('contextmenu',e=>e.preventDefault());
       o.el=b;return b;};
     for(const o of B)el.append(btn(o));
-    const pz=btn({id:'pause',a:'pause',c:'pz'});pz.querySelector('.mg').textContent='❚❚';pz.setAttribute('aria-label',tr(STR.pause));el.append(pz);
+    const pz=btn({id:'pause',a:'pause',c:'pz'});M.pz=pz;pz.setAttribute('aria-label',tr(STR.pause));el.append(pz);
+    /* v137: the menu button is a gear (an SVG: the emoji gear looks different on every phone) */
+    pz.querySelector('.mg').innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" stroke="#0a0f1c" stroke-width="1.2" stroke-linejoin="round" d="M10.3 1.5h3.4l.5 2.6a8 8 0 0 1 2 .9l2.2-1.5 2.4 2.4-1.5 2.2a8 8 0 0 1 .9 2l2.6.5v3.4l-2.6.5a8 8 0 0 1-.9 2l1.5 2.2-2.4 2.4-2.2-1.5a8 8 0 0 1-2 .9l-.5 2.6h-3.4l-.5-2.6a8 8 0 0 1-2-.9l-2.2 1.5-2.4-2.4 1.5-2.2a8 8 0 0 1-.9-2l-2.6-.5v-3.4l2.6-.5a8 8 0 0 1 .9-2L3.2 6.3l2.4-2.4 2.2 1.5a8 8 0 0 1 2-.9zM12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg>';
     B.find(o=>o.id==='e').el.querySelector('.mg').textContent='E';
     document.body.append(el);return el;
   };
@@ -146,6 +148,7 @@ if(MOBILE.on)(()=>{
     const g=a.game,vis=a.state==='play'&&g&&!g.ended&&!g.coopView&&a.input.mode!=='pad'&&!M.rot.classList.contains('on');
     ctl.classList.toggle('on',!!vis);if(!vis){if(M.keys.size)M.keys.clear();return;}
     const by=id=>B.find(o=>o.id===id);
+    {const R=a.renderer,pz=M.pz;if(pz)R.hudRP=(pz.offsetWidth+10)*R.W/Math.max(1,innerWidth);}   /* v137: the gear sits in the top-right corner: kills and zenny move to its left */
     {const rdy=g.dashCd<=0,act=g.dashT>0;set(by('dash'),{glyph:'走',col:'#7fd4ff',prog:rdy?1:1-g.dashCd/g.dashCdMax,ready:rdy,act,label:rdy?'':(g.dashCd<10?g.dashCd.toFixed(1):Math.ceil(g.dashCd))+'s'});}
     {const n=g.senzu,ok=n>0&&g.p.hp<g.p.maxHp-.5&&g.senzuCd<=0;set(by('sz'),{glyph:'豆',col:n>0?'#8be07a':'#6a7688',ready:ok,dots:Array.from({length:SENZU_MAX},(_,i)=>i<n)});}
     {const ab=g.abil;let prog=1,label='',act=false;
