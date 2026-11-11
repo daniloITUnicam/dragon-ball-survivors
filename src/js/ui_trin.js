@@ -92,17 +92,9 @@ Object.assign(UI.prototype,{
     const items=d.bag.map(b=>({k:trinketKey(b.id,b.r),id:b.id,r:b.r,p:b.p,f:b.f,at:b.at}));
     const L=this.tlist(st,items,{onclick:it=>{if(this.rrPend)return this.sfx('uiErr');this.rrSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.rrSel,eq:(d.equips||[]).some(e=>e&&trinketKey(e.id,e.r)===it.k)})});
     const b=this.rrSel&&P.bagGet(this.rrSel),side=h('div',{class:'bagside'});
-    if(b&&this.rrPend){
-      const o=this.rrPend,keep=nw=>{this.sfx(nw?'buy':'uiBack');if(nw){const k=P.rerollApply(this.rrSel,o);if(k)this.rrSel=k;this.toast({type:'info',msg:this.tr(T('Tenuto il nuovo cimelio','Kept the new trinket'))});}this.rrPend=null;this.rebuild(true);};
-      const better=(o.id===b.id?(o.p||0)-(b.p||0):0);
-      side.append(h('div',{class:'rrcmp'},
-        h('div',null,h('div',{class:'rrlab'},this.tr(T('Prima','Before'))),this.tdet(b.id,b.r,b.p,b.f)),
-        h('div',{class:'rrarrow'},'→'),
-        h('div',{class:'rrnew'+(better>0?' up':better<0?' down':'')},h('div',{class:'rrlab'},this.tr(T('Nuovo','New'))+(better?' '+(better>0?'▲ +':'▼ ')+better+'%':'')),this.tdet(o.id,o.r,o.p,o.f))),
-        h('div',{class:'row'},h('button',{class:'btn primary','data-fid':'rrnew',onclick:()=>keep(true)},this.tr(T('Tieni il nuovo','Keep the new one'))),
-          h('button',{class:'btn alt','data-fid':'rrold',onclick:()=>keep(false)},this.tr(T('Tieni il vecchio','Keep the old one')))));
-    }else if(b){
-      const can=P.canWork(b),roll=kind=>{const o=P.rerollRoll(kind,this.rrSel);if(!o){this.sfx('uiErr');return;}this.sfx('gStop'+Math.min(3,o.r));this.rrPend=o;this.rebuild(true);};
+    if(this.rrPend&&!this.rrOpen)this.rrPend=null;   /* a roll left without a choice keeps the old trinket */
+    if(b){
+      const can=P.canWork(b),roll=kind=>this.rrRoll(kind);
       const btn=(kind,ico,lab,tip)=>{const c=P.rerollCost(kind,b.r),ok=can&&d.zenny>=c&&(kind!=='pf'||hasPfE(trinDef(b.id),b.f));
         return h('button',{class:'btn'+(ok?' primary':' alt'),disabled:!ok,'data-fid':'rr'+kind,title:this.tr(tip),onclick:()=>roll(kind)},ico+' '+this.tr(lab)+' · ',c?zAmt(c,true):this.tr(T('gratis','free')));};
       side.append(this.tdet(b.id,b.r,b.p,b.f,[
@@ -113,6 +105,45 @@ Object.assign(UI.prototype,{
     return h('div',{class:'gwork'},this.header(T('Reroll dei cimeli','Trinket reroll')),
       h('p',{class:'sub'},this.tr(T('Scegli un cimelio della sacca e rerolla la sua perfezione o il cimelio stesso (stessa rarità). Paghi il tiro, poi decidi tu se tenere il nuovo o il vecchio.','Pick a trinket from your bag and reroll its perfection or the trinket itself (same rarity). You pay for the roll, then you decide whether to keep the new or the old one.'))),
       L.tools,h('div',{class:'bagsplit'},L.left,L.grid,side));
+  },
+
+  /* v136b: a reroll opens its own window: before and after, every stat with a green ▲ (better) or red ▼ (worse), and the choice */
+  rrRoll(kind){
+    const P=this.app.progress,o=P.rerollRoll(kind,this.rrSel);if(!o){this.sfx('uiErr');return;}
+    this.sfx('gStop'+Math.min(3,o.r));this.rrPend=o;this.rrKind=kind;this.rrOpen=true;this.rebuild(true);this.rrModal();
+  },
+  rrModal(){
+    const P=this.app.progress,d=this.save,b=P.bagGet(this.rrSel),o=this.rrPend;if(!b||!o){this.rrOpen=false;return;}
+    const prev=this.modalEl,L=this.app.i18n.lang==='it'?0:1;
+    const close=()=>{ov.remove();if(this.modalEl===ov)this.modalEl=prev;this.rrOpen=false;};
+    const done=nw=>{close();this.sfx(nw?'buy':'uiBack');
+      if(nw){const k=P.rerollApply(this.rrSel,o);if(k)this.rrSel=k;this.toast({type:'info',msg:this.tr(T('Tenuto il nuovo cimelio','Kept the new trinket'))});}
+      this.rrPend=null;this.rebuild(true);};
+    const tA=trinDef(b.id),tB=trinDef(o.id),pA=hasPfE(tA,b.f)?(b.p!=null?b.p:PF_NOM):null,pB=hasPfE(tB,o.f)?(o.p!=null?o.p:PF_NOM):null;
+    const sA=trinStats(tA,b.r,pA!=null?pA:PF_NOM,b.f),sB=trinStats(tB,o.r,pB!=null?pB:PF_NOM,o.f);
+    let up=0,dn=0;
+    const row=(lab,a,c,va,vb)=>{const dir=vb>va?'up':vb<va?'down':'eq';if(dir==='up')up++;if(dir==='down')dn++;
+      return h('div',{class:'rrrow '+dir},h('span',{class:'rrk'},lab),h('span',{class:'rra'},a||'—'),h('b',{class:'rrar'},dir==='up'?'▲':dir==='down'?'▼':'='),h('span',{class:'rrb'},c||'—'));};
+    const rows=[],rv=(k,v)=>k==='armor'||k==='regen'?Math.round(v*10):k==='proj'?v:Math.round(v*100);   /* compared as shown (a stat that rounds to the same number is unchanged) */
+    if(pA!=null||pB!=null)rows.push(row(this.tr(T('Perfezione','Perfection')),pA!=null?pA+'%':null,pB!=null?pB+'%':null,pA||0,pB||0));
+    for(const k of [...new Set([...sA.map(x=>x.k),...sB.map(x=>x.k)])]){const a=sA.find(x=>x.k===k),c=sB.find(x=>x.k===k);
+      rows.push(row((TLAB[k]||[k,k])[L],a?this.tr(a.t):null,c?this.tr(c.t):null,a?rv(k,a.v):0,c?rv(k,c.v):0));}
+    const fxA=tA.x||(tA.sp?tA.d:null),fxB=tB.x||(tB.sp?tB.d:null);
+    if(o.id!==b.id&&(fxA||fxB))rows.push(h('div',{class:'rrrow fx'},h('span',{class:'rrk'},this.tr(T('Effetto','Effect'))),h('span',{class:'rra'},fxA?this.tr(fxA):'—'),h('b',{class:'rrar'},'⇄'),h('span',{class:'rrb'},fxB?this.tr(fxB):'—')));
+    const verdict=up&&!dn?['up',T('Migliore','Better')]:dn&&!up?['down',T('Peggiore','Worse')]:up||dn?['mix',T('In parte migliore, in parte peggiore','Partly better, partly worse')]:['eq',T('Uguale','The same')];
+    const kind=this.rrKind,c=P.rerollCost(kind,b.r),canAgain=P.canWork(b)&&d.zenny>=c;
+    const ov=h('div',{class:'uask rrm'},h('div',{class:'uaskp rrmp'},
+      h('h3',null,(kind==='pf'?'🎲 ':'🔄 ')+this.tr(kind==='pf'?T('Reroll della perfezione','Perfection reroll'):T('Reroll del cimelio','Trinket reroll'))),
+      h('div',{class:'rrcards'},h('div',null,h('div',{class:'rrlab'},this.tr(T('Prima','Before'))),this.tcard(b.id,b.r,{p:b.p,fu:b.f})),h('div',{class:'rrarrow'},'→'),
+        h('div',{class:'rrnew '+verdict[0]},h('div',{class:'rrlab'},this.tr(T('Nuovo','New'))),this.tcard(o.id,o.r,{p:o.p,fu:o.f}))),
+      h('div',{class:'rrverdict '+verdict[0]},this.tr(verdict[1])),
+      h('div',{class:'rrtable'},rows),
+      h('div',{class:'row'},
+        h('button',{class:'btn primary','data-fid':'rrnew',onclick:()=>done(true)},'✓ '+this.tr(T('Tieni il nuovo','Keep the new one'))),
+        h('button',{class:'btn'+(canAgain?'':' alt'),disabled:!canAgain,'data-fid':'rragain',title:this.tr(T('Scarta questo tiro (tieni il vecchio) e rerolla di nuovo','Discard this roll (keep the old one) and reroll again')),
+          onclick:()=>{close();this.rrPend=null;this.rrRoll(kind);}},'🎲 '+this.tr(T('Riprova','Again'))+' · ',c?zAmt(c,true):this.tr(T('gratis','free'))),
+        h('button',{class:'btn alt','data-back':true,'data-fid':'rrold',onclick:()=>done(false)},this.tr(T('Tieni il vecchio','Keep the old one'))))));
+    this.root.append(ov);this.modalEl=ov;const f=ov.querySelector('[data-fid="rrnew"]');if(f)f.focus({preventScroll:true});
   },
 
   /* ---------- Gacha shop > Fusion ---------- */
