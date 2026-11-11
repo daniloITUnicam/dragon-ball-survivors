@@ -63,7 +63,6 @@ Object.assign(UI.prototype,{
         }},this.t('reset')))];
     }else if(tab==='gameplay'){
       body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
-        toggle(this.t('trinRefuse'),'trinRefuse',this.t('trinRefuseD')),
         toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
         toggle(this.tr(T6('Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop')),'hitstop',this.tr(T6('Un attimo di pausa e uno zoom sui colpi grossi (evoluzioni, boss, critici enormi, combo).','A split-second freeze and a zoom on big hits (evolutions, bosses, huge crits, combos).','Una pausa breve y un zoom en los golpes grandes (evoluciones, jefes, críticos enormes, combos).','Une micro-pause et un zoom sur les gros coups (évolutions, boss, critiques énormes, combos).','Ein kurzer Stopp und ein Zoom bei großen Treffern (Entwicklungen, Bosse, riesige Krits, Combos).','Uma pausa rápida e um zoom nos golpes grandes (evoluções, chefes, críticos enormes, combos).'))),
         toggle(this.tr(T6('Suggerimenti','Hints','Consejos','Astuces','Tipps','Dicas')),'hints',this.tr(T6('Brevi consigli la prima volta che incontri qualcosa di nuovo.','Short tips the first time you meet something new.','Consejos breves la primera vez que encuentras algo nuevo.','De courts conseils la première fois que tu rencontres quelque chose de nouveau.','Kurze Tipps, wenn dir zum ersten Mal etwas Neues begegnet.','Dicas curtas na primeira vez que você encontra algo novo.'))),
@@ -334,12 +333,6 @@ Object.assign(UI.prototype,{
         info.hints?info.hints.map(x=>this.evoHint(x.pid,x.wid,x.evo,x.ready)):null),
       i<10&&onclick?h('span',{class:'key'},i===9?0:i+1):null);
   },
-  /* the "refuse lower-rarity trinkets" switch, also reachable from the trinket windows (it is the same setting as in Settings) */
-  refuseToggle(){
-    const s=this.save.settings,b=h('button',{class:'btn small alt trtog','data-fid':'trref',title:this.t('trinRefuseD'),onclick:e=>{this.sfx();s.trinRefuse=!s.trinRefuse;this.app.applySettings();set();e.currentTarget.blur();}});
-    const set=()=>{b.textContent=this.t('trinRefuse')+': '+this.t(s.trinRefuse?'on':'off');b.classList.toggle('on',!!s.trinRefuse);};set();
-    return h('div',{class:'row trrow'},b);
-  },
   openModal(m,g){
     const again=!!(this.modalEl&&this.modalEl.isConnected&&this.modalEl.classList.contains('modal')&&this.modalEl.dataset.mt===m.type);   /* the same window rebuilt in place (e.g. after a purchase): no new intro animation */
     this.closeModal(true);
@@ -373,7 +366,7 @@ Object.assign(UI.prototype,{
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,style:'animation-delay:1.4s',onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.t('collect'))));
     }else if(m.type==='pick'){
       const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id,rar:(m.rars||[])[i],pf:(m.pfs||[])[i]}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs),this.refuseToggle());
+      el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs));
     }else if(m.type==='tswap'){
       /* every trinket slot is taken: compare the new trinket with what you carry and choose which one to replace (or keep them all) */
       const nt=trinDef(m.nw.id),curs=m.curs,multi=curs.length>1,sn=trinStats(nt,m.nw.rar,m.nw.pf),G=this.app.game,sd=G?G.sd:0;
@@ -402,7 +395,7 @@ Object.assign(UI.prototype,{
         h('p',{class:'tswarn'},'⚠ '+this.t('swapWarn')),
         h('div',{class:'row'},multi?null:rep(0,this.t('swapReplace')),
           h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(curs.length);}},(multi?(curs.length+1)+' · ':'')+this.t(multi?'swapKeepN':'swapKeep'))),
-        m.buy?null:this.refuseToggle());
+        null);
     }else if(m.type==='totem'){
       const W=(m.opts||['luck','risk']).map(id=>TOTEMS.find(t=>t.id===id)).filter(Boolean);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('totemTitle')),h('p',{class:'sub'},this.t('totemSub')),

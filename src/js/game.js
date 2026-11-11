@@ -422,10 +422,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* setting "skip lower trinkets": with every slot taken, a trinket worse than everything you carry (lower rarity, or the same rarity with less perfection) is sold at once;
      the comparison window only opens for one that beats at least one of your trinkets */
   trinScore(id,rar,pf){const t=trinDef(id);return rar*1000+(hasPf(t)?(pf!=null?pf:PF_NOM):PF_NOM);}
-  autoRefuse(id,rar,pf,buy){
-    if(buy||!this.save.settings.trinRefuse||this.trinkets.length<this.runCap)return false;
-    return this.trinScore(id,rar,pf)<Math.min(...this.trinkets.map(x=>this.trinScore(x,this.trR(x),this.trP(x))));
-  }
+  autoRefuse(){return false;}   /* v137: the "skip lower trinkets" setting is gone: every trinket found is kept */
   addTrinket(id,rar,cb){
     if(!trinDef(id))return false;
     if(rar==null)rar=this.rarOf(id);

@@ -12,8 +12,8 @@ Object.assign(UI.prototype,{
   /* small tooltip block: weapon icon + passive icon + sentence */
   evoHint(pid,wid,evo,ready){
     const w=WEAPONS[wid],p=PASS[pid],txt=this.tr(this.evoSentence(pid,wid,evo));
-    return h('div',{class:'evohint'+(ready?' ready':''),title:txt},
-      pGlyph(pid,p.c),h('span',{class:'arr'},'➜'),wGlyph(wid,w.c),h('span',{class:'et'},txt+(ready?' '+this.t('evoReady'):'')));
+    return h('div',{class:'evohint'+(ready?' ready':''),title:txt+(ready?' '+this.t('evoReady'):''),'aria-label':txt},
+      wGlyph(wid,w.c),h('span',{class:'plus'},'+'),pGlyph(pid,p.c),h('span',{class:'evostar'},'★'.repeat((evo|0)+1)));
   },
   /* weapons the player knows about (weapon unlocked in the save, or a starter of an unlocked character) */
   grimWeaponOpen(id,g){
