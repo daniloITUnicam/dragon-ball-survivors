@@ -335,3 +335,36 @@ html.mphone .gfull .tkcard .cn{font-size:13px}
 .gov .gspd{animation:gslideR .5s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes gslideR{0%{opacity:0;transform:translateX(60px)}100%{opacity:1;transform:none}}
 .gov.fast .gslide{animation-duration:.3s!important}
+/* v136b: back from a pull: the results shrink into the portal, the shop zooms back out around it */
+.gov.gzout{pointer-events:none;transform-origin:50% 52%;animation:gzout .62s cubic-bezier(.55,0,.8,.2) forwards}
+@keyframes gzout{0%{transform:none;opacity:1}55%{opacity:1;filter:none}100%{transform:scale(.06);opacity:0;filter:brightness(2.4)}}
+.gfull.gzin>.gscene{animation:gzscene .7s cubic-bezier(.2,.8,.3,1) both;transform-origin:50% 52%}
+@keyframes gzscene{0%{transform:scale(1.4);filter:brightness(1.7)}100%{transform:none;filter:none}}
+.gfull.gzin>:not(.gscene){animation:gzui .45s .3s ease-out both}
+@keyframes gzui{0%{opacity:0;transform:translateY(18px)}100%{opacity:1;transform:none}}
+/* v136b: trinket screens share the bag's layout: left column = sort buttons (2 per row) + rarity filter (Mythic to Common); the side card sits at the top */
+.bsorts{width:96px}
+.bsorti{display:grid;grid-template-columns:repeat(2,44px);gap:8px}
+.rarcol{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.rarcol .rarlbl{text-align:left}
+.rarcol .rchip{width:100%;text-align:left;font-size:11px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bsorts [data-tip]:hover::after,.bsorts [data-tip]:focus-visible::after{z-index:40}
+.bagside{max-height:calc(100vh - 150px);overflow:auto;scrollbar-width:thin}
+.bagdet .bdhead{display:flex;align-items:center;gap:12px;width:100%}
+.bagdet .bdhead .glyph{font-size:48px;width:auto;align-self:center}
+.bagdet .bdhead .cn{font-size:20px;line-height:1.15}
+.fbench{gap:8px}
+.fbench .fslots{max-width:none;flex:none}
+.fbench .fslot{min-height:56px}
+.fbench .fdown{font-size:22px;line-height:1;margin:-2px 0}
+.fbench .tdet{max-width:none}
+@media (max-width:700px){.bsorts{width:auto}.bsorti{display:flex}.rarcol{flex-direction:row;flex-wrap:wrap;margin-top:0}.rarcol .rarlbl{display:none}.rarcol .rchip{width:auto}.bagside{max-height:none}}
+.fbench .fslot{min-height:44px}
+.fbench .fslot .tcard{padding:5px 30px 5px 8px}
+.fbench .fslot .tcard .cd,.fbench .fslot .tcard .perf{display:none}
+.fbench .fslot .tcard .glyph{font-size:22px;width:28px}
+.fbench .fslot small{font-size:11px}.fbench .fslot .tplus{font-size:24px}
+/* v136b: these windows are the screen itself: full width, their content centred like the trinket bag (the moving menu background shows on both sides) */
+.gwork.screen,.tpick.screen{max-width:none;width:auto}
+.gwork>*,.tpick>*{max-width:1100px}
+.tpick>.tpfoot{width:min(1100px,100%)}

@@ -12,6 +12,11 @@ Object.assign(UI.prototype,{
       this.root.append(ov);this.modalEl=ov;yes.focus({preventScroll:true});
     });
   },
+  /* v136b: the rarity filter of the trinket screens, in the left column under the sort buttons, from Mythic down to Common */
+  rarChips(st,onChange){
+    return h('div',{class:'rarcol'},h('div',{class:'rarlbl'},this.t('gRarity')),[4,3,2,1,0].map(r=>{const b=h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,
+      onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;b.classList.toggle('on',!!st.rar[r]);onChange();}},this.tr(RARITY[r].n));return b;}));
+  },
   /* a filterable trinket grid. st: the filters (kept by the caller), items: [{k,id,r,p,f,at}], o.onclick(it), o.card(it) -> extra tcard options */
   tlist(st,items,o){
     const grid=h('div',{class:'baggrid'}),shown=h('span',{class:'achshown'});
@@ -23,24 +28,26 @@ Object.assign(UI.prototype,{
       grid.replaceChildren(...(list.length?list.map(it=>this.tcard(it.id,it.r,Object.assign({p:it.p,fu:it.f,btn:true,fid:'t'+it.k,onclick:()=>{this.sfx();o.onclick(it);}},o.card?o.card(it):{}))):[h('p',{class:'sub'},this.t(items.length?'bagNone':'bagEmpty'))]));
       shown.textContent=this.t('bagShown',{a:list.length,b:items.length});
     };
-    const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>{const b=h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;b.classList.toggle('on',!!st.rar[r]);fill();}},this.tr(RARITY[r].n));return b;}));
+    const chips=this.rarChips(st,fill);
     const search=h('input',{type:'text',class:'achsearch','data-fid':'tlq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
     const sb=Object.keys(TP_SORT).filter(k=>k!=='new'||o.byNew!==false).map(k=>{const lab=this.t('bagSort_'+k);
       return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'ts_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,
         onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sb)b.classList.toggle('on',b.dataset.sort===k);fill();}},TP_SORT[k]);});
     fill();
-    return{tools:h('div',{class:'achtools tltools'},search,h('div',{class:'tlsorts'},sb),chips,shown),grid,fill};
+    /* the same layout as the trinket bag: search on top; sort buttons and rarities in the left column; the grid; the caller's side panel on the right */
+    return{tools:h('div',{class:'achtools tltools'},search,shown),left:h('div',{class:'bsorts'},h('div',{class:'bsorti'},sb),chips),grid,fill};
   },
   /* what a fused trinket took from the others: "Fused with: Broken Scouter (crit chance), ..." */
   fuText(fu){const L=this.app.i18n.lang==='it'?0:1;return this.tr(T('Fuso con: ','Fused with: '))+fu.map(e=>this.tr(trinDef(e.id).n)+' ('+(TLAB[e.k]||[e.k,e.k])[L]+')').join(', ');},
   /* big card of a trinket for the side panels */
   tdet(id,r,p,f,extra){
     const i=this.tinfo(id,r,p,f),el=h('div',{class:'bagdet tdet'});el.style.setProperty('--c',i.c);
-    el.append(...[glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar+(i.fu?' · ⚗':'')),this.perfBar(i.perf),
+    el.append(...[h('div',{class:'bdhead'},glyph(i.t.k,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar+(i.fu?' · ⚗':'')))),this.perfBar(i.perf),
+      ...(extra||[]),
       h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
       i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(i.t.x||i.t.d))):null,
       i.fu?h('p',{class:'cd'},'⚗ '+this.fuText(i.fu)):null,
-      ...(extra||[])].filter(Boolean));
+    ].filter(Boolean));
     return el;
   },
 
@@ -74,7 +81,7 @@ Object.assign(UI.prototype,{
       h('div',{class:'hdr'},h('h2',null,this.tr(T('Cimeli da portare a casa','Trinkets to take home'))),h('div',{class:'zen'},zAmt(this.save.zenny))),
       h('p',{class:'sub'},this.tr(T('Boss finale sconfitto! Spunta i '+KEEP_N+' cimeli trovati in questa partita che vuoi tenere nella sacca: gli altri vengono venduti. I cimeli con cui sei entrato restano tuoi.',
         'Final boss defeated! Tick the '+KEEP_N+' trinkets found in this run you want to keep in your bag: the others are sold. The trinkets you brought in stay yours.'))),
-      L.tools,h('div',{class:'bagsplit'},L.grid,side),
+      L.tools,h('div',{class:'bagsplit'},L.left,L.grid,side),
       h('div',{class:'tpfoot'},h('span',null,this.tr(T('Scelti','Picked'))+' ',cnt),names,conf));
   },
 
@@ -105,7 +112,7 @@ Object.assign(UI.prototype,{
     }else side.append(h('p',{class:'sub'},this.t('bagEmpty')));
     return h('div',{class:'gwork'},this.header(T('Reroll dei cimeli','Trinket reroll')),
       h('p',{class:'sub'},this.tr(T('Scegli un cimelio della sacca e rerolla la sua perfezione o il cimelio stesso (stessa rarità). Paghi il tiro, poi decidi tu se tenere il nuovo o il vecchio.','Pick a trinket from your bag and reroll its perfection or the trinket itself (same rarity). You pay for the roll, then you decide whether to keep the new or the old one.'))),
-      L.tools,h('div',{class:'bagsplit'},L.grid,side));
+      L.tools,h('div',{class:'bagsplit'},L.left,L.grid,side));
   },
 
   /* ---------- Gacha shop > Fusion ---------- */
@@ -133,7 +140,8 @@ Object.assign(UI.prototype,{
         'Three trinkets from your bag become one: the one with the highest perfection stays, raised to the highest rarity of the three, and takes the best stat of each of the other two. 2 extra stats at most: fusing a fused trinket again replaces the old ones.'))),
       test?h('p',{class:'good'},this.tr(T('Modalità Test: si fondono solo i cimeli estratti in Test.','Test mode: only the trinkets pulled in Test can be fused.'))):null,
       done?h('div',{class:'fdone'},h('b',null,'⚗ '+this.tr(T('Fusione riuscita!','Fusion done!'))),this.tcard(done.id,done.r,{p:done.p,fu:done.f})):null,
-      h('div',{class:'fuserow'},h('div',{class:'fslots'},[0,1,2].map(slot)),h('div',{class:'rrarrow'},'→'),res),
-      L.tools,L.grid);
+      L.tools,
+      h('div',{class:'bagsplit'},L.left,L.grid,h('div',{class:'bagside fbench'},h('div',{class:'rarlbl'},this.tr(T('Cimeli da fondere','Trinkets to fuse'))+' · '+sl.length+' / 3'),
+        h('div',{class:'fslots'},[0,1,2].map(slot)),h('div',{class:'rrarrow fdown'},'↓'),res)));
   }
 });

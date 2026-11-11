@@ -293,3 +293,14 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .pleft.mini{overflow:visible;position:relative;z-index:20}
 .prunmode .krow.sbk .sbtip{z-index:80}
 .dmgsum .dtabs .btn{font-size:16px;padding:5px 14px;min-height:0}
+
+/* v136b: buttons press like an arcade button (same look): they rise under the pointer, sink when pressed, flash and throw sparks when released (UI.btnFx) */
+.btn{transition:transform .14s cubic-bezier(.3,1.7,.5,1),filter .14s,box-shadow .14s}
+.btn:hover:not(:disabled),.btn:focus-visible{transform:skewX(-4deg) translateY(-4px) scale(1.03);filter:brightness(1.14)}
+.btn:active:not(:disabled){transform:skewX(-4deg) translateY(4px) scale(.97);filter:brightness(.94);box-shadow:0 0 0 #07080c,inset 0 2px 0 rgba(255,255,255,.2);transition-duration:.05s}
+.btn.bflash{animation:bflash .4s ease-out}
+@keyframes bflash{0%{filter:brightness(1.95) saturate(1.3);box-shadow:0 0 0 2px #fff6c0,0 0 22px 6px rgba(255,225,74,.75)}100%{}}
+.bspk{position:fixed;z-index:9999;pointer-events:none;width:0;height:0}
+.bspk i{position:absolute;left:0;top:-1.5px;width:var(--l);height:3px;border-radius:2px;background:var(--c);box-shadow:0 0 6px var(--c),0 0 2px #fff;transform-origin:0 50%;opacity:0;animation:bspk .45s ease-out forwards;animation-delay:var(--dl)}
+@keyframes bspk{0%{opacity:1;transform:rotate(var(--a)) translateX(var(--d0)) scaleX(.3)}55%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d1)) scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.bspk{display:none}.btn.bflash{animation:none}}

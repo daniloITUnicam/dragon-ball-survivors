@@ -33,6 +33,17 @@ class UI{
     this.modalEl=null;this.sbEl=document.getElementById('sandbox');
     this.bindArcadeSounds();
   }
+  /* v136b: a pressed button flashes and throws yellow / cyan sparks from its edge (it rises under the pointer and sinks when pressed: skin.css) */
+  btnFx(b){
+    if(this.save.settings&&this.save.settings.reduceFx)return;
+    const r=b.getBoundingClientRect();if(!r.width)return;
+    b.classList.remove('bflash');void b.offsetWidth;b.classList.add('bflash');
+    const rx=r.width/2,ry=r.height/2,n=Math.round(clamp(r.width/14,8,16)),box=document.createElement('div');
+    box.className='bspk';box.style.left=(r.left+rx)+'px';box.style.top=(r.top+ry)+'px';
+    for(let i=0;i<n;i++){const a=i/n*TAU+Math.random()*.4,c=Math.cos(a),s=Math.sin(a),d0=rx*ry/Math.sqrt((ry*c)**2+(rx*s)**2)+2,
+      k=document.createElement('i');k.style.cssText='--a:'+a+'rad;--d0:'+d0.toFixed(1)+'px;--d1:'+(d0+12+Math.random()*14).toFixed(1)+'px;--l:'+(7+Math.random()*9).toFixed(1)+'px;--c:'+(i%2?'#5ad8ff':'#ffe14a')+';--dl:'+(Math.random()*.06).toFixed(3)+'s';box.append(k);}
+    document.body.append(box);setTimeout(()=>box.remove(),560);
+  }
   /* Arcade sounds for every DOM button (menus, modals, pause, level-up cards). Individual handlers may still
      call sfx() with a specific sound; the generic click only fires when none was played in the same instant. */
   bindArcadeSounds(){
@@ -47,6 +58,7 @@ class UI{
     });
     document.addEventListener('click',e=>{
       const b=btnOf(e);if(!b||b.disabled)return;
+      this.btnFx(b);
       const a=au();if(performance.now()-(a.lastUi||0)<45)return;
       a.sfx(b.dataset.back!==undefined?'uiBack':b.classList.contains('primary')?'uiClick':b.classList.contains('tab')?'uiTab':'uiClick');
     });

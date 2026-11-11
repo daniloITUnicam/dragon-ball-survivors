@@ -104,6 +104,14 @@ Object.assign(UI.prototype,{
     if(!res){this.sfx('uiErr');return;}
     this.gachaReveal(res,kind,times);
   },
+  /* v136b: closing a pull: the results shrink into the portal while the shop zooms back out around it */
+  gachaZoomOut(){
+    const o=this.gov;if(!o){this.rebuild(true);return;}
+    if(o.__stop)o.__stop();this.gov=null;if(this.modalEl===o)this.modalEl=null;
+    this.rebuild(true);
+    const sc=this.root.querySelector('.gsrc.gfull');if(sc){sc.classList.remove('gzin');void sc.offsetWidth;sc.classList.add('gzin');}
+    o.classList.add('gzout');setTimeout(()=>{o.remove();if(sc)sc.classList.remove('gzin');},700);
+  },
   closeReveal(){
     const o=this.gov;if(!o)return;
     if(o.__stop)o.__stop();o.remove();this.gov=null;if(this.modalEl===o)this.modalEl=null;
@@ -274,7 +282,7 @@ Object.assign(UI.prototype,{
       const foot=h('div',{class:'row'},
         can?h('button',{class:'btn primary','data-fid':'again',onclick:()=>{this.sfx('uiStart');this.gachaPull(kind,again);}},this.t('gAgain')+(again>1?' ×'+again:'')+(test?'':' ('+left+')')):null,
         h('button',{class:'btn alt','data-fid':'gbag2',onclick:()=>{this.sfx();this.closeReveal();this.push('bag',{});}},'🎒 '+this.t('bagBtn')),
-        h('button',{class:'btn alt','data-back':true,'data-fid':'gclose',onclick:()=>{this.sfx('uiBack');this.closeReveal();this.rebuild(true);}},this.t('gClose')));
+        h('button',{class:'btn alt','data-back':true,'data-fid':'gclose',onclick:()=>{this.sfx('uiBack');this.gachaZoomOut();}},this.t('gClose')));
       /* setting "auto-open": the next 1x / 10x ticket opens by itself, one at a time, until the player closes the window or presses Stop */
       const nk=(!test&&this.save.settings.tkAuto&&!bulk)?['t1','t10'].sort((a,b)=>(b===kind)-(a===kind)).find(k=>this.save.tickets[k]>0):null;
       if(nk){
@@ -321,17 +329,17 @@ Object.assign(UI.prototype,{
     if(sel){
       const i=this.tinfo(sel.id,sel.r,sel.p,sel.f),isEq=eqks.includes(this.bagSel),eqSlot=isEq?(d.equips||[]).findIndex(e=>e&&trinketKey(e.id,e.r)===this.bagSel):-1;
       det.style.setProperty('--c',i.c);
-      det.append(...[glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),
+      det.append(...[h('div',{class:'bdhead'},glyph(i.t.k,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar))),this.perfBar(i.perf),
+        isEq&&(slotSel==null||eqSlot===slotSel)?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,eqSlot);this.rebuild(true);}},this.t('bagUnequip')):
+          h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r,slotSel);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip')),
         h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
         i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(i.t.x||i.t.d))):null,
         i.fu?h('p',{class:'cd'},'⚗ '+this.fuText(i.fu)):null,
         h('p',{class:'cd'},this.t('bagGot',{d:this.fmtDate(sel.at)})),
         h('p',{class:'cd'},this.t('bagMarket')+': ',zAmt(ZENO_PRICE[sel.r],true)),
-        sel.t?h('p',{class:'cd'},'🧪 Test'):null,
-        isEq&&(slotSel==null||eqSlot===slotSel)?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,eqSlot);this.rebuild(true);}},this.t('bagUnequip')):
-          h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r,slotSel);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip'))].filter(Boolean));
+        sel.t?h('p',{class:'cd'},'🧪 Test'):null].filter(Boolean));
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
-    const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;this.rebuild(true);}},this.tr(RARITY[r].n))));
+    const chips=this.rarChips(st,()=>this.rebuild(true));
     const search=h('input',{type:'text',class:'achsearch','data-fid':'bagq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
     /* the sort options: a column of icons on the left, each with a tooltip */
     const SORT_ICON={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
@@ -341,7 +349,7 @@ Object.assign(UI.prototype,{
     fill();
     return h('div',null,this.header('bagTitle'),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,
       h('div',{class:'achtools'},search,shown),
-      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},sortBtns),grid,h('div',{class:'bagside'},h('div',{class:'rarbox'},h('div',{class:'rarlbl'},this.t('gRarity')),chips),det)));
+      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},h('div',{class:'bsorti'},sortBtns),chips),grid,h('div',{class:'bagside'},det)));
   },
   /* ---------- Super Shenron: the 7 Super Dragon Balls spent on a reward (opened from the stage menu) ---------- */
   screen_superWish(){
