@@ -10,7 +10,7 @@
    Any resolution: the opaque part of frame 0 is drawn MO_H world px tall and every frame of the sheet uses the same scale and foot line.
    brk<kind>.png: intact | damaged | debris. The act*.png frames are listed in MO_H. */
 const BRK_N=5,BRK_EVERY=3.5,BRK_SEED=3,BRK_FAR=2300,BRK_IN=.45,BRK_FX=2.6,BRK_AIM=420;
-const ACT_FIRST=40,ACT_EVERY=[50,80],ACT_MAX=2,DROP_FALL=2.2,NEST_T=20,NIMBUS_T=12,NIMBUS_IN=1.6,GRAV_T=25,GRAV_IN=1.5,GRAV_POP=.7,DIG_T=2.5,SENZU_N=3;
+const NIMBUS_LIFT=20,ACT_FIRST=40,ACT_EVERY=[50,80],ACT_MAX=2,DROP_FALL=2.2,NEST_T=20,NIMBUS_T=12,NIMBUS_IN=1.6,GRAV_T=25,GRAV_IN=1.5,GRAV_POP=.7,DIG_T=2.5,SENZU_N=3;
 /* h: world height of the intact object, r: footprint radius, hp: health (x the run's enemy health curve), c: splinter colour, s: sound, keep: never despawned by distance */
 const BRK={
   bush:{h:46,r:15,hp:7,c:'#5fb04a',s:'pop'},
@@ -91,6 +91,7 @@ const MOBJ={
     this.tickBrk(g,dt);
     M.at-=dt;if(M.at<=0){M.at=rnd(ACT_EVERY[0],ACT_EVERY[1]);if(M.acts.length<ACT_MAX)this.spawnAct(g);}
     for(const a of M.acts){a.t+=dt;this['t_'+a.k](g,a,dt);}
+    if(M.ride&&!M.acts.some(a=>a.k==='nimbus'&&a.st==='ride'))M.ride=null;
     if(M.acts.some(a=>a.dead))M.acts=M.acts.filter(a=>!a.dead);
     this.tickAlt(g,dt);
   },
@@ -196,7 +197,10 @@ const MOBJ={
         g.audio.sfx('pkhaste');g.ring(p.x,p.y,90,ACT_C.nimbus,.5);this.say(g,"In sella alla Nuvola d'oro!",'Riding the golden Nimbus!',ACT_C.nimbus,'+40% velocità, raccolta più ampia','+40% speed, wider pickup');}
       else if(a.t-a.t1>45){a.st='out';a.t1=a.t;a.done=true;}}
     if(a.st==='ride'){a.x=p.x;a.y=p.y;
-      if(a.t-a.t1>=NIMBUS_T){a.st='out';a.t1=a.t;a.sd=(g.input.x||0)<0?-1:1;}
+      /* v137: the hero stands on the cloud: lifted off the ground, bobbing with it, no walking steps (Renderer.drawPlayer reads g.mo.ride) */
+      const rt=a.t-a.t1,up=Math.min(1,rt/.35),dn=Math.min(1,Math.max(0,NIMBUS_T-rt)/.35),R=g.mo.ride||(g.mo.ride={tilt:0});
+      R.lift=(NIMBUS_LIFT+4*Math.sin(rt*2.6))*Math.min(up,dn);R.tilt+=(clamp((g.input.x||0)*.14,-.14,.14)-R.tilt)*Math.min(1,dt*6);R.t=rt;
+      if(a.t-a.t1>=NIMBUS_T){a.st='out';a.t1=a.t;a.sd=(g.input.x||0)<0?-1:1;g.mo.ride=null;}
       else if(Math.random()<dt*16)g.fx.push({x:p.x+rnd(-14,14),y:p.y+2,vx:rnd(-30,30)-(g.input.x||0)*80,vy:rnd(-14,4)-(g.input.y||0)*40,l:.5,m:.5,c:'#ffe58a',s:rnd(3,6)});}
     if(a.st==='out'&&a.t-a.t1>1.3)a.dead=true;},
   /* a Senzu plant with SENZU_N beans: one bean every second while you stand by it hurt (25% of your health each) */
@@ -367,8 +371,7 @@ const MOBJ={
         if(a.st==='idle'){const bob=Math.sin(t*2.2)*3;this.shadow(ctx,x,y,24,.18);GLOW.at(ctx,x,y-14+bob,46,'#ffd23f',.35+.1*Math.sin(t*4));
           if(!this.img(ctx,'actnimbus',((t*6)|0)%4,x,y-8+bob,MO_H.actnimbus))this.blob(ctx,x,y-8+bob,26,'#ffe066');
           if(Ambient.on&&Math.random()<.2)g.fx.push({x:x+rnd(-22,22),y:y-16+rnd(-8,8),vx:0,vy:-20,l:.5,m:.5,c:'#fff3b0',s:2});}
-        else if(a.st==='ride'){const k=1-Math.max(0,(a.t-a.t1)-(NIMBUS_T-1));GLOW.at(ctx,x,y-4,40,'#ffd23f',.3);ctx.save();ctx.globalAlpha=clamp(k,0,1);
-          if(!this.img(ctx,'actnimbus',((t*8)|0)%4,x,y+8,MO_H.actnimbus*.9))this.blob(ctx,x,y+8,22,'#ffe066');ctx.restore();}}
+        else if(a.st==='ride'){const R=M.ride,L=R?R.lift:0;this.shadow(ctx,x,y+2,30-L*.3,.22);GLOW.at(ctx,x,y-4,40,'#ffd23f',.22);}}
       else if(a.k==='senzu'){
         const gq=clamp(a.t/.9,0,1),sc=gq>=1?1:Math.max(0,easeOutBack(gq)),al=a.wt!==undefined?clamp(1-(a.wt-2.4)/.8,0,1):1;
         if(gq<1&&Ambient.on&&Math.random()<.4)g.fx.push({x:x+rnd(-14,14),y:y-rnd(0,30),vx:rnd(-40,40),vy:-rnd(30,80),l:.5,m:.5,c:'#8be07a',s:3});
@@ -399,6 +402,11 @@ const MOBJ={
   drawAir(R,g,t){
     const M=g.mo;if(!M)return;const ctx=R.ctx,now=performance.now(),p=g.p;
     for(const a of (M.alts||[]))this.drawAltAir(ctx,g,a,t);
+    if(M.ride){   /* v137: the golden Nimbus under the hero's feet, puffing (its frames) and swaying with the flight */
+      const R=M.ride,x=p.x,y=p.y-R.lift+7,k=clamp((NIMBUS_T-(R.t||0))/.6,0,1);
+      ctx.save();ctx.globalAlpha=k;GLOW.at(ctx,x,y-6,52,'#ffd23f',.35+.1*Math.sin(t*5));ctx.translate(x,y);ctx.rotate(R.tilt+Math.sin(t*3.1)*.04);
+      const sw=1+.05*Math.sin(t*4.2);ctx.scale(sw,2-sw);
+      if(!this.img(ctx,'actnimbus',((t*7)|0)%4,0,0,MO_H.actnimbus*1.25))this.blob(ctx,0,0,28,'#ffe066');ctx.restore();}
     for(const a of M.acts){
       if(a.k==='drop'&&!a.e){const q=clamp(a.t/DROP_FALL,0,1),e=q<.85?q/.85*.9:.9+(q-.85)/.15*.1,h=BRK.supply.h,y=a.y-380*(1-e),sw=Math.sin(a.t*2.6)*.14*(1-q);
         ctx.save();ctx.translate(a.x,y);ctx.rotate(sw);

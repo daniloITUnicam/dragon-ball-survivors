@@ -2093,3 +2093,9 @@ this.W=1;this.H=1;this.Z=1;
     if(g.sandbox)txt('SANDBOX',W/2,H-10*U,'#ff7ad0','center',F(12));
   }
 }
+/* v137: riding the golden Nimbus (MOBJ: g.mo.ride): the hero is drawn lifted off the ground by the cloud's bob and keeps still (no walking steps) */
+{const dp0=Renderer.prototype.drawPlayer;
+  Renderer.prototype.drawPlayer=function(g,t){
+    const R=g.mo&&g.mo.ride;if(!R||!(R.lift>0))return dp0.call(this,g,t);
+    const p=g.p,mv=p.mv,ctx=this.ctx;p.mv=false;ctx.save();ctx.translate(0,-R.lift);
+    try{return dp0.call(this,g,t);}finally{ctx.restore();p.mv=mv;}};}
