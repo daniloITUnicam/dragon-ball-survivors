@@ -17,6 +17,15 @@ const glyph=(k,c)=>h('span',{class:'glyph',style:'--c:'+c},k);
 const imgGlyph=(src,c)=>h('span',{class:'glyph gimg',style:'--c:'+c},h('img',{src,alt:'',draggable:'false'}));
 /* v137: banner lettering: the dark outline is the text itself, the gradient a copy on top (a thick -webkit-text-stroke would cover a background-clip gradient) */
 const bTxt=s=>h('span',{class:'btx','data-t':s},s);
+/* v137: the animated layers of a title banner (behind the lettering): kind 'lv' = embers, swirling fire arcs and twinkles; 'st' = drifting clouds, crackling lightning and twinkles */
+const BFX_TW=[[6,22,0],[17,74,.7],[29,14,1.3],[44,84,.4],[61,12,1.8],[74,78,1.1],[88,20,.2],[95,64,1.5],[52,50,2.2]];
+const banFx=kind=>{const L=[],r=i=>((i*73+17)%100)/100;
+  for(const [x,y,d] of BFX_TW)L.push(h('i',{class:'btw',style:'left:'+x+'%;top:'+y+'%;--d:'+d+'s;--s:'+(.6+r(x)*.8).toFixed(2)}));
+  if(kind==='lv'){L.push(h('i',{class:'barc a1'}),h('i',{class:'barc a2'}),h('i',{class:'barc a3'}),h('i',{class:'bglow'}));
+    for(let i=0;i<14;i++)L.push(h('i',{class:'bem',style:'left:'+(4+i*6.7+r(i)*4).toFixed(1)+'%;--d:'+(r(i+3)*3).toFixed(2)+'s;--t:'+(1.8+r(i+7)*1.6).toFixed(2)+'s;--x:'+((r(i+11)-.5)*30).toFixed(0)+'px'}));}
+  else{L.push(h('i',{class:'bcl c1'}),h('i',{class:'bcl c2'}),h('i',{class:'bcl c3'}));
+    for(let i=0;i<7;i++)L.push(h('i',{class:'bbolt b'+(i%4),style:'left:'+[3,16,30,47,63,79,91][i]+'%;--d:'+(r(i+5)*3.2).toFixed(2)+'s;--t:'+(2.2+r(i+2)*1.8).toFixed(2)+'s;--f:'+(i%2?-1:1)}));}
+  return h('span',{class:'bfx '+kind,'aria-hidden':'true'},L);};
 /* v137: an upgrade's icon (the shop picture it shares, or its kanji) */
 const pGlyph=(pid,c)=>{const P=PASS[pid]||{},u=typeof PASS_IMG!=='undefined'&&PASS_IMG[pid]&&SHOP_IMG[PASS_IMG[pid]];return u?imgGlyph(u,c||P.c):glyph(P.k||'?',c||P.c);};
 /* v137: a weapon's icon (its picture, or its kanji while it has none) */
