@@ -2,7 +2,7 @@
 /* ====== v115: online — nicknames, scores, leaderboards (stage + difficulty, by time / kills / damage),
    the weekly challenge (same stage, character, difficulty and random seed for everybody) and the shareable end-of-run card.
    Server side: supabase/online.sql (tables profiles + scores, RPC leaderboard). ====== */
-const NICK_RE=/^[A-Za-z0-9_ .-]{3,16}$/,BOARD_METRICS=['t','kills','dmg'],WEEK_DIFFS=['normal','normal','hard'];
+const NICK_RE=/^[A-Za-z0-9_ .-]{3,16}$/,BOARD_METRICS=['t','kills','dmg'],WEEK_DIFFS=['normal','normal','normal'];
 const Online={
   /* ISO-8601 week, UTC: "2026-W44" */
   weekId(d){d=d?new Date(d):new Date();const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())),wd=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-wd);
@@ -38,7 +38,7 @@ const Online={
     tx('DRAGON BALL SURVIVORS',40,62,'#ffd23f',F(40,800));
     tx(tr(C.n)+(g.mastLv>=MAST_TITLE_LV?'  « '+tr(Mastery.title(C.id))+' »':''),40,108,'#fff',F(30));
     const R=600;tx((res.win?'✓ ':'✗ ')+tr(st.n),R,62,res.win?'#8be07a':'#ff8a8a',F(36,800));
-    tx(tr(DIFF[g.diffId].n)+(g.x2?' · x2':'')+(g.week?' · '+tr(T6('Sfida','Challenge','Desafío','Défi','Herausforderung','Desafio'))+' '+g.week:'')+((g.pacts||[]).length?' · ☠'+g.pacts.length:''),R,100,'#cfd8ff',F(24,600));
+    tx((g.x2?'x2':'')+(g.week?' · '+tr(T6('Sfida','Challenge','Desafío','Défi','Herausforderung','Desafio'))+' '+g.week:'')+((g.pacts||[]).length?' · ☠'+g.pacts.length:''),R,100,'#cfd8ff',F(24,600));
     let dmg=0;for(const k in g.dmgBy)dmg+=g.dmgBy[k]||0;
     const stats=[[tr(T6('Tempo','Time','Tiempo','Temps','Zeit','Tempo')),fmtT(g.t)],[tr(T6('Uccisioni','Kills','Bajas','Éliminations','Kills','Abates')),String(g.kills)],[tr(T6('Danni','Damage','Daño','Dégâts','Schaden','Dano')),this.big(dmg)],[tr(T6('Livello','Level','Nivel','Niveau','Level','Nível')),String(g.lvl)]];
     stats.forEach(([a,b],i)=>{const X=R+i*148;x.fillStyle='rgba(0,0,0,.35)';x.fillRect(X,124,138,76);tx(b,X+69,166,'#ffd23f',F(34,800),'center');tx(a,X+69,190,'#cfd8ff',F(16,600),'center');});

@@ -105,6 +105,7 @@ const trackUri=t=>FILE_TRACKS[t]||null;
 const MENU_GAIN={menu:1.15,menu2:1.15*.88};
 /* sound effects taken from files in assets/ (build.py: SFX_FILES) - key 'sphere' = the Dragon Ball pick-up sound, 'levelup' = the level-up sound. Decoded once, played as buffers. */
 const FILE_SFX=/*__SFX__*/{};
+const GACHA_VIDEO='__GVID__';   /* v136: the summon video (build.py: '' when the build does not link the assets) */
 const XFADE=3.2; /* seconds of equal-power crossfade between the end and the start of a looping file track */
 const xfCurve=(up)=>{const n=48,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1);c[i]=Math.sin((up?x:1-x)*Math.PI/2);}return c;};
 /* ====== v128: 8-bit sound effects. Every sound is made of the four channels of an old console: two pulse waves (25% 'pulse',
@@ -569,6 +570,16 @@ class AudioSys{
       case'gStop1':this.thump(.12,120,.18);[880,1175].forEach((f,i)=>this.toneAt(f,.16,'sine',.055,0,.03+i*.07));break;
       case'gStop2':this.thump(.16,100,.24);[784,988,1175,1568].forEach((f,i)=>this.toneAt(f,.18,'square',.045,0,.03+i*.06));this.noise(.3,.05,11000,3000,.12);break;
       case'gStop3':this.thump(.22,85,.4);this.zap(300,2200,.35,.06);[523,659,784,1046,1318,1568].forEach((f,i)=>{this.toneAt(f,.3,'square',.04,0,.12+i*.045);this.toneAt(f/2,.3,'triangle',.04,0,.12+i*.045);});this.noise(.6,.09,12000,1500,.1);this.elec(.4,.05,.1,90,0);break;
+      /* v136: the 8-bit exclamation when the portal's balls take the colour of the best trinket of a pull: the rarer, the bigger the "!" */
+      case'gRar0':this.toneAt(523,.08,'square',.05,0,0);this.toneAt(659,.1,'square',.05,0,.07);break;
+      case'gRar1':[523,659,784].forEach((f,i)=>this.toneAt(f,.08,'square',.05,0,i*.06));this.toneAt(1046,.16,'square',.05,0,.2);break;
+      case'gRar2':[392,523,659,784].forEach((f,i)=>this.toneAt(f,.07,'square',.055,0,i*.055));this.toneAt(1046,.1,'square',.06,0,.24);this.toneAt(1318,.22,'square',.055,400,.33);break;
+      case'gRar3':[523,659,784,1046].forEach((f,i)=>this.toneAt(f,.07,'square',.06,0,i*.05));[1318,1568].forEach((f,i)=>this.toneAt(f,.12,'square',.065,0,.24+i*.1));
+        this.toneAt(2093,.4,'square',.06,600,.46);this.toneAt(1046,.4,'triangle',.06,0,.46);this.noise(.25,.05,12000,4000,.46);break;
+      case'gRar4':[262,330,392,523,659,784,1046].forEach((f,i)=>this.toneAt(f,.06,'square',.065,0,i*.04));
+        [1568,0,1568].forEach((f,i)=>{if(f)this.toneAt(f,.09,'square',.07,0,.32+i*.09);});
+        this.toneAt(2093,.6,'square',.07,900,.6);this.toneAt(1046,.6,'triangle',.07,0,.6);this.toneAt(523,.6,'square',.04,0,.6);
+        this.noise(.5,.09,12000,2000,.6);this.thump(.3,80,.6,.6);break;
       case'gPop0':this.toneAt(420,.07,'square',.04,260,0);break;
       case'gPop1':this.toneAt(560,.08,'square',.045,330,0);this.toneAt(1120,.09,'sine',.03,0,.03);break;
       case'gPop2':this.toneAt(700,.09,'square',.05,400,0);[1320,1760].forEach((f,i)=>this.toneAt(f,.12,'sine',.035,0,.04+i*.05));break;

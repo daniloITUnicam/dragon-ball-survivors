@@ -63,7 +63,7 @@ Object.assign(UI.prototype,{
     if(st.tab==='weekly'){
       const w=Online.weekly(),C=CHARS.find(c=>c.id===w.char),S=STAGES[w.stage],left=Online.weekLeft(),dd=Math.floor(left/864e5),hh=Math.floor(left%864e5/36e5);
       body=[h('div',{class:'wkcard'},h('div',{class:'wkh'},h('b',null,'🗓 '+w.id),h('span',null,this.tr(OT.ends)+' '+dd+'d '+hh+'h')),
-        h('div',{class:'wkrow'},h('span',null,'🌍 '+this.tr(S.n)),h('span',null,'🥋 '+this.tr(C.n)),h('span',null,'⚔ '+this.tr(DIFF[w.diff].n))),
+        h('div',{class:'wkrow'},h('span',null,'🌍 '+this.tr(S.n)),h('span',null,'🥋 '+this.tr(C.n))),
         h('p',{class:'sub'},this.tr(OT.sameFor)),
         h('button',{class:'btn primary','data-fid':'wkplay',onclick:()=>{this.sfx('uiStart');this.app.startGame({stage:w.stage,char:w.char,diff:w.diff,x2:false,sandbox:false,pet:this.save.pet,week:w.id,seed:w.seed});}},'▶ '+this.tr(OT.play))),
         mets,this.boardList(w.stage,w.diff,st.metric,w.id)];
@@ -71,8 +71,8 @@ Object.assign(UI.prototype,{
     }else if(st.tab==='comm'){body=[h('p',{class:'sub'},this.tr(OT.commD)),this.commList()];
     }else{
       const ss=h('select',{'data-fid':'bstage',onchange:()=>{st.stage=+ss.value;this.rebuild(true);}},STAGE_ORDER.map(i=>h('option',{value:i,selected:st.stage===i},'S'+STAGES[i].no+' '+this.tr(STAGES[i].n))));
-      const sd=h('select',{'data-fid':'bdiff',onchange:()=>{st.diff=sd.value;this.rebuild(true);}},Object.keys(DIFF).map(k=>h('option',{value:k,selected:st.diff===k},this.tr(DIFF[k].n))));
-      body=[h('div',{class:'row'},ss,sd),mets,this.boardList(st.stage,st.diff,st.metric,null)];
+      st.diff='normal';
+      body=[h('div',{class:'row'},ss),mets,this.boardList(st.stage,st.diff,st.metric,null)];
     }
     return h('div',{class:'center boards'},this.header(OT.boards),this.nickRow(),tabs,...body);
   },

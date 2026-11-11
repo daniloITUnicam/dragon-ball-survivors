@@ -54,10 +54,10 @@ const COOP={
     if(this.code)this.poll();
     this.soloWatch();
     if(t-this.bgLast>COOP_BG*1000&&this.app.state==='menu'){this.bgLast=t;this.rpc('coop_touch',{}).catch(()=>{});this.loadInvites();}},
-  /* v134: a solo run started from an open room while waiting (game.waitRoom = the room code): the room keeps polling (presence), and when
-     somebody joins a banner offers to end the run (coins kept) and go to the room */
-  soloWatch(){const a=this.app,g=a&&a.game,on=!!(g&&g.waitRoom&&g.waitRoom===this.code&&!g.ended&&this.st&&(this.st.members||[]).length>1&&this.st.status==='lobby');
-    if(on!==!!this._soloOn){this._soloOn=on;if(a.ui&&a.ui.coopJoinBanner)a.ui.coopJoinBanner(on?(this.st.members.find(m=>!m.me)||{}).nick:null);}},
+  /* v134: a solo run started from an open room while waiting (game.waitRoom = the room code): the room keeps polling (presence); when somebody
+     joins, the run becomes a co-op run on the spot: this Game turns host, the newcomer drops in (COOPG.hostDropIn) */
+  soloWatch(){const a=this.app,g=a&&a.game;
+    if(g&&g.waitRoom&&g.waitRoom===this.code&&!g.ended&&!g.coop&&this.st&&(this.st.members||[]).length>1&&this.st.status==='lobby'&&!COOPG.net)COOPG.hostDropIn(a,g,this.st);},
   link(code){try{if(/^https?:$/.test(location.protocol))return location.origin+location.pathname+'?room='+code;}catch(e){}return code;},
   /* ?room=ABCD in the address: join it once signed in */
   linkCode(){try{const q=new URLSearchParams(location.search).get('room');return q&&/^[A-Za-z0-9]{4}$/.test(q)?q.toUpperCase():null;}catch(e){return null;}}

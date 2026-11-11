@@ -3,7 +3,7 @@
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
-const ZENO_EVERY=200,ZENO_TTL=180,ZENO_IN=1.8,FEAT_IN=1.3,CHEST_IN=.75,FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+const END_RAR=3,END_PF=69,ZENO_EVERY=360,ZENO_TTL=180,ZENO_IN=1.8,FEAT_IN=1.3,CHEST_IN=.75,FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 /* v116: game feel — hit-stop (s) and camera punch (fraction of zoom), combo tiers (streak -> Zenny/XP multiplier), overkill */
 const HS_EVO=.08,HS_BOSS=.1,HS_CRIT=.05,HS_CRIT_CD=1.5,ZP_EVO=.07,ZP_BOSS=.09,ZP_CRIT=.035,OVK_K=4,OVK_R=70,OVK_CD=.3,OVK_PUSH=9;
 const COMBO=[{n:50,m:1.1,t:T6('COMBO!','COMBO!','¡COMBO!','COMBO !','COMBO!','COMBO!'),c:'#ffb13b'},{n:100,m:1.25,t:T6('SUPER COMBO!','SUPER COMBO!','¡SÚPER COMBO!','SUPER COMBO !','SUPER-COMBO!','SUPER COMBO!'),c:'#ff7b4a'},
@@ -34,6 +34,28 @@ const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_GIVE=130,PET_KAMI_SPD=560,PET_KAM
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
+/* v134: the 30-minute curve (all stages): enemy health x(1 + CURVE_HP * progress^CURVE_HP_E), damage x(1 + CURVE_DMG * progress), how many at once
+   CURVE_CAP0 + CURVE_CAP1 * progress^CURVE_CAP_E (x CAP_K), how fast they come CURVE_RATE0 + CURVE_RATE1 * progress^1.35, bosses x(1 + CURVE_BOSS * progress) */
+const XP_TS_E=.55,EARLY_XP=1.2,EARLY_XP_T=300,CURVE_SD=1,CURVE_HP=9,CURVE_HP_E=2,CURVE_DMG=1.6,CURVE_CAP0=46,CURVE_CAP1=300,CURVE_CAP_E=1.5,CURVE_RATE0=2.2,CURVE_RATE1=11,CURVE_BOSS=2;
+/* v134: a stage's enemies brought to the strength of the first stage's (same curve everywhere): the ratio of the first stage's average roster health /
+   damage / experience to this stage's (weighted like the roster), the same for its bosses' health. Cached per stage */
+const NORM_C=new Map();
+function stageNorm(st){
+  if(NORM_C.has(st))return NORM_C.get(st);
+  const avg=(S,k)=>{let a=0,w=0;for(const r of S.roster){const d=ENEMIES[r[0]];if(!d)continue;const wt=r[2]||1;a+=(d[k]||0)*wt;w+=wt;}return w?a/w:1;};
+  const R=STAGES[STAGE_ORDER[0]],n={hp:avg(R,'hp')/avg(st,'hp'),dmg:avg(R,'dmg')/avg(st,'dmg'),xp:avg(R,'xp')/avg(st,'xp')};
+  for(const k in n)if(!isFinite(n[k])||n[k]<=0)n[k]=1;
+  NORM_C.set(st,n);return n;
+}
+/* v134: the bosses follow one curve too: a boss's health is the first stage's boss health at that point of the run (interpolated between its bosses,
+   in log space), whoever the boss is; transformations and minibosses go through the same curve */
+let BOSS_REF=null;
+function bossRef(k,p){   /* k: 'hp' or 'dmg' */
+  if(!BOSS_REF){const R=STAGES[STAGE_ORDER[0]];BOSS_REF=bossPlan(R,DIFF.normal.dur,'normal').map(b=>{const d=BOSSES[b[0]]||{hp:100,dmg:10};return{p:b[1]/R.time,hp:Math.log(d.hp),dmg:Math.log(d.dmg||10)};}).sort((a,b)=>a.p-b.p);}
+  const L=BOSS_REF;if(!L.length)return k==='hp'?100:10;if(p<=L[0].p)return Math.exp(L[0][k])*(k==='hp'?Math.max(.35,p/L[0].p):1);
+  for(let i=1;i<L.length;i++)if(p<=L[i].p){const a=L[i-1],b=L[i],f=(p-a.p)/(b.p-a.p);return Math.exp(a[k]+(b[k]-a[k])*f);}
+  return Math.exp(L[L.length-1][k]);
+}
 const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: più Salute','Target: most HP'),T('Bersaglio: meno Salute','Target: least HP'),T('Bersaglio: boss','Target: boss')];
 const TOP_K=1.5;
 const DMG_T=1.1;   /* seconds a damage number stays on screen (every other floating text: .8 s) */
@@ -65,8 +87,8 @@ const EGRID={S:40,M:4095,head:new Int32Array(4096),next:new Int32Array(512),mark
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
-    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sd=this.stage.dif!==undefined?this.stage.dif:o.stage;this.spdK=stageSpd(this.sd);MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
-    this.diffId=o.diff;this.D=DIFF[o.diff];
+    this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sdR=this.stage.dif!==undefined?this.stage.dif:o.stage;this.sd=CURVE_SD;this.spdK=stageSpd(this.sd);this.hardK=1+Math.min(STAGE_HARD_MAX,STAGE_HARD*(this.stage.pos||0));{const N=stageNorm(this.stage);this.norm=N;}   /* v134: sdR = the stage's step (rewards), sd = the shared curve; norm = this stage's enemies brought to the first stage's strength */MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
+    this.diffId='normal';this.D=DIFF.normal;
     this.week=o.week||null;this.pacts=o.sandbox||o.week?[]:(o.pacts||[]).filter(id=>PACTS.some(p=>p.id===id));this.pk=pactFx(this.pacts);
     {const ml=Mastery.lv(this.save,o.char),mr=(this.save.mastery||{})[o.char]||{};this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(o.char):null;this.skin=Mastery.skinOf(this.save,o.char);}
     this.spdK*=this.pk.espd;   /* v115: Pacts */
@@ -77,7 +99,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
-    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
+    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.shopLv('rr')),sk:Math.min(5,this.shopLv('sk')),bn:Math.min(5,this.shopLv('bn'))};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
@@ -107,9 +129,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
     {const T0=[],R0={},P0={},S0={};   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
       for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&trinDef(eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
-        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
+        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';if(isFused(be.f))this.tFu[eq.id]=be.f.slice();this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
       if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
-    this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
+    this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);MOBJ.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
   get maxW(){return this.sandbox?MAX_WEAPONS:clamp(Math.round(this.save.settings.weapons)||MAX_WEAPONS,1,MAX_WEAPONS);}
@@ -148,11 +170,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* ---------- stats ---------- */
   tMods(){
     const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0};
-    for(const id of this.trinkets){const t=trinDef(id);if(t&&t.m){const tmx=trinMods(t,this.trR(id),this.trP(id));for(const k in tmx)m[k]+=tmx[k];}}
+    for(const id of this.trinkets){const t=trinDef(id);if(t&&(t.m||this.tFu[id])){const tmx=trinMods(t,this.trR(id),this.trP(id),this.tFu[id]);for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
   recalc(){
-    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
+    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
     if(this.mastP)for(const k in this.mastP)sh[k]+=this.mastP[k];
@@ -165,7 +187,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.magnet=100*(C.mag||1)*(1+.05*sl('magnet')+tm.magnet+sh.magnet);
     S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.5*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
-    S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp)*(this.x2?.30:1)/this.TS;   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
+    S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp+sh.xp)*(this.x2?.30:1)/Math.pow(this.TS,XP_TS_E);   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
     S.gold=1+.15*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
@@ -192,7 +214,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* v109: where each stat of the pause screen comes from (its tooltip): rows {l: label (T or text), x: suffix, v: value text}; the last row ("other") closes the gap
      to the real value - abilities, Kaioken, Berserk, totems, the swap, temporary effects - so the rows always add up to what the stat shows */
   statBreak(){
-    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,S=this.S,tf=this.totemFx||{},sz=this.szStat||{},tb={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};
+    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,S=this.S,tf=this.totemFx||{},sz=this.szStat||{},tb={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
     for(const b of this.tempBuffs)tb[b.k]+=b.v;
     const shopN=id=>{const it=SHOP.find(x=>x.id===id);return it?it.n:T(id,id);},fe=this.formEntry;
     const OTH=T('Altro (abilità, Kaioken, totem, effetti attivi)','Other (abilities, Kaioken, totems, active effects)');
@@ -219,7 +241,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     addS('dodge',S.dodge,[[FORM,fm?fm.dodge:0],[TRIN,tm.dodge]],(v,s)=>s?pc(v):Math.round(v*1000)/10+'%');
     addS('area',S.area,[[T('Base','Base'),1],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
     addS('luck',S.luck,[[shopN('luck'),.05*sl('luck'),lvS('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.03:0],[T('Compagno','Companion'),this.petLuckT>0?.05:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
-    mulS('xp',S.xp,C.xpm/this.TS,BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
+    mulS('xp',S.xp,C.xpm/Math.pow(this.TS,XP_TS_E),BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
     addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
     mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[T('Totem','Totem'),1+(tf.magnet||0)]]);
     addS('proj',S.proj,[[FORM,fm?(fm.idx>=6?2:fm.idx>=3?1:0):0],[shopN('proj'),sl('proj'),lvS('proj')],[PASS.proj.n,P.proj||0,lvP('proj')],[TRIN,tm.proj||0]],(v,s)=>s?ad(v,0):nm(v,0));
@@ -346,7 +368,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* a trinket found during the run is not kept: it is sold for zenny when something replaces it and at the end of the run (the one from the bag is never sold) */
   sellTrinket(id,rar,why){
     const t=trinDef(id);if(!t)return 0;
-    const v=trinketSale(rar,this.sd);this.addZenny(v);this.run.tsold=(this.run.tsold||0)+1;
+    const v=trinketSale(rar,this.sdR);this.addZenny(v);this.run.tsold=(this.run.tsold||0)+1;
     if(why!=='end'){this.floatText(this.p.x,this.p.y-70,this.env.tr(why==='auto'?T('Rifiutato: ','Refused: '):T('Venduto: ','Sold: '))+this.env.tr(t.n)+'  +Z '+v,1);this.audio.sfx('coin');}
     return v;
   }
@@ -371,7 +393,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const i=this.trinkets.indexOf(id);if(i<0)return -1;
     const t=trinDef(id);
     if(this.tSrc[id]==='run')this.sellTrinket(id,this.trR(id));
-    this.trinkets.splice(i,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];
+    this.trinkets.splice(i,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];delete this.tFu[id];
     if(t&&t.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
     return i;
   }
@@ -399,10 +421,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   addTrinket(id,rar,cb){
     if(!trinDef(id))return false;
     if(rar==null)rar=this.rarOf(id);
-    const pf=cb&&cb.pf!=null?cb.pf:rollPf(this.S.luck);
+    if(this.endless&&rar!=null)rar=Math.min(rar,END_RAR);
+    const pf=this.capPf(cb&&cb.pf!=null?cb.pf:rollPf(this.S.luck));
     const buy=!!(cb&&cb.buy),yes=()=>{if(cb&&cb.onYes)cb.onYes();},no=()=>{if(cb&&cb.onNo)cb.onNo();};
-    if(this.trinkets.includes(id)){   /* already carried: a better copy (higher rarity, or the same rarity with more perfection) upgrades it in place, otherwise the new one is sold */
-      if(rar>this.trR(id)||(rar===this.trR(id)&&hasPf(trinDef(id))&&pf>this.trP(id))){const ok=this.equipTrinket(id,rar,id,pf);if(ok)yes();return ok;}
+    if(this.trinkets.includes(id)){   /* already carried: a better copy (higher rarity, or the same rarity with more perfection) upgrades it in place, otherwise the new one is sold (never a fused one: v136) */
+      if(!this.tFu[id]&&(rar>this.trR(id)||(rar===this.trR(id)&&hasPf(trinDef(id))&&pf>this.trP(id)))){const ok=this.equipTrinket(id,rar,id,pf);if(ok)yes();return ok;}
       if(!buy)this.sellTrinket(id,rar);
       no();return false;
     }
@@ -416,10 +439,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.trinkets.includes(n.id)||this.trinkets.length<this.runCap||this.autoRefuse(n.id,n.rar,n.pf,n.buy)){   /* the situation changed while it was waiting: decide again */
       this.addTrinket(n.id,n.rar,{pf:n.pf,onYes:n.onYes,onNo:n.onNo,buy:n.buy});return this.drainTQ();
     }
-    this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),pf:this.trP(id),src:this.tSrc[id]})),nw:{id:n.id,rar:n.rar,pf:n.pf},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
+    this.modal={type:'tswap',curs:this.trinkets.map(id=>({id,rar:this.trR(id),pf:this.trP(id),src:this.tSrc[id],fu:this.tFu[id]})),nw:{id:n.id,rar:n.rar,pf:n.pf},onYes:n.onYes,onNo:n.onNo,buy:n.buy};
   }
   rarityWeights(){
-    const si=this.sd,L=this.S.luck;
+    const si=this.sdR,L=this.S.luck;
     return[62,27*(1+.05*si+L*.4),9.5*(1+.1*si+L*.8),1.5*(1+.15*si+L*1.2)];
   }
   rollTrinket(excl){
@@ -437,7 +460,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   rollTrinketList(n){const out=[];for(let i=0;i<n;i++){const id=this.rollTrinket(out);if(!id)break;out.push(id);}return out;}
   /* loot chests: the rarity is rolled when the chest drops (Luck shifts the odds toward the rare ones), and decides how much is inside (CHEST_RAR in data.js) */
   chestRarWeights(){const L=this.S.luck;return[CHEST_W[0]*Math.max(.3,1-L*.8),CHEST_W[1]*(1+L*.5),CHEST_W[2]*(1+L*1.2),CHEST_W[3]*(1+L*2.4),CHEST_W[4]*(1+L*4)];}
-  rollChestRar(){const w=this.chestRarWeights();let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;}
+  rollChestRar(){const w=this.chestRarWeights();if(this.endless)w[4]=0;let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;}   /* v134: no Mythic chests in Endless */
+  /* v134: Endless gives trinkets up to Legendary with a perfection below 70 */
+  capPf(p){return this.endless&&p!=null?Math.min(p,END_PF):p;}
   /* n character upgrades (weapon levels and secondary upgrades, also new ones while a slot is free) for a chest: the same one can come up more than once, never past its max.
      Weapons first (60%), owned upgrades before new ones, and an upgrade a maxed weapon waits for jumps the queue. */
   chestUps(n,evoId){   /* evoId: the weapon this chest evolves - it restarts at Lv 1 of its new tier, so its levels count again */
@@ -456,8 +481,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* nothing left to give a chest: no evolution ready, no weapon level, no secondary upgrade (Endless levels past 5 do not count) */
   allMaxed(){return ![...this.weapons.values()].some(w=>this.evoReady(w))&&!this.fuseReady()&&!this.chestUps(1).length;}
   chestRewards(isFinal,boss,elite,rar){
-    const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sd))}),used=[];
-    const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:r,pf:pfFloor(rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1),cf.pf)};};   /* Epic+: the perfection starts from cf.pf; Mythic: a better roll for its Mythic trinkets */
+    const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sdR))}),used=[];
+    const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:this.endless?Math.min(r,END_RAR):r,pf:this.capPf(pfFloor(rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1),cf.pf))};};   /* Epic+: the perfection starts from cf.pf; Mythic: a better roll for its Mythic trinkets */
     /* the weapon slot: a ready evolution, otherwise a character upgrade; then cf.t more character upgrades */
     const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     const ev=elig.length?pick(elig).id:null;if(ev)R.push({k:'evo',id:ev});
@@ -975,7 +1000,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   pickTarget(md,m){
     const p=this.p,r2=md*md;let b=null,bs=0,near=null,nd=r2;
     for(const e of this.en){
-      if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=dx*dx+dy*dy;if(d>=r2)continue;
+      if(e.dead||e.prop)continue;const dx=e.x-p.x,dy=e.y-p.y,d=dx*dx+dy*dy;if(d>=r2)continue;
       if(d<nd){nd=d;near=e;}
       if(m===3){if(e.boss&&(!b||d<bs)){b=e;bs=d;}}
       else{const s=m===1?e.hp:-e.hp;if(!b||s>bs){b=e;bs=s;}}
@@ -989,7 +1014,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   nearest(x,y,md){
     if(this.tgt&&x===this.p.x&&y===this.p.y)return this.pickTarget(md,this.tgt);
-    let b=null,bd=md*md;for(const e of this.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-y,d=dx*dx+dy*dy;if(d<bd){bd=d;b=e;}}return b;}
+    let b=null,bd=md*md,o=null,od=Math.min(md,BRK_AIM)**2;for(const e of this.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-y,d=dx*dx+dy*dy;if(e.prop){if(d<od){od=d;o=e;}continue;}if(d<bd){bd=d;b=e;}}return b||o;}   /* v135: breakables only when no enemy is in range */
   hit(e,base,kx,ky){
     const S=this.S;let d=base*S.might*DMG_NERF;
     if(this.has('rage')&&this.p.hp<this.p.maxHp*.35)d*=1.2;
@@ -998,6 +1023,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   damageEnemy(e,d,kx,ky,crit){
     if(e.dead)return;
+    if(e.prop){MOBJ.hit(this,e,d);return;}   /* v135: a breakable (mapobj.js) */
     if(e.xf){if(this.showNums&&Math.random()<.2)this.floatText(e.x,e.y-e.r*1.7,'0',0);return;}
     if(e.under)return;
     if(e.armor)d=Math.max(d*.3,d-e.armor);
@@ -1025,6 +1051,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.showNums)this.floatText(e.x,e.y-e.r*2.2,'OVERKILL '+Math.round(d),7);
   }
   killEnemy(e){
+    if(e.prop){MOBJ.brk(this,e);return;}   /* v135: a breakable breaks: no kill, its own drops */
     if(e.sparring){e.dead=true;this.burst(e.x,e.y-8,30,'#aab4ff');this.audio.sfx('boom');if(this.trial)this.trial.killed=true;return;}
     e.dead=true;this.kills++;this.audio.sfx('kill');PROGX.onKill(this);COMMUNITY.onKill(this,e);this.bumpStreak();this.addCorpse(e);   /* it stays and dissolves (corpse.js) */
     if(e.goldS){EXTRAS.onKill(this,e);return;}   /* v117: the golden Saibaman */
@@ -1034,8 +1061,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(e.boss&&e.mini){   /* miniboss: like an elite (chest, ticket, a little zenny); it does not count as a boss */
       this.bossAlive--;this.addTicket('t1',1,e);
       {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
-      const pay=Math.round(40*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);this.burst(e.x,e.y-10,22,'#ffd23f');this.audio.sfx('coin');
-      for(let i=0;i<5;i++)this.dropGem(e.x+rnd(-50,50),e.y+rnd(-50,50),18*this.stage.xp*XP_MUL);
+      const pay=Math.round(40*ZMUL*(this.sdR+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);this.burst(e.x,e.y-10,22,'#ffd23f');this.audio.sfx('coin');
+      for(let i=0;i<5;i++)this.dropGem(e.x+rnd(-50,50),e.y+rnd(-50,50),18*XP_MUL);
       this.shake=.5;this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.2);
       this.bossShock(e);
       return;
@@ -1043,11 +1070,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(e.boss){
       this.run.bossKills++;this.bossAlive--;{const B=this.bkills||(this.bkills={});B[e.bid]=(B[e.bid]||0)+1;}   /* v117: career: bosses by id */
       if(e.tama){e.tama.lock=false;e.tama.beaten=true;this.ring(e.tama.x,e.tama.y-30,140,'#ffd23f',.8);this.say(this.env.tr(T('Il Tamagami cede la Super Sfera: prendila!','The Tamagami yields the Super Dragon Ball: take it!')),'#ffd23f',3.2);}
-      const pay=Math.round(60*ZMUL*(this.sd+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
+      const pay=Math.round(60*ZMUL*(this.sdR+1)*(e.final?2:1));this.addZenny(pay);this.burst(e.x,e.y-10,26,'#ffd23f');this.audio.sfx('coin');this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
       {this.chests.push({...this.landAt(e.x,e.y,30),final:e.final,t:0,boss:true,rar:BOSSX.chestRar(this,e)});}
-      for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*this.stage.xp*XP_MUL);
+      for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*XP_MUL);
       this.shake=.7;this.hitStop(HS_BOSS,ZP_BOSS);this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
       if(e.final){const fn=BOSSX.finisherName(this,this.curW);if(fn)this.finisher={n:fn,c:(this.curW&&WEAPONS[this.curW]&&WEAPONS[this.curW].c)||'#ffd23f'};this.startVictory(e);}   /* v116: the named finishing move */
@@ -1258,11 +1285,31 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;if(d<320){e.stun=Math.max(e.stun,2);if(!e.boss){e.kx+=dx/d*500;e.ky+=dy/d*500;}}}
     this.say(this.env.tr(T('RESURREZIONE!','REVIVED!')),'#ffffff',2.5);this.audio.sfx('transform');
   }
+  /* v136: the trinkets found in this run that are still carried (not the ones brought from the bag) */
+  foundTrinkets(){return this.trinkets.filter(id=>this.tSrc[id]==='run').map(id=>({id,r:this.trR(id),p:this.trP(id)}));}
+  /* v136: only a win lets found trinkets go home: KEEP_N of them, chosen in a window when more were found (UI.screen_tpick); every other one is sold.
+     A defeat, and what is found in Endless after the win, is all sold. Co-op keeps the old rule (everything carried goes into the bag). */
   finish(win,opts){
     if(this.ended)return;this.ended=true;
-    this.keepHeld();
+    if(this.coop||this.coopView){this.keepHeld();this.finish2(win,opts);return;}
+    const f=win&&!this.tPicked?this.foundTrinkets():[];
+    if(f.length>KEEP_N&&this.env.pickTrinkets){this.tPicked=true;this.env.pickTrinkets(this,f,ids=>this.finish2(win,opts,ids));return;}
+    if(win)this.tPicked=true;
+    this.finish2(win,opts,f.slice().sort((a,b)=>this.trinScore(b.id,b.r,b.p)-this.trinScore(a.id,a.r,a.p)).slice(0,KEEP_N).map(x=>x.id));
+  }
+  finish2(win,opts,ids){
+    if(ids)this.keepChosen(ids);
     const res=this.progress.finishRun(this,win,opts);
     this.env.onEnd(res,this);
+  }
+  keepChosen(ids){
+    let v=0;const kept=this.run.tkept||(this.run.tkept=[]);
+    for(const id of this.trinkets)if(this.tSrc[id]==='run'){
+      const r=this.trR(id),p=this.trP(id),k=ids.includes(id)&&this.progress&&this.progress.keepTrinket?this.progress.keepTrinket(this,id,r,p):null;
+      this.tSrc[id]=k?'kept':'sold';
+      if(k)kept.push({id,r,p,up:!!k.up,from:k.from||0});else v+=this.sellTrinket(id,r,'end');
+    }
+    return v;
   }
   /* death: slow motion, the music drags, the hero falls; the end menu opens after DEATH_T seconds */
   startDeath(){
@@ -1338,8 +1385,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* ---------- spawning ---------- */
   /* difficulty scales with progress through the stage; the stage multiplier eases in over the first 40% */
   get nt(){return this.t/this.TS;}
-  stageXp(){const x=Math.sqrt(this.stage.xp);return 1+(x-1)*Math.min(1,this.prog()/.5);}
-  earlyXp(){return 1+1.0*Math.max(0,1-this.prog()*2.6);}
+  stageXp(){return this.norm.xp;}
+  earlyXp(){return 1+EARLY_XP*Math.max(0,1-this.t/EARLY_XP_T);}   /* v134: the first minutes level up fast (seconds, not a share of the run) */
   prog(){return Math.min(1.3,this.t/this.dur);}
   stageMul(v){return 1+(v-1)*Math.min(1,this.t/(this.dur*.4));}
   /* per-step escalation factors (see ESC_N / ESC_X): Extreme grows faster and also gets armor */
@@ -1352,13 +1399,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* stage tuning for x2 + Extreme only (st.x2x, Tournament of Power): regular enemies' HP / damage start at hp0 / dmg0 and reach hp / dmg at 40% of the run; bosses' HP x bhp */
   x2xK(k){const X=this.stage.x2x;if(!X||!this.x2||this.diffId!=='extreme')return 1;if(k==='bhp')return X.bhp;const f=Math.min(1,this.prog()/.4);return X[k+'0']+(X[k]-X[k+'0'])*f;}
   crowdK(late){const u=clamp((this.prog()-.15)/.7,0,1);return EARLY_K+(late-EARLY_K)*u*u*(3-2*u);}   /* v132: see ENEMY_N_K */
-  hpMul(){return this.x2xK('hp')*this.lateK('hp')*ENEMY_HP_MUL*(1+Math.pow(this.prog(),2)*(G_HP_K*1.1+.45*this.sd))*this.stageMul(this.stage.hp)*this.D.hp*(this.x2?1.4:1);}
-  dmgMul(){return this.x2xK('dmg')*this.lateK('dmg')*ENEMY_DMG_MUL*(1.0+this.prog()*G_DMG_K)*this.stageMul(1+.15*this.sd)*this.D.dmg*(this.x2?1.25:1);}
+  hpMul(){return ENEMY_HP_MUL*(1+CURVE_HP*Math.pow(this.prog(),CURVE_HP_E))*this.norm.hp*this.hardK*this.D.hp*(this.x2?1.4:1);}   /* v134: the same curve on every stage */
+  dmgMul(){return ENEMY_DMG_MUL*(1+CURVE_DMG*this.prog())*this.norm.dmg*this.hardK*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   spawnCap(){return Math.round(this.spawnCap0()*ENEMY_N_K);}
-  spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((24+4*this.sd+(250+30*this.sd)*Math.pow(pr,1.7))*CAP_K*xk*this.lateK('spawn'));}
-  spawnRate(){return ENEMY_N_K*this.lateK('spawn')*(1+9*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.stageMul(this.stage.spawn)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
+  spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((CURVE_CAP0+CURVE_CAP1*Math.pow(pr,CURVE_CAP_E))*CAP_K*xk);}   /* v134: plenty from the first minute, hordes at the end */
+  spawnRate(){return ENEMY_N_K*(CURVE_RATE0+CURVE_RATE1*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
@@ -1377,7 +1424,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
          Numbers start at 0 (all their uses treat 0 like "absent": >0, ||0, truthiness), the rest at undefined (exactly as before for every read) */
       atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,hpK:1,
-      sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined};
+      sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined,prop:def.prop};
   }
   rosterPick(){
     const t=this.nt,r=this.stage.roster,w=[];
@@ -1510,8 +1557,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
     {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
-    const pay=Math.round(25*ZMUL*(this.sd+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
-    for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*this.stage.xp*XP_MUL);
+    const pay=Math.round(25*ZMUL*(this.sdR+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
+    for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
     this.say(this.env.tr(T('ÉLITE SCONFITTO! Apri il forziere','ELITE DEFEATED! Open the chest')),'#ffd23f',2.4);
   }
@@ -1543,8 +1590,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     let bd=BOSSES[id];if(mini)bd=Object.assign({},bd,{n:T(bd.n.it+' (Mini)',bd.n.en+' (Mini)'),p2:0,morph:0});
     const p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
-    const hp=bd.hp*BOSS_HP_MUL*this.D.hp*(this.x2?1.4*this.x2xK('bhp'):1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
-    Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bd.dmg*this.dmgMul()*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
+    const bp=Math.min(1,this.prog()),hp=bossRef('hp',bp)*BOSS_HP_MUL*this.hardK*(1+CURVE_BOSS*this.prog())*this.D.hp*(this.x2?1.4*this.x2xK('bhp'):1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
+    Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bossRef('dmg',bp)*this.dmgMul()/this.norm.dmg*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
     this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
@@ -1924,7 +1971,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(MOMENTS.tickCine(this,rdt))return;   /* v116: a boss transformation cinematic */   /* v116: Ki Clash: everything else waits */   /* v116: hit-stop: the world holds still, the frame is still drawn */
     if(this.summon){SUMMON.update(this,rdt);if(this.summon)dt*=this.summon.ts;if(this.modal)return;}   /* v113: the dragon is coming: the world almost stops */
     Hints.tick(this,rdt);   /* v115: guided first run */
-    if(!this.modal&&!this.dying){MOMENTS.tickLastStand(this,dt);MOMENTS.tickAlly(this,dt);MAPX.tick(this,dt);GHOST.rec(this,dt);BOSSX.tick(this,dt);EXTRAS.tick(this,dt);if((this._alT=(this._alT||0)-dt)<=0){this._alT=.5;MOMENTS.checkAlly(this);PROGX.tickRec(this);}}   /* v116 */
+    if(!this.modal&&!this.dying){MOMENTS.tickLastStand(this,dt);MOMENTS.tickAlly(this,dt);MAPX.tick(this,dt);MOBJ.tick(this,dt);GHOST.rec(this,dt);BOSSX.tick(this,dt);EXTRAS.tick(this,dt);if((this._alT=(this._alT||0)-dt)<=0){this._alT=.5;MOMENTS.checkAlly(this);PROGX.tickRec(this);}}   /* v116 */
     if(this.xform&&!this.xform.released)dt*=.4;
     const p=this.p,S=this.S;
     const inTrial=!!this.trial,inTun=!!this.tun,frozen=inTrial||inTun;   /* in a trial room or a tunnel the run clock, the director, the map and the world are paused */
@@ -1967,7 +2014,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(this.hordeBoost>0)this.hordeBoost-=dt;
       this.spAcc+=this.spawnRate()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
       const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
-      while(this.spAcc>=1){this.spAcc-=1;if(this.en.length<cap)this.spawnOne();}
+      while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
     }
@@ -1995,7 +2042,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.seenT-=dt;
     if(this.seenT<=0){
       this.seenT=.5;
-      if(!this.sandbox&&(this._seenT=(this._seenT||0)-dt)<=0){this._seenT=.25;const vr=this.viewR*1.1,p0=this.p;for(const e of this.en){const id=e.boss?e.bd.id:e.def.id;if(id&&!this.save.seen[id]&&Math.hypot(e.x-p0.x,e.y-p0.y)<vr){this.save.seen[id]=1;this.newSeen=true;}}}
+      if(!this.sandbox&&(this._seenT=(this._seenT||0)-dt)<=0){this._seenT=.25;const vr=this.viewR*1.1,p0=this.p;for(const e of this.en){if(e.prop)continue;const id=e.boss?e.bd.id:e.def.id;if(id&&!this.save.seen[id]&&Math.hypot(e.x-p0.x,e.y-p0.y)<vr){this.save.seen[id]=1;this.newSeen=true;}}}
       if(this.newSeen){this.newSeen=false;this.progress.save.write();}
     }
 
@@ -2309,6 +2356,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       tag();ow=e;if(this.coop)p=this.coopTgt(e);   /* v120: co-op: the nearest standing hero */
       if(e.atk>0)e.atk-=dt;
       if(e.dead)continue;
+      if(e.prop){MOBJ.propTick(this,e,dt);continue;}   /* v135: breakables stand still */
       if(e.fl>0)e.fl-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,dist=Math.sqrt(dx*dx+dy*dy)||1,dyk=dy>0?dy/TOP_K:dy;
       if(!e.boss&&dx*dx+dyk*dyk>vrE*vrE){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
@@ -2406,10 +2454,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
      an enemy touching a boss moves the whole overlap), using the grid built at the start of the frame */
   crowdApart(){
     const G=EGRID,EN=this.en,n=EN.length,KB=[0,0,0,0,0,0,0,0,0],vd=this.stage.theme==='void'&&!this.trial;
-    for(let a=0;a<n;a++){const e=EN[a];if(e.dead||e.boss)continue;const se=e.ai!=='hover';
+    for(let a=0;a<n;a++){const e=EN[a];if(e.dead||e.boss)continue;const se=e.ai!=='hover'&&e.ai!=='prop';
       const cx=Math.floor(e.x/40),cy=Math.floor(e.y/40);let nk=0;
       for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){const k=G.key(gx,gy);let dup=false;for(let q=0;q<nk;q++)if(KB[q]===k){dup=true;break;}if(dup)continue;KB[nk++]=k;   /* (two cells in one bucket: walk it once) */
-        for(let b=G.head[k];b>=0;b=G.next[b]){if(b<=a)continue;const o=EN[b];if(o.dead)continue;const so=o.ai!=='hover';if(!se&&!so)continue;
+        for(let b=G.head[k];b>=0;b=G.next[b]){if(b<=a)continue;const o=EN[b];if(o.dead)continue;const so=o.ai!=='hover'&&o.ai!=='prop';if(!se&&!so)continue;
           const ox=e.x-o.x,oy=e.y-o.y,rr=(e.r+o.r)*.75,d2=ox*ox+oy*oy;
           if(d2<rr*rr&&d2>.01){const d=Math.sqrt(d2),push=(rr-d)*.5,ux=ox/d*push,uy=oy/d*push;if(se){e.x+=ux;e.y+=uy;}if(so){o.x-=ux;o.y-=uy;}}}}
       if(se)for(const bi of G.boss){const o=EN[bi];if(o.dead)continue;const ox=e.x-o.x,oy=e.y-o.y,rr=(e.r+o.r)*.75,d2=ox*ox+oy*oy;
@@ -2540,12 +2588,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.run.zeno=(this.run.zeno||0)+1;
     const p=this.p,cx=p.x,cy=p.y,pk=ZENO_PRICE,items=[],used=[];
     /* rarity follows Luck (higher luck -> better odds up to legendary); 1% of the items are mythic */
-    const L=this.S.luck,si=this.sd,W=[62/(1+L*.6),27*(1+.05*si+L*.8),9.5*(1+.1*si+L*1.6),1.5*(1+.15*si+L*2.4)],WT=W.reduce((a,b)=>a+b,0);   /* Luck pushes the stock towards higher rarities */
+    const L=this.S.luck,si=this.sdR,W=[62/(1+L*.6),27*(1+.05*si+L*.8),9.5*(1+.1*si+L*1.6),1.5*(1+.15*si+L*2.4)],WT=W.reduce((a,b)=>a+b,0);   /* Luck pushes the stock towards higher rarities */
     for(let i=0;i<4;i++){
-      let r=4;if(Math.random()>=.01){let q=Math.random()*WT;r=0;for(let k=0;k<4;k++){q-=W[k];if(q<=0){r=k;break;}}}
+      let r=4;if(Math.random()>=.01){let q=Math.random()*WT;r=0;for(let k=0;k<4;k++){q-=W[k];if(q<=0){r=k;break;}}}if(this.endless)r=Math.min(r,END_RAR);
       /* trinkets with stats can appear at any rarity; special-effect ones only at their own */
       const c=pickTrinket(r,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id));if(!c)continue;
-      used.push(c.id);items.push({id:c.id,rar:r,pf:rollPf(L),x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sd)),sold:false});
+      used.push(c.id);items.push({id:c.id,rar:r,pf:this.capPf(rollPf(L)),x:0,y:-30,price:Math.round(pk[r]*(1+.3*this.sdR)),sold:false});
     }
     items.forEach((it,i)=>{it.x=(i-(items.length-1)/2)*112;if(it.rar>=2){it.price=Math.round(it.price*.7);it.disc=true;}});   /* Epic and above: -30% */
     if(items.length)pick(items).free=true;   /* one random item is always free */
@@ -2603,7 +2651,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   /* killed: the Master defeated - the free upgrade only (transformation or weapon level), no stat swaps for sale (v132) */
   makeOffers(killed){
-    const ps=(1+.6*this.sd)*(.45+.55*Math.min(1,this.t/this.dur)),offers=[];
+    const ps=(1+.6*this.sdR)*(.45+.55*Math.min(1,this.t/this.dur)),offers=[];
     if(this.formsUnlocked<Math.min(6,this.formMax)&&FORM_TIERS[this.formsUnlocked].lvl-this.lvl<=10)offers.push({kind:'form',price:Math.round(170*ps*(1+.3*this.formsUnlocked))});
     const ws=[...this.weapons.values()].filter(w=>w.lv<WMAX);
     if(ws.length)offers.push({kind:'weapon',wid:pick(ws).id,price:Math.round(35*ps)});

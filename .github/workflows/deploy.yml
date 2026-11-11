@@ -54,7 +54,7 @@ jobs:
           cp -r dist/s site/s
           cp dist/sw.js site/sw.js
           mkdir -p site/assets
-          find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' \) -exec cp {} site/assets/ \;
+          find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' -o -name '*.mp4' \) -exec cp {} site/assets/ \;
           [ -f CNAME ] && cp CNAME site/CNAME || true
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3

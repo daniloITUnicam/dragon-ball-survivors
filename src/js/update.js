@@ -33,7 +33,7 @@ class Updater{
     if(!SW_ON||typeof navigator==='undefined'||!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
     navigator.serviceWorker.register('sw.js').catch(()=>{});
     navigator.serviceWorker.ready.then(r=>{
-      const keep=[...Object.values(SPRITE_PACK).map(d=>d&&d.u),...Object.values(FILE_TRACKS),...Object.values(FILE_SFX)].filter(u=>typeof u==='string'&&!u.startsWith('data:'));
+      const keep=[...Object.values(SPRITE_PACK).map(d=>d&&d.u),...Object.values(FILE_TRACKS),...Object.values(FILE_SFX),GACHA_VIDEO].filter(u=>typeof u==='string'&&!u.startsWith('data:'));
       if(r.active)r.active.postMessage({keep});
     }).catch(()=>{});
   }

@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
+ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','mapobj','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_trin','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -158,6 +158,11 @@ for f in sorted((ROOT/'assets').glob('*')):
     _sfx[k] = ('assets/' + urllib.parse.quote(f.name) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
     print('sfx:   %-8s <- %s (%s, %.0f KB)' % (k, f.name, _mode, f.stat().st_size / 1024))
 js = js.replace('/*__SFX__*/{}', json.dumps(_sfx, separators=(',', ':')))
+# ---- v136: the summon video of the Gacha shop (assets/gacha.mp4): linked in link mode only; without it the shop keeps the dragon-ball reels ----
+_gv = ROOT/'assets'/'gacha.mp4'
+_gvu = ('assets/gacha.mp4?v=' + hashlib.md5(_gv.read_bytes()).hexdigest()[:8]) if (_mode == 'link' and _gv.exists()) else ''
+js = js.replace("'__GVID__'", json.dumps(_gvu))
+if _gvu: print('video: gacha <- gacha.mp4 (%.1f MB)' % (_gv.stat().st_size / 1048576))
 # ---- optional sprite sheets: assets/sprites/[<folder>/]<id>.png / <id>_<n>.png (+ sprites.json overrides) ----
 # The sheets the game uses live in folders with a lowercase name (boss/, effetti/, rocce/, ...; loose files in assets/sprites/ work too). NOT scanned: folders that start
 # with "_" (_sorgenti = source art of the generators, _inutilizzati = sheets the game does not use) and folders with capitals or spaces (raw frame packs, see assets/sprites/README.md).

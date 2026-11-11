@@ -7,12 +7,11 @@ const DMG_NERF=.92;
 const xpNeed=l=>Math.floor((3+l*2.4+l*l*.22+(l>10?(l-10)*(l-10)*1.5:0))*1.35);
 
 /* every difficulty has its own run length (dur, seconds), the same on every stage: stage times, boss times and roster windows are stretched to fit */
-const DIFF={
-  easy:{n:T('Facile','Easy'),hp:.72,dmg:.7,spawn:.7,zenny:.7,dur:300},
-  normal:{n:T('Normale','Normal'),hp:1.0,dmg:1,spawn:1,zenny:1,dur:600},
-  hard:{n:T('Difficile','Hard'),hp:2,dmg:1.05,spawn:1.4,zenny:1.35,dur:900},
-  extreme:{n:T('Estremo','Extreme'),hp:4,dmg:1.26,spawn:1.5,zenny:2.4,dur:1800}
-};
+/* v134: one difficulty, a 30-minute run for every stage (the curve: Game.hpMul / dmgMul / spawnCap0 / spawnRate). The old ids (easy / hard / extreme, in saves,
+   links and server rows) read as it; Object.keys(DIFF) lists only 'normal'. The challenge on top is the Pacts. */
+const DIFF=new Proxy({normal:{n:T('Normale','Normal'),hp:1,dmg:1,spawn:1,zenny:1,dur:1800}},{get:(t,k)=>k in t?t[k]:(k==='easy'||k==='hard'||k==='extreme')?t.normal:undefined});
+/* v134: every stage has the same curve, a little harder each step: +2.5% enemy health and damage per stage, at most +10% */
+const STAGE_HARD=.025,STAGE_HARD_MAX=.10;
 
 /* ---------- Weapons ---------- */
 const WEAPONS={
@@ -209,7 +208,7 @@ const CHARS=[
   lock:T('Completa lo Stage 3','Clear Stage 3'),ul:r=>r.win&&r.pos>=2,price:38000,
   cfg:{skin:'#f5d3b0',outfit:'#3a4f78',legs:'#3a4f78',belt:'#8a5a2a',under:'#f2f0e8',sleeve:'#f2f0e8',hair:'#ffe9a0',hs:'long',boot:'#8a5a2a'}},
  {id:'broly',line:'broly',n:T('Broly','Broly'),d:T('Parte con l\'Aura. Enorme salute, lento ma devastante.','Starts with Aura. Huge HP, slow but devastating.'),start:['aura'],spd:.9,might:1.25,hp:140,regen:0,xpm:1,keepHair:true,
-  lock:T('Completa lo Stage 2 in Difficile','Clear Stage 2 on Hard'),ul:r=>r.win&&r.pos>=1&&(r.diff==='hard'||r.diff==='extreme'),price:165000,
+  lock:T('Completa lo Stage 2 con un Patto attivo','Clear Stage 2 with a Pact on'),ul:r=>r.win&&r.pos>=1&&r.pacts>0,price:165000,
   cfg:{skin:'#e0b084',outfit:'#6a4a2a',legs:'#6a4a2a',armor:'#3ba35a',shoulder:'#3ba35a',hair:'#7fe05a',hs:'vegeta',wide:true,boot:'#6a4a2a'}},
  {id:'freezer',line:'freezer',n:T('Freezer','Frieza'),d:T('Parte col Raggio Perforante. Danno +20%, meno salute.','Starts with Piercing Beam. +20% damage, less HP.'),start:['dbeam'],spd:1,might:1.2,hp:88,regen:0,xpm:1,
   lock:T('Sconfiggi 40 boss in totale','Defeat 40 bosses in total'),ul:r=>r.totBosses>=40,price:76000,
@@ -234,7 +233,7 @@ const CHARS=[
   lock:T('Sconfiggi 5 boss in totale','Defeat 5 bosses in total'),ul:r=>r.totBosses>=5,price:27000,
   cfg:{skin:'#d9a27a',outfit:'#2a2a3a',legs:'#2a2a3a',armor:'#b88a3a',shoulder:'#d9c07a',hair:'#15121c',hs:'long',boot:'#d9c07a'}},
  {id:'nappa',line:'saiyan2',n:T('Nappa','Nappa'),d:T('Cannone Distruttore. Molta salute, lento.','Break Cannon. Lots of HP, slow.'),start:['breaker'],spd:.9,might:1.15,hp:130,regen:.2,xpm:1,
-  lock:T('Completa lo Stage 1 in Difficile','Clear Stage 1 on Hard'),ul:r=>r.win&&r.sid===0&&(r.diff==='hard'||r.diff==='extreme'),price:36000,
+  lock:T('Completa lo Stage 1 con un Patto attivo','Clear Stage 1 with a Pact on'),ul:r=>r.win&&r.sid===0&&r.pacts>0,price:36000,
   cfg:{skin:'#e0a67a',outfit:'#3a3a46',legs:'#3a3a46',armor:'#c97d2e',shoulder:'#c97d2e',hs:'bald',stache:'#3a2a1a',wide:true,boot:'#c97d2e'}},
  {id:'ginyu',line:'freezer',n:T('Capitan Ginyu','Captain Ginyu'),d:T('Boomerang Ginyu. +10% esperienza.','Ginyu Boomerang. +10% XP.'),start:['boomer'],spd:1,might:1.05,hp:105,regen:0,xpm:1.1,
   lock:T('Raggiungi il livello 30 in una partita','Reach level 30 in a run'),ul:r=>r.lvl>=30,price:22000,
@@ -246,7 +245,7 @@ const CHARS=[
   lock:T('Completa lo Stage 7','Clear Stage 7'),ul:r=>r.win&&r.sid===6,price:38000,
   cfg:{skin:'#e8b890',outfit:'#3a3a46',legs:'#3a3a46',armor:'#c97d2e',shoulder:'#c97d2e',belt:'#c97d2e',hair:'#15121c',hs:'goku',band:'#d8302a',boot:'#c97d2e',wrist:'#c8302a'}},
  {id:'c17',line:'android',n:T('C-17','Android 17'),d:T('Disco Distruttore. Armatura +1, rigenera.','Destructo Disc. +1 armor, regenerates.'),start:['disc'],spd:1.05,might:1,hp:105,regen:.3,xpm:1,armor:1,
-  lock:T('Completa lo Stage 3 in Difficile','Clear Stage 3 on Hard'),ul:r=>r.win&&r.sid===2&&(r.diff==='hard'||r.diff==='extreme'),price:36000,
+  lock:T('Completa lo Stage 3 con un Patto attivo','Clear Stage 3 with a Pact on'),ul:r=>r.win&&r.sid===2&&r.pacts>0,price:36000,
   cfg:{skin:'#f2c9a0',outfit:'#2a2a3a',legs:'#2a4f8a',belt:'#f2a03a',under:'#f2a03a',sleeve:'#2a2a3a',hair:'#15121c',hs:'long',eye:'#2a4aa0',boot:'#5a3a2a'}},
  {id:'c16',line:'android',n:T('C-16','Android 16'),d:T('Granata Infernale. Gigante: molta salute, lento.','Hellzone Grenade. Giant: lots of HP, slow.'),start:['hellzone'],spd:.85,might:1.15,hp:150,regen:.3,xpm:1,armor:1,u:2.25,
   lock:T('Sconfiggi 40.000 nemici in totale','Defeat 40,000 enemies in total'),ul:r=>r.totKills>=40000,price:70000,
@@ -258,13 +257,13 @@ const CHARS=[
   lock:T('Raggiungi il livello 45 in una partita','Reach level 45 in a run'),ul:r=>r.lvl>=45,price:170000,
   cfg:{skin:'#d8a898',outfit:'#c8302a',legs:'#3a3a4a',belt:'#f2c230',hair:'#d8d8e0',hs:'bald',beard:true,beardC:'#d8d8e0',wide:true,boot:'#f4f1ea'}},
  {id:'hit',line:'pride',n:T('Hit','Hit'),d:T('Salto Temporale. Veloce, ricarica -10%.','Time Skip. Fast, -10% cooldown.'),start:['chrono'],spd:1.15,might:1.1,hp:90,regen:0,xpm:1,cd:.9,
-  lock:T('Completa lo Stage 5 in Difficile','Clear Stage 5 on Hard'),ul:r=>r.win&&r.sid===4&&(r.diff==='hard'||r.diff==='extreme'),price:160000,
+  lock:T('Completa lo Stage 5 con un Patto attivo','Clear Stage 5 with a Pact on'),ul:r=>r.win&&r.sid===4&&r.pacts>0,price:160000,
   cfg:{skin:'#d8c0b0',outfit:'#3a3a5a',legs:'#3a3a5a',belt:'#e8e0d0',under:'#2a2a46',hair:'#2a2a3a',hs:'trunks',eye:'#8aa0ff',cape:'#2a2a46',boot:'#2a2a3a'}},
  {id:'kefla',line:'saiyan2',n:T('Kefla','Kefla'),d:T('Meteora di Fusione. Danno +15%.','Fusion Meteor. +15% damage.'),start:['meteor'],spd:1.1,might:1.15,hp:100,regen:0,xpm:1,
-  lock:T('Completa lo Stage 8 in Difficile','Clear Stage 8 on Hard'),ul:r=>r.win&&r.sid===7&&(r.diff==='hard'||r.diff==='extreme'),price:92000,
+  lock:T('Completa lo Stage 8 con un Patto attivo','Clear Stage 8 with a Pact on'),ul:r=>r.win&&r.sid===7&&r.pacts>0,price:92000,
   cfg:{skin:'#f2b98a',outfit:'#3ba35a',legs:'#e8742c',under:'#f2c230',sleeve:'#f2c230',belt:'#f2c230',hair:'#15121c',hs:'long',boot:'#f2c230',wrist:'#3ba35a'}},
  {id:'beerus',line:'god',n:T('Beerus','Beerus'),d:T('Aura e Sfera della Distruzione. Ricarica -8%.','Aura and Sphere of Destruction. -8% cooldown.'),start:['aura','hakai'],spd:1,might:1.1,hp:100,regen:0,xpm:1,cd:.92,
-  lock:T('Completa lo Stage 9 in Difficile','Clear Stage 9 on Hard'),ul:r=>r.win&&r.sid===8&&(r.diff==='hard'||r.diff==='extreme'),price:250000,
+  lock:T('Completa lo Stage 9 con un Patto attivo','Clear Stage 9 with a Pact on'),ul:r=>r.win&&r.sid===8&&r.pacts>0,price:250000,
   cfg:{skin:'#9886c0',outfit:'#6a3aa0',legs:'#6a3aa0',belt:'#f2c230',hair:'#9886c0',hs:'bald',ears:true,eye:'#ffd23f',cape:'#4a2a7a',boot:'#f2c230'}},
  {id:'jiren',line:'pride',n:T('Jiren','Jiren'),d:T('Impatto Potente e Aura. Danno +30%, armatura +1.','Power Impact and Aura. +30% damage, +1 armor.'),start:['shock','aura'],spd:1,might:1.3,hp:125,regen:0,xpm:1,armor:1,
   lock:T('Completa lo Stage 10','Clear Stage 10'),ul:r=>r.win&&r.sid===9,price:215000,
@@ -273,7 +272,7 @@ const CHARS=[
   lock:T('Sconfiggi 150 boss in totale','Defeat 150 bosses in total'),ul:r=>r.totBosses>=150,price:300000,
   cfg:{skin:'#8ad0e0',outfit:'#6a3aa0',legs:'#6a3aa0',armor:'#f4f1ea',shoulder:'#f4f1ea',belt:'#f4f1ea',hair:'#e8e8f4',hs:'trunks',eye:'#7a3aa0',staff:true,boot:'#f4f1ea'}},
  {id:'gogeta',line:'saiyan2',n:T('Gogeta','Gogeta'),d:T('Big Bang Kamehameha e Colpo di Ki. Danno +20%.','Big Bang Kamehameha and Ki Blast. +20% damage.'),start:['sweep','ki'],spd:1.05,might:1.2,hp:100,regen:0,xpm:1,
-  lock:T('Completa lo Stage 11 in Difficile','Clear Stage 11 on Hard'),ul:r=>r.win&&r.sid===10&&(r.diff==='hard'||r.diff==='extreme'),price:260000,
+  lock:T('Completa lo Stage 11 con un Patto attivo','Clear Stage 11 with a Pact on'),ul:r=>r.win&&r.sid===10&&r.pacts>0,price:260000,
   cfg:{skin:'#f2b98a',outfit:'#142a88',legs:'#f1efe8',belt:'#e8742c',under:'#f1efe8',sleeve:'#142a88',hair:'#15121c',hs:'vegeta',boot:'#f2c230',wrist:'#e8742c'}},
  {id:'dyspo',line:'pride',n:T('Dyspo','Dyspo'),d:T('Calcio Dinamite. Velocissimo, ricarica -10%, fragile.','Dynamite Kick. Super fast, -10% cooldown, fragile.'),start:['dyn'],spd:1.28,might:1,hp:80,regen:0,xpm:1,cd:.9,
   lock:T('Completa lo Stage 5','Clear Stage 5'),ul:r=>r.win&&r.sid===4,price:52000,
@@ -288,13 +287,13 @@ const CHARS=[
   lock:T('Completa lo Stage 8','Clear Stage 8'),ul:r=>r.win&&r.sid===7,price:54000,
   cfg:{skin:'#ff9ec7',outfit:'#3a3a56',legs:'#f4f1ea',belt:'#e8a8d0',under:'#f4f1ea',sleeve:'#f4f1ea',hair:'#f4f1ea',hs:'long',eye:'#ff3b5a',boot:'#3a3a56'}},
  {id:'kale',line:'kale',n:T('Kale','Kale'),d:T('Big Bang Kamehameha. Danno +25%, molta salute, ricarica lenta.','Big Bang Kamehameha. +25% damage, lots of HP, slower cooldown.'),start:['sweep'],spd:.95,might:1.25,hp:125,regen:0,xpm:1,cd:1.1,
-  lock:T('Completa lo Stage 7 in Difficile','Clear Stage 7 on Hard'),ul:r=>r.win&&r.sid===6&&(r.diff==='hard'||r.diff==='extreme'),price:59000,
+  lock:T('Completa lo Stage 7 con un Patto attivo','Clear Stage 7 with a Pact on'),ul:r=>r.win&&r.sid===6&&r.pacts>0,price:59000,
   cfg:{skin:'#e0b084',outfit:'#3a3a46',legs:'#3a3a46',belt:'#f2c230',armor:'#f2c230',hair:'#15121c',hs:'long',boot:'#f2c230',wrist:'#f2c230',wide:true}},
  {id:'zamasu',line:'zamasu',n:T('Zamasu','Zamasu'),d:T('Spada e Fulmine Angelico. Rigenera, ricarica -8%.','Sword and Angelic Bolt. Regenerates, -8% cooldown.'),start:['slash','chain'],spd:1,might:1.05,hp:100,regen:.5,xpm:1,cd:.92,
   lock:T('Completa lo Stage 9','Clear Stage 9'),ul:r=>r.win&&r.sid===8,price:90000,
   cfg:{skin:'#a8d8b0',outfit:'#6a4aa0',legs:'#6a4aa0',belt:'#e8c040',armor:'#f4f1ea',shoulder:'#f4f1ea',hair:'#f4f1ea',hs:'bald',pointy:true,eye:'#c8302a',boot:'#e8c040'}},
  {id:'black',line:'black',n:T('Goku Black','Goku Black'),d:T('Spada e Colpo di Ki. Danno +20%, veloce.','Sword and Ki Blast. +20% damage, fast.'),start:['slash','ki'],spd:1.1,might:1.2,hp:95,regen:0,xpm:1,
-  lock:T('Completa lo Stage 9 in Difficile','Clear Stage 9 on Hard'),ul:r=>r.win&&r.sid===8&&(r.diff==='hard'||r.diff==='extreme'),price:78000,
+  lock:T('Completa lo Stage 9 con un Patto attivo','Clear Stage 9 with a Pact on'),ul:r=>r.win&&r.sid===8&&r.pacts>0,price:78000,
   cfg:{skin:'#d9a98a',outfit:'#2a2630',legs:'#2a2630',belt:'#d8a0b8',under:'#9a7ab0',hair:'#15121c',hs:'goku',boot:'#9a7ab0',wrist:'#9a7ab0',sleeve:'#2a2630'}},
  {id:'fzamasu',line:'fzamasu',n:T('Zamasu Fuso','Fused Zamasu'),d:T('Fulmine Angelico e Meteora. Danno +25%, molta salute, rigenera.','Angelic Bolt and Meteor. +25% damage, lots of HP, regenerates.'),start:['chain','meteor'],spd:1,might:1.25,hp:130,regen:.6,xpm:1,
   lock:T('Sconfiggi 200 boss in totale','Defeat 200 bosses in total'),ul:r=>r.totBosses>=200,price:280000,
@@ -313,7 +312,7 @@ const CHARS=[
   lock:T('Completa lo Stage 3','Clear Stage 3'),ul:r=>r.win&&r.sid===2,price:28000,
   cfg:{skin:'#f2b98a',outfit:'#3a8a4a',legs:'#3a8a4a',belt:'#f2c230',cape:'#c8302a',gloves:'#c8302a',hs:'bald',turban:'#e8e8f0',shades:true,boot:'#c8302a',wrist:'#f2c230',shoulder:'#f2c230'}},
  {id:'chaozu',line:'chaozu',n:T('Chiaotzu','Chiaotzu'),d:T('Raggio Perforante. Piccolo e veloce, raccolta ampliata, fragile.','Piercing Beam. Small and fast, wider pickup, fragile.'),start:['dbeam'],spd:1.08,might:.95,hp:85,regen:0,xpm:1.1,mag:1.3,u:1.7,
-  lock:T('Completa lo Stage 6 in Difficile','Clear Stage 6 on Hard'),ul:r=>r.win&&r.sid===5&&(r.diff==='hard'||r.diff==='extreme'),price:13000,
+  lock:T('Completa lo Stage 6 con un Patto attivo','Clear Stage 6 with a Pact on'),ul:r=>r.win&&r.sid===5&&r.pacts>0,price:13000,
   cfg:{skin:'#f4efe6',outfit:'#2f6fd8',legs:'#2f6fd8',belt:'#e8742c',sleeve:'#e8742c',hs:'bald',boot:'#e8742c',wrist:'#e8742c'}},
  {id:'recoome',line:'force',n:T('Recoome','Recoome'),d:T('Cannone d\'Impatto. Gigante: danno +30%, molta salute, lento.','Break Cannon. Giant: +30% damage, lots of HP, slow.'),start:['breaker'],spd:.9,might:1.3,hp:125,regen:0,xpm:1,armor:1,u:2.2,
   lock:T('Completa lo Stage 2','Clear Stage 2'),ul:r=>r.win&&r.sid===1,price:48000,
@@ -340,7 +339,7 @@ const CHARS=[
   lock:T('Sconfiggi 80.000 nemici in totale','Defeat 80,000 enemies in total'),ul:r=>r.totKills>=80000,price:24000,
   cfg:{skin:'#34303c',outfit:'#2a58c8',legs:'#2a58c8',belt:'#f2c230',hs:'bald',turban:'#e8d890',boot:'#f2c230',wide:true,eye:'#ffd23f'}},
  {id:'uub',line:'uub',n:T('Uub','Uub'),d:T('Kamehameha e Sfere Eccentriche. Danno +20%, veloce.','Kamehameha and Homing Orbs. +20% damage, fast.'),start:['kame','homing'],spd:1.1,might:1.2,hp:100,regen:0,xpm:1,u:1.85,
-  lock:T('Completa lo Stage 4 in Difficile','Clear Stage 4 on Hard'),ul:r=>r.win&&r.sid===3&&(r.diff==='hard'||r.diff==='extreme'),price:88000,
+  lock:T('Completa lo Stage 4 con un Patto attivo','Clear Stage 4 with a Pact on'),ul:r=>r.win&&r.sid===3&&r.pacts>0,price:88000,
   cfg:{skin:'#8a5a3a',outfit:'#e8742c',legs:'#e8742c',belt:'#2347a8',under:'#2347a8',hair:'#15121c',hs:'mohawk',boot:'#2347a8',wrist:'#2347a8'}},
  {id:'frost',line:'frost',n:T('Frost','Frost'),d:T('Raggio Perforante e Fulmine Angelico. Danno +15%, veloce.','Piercing Beam and Angelic Bolt. +15% damage, fast.'),start:['dbeam','chain'],spd:1.05,might:1.15,hp:105,regen:0,xpm:1,
   lock:T('Completa uno stage con il moltiplicatore x2','Clear a stage with the x2 modifier'),ul:r=>r.win&&r.x2,price:49000,
@@ -350,7 +349,7 @@ const CHARS=[
   cfg:{skin:'#5aa83a',outfit:'#c8302a',legs:'#6a3d9a',belt:'#e8c040',armor:'#6a3d9a',shoulder:'#e8c040',cape:'#6a3d9a',hair:'#5aa83a',hs:'antenna',pointy:true,band:'#e8c040',boot:'#e8c040',wide:true,eye:'#ff3b3b'}},
  /* Zeno-sama: as strong as Vampire Survivors' Queen Sigma (333 health, armor 3, +50% damage, -25% cooldown, +1% damage per level) with every number raised a bit. Not for sale: clear every stage on Extreme and unlock every weapon. His art is the picture of his shop (Sprites.zenoSheet). */
  {id:'zeno',line:'zeno',n:T('Zeno-sama','Zeno-sama'),d:T('Hakai e Genkidama. Il più forte di tutti: salute, danno, armatura e rigenerazione enormi, ricarica -30%, e il danno cresce a ogni livello.','Sphere of Destruction and Spirit Bomb. The strongest of all: huge health, damage, armor and regeneration, -30% cooldown, and damage grows with every level.'),start:['hakai','spirit'],spd:1.4,might:1.65,hp:360,regen:2,xpm:1.35,armor:4,cd:.7,mag:2,lvMight:.015,u:1.85,
-  lock:T('Completa ogni stage in modalità Estrema e sblocca tutte le armi','Clear every stage on Extreme and unlock every weapon'),ul:r=>r.allX&&r.allW,
+  lock:T('Completa ogni stage e sblocca tutte le armi','Clear every stage and unlock every weapon'),ul:r=>r.allX&&r.allW,
   cfg:{skin:'#7ab8e8',outfit:'#d83a9a',legs:'#e8c83a',belt:'#ffd23f',hair:'#7ab8e8',hs:'bald',eye:'#2a2a3a',boot:'#d83a9a',cape:'#d83a9a',emblem:'#ffffff'}}];
 
 /* ---------- Enemies ---------- */
@@ -587,7 +586,7 @@ const STAGES=[
   roster:[['fighter',0,8,300],['war',20,6],['archer',40,3],['unibomb',60,3],['phantom',90,4],['messenger',120,3],['cosmberserk',150,4],['champ',260,2.4],['col',320,2.2],['silvercol',420,1.8]],
   bosses:[['dyspo',200],['bergamo',300],['basil',390],['lavender',470],['ribrianne',560],['cabba',650],['caulifla',745],['kale',840],['frost',940],['hit',1030],['toppo',1110],['jiren',1200,1]]},
  {id:6,n:T('Isola di Muten','Roshi\'s Island'),theme:'beach',time:480,dif:.4,req:0,hp:1.05,spawn:1,xp:1.3,zenny:1.2,music:6,
-  roster:[['rrs',0,9,240],['wolf',0,5,320],['crab',10,6,260],['pter',20,6,300],['ninja',45,3.5],['pirate',60,5],['rrbomb',80,3],['gun',100,3.5],['rap',140,3.5],['cave',180,4],['dino',240,2],['turtle',260,1.6],['cave2',300,2],['ninja2',340,2.2]],
+  roster:[['rrs',0,9,240],['wolf',60,5,320],['crab',10,6,260],['pter',20,6,300],['ninja',45,3.5],['pirate',60,5],['rrbomb',80,3],['gun',100,3.5],['rap',140,3.5],['cave',180,4],['dino',240,2],['turtle',260,1.6],['cave2',300,2],['ninja2',340,2.2]],
   bosses:[['tao',130],['tenshin',260],['jackie',380],['kingpiccolo',480,1]]},
  {id:7,n:T('Pianeta Vegeta','Planet Vegeta'),theme:'redrock',time:600,dif:1.5,req:1,hp:1.3,spawn:1.05,xp:1.6,zenny:1.6,music:7,
   roster:[['srenegade',0,9,260],['rasin',0,5,260],['sberserk',40,4],['lakasei',70,4],['cacao',90,3],['magmabomb',60,3],['pter2',130,3],['amond',160,4],['daiz',240,2.4],['treant',330,1.8]],
@@ -694,7 +693,8 @@ function rollPf(luck,boost){   /* boost: multiplies the odds of every 'X or more
   return Math.max(0,Math.min(100,Math.round(x*(1+L*.25))));}
 const hasPf=t=>!!(t&&t.m);
 const pfFloor=(p,min)=>min>0?Math.round(min+(100-min)*p/100):p;   /* a perfection roll squeezed into min..100 (chests from Epic up) */
-const TRIN_RUN_CAP=Infinity;   /* v109: no limit to the trinkets carried during a run, all of them count (the bag slots before a run stay 1-3) */
+const TRIN_RUN_CAP=Infinity,KEEP_N=2,FUSE_MAX=2;   /* v136: KEEP_N found trinkets go home after a win; a fused trinket carries FUSE_MAX extra stats at most */
+/* v109: no limit to the trinkets carried during a run, all of them count (the bag slots before a run stay 1-3) */
 const perfColor=p=>p>=100?'#e8f4ff':p>=80?'#ffd23f':p>=55?'#8be07a':p>=30?'#4ab0ff':'#9aa4b0';
 /* Quantità (key proj): +1 projectile for every weapon. Only Legendary and Mythic trinkets carry it: Legendary 2 (3 with a perfect 100 roll), Mythic 3 (4 from a 50 roll, 5 with a perfect 100 roll) */
 const trinProj=(r,pf)=>{const p=pf==null?PF_NOM:pf;return r<3?0:r===3?2+(p>=100?1:0):3+(p>=50?1:0)+(p>=100?1:0);};
@@ -708,15 +708,32 @@ function pickTrinket(r,ok,rnd){
   for(const t of pool){q-=wt(t);if(q<=0)return t;}
   return pool[pool.length-1];
 }
-function trinMods(t,r,pf){
+/* v136: a fused trinket (Gacha shop > Fusion) also carries one stat of each of the two trinkets fused into it: fu = [{id,k}] (at most FUSE_MAX), the stat k of
+   trinket id computed at the fused trinket's rarity and perfection; where it has that stat already the best value counts. Its effect stays its own. */
+function trinMods(t,r,pf,fu){
+  const o=trinMods0(t,r,pf);
+  if(t&&fu&&fu.length){if(r==null)r=t.r;for(const e of fu){const m=trinMods0(trinDef(e.id),r,pf),v=m[e.k];if(v>0&&!(o[e.k]>=v))o[e.k]=v;}}
+  return o;
+}
+/* the best stat of a trinket at rarity r (the highest share of that stat's cap), skipping the keys in `skip` when it has another one */
+function trinBestStat(id,fu,r,skip){
+  const c=[];const add=(tid,k)=>{const m=trinMods0(trinDef(tid),r,PF_NOM),v=m[k];if(v>0&&k!=='proj')c.push({id:tid,k,s:v/((TCAP[k]||1)*RS[r])});};
+  {const t=trinDef(id);if(t&&t.m)for(const k in t.m)add(id,k);}
+  for(const e of (fu||[]))add(e.id,e.k);
+  if(!c.length)return null;c.sort((a,b)=>b.s-a.s);
+  const b=c.find(x=>!(skip&&skip.has(x.k)))||c[0];return{id:b.id,k:b.k};
+}
+const isFused=fu=>!!(fu&&fu.length);
+const hasPfE=(t,fu)=>hasPf(t)||isFused(fu);   /* perfection matters: a trinket with stats, or a fused one */
+function trinMods0(t,r,pf){
   if(!t||!t.m)return{};
   if(r==null)r=t.r;
   const k=RS[r]/RS[t.r],o={},f=pfK(pf);
   for(const key in t.m){if(key==='proj'){o.proj=trinProj(r,pf);continue;}const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
   return o;
 }
-function trinStats(t,r,pf){
-  const m=trinMods(t,r,pf),out=[];
+function trinStats(t,r,pf,fu){
+  const m=trinMods(t,r,pf,fu),out=[];
   for(const key in m){
     const v=m[key];if(!v)continue;const L=TLAB[key]||[key,key];
     if(key==='proj'){out.push({k:key,v,t:T('+'+v+' quantità','+'+v+' amount')});}
@@ -726,10 +743,11 @@ function trinStats(t,r,pf){
   }
   return out;
 }
-function trinDesc(t,r,pf){
-  if(!t.m||(t.sp&&!t.x))return t.d;
-  const st=trinStats(t,r,pf);
-  return T(st.map(x=>x.t.it).join(', ')+'.'+(t.x?' '+t.x.it:''),st.map(x=>x.t.en).join(', ')+'.'+(t.x?' '+t.x.en:''));
+function trinDesc(t,r,pf,fu){
+  const fz=isFused(fu);
+  if(!fz&&(!t.m||(t.sp&&!t.x)))return t.d;
+  const st=trinStats(t,r,pf,fu),x=t.x||(t.sp&&!t.m?t.d:null);
+  return T(st.map(x=>x.t.it).join(', ')+'.'+(x?' '+x.it:''),st.map(x=>x.t.en).join(', ')+'.'+(x?' '+x.en:''));
 }
 for(const t of TRINKETS)if(t.m&&!(t.sp&&!t.x))t.d=trinDesc(t,t.r);   /* the shown text always matches the (capped) stats */
 const TRIN_PICK=4;    /* trinkets offered by a boss chest (it was 4 + up to 6 more with Luck, 10 at most) */
@@ -921,7 +939,7 @@ const ACHIEVEMENTS=[
  A('t5','Resistenza','Endurance','Sopravvivi 5 minuti.','Survive 5 minutes.',100,s=>s.run.t>=300,PG(s=>s.rec.t,300,'t')),
  A('t10','Maratoneta','Marathoner','Sopravvivi 10 minuti.','Survive 10 minutes.',200,s=>s.run.t>=600,PG(s=>s.rec.t,600,'t')),
  A('t20','Instancabile','Tireless','Sopravvivi 20 minuti.','Survive 20 minutes.',600,s=>s.run.t>=1200,PG(s=>s.rec.t,1200,'t')),
- A('t30','Eternità','Eternity','Sopravvivi 30 minuti (modalità Estremo).','Survive 30 minutes (Extreme mode).',1500,s=>s.run.t>=1800,PG(s=>s.rec.t,1800,'t')),
+ A('t30','Eternità','Eternity','Sopravvivi 30 minuti.','Survive 30 minutes.',1500,s=>s.run.t>=1800,PG(s=>s.rec.t,1800,'t')),
  /* level */
  A('l10','Allievo','Pupil','Raggiungi il livello 10.','Reach level 10.',50,s=>s.run.lvl>=10,PG(s=>s.rec.lvl,10)),
  A('l25','Maestro','Master','Raggiungi il livello 25.','Reach level 25.',100,s=>s.run.lvl>=25,PG(s=>s.rec.lvl,25)),
@@ -970,8 +988,8 @@ const ACHIEVEMENTS=[
  A('z100k','Magnate','Tycoon','Guadagna 100.000 zenny in totale.','Earn 100,000 zenny in total.',2000,s=>s.zenny>=100000,PG(s=>s.zenny,100000)),
  A('coin2k','Portafoglio gonfio','Fat Wallet','Raccogli 2.000 monete in una sola partita.','Collect 2,000 coins in a single run.',300,s=>s.run.coins>=2000,PG(s=>s.rec.coins,2000)),
  /* difficulty, modes, collection */
- A('hard','Duro a morire','Hard to Kill','Completa uno stage in Difficile.','Clear a stage on Hard.',800,s=>s.hardClears>=1,PG(s=>s.hardClears,1)),
- A('ext','Inferno in terra','Hell on Earth','Completa uno stage in Estremo.','Clear a stage on Extreme.',2500,s=>s.extremeClears>=1,PG(s=>s.extremeClears,1)),
+ A('hard','Duro a morire','Hard to Kill','Completa uno stage con almeno un Patto attivo.','Clear a stage with at least one Pact on.',800,s=>s.hardClears>=1,PG(s=>s.hardClears,1)),
+ A('ext','Inferno in terra','Hell on Earth','Completa uno stage con almeno 3 Patti attivi.','Clear a stage with at least 3 Pacts on.',2500,s=>s.extremeClears>=1,PG(s=>s.extremeClears,1)),
  A('x2','Doppio spasso','Double Trouble','Completa uno stage in modalità x2.','Clear a stage in x2 mode.',800,s=>s.x2Clears>=1,PG(s=>s.x2Clears,1)),
  A('runs10','Non mollo mai','Never Give Up','Gioca 10 partite.','Play 10 runs.',150,s=>s.runs>=10,PG(s=>s.runs,10)),
  A('runs50','Veterano','Veteran','Gioca 50 partite.','Play 50 runs.',600,s=>s.runs>=50,PG(s=>s.runs,50)),

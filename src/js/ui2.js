@@ -24,7 +24,7 @@ function wsFx(id,a,b){
   }
   return out.length?out:null;
 }
-const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup')};
+const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup'),xp:T('Esperienza','Experience')};
 const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets'),immortal:T('Immortalità','Immortality'),transform:T('Trasformazione','Transformation'),legend:T('Cimelio leggendario','Legendary trinket'),lucky:T('Ticket 10× Fortunato (Porunga)','Lucky Ticket 10× (Porunga)'),char:T('Un personaggio (Porunga)','A character (Porunga)')};
 Object.assign(UI.prototype,{
   /* ---------- settings ---------- */
@@ -231,12 +231,12 @@ Object.assign(UI.prototype,{
   /* v131: the trinkets found in this run, in their own window, with the same search / rarity / sort filters as the trinket bag */
   screen_runTrinkets(){
     const g=this.app.game,st=this.rtF||(this.rtF={q:'',rar:[1,1,1,1,1],sort:'new'});
-    const all=g?g.trinkets.map((id,n)=>{const r=g.trR(id),p=hasPf(trinDef(id))?g.trP(id):null;return{id,r,p,n,i:this.tinfo(id,r,p)};}):[];
+    const all=g?g.trinkets.map((id,n)=>{const r=g.trR(id),fu=g.tFu&&g.tFu[id],p=hasPfE(trinDef(id),fu)?g.trP(id):null;return{id,r,p,n,fu,i:this.tinfo(id,r,p,fu)};}):[];
     const grid=h('div',{class:'baggrid'}),shown=h('span',{class:'achshown'});
     const sorts={new:(x,y)=>y.n-x.n,old:(x,y)=>x.n-y.n,rar:(x,y)=>y.r-x.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.r-x.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.r-x.r};
     const fill=()=>{
       const q=RAR_NORM(st.q.trim()),list=all.filter(o=>st.rar[o.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
-      grid.replaceChildren(...(list.length?list.map(o=>this.tcard(o.id,o.r,{p:o.p})):[h('p',{class:'sub'},this.t(all.length?'bagNone':'runTrinNone'))]));
+      grid.replaceChildren(...(list.length?list.map(o=>this.tcard(o.id,o.r,{p:o.p,fu:o.fu})):[h('p',{class:'sub'},this.t(all.length?'bagNone':'runTrinNone'))]));
       shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
     };
     const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rtc'+r,onclick:e=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;e.currentTarget.classList.toggle('on',!!st.rar[r]);fill();}},this.tr(RARITY[r].n))));
@@ -306,13 +306,14 @@ Object.assign(UI.prototype,{
     if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null};}
+    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
     const fc=info.cat&&CAT_COL[info.cat];
     return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
+      info.trin?potara('pcard'):null,
       info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
@@ -376,14 +377,14 @@ Object.assign(UI.prototype,{
           return h('div',{class:'tsrow '+(va>vb?'up':va<vb?'down':'eq')},a?this.tr(a.t):'—',h('b',null,va>vb?' ▲':va<vb?' ▼':''));}));
         const sp=t.x||(t.sp?t.d:null);
         return h('div',{class:'tscol'+(pf!=null&&pf>=100?' perfect':''),style:'--c:'+RARITY[r].c},h('div',{class:'tstag'},tag),
-          h('div',{class:'tshead'},glyph(t.k,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
+          h('div',{class:'tshead'},glyph(t.k,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},potara(),this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
           this.perfBar(pf),h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null,extra||null);};
       const rep=(i,lbl)=>h('button',{class:'btn'+(i===weak?' primary':' alt'),'data-focus':i===weak?true:null,onclick:()=>{this.sfx('chest');this.app.resolveModal(i);}},(multi?(i+1)+' · ':'')+lbl);
-      const curCols=curs.map((c,i)=>{const ct=trinDef(c.id),cp=hasPf(ct)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf);
+      const curCols=curs.map((c,i)=>{const ct=trinDef(c.id),cp=hasPfE(ct,c.fu)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf,c.fu);
         return col(ct,c.rar,cp,st,sn,this.t(c.src==='bag'?'swapCurBag':'swapCur'),h('div',{class:'tsextra'},dl(cp,np),c.src==='bag'?null:sell(this.t('swapSellOld'),c.rar),multi?h('div',{class:'row tsbtn'},rep(i,this.t('swapReplace'))):null));});
       const c0=curs[0],cmp=sc(m.nw.id,m.nw.rar,m.nw.pf)-Math.max(...curs.map(c=>sc(c.id,c.rar,c.pf))),vd=cmp>0?'up':cmp<0?'down':'eq';
       const verdict=h('div',{class:'tsverdict '+vd},this.t(cmp>0?'swapBetter':cmp<0?'swapWorse':'swapSame'));
-      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(trinDef(c0.id),c0.rar,c0.pf),this.t('swapNew'),h('div',{class:'tsextra'},multi?null:dl(hasPf(trinDef(c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
+      const newCol=col(nt,m.nw.rar,np,sn,multi?[]:trinStats(trinDef(c0.id),c0.rar,c0.pf,c0.fu),this.t('swapNew'),h('div',{class:'tsextra'},multi?null:dl(hasPf(trinDef(c0.id))?(c0.pf!=null?c0.pf:PF_NOM):null,np),multi?null:verdict,m.buy?null:sell(this.t('swapSellNew'),m.nw.rar)),multi);
       el=h('div',{class:'screen modal'},h('h2',null,this.t(multi?'swapTitleN':'swapTitle1')),
         h('p',{class:'sub'},this.t(multi?'swapSubN':'swapSub1',{n:curs.length})),
         h('div',{class:'tswap'+(multi?' multi':'')},multi?[newCol,h('div',{class:'tsarrow'},'→'),...curCols]:[curCols[0],h('div',{class:'tsarrow'},'→'),newCol]),
@@ -459,7 +460,7 @@ Object.assign(UI.prototype,{
         w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
-    if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),pf=hasPf(t)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')),h('p',null,this.tr(trinDesc(t,rr,pf))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
+    if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),fu=g.tFu&&g.tFu[z.id],pf=hasPfE(t,fu)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')+(fu?' · ⚗':'')),h('p',null,this.tr(trinDesc(t,rr,pf,fu))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
     if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
       ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
     if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}

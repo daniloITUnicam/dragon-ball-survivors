@@ -13,6 +13,9 @@ const GACHA={
   maxPulls:100                                    /* most pulls in one go (tickets spent together) */
 };
 const TICKET_KINDS=['t1','t10','l10'];
+/* v136: Gacha shop > Reroll: a new perfection roll (pf) or another trinket of the same rarity (id, perfection and fusion kept), for zenny by rarity;
+   the player then keeps the new one or the old one. Gacha shop > Fusion: three trinkets become one (Progress.fusePlan). */
+const REROLL_COST={pf:[120,300,750,1800,4500],id:[200,500,1200,3000,7500]};
 /* tickets bought with zenny: a 1x ticket costs TICKET_PRICE.t1, a 10x ticket 10 times as much; on Saturday and Sunday the 10x ticket is 20% cheaper. The Lucky ticket is not for sale. */
 const TICKET_PRICE={t1:1000,t10:10000},TICKET_WEEKEND=.2;
 const isWeekend=(d)=>{const w=(d||new Date()).getDay();return w===0||w===6;};
@@ -65,6 +68,48 @@ Object.assign(Progress.prototype,{
       out.push(res);
     }
     this.save.write();return out;
+  }
+  ,bagGet(k){return this.d.bag.find(b=>trinketKey(b.id,b.r)===k)||null;}
+  /* Test mode: only the trinkets pulled in Test can be rerolled or fused (they go away with it), for free */
+  ,canWork(b){return !!b&&(!this.d.settings.sandbox||!!b.t);}
+  ,rerollCost(kind,r){return this.d.settings.sandbox?0:(REROLL_COST[kind]||[])[r]||0;}
+  /* spends the zenny and returns the candidate {id,r,p,f} (nothing changes in the bag until rerollApply), or null */
+  ,rerollRoll(kind,k){
+    const d=this.d,b=this.bagGet(k);if(!this.canWork(b))return null;const c=this.rerollCost(kind,b.r);if(d.zenny<c)return null;
+    let o=null;
+    if(kind==='pf'){if(hasPfE(trinDef(b.id),b.f))o={id:b.id,r:b.r,p:rollPf(0),f:b.f};}
+    else{const own=new Set(d.bag.map(x=>trinketKey(x.id,x.r))),t=pickTrinket(b.r,q=>q.id!==b.id&&!own.has(trinketKey(q.id,b.r))&&!(b.f||[]).some(e=>e.id===q.id));if(t)o={id:t.id,r:b.r,p:b.p,f:b.f};}
+    if(!o)return null;
+    d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;this.save.write();return o;
+  }
+  ,rerollApply(k,o){
+    const d=this.d,b=this.bagGet(k);if(!b||!o||(o.id!==b.id&&this.bagHas(o.id,b.r)))return null;
+    const eqs=d.equips||[];
+    for(let i=0;i<eqs.length;i++){const e=eqs[i];if(!e)continue;if(e.id===b.id&&e.r===b.r)eqs[i]={id:o.id,r:b.r};else if(e.id===o.id)eqs[i]=null;}   /* the slot follows; another rarity of the new trinket leaves its slot */
+    b.id=o.id;b.p=o.p;if(isFused(o.f)){b.f=o.f.filter(e=>e.id!==o.id);if(!b.f.length)delete b.f;}
+    if(d.trin)d.trin[o.id]=1;d.equip=eqs[0]||null;this.save.write();return trinketKey(b.id,b.r);
+  }
+  /* three bag trinkets -> one: the rarity of the rarest (that one is the base: its trinket and its effect; ties: the better perfection), the stats of all three
+     Rule (v136b): the base is the one with the highest perfection (ties: the rarer); the result is that trinket, at the highest rarity of the three, with its
+     perfection, its own stats and effect, plus the best stat of each of the other two (a stat it lacks when they have one: trinBestStat). Two extra stats at most:
+     a fused trinket fused again keeps only the two new ones, nothing piles up. block: that trinket at that rarity is already in the bag (outside the three). */
+  ,fusePlan(keys){
+    if(!keys||keys.length!==3||new Set(keys).size!==3)return null;const bs=keys.map(k=>this.bagGet(k));if(bs.some(b=>!b))return null;
+    const pfOf=b=>hasPfE(trinDef(b.id),b.f)?(b.p!=null?b.p:PF_NOM):-1;
+    const base=bs.reduce((a,b)=>pfOf(b)>pfOf(a)||(pfOf(b)===pfOf(a)&&b.r>a.r)?b:a),r=Math.max(...bs.map(b=>b.r)),p=pfOf(base);
+    const have=new Set(Object.keys(trinMods0(trinDef(base.id),r,PF_NOM))),f=[];
+    for(const b of bs)if(b!==base){const s=trinBestStat(b.id,b.f,r,have);if(s){f.push(s);have.add(s.k);}}
+    const k=trinketKey(base.id,r),block=this.d.bag.some(b=>trinketKey(b.id,b.r)===k&&!bs.includes(b));
+    return{base,id:base.id,r,p:p<0?PF_NOM:p,f:f.slice(0,FUSE_MAX),block};
+  }
+  ,fuse(keys){
+    const d=this.d,P=this.fusePlan(keys);if(!P||P.block)return null;const bs=keys.map(k=>this.bagGet(k));if(bs.some(b=>!this.canWork(b)))return null;
+    const eqs=d.equips||(d.equips=[null,null,null]);let slot=-1;
+    eqs.forEach((e,i)=>{if(e&&bs.some(b=>b.id===e.id&&b.r===e.r)){if(slot<0)slot=i;eqs[i]=null;}});
+    d.bag=d.bag.filter(b=>!bs.includes(b));
+    const nb={id:P.id,r:P.r,at:Date.now(),p:P.p};if(P.f.length)nb.f=P.f;if(bs.some(b=>b.t))nb.t=1;d.bag.push(nb);
+    if(slot>=0)eqs[slot]={id:nb.id,r:nb.r};d.equip=eqs[0]||null;d.gacha.fused=(d.gacha.fused||0)+1;this.save.write();
+    return trinketKey(nb.id,nb.r);
   }
   /* trinket slots before a run: 1 + one per "Extra Trinket" purchase (max 3). equipTrinket(id,r,slot): equips into that slot (default: the first empty one, else slot 1);
      equipTrinket(null,0,slot) empties a slot, equipTrinket(null) empties all of them */

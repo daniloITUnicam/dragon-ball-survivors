@@ -11,7 +11,7 @@ const COOP_WORLD=new Set(('env audio progress stageIdx stage sd spdK diffId D we
   'endless enMile en0 xpAcc xpRate balls ballSet summon hs zoomP rain vw vh streak streakT streakPop streakW cstk cstkT TS CR evK rt dur trialN spAcc hordeT packT bossQ hordePlan wave '+
   'elitePlan miniPlan scanK ballEvery ballAt supPlan bossHit finalSpawned cleared ended post timeScale sb showNums bossAlive trial tun bombOn ev bombT bombEnd shootOn shootQ shootQT shootT '+
   'shootEnd bz jbeams dying curW vortex seenT newSeen map banner bq modal flash flashC shake shocks shockId bshock evLog clash bcine kcNext mx sbx gold gsT recs cKeys cev bkills hintS _alT '+
-  'ghost gtrail finisher vic ck gemCombo gemFxN gemFxT gemT ovkCd hsCd coop coopView unranked runId hordeBoost sbk ring burst bolt pillar floatText say coopE coopMd coopNames vicT').split(' '));
+  'ghost gtrail finisher vic ck gemCombo gemFxN gemFxT gemT ovkCd hsCd coop coopView unranked runId hordeBoost sbk ring burst bolt pillar floatText say coopE coopMd coopNames vicT mo sdR hardK norm waitRoom waitSeed').split(' '));
 Object.assign(Game.prototype,{
   /* ---------- host ---------- */
   coopInit(o){
@@ -43,7 +43,7 @@ Object.assign(Game.prototype,{
     this.save=save;this.C=C;
     {const ml=Mastery.lv(save,C.id);this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(C.id):null;this.skin=Mastery.skinOf(save,C.id);}
     this.p={x:0,y:0,hp:1,maxHp:1,face:1,inv:0,mv:false};this.input={x:0,y:0,interact:false};
-    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tq=[];
+    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(save.settings&&save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;
     this.ru={rr:Math.min(5,this.shopLv('rr')),sk:Math.min(5,this.shopLv('sk')),bn:Math.min(5,this.shopLv('bn'))};this.ru0=Object.assign({},this.ru);this.banRun=new Set();
@@ -56,7 +56,7 @@ Object.assign(Game.prototype,{
     this.fz=null;for(const id of C.start.slice(0,this.maxW))this.addWeapon(id);
     this.revives=this.shopLv('revive');this.luckT=0;this.petLuckT=0;this.initPet(save.pet||'dende');
     {const T0=[],R0={},P0={},S0={};for(const eq of (save.equips||[save.equip]).slice(0,this.tcap)){const td=eq&&trinDef(eq.id),be=td&&(save.bag||[]).find(b=>b.id===eq.id&&b.r===eq.r);
-        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';if(td.sp==='barrier')this.barrierReady=true;}
+        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';if(isFused(be.f))this.tFu[eq.id]=be.f.slice();if(td.sp==='barrier')this.barrierReady=true;}
       if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
     this.recalc();this.p.hp=this.p.maxHp;{const vp=EXTRAS.poseOf(save,C.id);this.vpose=vp?vp.id:null;}
   },
@@ -85,6 +85,14 @@ Object.assign(Game.prototype,{
       const lm={type:'level',options:this.levelOptions()};const rc=this.recommend(lm.options);if(rc){lm.rec=rc.i;lm.recWhy=rc.why;}
       if(lm.options.every(o=>o.type==='z')){lm.maxed=true;}
       this.coopQueue(m,lm);});},
+  /* v134: a mate who arrives in a run already going: every level-up they missed is taken at once with the recommended card (forms included),
+     so they start at the shared level with a build of that level instead of the starting weapons */
+  coopCatchUp(m){const n=this.lvl-1;if(n<=0)return;this.withHero(m,()=>{const keep=this.modal;
+    try{for(let i=0;i<n;i++){while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();this.recalc();
+        const L=this.levelOptions();if(!L||!L.length||L.every(o=>o.type==='z'))break;const rc=this.recommend(L);this.modal={type:'level',options:L};this.resolveModal(rc?rc.i:0);
+        for(let k=0;k<4&&this.modal&&this.modal!==keep;k++)this.resolveModal(0);}   /* a window that follows (an evolution...) */
+    }catch(e){console.error('catch-up',e);}finally{this.modal=keep;}this.recalc();});
+    this.coop.ev.push(['say',m.nick+' · Lv '+this.lvl,'#8be07a',2.5,null]);},
   /* a mate's windows wait in line: one is shown at a time, and it has COOP_PICK_T seconds before a card is taken for them */
   coopQueue(m,modal,first){const id=++this.coop.mqId,q={id,nick:m.nick,modal,sent:false,left:COOP_PICK_T};if(first)this.coop.mq.unshift(q);else this.coop.mq.push(q);this.coopNext(m);},
   coopNext(m){if(this.coop.mq.some(x=>x.nick===m.nick&&x.sent))return;const q=this.coop.mq.find(x=>x.nick===m.nick);if(!q)return;q.sent=true;q.left=COOP_PICK_T;this.coopSendModal(m,q);},
@@ -222,7 +230,7 @@ const COOPG={
     this.app.ui.coopConnecting(this);},
   onMsg(nick,m){const g=this.app.game;
     if(this.role==='host'){
-      if(m.t==='hello'){this.ready.set(nick,m);this.app.ui.coopConnecting(this);if(this.started&&g&&!g.coopMate(nick)){g.coopAddMate(nick,m.ch,m.lo);this.send(nick,this.startMsg(nick));}return;}
+      if(m.t==='hello'){this.ready.set(nick,m);this.app.ui.coopConnecting(this);if(this.started&&g&&!g.coopMate(nick)){const mt=g.coopAddMate(nick,m.ch,m.lo);if(g.lvl>1)g.coopCatchUp(mt);this.send(nick,this.startMsg(nick));}return;}
       const mt=g&&g.coopMate(nick);if(!mt)return;mt.last=performance.now();
       if(m.t==='in'){mt.h.input.x=clamp(+m.x||0,-1,1);mt.h.input.y=clamp(+m.y||0,-1,1);}
       else if(m.t==='act'&&!g.modal&&!g.coopPaused())g.withHero(mt,()=>{if(m.a==='dash'){const i=this.app.game.input;g.dash();}else if(m.a==='ab')g.useAbility();else if(m.a==='senzu')g.useSenzu();else if(m.a==='pet')g.usePet();});
@@ -239,6 +247,17 @@ const COOPG={
     else if(m.t==='end')this.clientEnd(m);
   },
   /* ---- host ---- */
+  /* v134: the solo run of the room's host becomes a co-op run while it goes on: the Game turns host, the room switches to 'playing' with the run's
+     seed (the newcomer's client builds the same world from it) and whoever connects is added as a mate, levelled up to the shared level */
+  hostDropIn(app,g,st){if(this.net||!g||g.coop)return;
+    this.app=app;this.code=st.code;this.me=app.cloud.nick;this.host=this.me;this.role='host';
+    this.st=Object.assign({},st,{seed:g.waitSeed,stage:g.stageIdx,diff:g.diffId,mode:g.endless?'endless':'classic'});
+    this.peersWanted=(st.members||[]).length-1;this.ready=new Map();this.started=true;this.t0=performance.now();
+    g.coopInit({me:this.me,code:st.code});
+    this.net=new CoopNet({me:this.me,host:this.host,code:st.code,cloud:app.cloud,onMsg:(n,m)=>this.onMsg(n,m),onPeer:(n,on)=>this.onPeer(n,on)});this.net.start();
+    app.cloud.rpc('room_dropin',{p_code:st.code,p_seed:g.waitSeed|0}).catch(()=>{});
+    const nk=(st.members||[]).filter(m=>!m.me).map(m=>m.nick).join(', ');
+    g.say(app.i18n.t(T6(nk+' entra nella partita!',nk+' is joining the run!','¡'+nk+' se une a la partida!',nk+' rejoint la partie !',nk+' steigt ein!',nk+' está entrando na partida!')),'#8be07a',3);g.audio.sfx('ticket');},
   /* a mate who left (or lost the connection): out of the run; the rest go on, and the run is lost if nobody left stands */
   dropMate(nick){const g=this.app.game;if(!g||!g.coop)return;const i=g.coop.mates.findIndex(x=>x.nick===nick);if(i<0)return;g.coop.mates.splice(i,1);g.coop.mq=g.coop.mq.filter(q=>q.nick!==nick);
     g.say(nick+' ✕','#9aa4b8',2);if(g.coopHeroes().every(q=>q.down))g.coop.over=true;},
@@ -295,10 +314,10 @@ const COOPV={
     for(const r of s.e){const[uid,id,boss,x,y,hpk,face,fl,stun,atk,st,sq,ph,fuse,under,enr,elite,mvs,age,gold]=r;seen.add(uid);let e=E.get(uid);
       if(!e){if(boss){const bd=BOSSES[id]||BOSSES[Object.keys(BOSSES)[0]],x0=r[20]||{};e=v.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},x,y);
           Object.assign(e,{ai:'boss',boss:true,bid:x0.bid||id,bd:Object.assign({},bd,{id:x0.bid||id}),final:!!x0.final,mini:!!x0.mini});}
-        else{const d=ENEMIES[id];if(!d)continue;e=v.mkEnemy(d,x,y);}e.uid=uid;E.set(uid,e);e.tx=x;e.ty=y;}
+        else{const d=ENEMIES[id]||MOBJ.defOf(id);if(!d)continue;e=v.mkEnemy(d,x,y);}e.uid=uid;E.set(uid,e);e.tx=x;e.ty=y;}
       if(boss){const B=BOSSES[id];if(B&&e.bdk!==id){e.bdk=id;e.bd=Object.assign({},B,{id:e.bid});e.esid=undefined;}Object.assign(e,r[20]||{});e.xf=r[21]||null;e.gd=r[22]||null;e.tel=r[23]||null;}
       e.tx=x;e.ty=y;e.hp=hpk*(e.max||1);e.face=face;e.fl=fl?.07:0;e.stun=stun;e.atk=atk;e.st=st;e.sq=sq;e.ph=ph;e.fuse=fuse;e.under=!!under;e.enr=!!enr;e.elite=!!elite;e.mvs=mvs;e.age=age;e.goldS=!!gold;e.dead=false;out.push(e);}
-    for(const [uid,e] of E)if(!seen.has(uid)){E.delete(uid);if(e.hp>0)v.addCorpse&&v.addCorpse(e);}
+    for(const [uid,e] of E)if(!seen.has(uid)){E.delete(uid);if(e.prop){if(Math.hypot(e.x-v.p.x,e.y-v.p.y)<900)MOBJ.debris(v,e);}else if(e.hp>0)v.addCorpse&&v.addCorpse(e);}
     v.en=out;
     v.pr=s.pr;v.eb=s.eb.map(b=>({x:b[0],y:b[1],r:b[2],c:b[3],cp:!!b[4]}));v.gm=s.gm.map(g=>({x:g[0],y:g[1],v:g[2]}));
     v.loot=s.lo.map(l=>({k:l[0],x:l[1],y:l[2],star:l[3],tama:l[4],lock:!!l[5],alt:!!l[6],t:l[7]}));v.chests=s.ch.map(c=>({x:c[0],y:c[1],rar:c[2],final:!!c[3],elite:!!c[4],boss:!!c[5],op:c[6]<0?undefined:c[6],t:9}));

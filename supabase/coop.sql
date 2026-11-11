@@ -381,3 +381,19 @@ do $$ begin
   revoke all on function public.coop_hours() from public;
   grant execute on function public.coop_hours() to anon, authenticated;
 end $$;
+
+-- v134: drop-in. The host of an open room plays solo while waiting; when somebody joins, the host's run becomes the co-op run:
+-- the room goes to 'playing' with the seed of that run (the newcomer's game builds the same world from it), no ready check
+create or replace function public.room_dropin(p_code text, p_seed int) returns text language plpgsql security definer set search_path = public as $$
+declare me uuid := public.coop_me();
+begin
+  if not exists (select 1 from public.rooms where code = p_code and host = me and status = 'lobby') then return 'not_host'; end if;
+  if (select count(*) from public.room_members where code = p_code) < 2 then return 'alone'; end if;
+  update public.rooms set status = 'playing', seed = greatest(1, p_seed), updated_at = now() where code = p_code;
+  delete from public.room_messages where code = p_code;
+  return 'ok';
+end $$;
+do $$ begin
+  revoke all on function public.room_dropin(text,int) from public;
+  grant execute on function public.room_dropin(text,int) to authenticated;
+end $$;

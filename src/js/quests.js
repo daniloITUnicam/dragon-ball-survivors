@@ -50,17 +50,17 @@ for(const a of ACHIEVEMENTS){a.cat=/^(wu_|we_)/.test(a.id)?'ach':'obj';}
     C(1,{t1:1},'c_pf3','Schivata perfetta','Perfect Dodge','Sconfiggi 3 boss senza subire danni (in totale).','Defeat 3 bosses without taking damage (in total).',300,s=>s.perfect>=3,PG(s=>s.perfect,3)),
     C(1,{t1:1},'c_ks100','Cento di fila','A Hundred in a Row','Fai una serie di 100 uccisioni consecutive in una partita.','Chain 100 kills in a row in one run.',300,s=>s.run.streak>=100,PG(s=>s.rec.streak,100)),
     C(1,{t1:1},'c_lv35','Allievo modello','Model Pupil','Raggiungi il livello 35 in una partita.','Reach level 35 in a run.',300,s=>s.run.lvl>=35,PG(s=>s.rec.lvl,35)),
-    C(2,{t1:3},'c_hard3','Tre prove dure','Three Hard Trials','Completa 3 stage in Difficile o superiore.','Clear 3 stages on Hard or higher.',800,s=>s.hardClears>=3,PG(s=>s.hardClears,3)),
+    C(2,{t1:3},'c_hard3','Tre prove dure','Three Hard Trials','Completa 3 stage con almeno un Patto attivo.','Clear 3 stages with at least one Pact on.',800,s=>s.hardClears>=3,PG(s=>s.hardClears,3)),
     C(2,{t1:3},'c_ev4','Evoluzione a catena','Chain Evolution','Evolvi 4 armi in una partita.','Evolve 4 weapons in one run.',800,s=>s.run.evos>=4,PG(s=>s.rec.evos,4)),
     C(2,{t1:3},'c_ks400','Quattrocento colpi','Four Hundred Blows','Fai una serie di 400 uccisioni consecutive in una partita.','Chain 400 kills in a row in one run.',800,s=>s.run.streak>=400,PG(s=>s.rec.streak,400)),
     C(2,{t1:3},'c_coin4k','Tasche piene','Pockets Full','Raccogli 4.000 monete in una sola partita.','Collect 4,000 coins in a single run.',800,s=>s.run.coins>=4000,PG(s=>s.rec.coins,4000)),
-    C(3,{t10:1},'c_ext3','Tre Inferni','Three Hells','Completa 3 stage in Estremo.','Clear 3 stages on Extreme.',2000,s=>s.extremeClears>=3,PG(s=>s.extremeClears,3)),
+    C(3,{t10:1},'c_ext3','Tre Inferni','Three Hells','Completa 3 stage con almeno 3 Patti attivi.','Clear 3 stages with at least 3 Pacts on.',2000,s=>s.extremeClears>=3,PG(s=>s.extremeClears,3)),
     C(3,{t10:1},'c_pf10','Intoccabile ×10','Untouchable ×10','Sconfiggi 10 boss senza subire danni (in totale).','Defeat 10 bosses without taking damage (in total).',2000,s=>s.perfect>=10,PG(s=>s.perfect,10)),
     C(3,{t10:1},'c_k9k','Annientamento','Annihilation','9.000 nemici in una partita.','9,000 enemies in one run.',2000,s=>s.run.kills>=9000,PG(s=>s.rec.kills,9000)),
     C(3,{t10:1},'c_lv90','Quasi al limite','Almost at the Limit','Raggiungi il livello 90 in una partita.','Reach level 90 in a run.',2000,s=>s.run.lvl>=90,PG(s=>s.rec.lvl,90)),
-    C(4,{l10:1},'c_ext8','Dominatore dell’Inferno','Lord of Hell','Completa 8 stage in Estremo.','Clear 8 stages on Extreme.',5000,s=>s.extremeClears>=8,PG(s=>s.extremeClears,8)),
+    C(4,{l10:1},'c_ext8','Dominatore dell’Inferno','Lord of Hell','Completa 8 stage con almeno 3 Patti attivi.','Clear 8 stages with at least 3 Pacts on.',5000,s=>s.extremeClears>=8,PG(s=>s.extremeClears,8)),
     C(4,{l10:1},'c_ks1500','Millecinquecento','Fifteen Hundred','Fai una serie di 1.500 uccisioni consecutive in una partita.','Chain 1,500 kills in a row in one run.',5000,s=>s.run.streak>=1500,PG(s=>s.rec.streak,1500)),
-    C(4,{l10:1},'c_hard11','Tutto in Difficile','Everything on Hard','Completa 11 stage in Difficile o superiore.','Clear 11 stages on Hard or higher.',5000,s=>s.hardClears>=11,PG(s=>s.hardClears,11))
+    C(4,{l10:1},'c_hard11','Tutto coi Patti','Everything with Pacts','Completa 11 stage con almeno un Patto attivo.','Clear 11 stages with at least one Pact on.',5000,s=>s.hardClears>=11,PG(s=>s.hardClears,11))
   );
 }
 const TIER_NAMES=[null,T('Facile','Easy'),T('Medio','Medium'),T('Difficile','Hard'),T('Estremo','Extreme')],TIER_COL=[null,'#8be07a','#ffd23f','#ff9a3d','#ff4a6a'];

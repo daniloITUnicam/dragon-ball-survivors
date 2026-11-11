@@ -37,6 +37,7 @@ class SaveData{
     if(obj&&!obj.hints&&d.stats.runs>=3)d.hints={_vet:1};   /* v115: players who already know the game skip the first-run hints */
     d.pacts=(Array.isArray(d.pacts)?d.pacts:[]).filter((id,i,a)=>PACTS.some(p=>p.id===id)&&a.indexOf(id)===i);
     if(d.evoRule!==2){d.we={};d.wc={};d.evoRule=2;}
+    if(!(d.season>=134)){d.best={};d.season=134;d.diff='normal';}   /* v134: one difficulty and 30-minute runs: the records start over */
     /* the automatic level-up and its priority list used to be Endless-only settings called endAuto / endPrio: they work in every mode now, and keep what the player had */
     {const os=obj&&obj.settings;if(os){if(os.lvAuto===undefined&&os.endAuto===true)d.settings.lvAuto=true;if(!(Array.isArray(os.lvPrio)&&os.lvPrio.length)&&Array.isArray(os.endPrio))d.settings.lvPrio=os.endPrio.filter(k=>typeof k==='string').slice(0,10);}
       delete d.settings.endAuto;delete d.settings.endPrio;}
@@ -47,7 +48,8 @@ class SaveData{
     for(const k of['clears','x2','xc'])while(d[k].length<STAGES.length)d[k].push(0);
     /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..3 (v53: it used to be 1..7) without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
-    {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok){seen.add(b.id+'@'+b.r);b.p=Number.isFinite(+b.p)?Math.max(0,Math.min(100,Math.round(+b.p))):PF_NOM;}return ok;});   /* v54: every bag trinket has a perfection (older ones: the nominal 50%) */
+    {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok){seen.add(b.id+'@'+b.r);b.p=Number.isFinite(+b.p)?Math.max(0,Math.min(100,Math.round(+b.p))):PF_NOM;
+      if(b.f!==undefined){b.f=Array.isArray(b.f)?b.f.map(x=>typeof x==='string'?trinBestStat(x,null,b.r,null):x&&typeof x==='object'&&trinDef(x.id)&&trinDef(x.id).m&&trinDef(x.id).m[x.k]!=null?{id:x.id,k:x.k}:null).filter(Boolean).slice(0,FUSE_MAX):null;if(!b.f||!b.f.length)delete b.f;}}return ok;});   /* v136: f = the trinkets fused into it */   /* v54: every bag trinket has a perfection (older ones: the nominal 50%) */
       /* v57: up to 3 trinkets can be equipped before a run (one slot + one per "Extra Trinket" purchase); d.equip mirrors slot 1 for older saves / devices */
       {const n=Math.min(3,1+(d.shop.tslot||0)),src=Array.isArray(d.equips)&&d.equips.some(Boolean)?d.equips:[d.equip||null],ids=new Set();
         d.equips=[0,1,2].map(i=>{const e=src[i];if(!e||i>=n||!seen.has(e.id+'@'+e.r)||ids.has(e.id))return null;ids.add(e.id);return{id:e.id,r:e.r};});
@@ -72,7 +74,7 @@ class Progress{
   get d(){return this.save.d;}
   runCtx(g,win){
     const s=this.d.stats;
-    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,stage:g.stageIdx<5?g.stageIdx:-1,pos:STAGES[g.stageIdx].pos,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
+    return{t:g.t,lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,win:!!win,diff:g.diffId,pacts:(g.pacts||[]).length,stage:g.stageIdx<5?g.stageIdx:-1,pos:STAGES[g.stageIdx].pos,sid:g.stageIdx,x2:g.x2,forms:g.formsUnlocked,evos:g.run.evos,
       totKills:s.kills+(g.kills-g.bank.kills),totBosses:s.bosses+(g.run.bossKills-g.bank.bossKills),
       allX:STAGES.every((_,i)=>this.d.xc[i]),allW:Object.keys(WEAPONS).every(id=>id==='ki'||this.d.wu[id])};   /* Zeno-sama: every stage cleared on Extreme + every weapon unlocked */
   }
@@ -164,8 +166,8 @@ class Progress{
     const tks={};for(const k of TICKET_KINDS){const n=(g.run.tk[k]||0)-((b.tk&&b.tk[k])||0);if(n>0){d.tickets[k]+=n;tks[k]=n;}}   /* the tickets found in the run */
     if(firstWin&&g.pacts&&g.pacts.length){const n=Math.max(1,Math.floor(pactBonus(g.pacts)/PACT_TK+1e-6));d.tickets.t1+=n;tks.t1=(tks.t1||0)+n;}   /* v115: a stage won under Pacts pays 1× tickets too */
     st.maxLevel=Math.max(st.maxLevel,g.lvl);st.maxTime=Math.max(st.maxTime,Math.floor(g.t));
-    if(firstWin&&g.diffId==='extreme')d.xc[idx]=1;   /* this stage has been cleared on Extreme: it unlocks Endless for the stage */
-    if(firstWin){d.clears[idx]++;if(g.diffId==='hard'||g.diffId==='extreme')st.hardClears++;if(g.diffId==='extreme')st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}
+    if(firstWin)d.xc[idx]=1;   /* v134: clearing the stage (30 minutes) unlocks its Endless */
+    if(firstWin){d.clears[idx]++;if(g.pacts&&g.pacts.length)st.hardClears++;if(g.pacts&&g.pacts.length>=3)st.extremeClears=(st.extremeClears||0)+1;if(g.x2)st.x2Clears++;}   /* v134: hardClears = stages cleared with at least one Pact */
     const bk=String(idx),bb=d.best[bk];
     if(!bb||g.kills>bb.kills)d.best[bk]={kills:g.kills,t:Math.floor(g.t),diff:g.diffId};
     g.bank={tk:Object.assign({},g.run.tk),kills:g.kills,bossKills:g.run.bossKills,chests:g.run.chests,balls:g.run.balls,wishes:g.run.wishes,perfect:g.run.perfect,coins:g.run.coins,zeno:g.run.zeno||0,zbuy:g.run.zbuy||0,evos:g.run.evos||0,elites:g.run.elites||0,t:g.t,counted:true,cleared:b.cleared||!!win};   g.run.minC=g.run.coins;

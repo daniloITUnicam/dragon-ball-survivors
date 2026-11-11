@@ -121,10 +121,12 @@ class App{
     const g=new Game({stage:m.stage,char:m.ch,diff:m.diff,x2:false,sandbox:false,pet:this.save.d.pet},this.makeEnv());
     g.coopView=true;g.sb.nospawn=true;g.en=[];g.p.nick=me;g.coopNames=m.names;this.game=g;this.state='play';this.joy.on=false;this.audio.unlock();this.audio.play('stage'+STAGES[m.stage].id);
     g.say(this.i18n.t(STAGES[m.stage].n)+' · CO-OP','#ffd23f',3);return g;}
-  makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g)};}
+  makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g),pickTrinkets:(g,l,cb)=>this.pickTrinkets(g,l,cb)};}
+  /* v136: after a win, the window that chooses which found trinkets go home (the run is over, the world is drawn frozen behind it) */
+  pickTrinkets(g,list,cb){this.state='end';this.ui.closeModal();this.ui.show('tpick',{g,list,cb});this.audio.play('menu');}
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
-    Online.unseed();CLASH.unbind();if((o.week||o.coop)&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
+    Online.unseed();CLASH.unbind();if((o.week||o.coop||o.wait)&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
     this.game=new Game(o,this.makeEnv());if(o.coop)this.game.coopInit(o.coop);
     if(!o.sandbox&&!o.coop&&this.cloud.uid&&this.cloud.nick){const g=this.game;this.cloud.runStart().then(id=>{if(id&&this.game===g)g.runId=id;}).catch(()=>{});}   /* v118: run token */
     if(GUARD.tainted)this.game.unranked=true;

@@ -184,7 +184,7 @@ class UI{
     const diffs=Object.keys(DIFF).map(k=>h('button',{class:'btn small'+(sel.diff===k?'':' alt'),'data-fid':'df'+k,onclick:()=>{this.sfx();sel.diff=k;d.diff=k;this.app.save.write();this.rebuild(true);}},this.tr(DIFF[k].n)));
     return h('div',null,this.header('chooseStage',null,this.gearBtn()),
       h('div',{class:'row topact'},this.btn('next',()=>this.push('chars'),'primary')),
-      h('div',{class:'row'},h('span',{class:'lbl'},this.t('difficulty')),diffs,
+      h('div',{class:'row'},diffs.length>1?h('span',{class:'lbl'},this.t('difficulty')):null,...(diffs.length>1?diffs:[]),   /* v134: one difficulty, no selector */
         /* the explanation lives in the tooltip (on the wrapper too, so it also shows while the button is locked) */
         h('span',{class:'x2wrap',title:x2ok?this.t('x2Desc'):this.t('x2Locked')},
           h('button',{class:'btn small'+(sel.x2?'':' alt'),disabled:!x2ok,'data-fid':'x2',title:x2ok?this.t('x2Desc'):this.t('x2Locked'),

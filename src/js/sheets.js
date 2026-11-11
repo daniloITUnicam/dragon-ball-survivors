@@ -87,7 +87,7 @@ Sprites.sheetFrame=function(sid,frame){
 /* decode the embedded sheets; onLoad(id) fires for each one so open menus can refresh.
    v114: the big sheets only one place needs (SPRITE_LAZY: the Snake Way islands, the summoned dragons, the Tamagami statues - about 100 MB of
    decoded pixels) are not decoded at start: Sprites.need(group) decodes a group when a run needs it, Sprites.drop(group) frees it again */
-const SPRITE_LAZY={isles:/^isleo?[a-z]+$/,dragons:/^(shenron|porunga)$/,tama:/^tamas?\d+f?$/,wfx:/^wfx/};   /* wfx: the weapon effects, loaded the first time a run wants them (Sprites.prep) */
+const SPRITE_LAZY={isles:/^isleo?[a-z]+$/,dragons:/^(shenron|porunga)$/,tama:/^tamas?\d+f?$/,wfx:/^wfx/,gui:/^(gachabg|potara)$/};   /* gui: pictures used only as CSS backgrounds (by URL) */   /* wfx: the weapon effects, loaded the first time a run wants them (Sprites.prep) */
 Sprites.lazyOf=function(id){for(const k in SPRITE_LAZY)if(SPRITE_LAZY[k].test(id))return k;return null;};
 Sprites.loadPack=function(onLoad){
   Sprites._onLoad=onLoad;

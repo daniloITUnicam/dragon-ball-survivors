@@ -23,7 +23,7 @@ const normQ=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'
 /* ---- what a locked character asks for, read from its English requirement text ---- */
 function reqInfo(en){
   let m;const num=s=>+String(s).replace(/,/g,'');
-  if((m=/^Clear Stage (\d+)( on Hard)?$/.exec(en)))return{t:'stage',no:+m[1],hard:!!m[2]};
+  if((m=/^Clear Stage (\d+)( with a Pact on)?$/.exec(en)))return{t:'stage',no:+m[1],hard:!!m[2]};
   if((m=/^Defeat ([\d,]+) bosses in total$/.exec(en)))return{t:'tot',k:'bosses',n:num(m[1])};
   if((m=/^Defeat ([\d,]+) enemies in total$/.exec(en)))return{t:'tot',k:'kills',n:num(m[1])};
   if((m=/^Defeat ([\d,]+) enemies in one run$/.exec(en)))return{t:'run',k:'kills',n:num(m[1])};
@@ -121,7 +121,7 @@ Object.assign(UI.prototype,{
       const r=reqInfo(c.lock.en||''),o={kind:'char',id:c.id,name:c.n,icon:'人',color:'#ffd23f',text:c.lock,reward:T('Sblocchi il personaggio','Unlocks the character'),stage:last,diff:d.diff||'normal',char:lastChar,cur:0,max:1,ratio:0};
       if(r.t==='stage'){
         const si=STAGES.findIndex(s=>s.no===r.no);o.max=1;o.cur=si>=0&&d.clears[si]>0?(r.hard?0:1):0;
-        o.stage=si>=0&&open(si)?si:first;if(r.hard)o.diff='hard';
+        o.stage=si>=0&&open(si)?si:first;
       }else if(r.t==='tot'){o.max=r.n;o.cur=Math.min(r.n,sv[r.k]||0);o.stage=last;}
       else if(r.t==='run'){const rk={kills:'kills',lvl:'lvl',form:'form',evos:'evos'}[r.k];o.max=r.n;o.cur=Math.min(r.n,(sv.rec&&sv.rec[rk])||0);o.stage=last;}
       else if(r.t==='x2'){o.stage=first;}
@@ -169,7 +169,7 @@ Object.assign(UI.prototype,{
         this.trinketSlot())));
     const stageCard=h('div',{class:'qscard'},h('span',{class:'lbl'},this.tr(T('Stage scelto','Chosen stage'))),
       h('div',{class:'qsstage'},pv,h('div',{class:'stnum'},'STAGE '+S.no),h('div',{class:'cn'},this.tr(S.n)),
-        h('div',{class:'cd'},this.t('difficulty')+': '+dName+' · '+this.t('duration')+': '+fmtT(DIFF[diff].dur)+' · '+this.t('bosses')+': '+bossPlan(S,DIFF[diff].dur,diff).length)));
+        h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[diff].dur)+' · '+this.t('bosses')+': '+bossPlan(S,DIFF[diff].dur,diff).length)));
     let goal;
     if(tg){
       const pct=Math.round(tg.ratio*100),isTotal=tg.max>1;
