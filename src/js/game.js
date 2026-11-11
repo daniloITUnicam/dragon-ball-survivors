@@ -32,6 +32,13 @@ const XF_LOCK=.6,XF_ZOOM=1.6,XF_ZOUT=.9;   /* v133: the Kaioken takes its health
 const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_GIVE=130,PET_KAMI_SPD=560,PET_KAMI_T=2.6,PET_KAMI_R=620,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,ELITE_BONUS_MAX=1,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
+/* v138: a livelier opening - a first group right at the screen edge after OPEN_T s, spawns x(1+EARLY_RUSH) fading to x1 over EARLY_RUSH_T s, and new enemies
+   appear just outside the screen (not out at viewR) until EDGE_T0, blending back by EDGE_T1. Enemy ranks: every TIER_EVERY s (up to TIER_MAX) a tougher,
+   recoloured variant joins the crowd (TIER_SHARE of the spawns, the newest rank most often), with a vanguard of TIER_VAN+2*rank announced by a banner.
+   A rank-k enemy: HP x(1+TIER_HP*k), damage x(1+TIER_DMG*k), +TIER_ARM*k armor, speed x(1+TIER_SPD*k), drawn x(1+TIER_R*k), XP x(1+TIER_XP*k) */
+const OPEN_T=.6,OPEN_N=7,EARLY_RUSH=.6,EARLY_RUSH_T=150,EDGE_T0=240,EDGE_T1=420,TIER_EVERY=300,TIER_MAX=5,TIER_HP=.7,TIER_DMG=.12,TIER_ARM=.6,TIER_SPD=.03,TIER_R=.07,TIER_XP=.5,
+  TIER_SHARE=[0,.2,.27,.34,.4,.46],TIER_VAN=6,TIER_C=['','#4ab0ff','#3ddc84','#b44bff','#ff3b3b','#ff5fc8'],
+  TIER_N=[null,T('Veterani','Veterans'),T('Corazzati','Armored'),T('Furiosi','Berserkers'),T('Spietati','Ruthless'),T('Divini','Divine')];
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 /* v134: the 30-minute curve (all stages): enemy health x(1 + CURVE_HP * progress^CURVE_HP_E), damage x(1 + CURVE_DMG * progress), how many at once
@@ -112,7 +119,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.balls=0;this.ballSet=[];this.senzu=this.pk.nosenzu?0:Math.min(SENZU_MAX,(this.C&&this.C.senzu)||0);this.senzuCd=0;this.dashCd=0;this.dashT=0;this.revives=0;this.totemLuck=0;this.totemFx={};this.totemTag=null;this.stormT=0;this.pulseT=0;this.abCd=0;this.regenT=0;this.regenRate=0;this.clones=null;this.cloneT=0;this.sbc=null;this.summon=null;this.immT=0;this.hs=0;this.zoomP=0;this.spheres=[];this.ghosts=null;this.ghostT=0;this.rain=[];this.held=null;this.critT=0;this.shieldT=0;this.tsT=0;this.abBuf=null;this.dashT=0;this.dashHit=null;this.hpHist=[];this.histT=0;this.bshock=null;this.riskT=0;this.kai=0;this.bers=0;this.bersCd=0;this.bersT=0;this.bv=null;this.xform=null;this.afterX=null;this.shocks=[];this.shockId=0;this.inHeal=false;this.emo=null;this.emoT=0;this.modal=null;this.banner=null;this.flash=0;this.flashC='#fff';this.shake=0;
     this.vw=960;this.vh=560;this.streak=0;this.streakT=0;this.streakPop=0;this.cstk=0;this.cstkT=0;
     this.TS=this.D.dur/this.stage.time;this.CR=this.x2?2:1;this.evK=this.x2?1.5:1;this.rt=0;this.dur=this.stage.time*this.TS;this.trialN=0;
-    this.spAcc=0;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
+    this.spAcc=0;this.tier=0;this.opened=false;this.hordeT=150*Math.sqrt(this.TS)*this.evK;this.packT=75*this.evK;{const all=bossPlan(this.stage,this.dur,this.diffId).map(b=>[b[0],b[1],b[2]]),mid=all.filter(b=>!b[2]),gap=mid.length?this.dur/(mid.length+1):999,step=this.stage.abs?1:Math.max(1,Math.ceil(42/gap));   /* short runs: thin out the boss list so fights are not back to back (the Android Ruins keep their 5-minute clock) */
       this.bossQ=all.filter(b=>b[2]||mid.indexOf(b)%step===step-1||step===1).map(b=>({id:b[0],t:b[1]*this.TS,final:!!b[2],done:false,k:(this.stage.abs&&ANDROID_K[b[0]])||1}));}
     /* when the hordes arrive (same schedule as hordeT below): shown as little skulls on the progress bar */
     this.hordePlan=[];{const h0=130*Math.sqrt(this.TS),st=(110-12*this.sd)*Math.sqrt(this.TS);for(let t=h0;t<this.dur-20;t+=st)this.hordePlan.push(t);}
@@ -1427,7 +1434,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
          Numbers start at 0 (all their uses treat 0 like "absent": >0, ||0, truthiness), the rest at undefined (exactly as before for every read) */
-      atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,hpK:1,
+      atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,hpK:1,tier:0,
       sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined,prop:def.prop};
   }
   rosterPick(){
@@ -1474,8 +1481,25 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   snakeTier(){return this.stage.capT?Math.min(this.stage.capT.length-1,(this.nt/150)|0):0;}
   spawnOne(){
-    const a=rnd(0,TAU),d=this.viewR+rnd(10,110),def=this.limitShooter(this.rosterPick());
-    if(def){const[x,y]=this.spawnSpot(a,d,0);this.en.push(this.mkEnemy(def,x,y));}
+    const a=rnd(0,TAU),d=this.spawnDist(a),def=this.limitShooter(this.rosterPick());
+    if(def){const[x,y]=this.spawnSpot(a,d,0),e=this.mkEnemy(def,x,y);if(this.tier>0&&Math.random()<TIER_SHARE[this.tier])this.rankUp(e,this.tierPick());this.en.push(e);}
+  }
+  /* just outside the visible screen along angle a (above the player TOP_K farther, as in spawnSpot, plus room for the sprite) */
+  edgeD(a){const c=Math.abs(Math.cos(a)),s=Math.sin(a),as=Math.abs(s),up=s<0,m=rnd(26,90);
+    return Math.min(c>.01?(this.vw/2+m)/c:1e9,as>.01?(this.vh/2+m+(up?44:0))/(as*(up?TOP_K:1)):1e9);}
+  spawnDist(a){const far=this.viewR+rnd(10,110),u=clamp((this.t-EDGE_T0)/(EDGE_T1-EDGE_T0),0,1);return u>=1?far:Math.min(far,this.edgeD(a))*(1-u)+far*u;}
+  earlyRush(){return 1+EARLY_RUSH*clamp(1-this.t/EARLY_RUSH_T,0,1);}
+  /* the opening group: all around, right at the screen edge, so the run is moving from the first second */
+  openGroup(){const n=Math.round(OPEN_N*ENEMY_N_K*this.D.spawn),a0=rnd(0,TAU);
+    for(let i=0;i<n;i++){const a=a0+i/n*TAU+rnd(-.2,.2),def=this.limitShooter(this.rosterPick());if(!def)continue;const[x,y]=this.spawnSpot(a,this.edgeD(a),i);this.en.push(this.mkEnemy(def,x,y));}}
+  /* enemy ranks (see TIER_*): the newest rank most of the time, otherwise an older one */
+  tierPick(){const k=this.tier;return k<=1||Math.random()<.55?k:1+((Math.random()*(k-1))|0);}
+  rankUp(e,k){if(!(k>0)||e.boss||e.prop||e.ai==='explode')return e;const h=1+TIER_HP*k;e.tier=k;e.hp*=h;e.max*=h;e.dmg*=1+TIER_DMG*k;e.armor+=TIER_ARM*k*(1+.4*this.sd);e.spd*=1+TIER_SPD*k;e.r*=1+TIER_R*k*.6;e.xpm*=1+TIER_XP*k;return e;}
+  tierUp(k){
+    const c=TIER_C[k];this.say(this.env.tr(T('NEMICI PIÙ FORTI: ','STRONGER FOES: '))+this.env.tr(TIER_N[k]).toUpperCase()+'!',c,2.8,this.env.tr(T('Più Salute, più danni, più Esperienza','More Health, more damage, more XP')));
+    this.audio.sfx('warn');this.shake=Math.max(this.shake,.3);if(this.finalOn)return;
+    const n=Math.round((TIER_VAN+2*k)*ENEMY_N_K),a0=rnd(0,TAU);
+    for(let i=0;i<n;i++){const a=a0+i/n*TAU,def=this.limitShooter(this.rosterPick());if(!def||def.ai==='explode')continue;const[x,y]=this.spawnSpot(a,this.spawnDist(a),i);this.en.push(this.rankUp(this.mkEnemy(def,x,y),k));}
   }
   spawnRing(n,def,extra){
     const d=this.viewR+40;
@@ -2029,7 +2053,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       this.updateWave();this.updateElites();this.updateMinis();this.updateBallPlan();this.updateSuperPlan();
       const wv=this.waveMul();
       if(this.hordeBoost>0)this.hordeBoost-=dt;
-      this.spAcc+=this.spawnRate()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
+      if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
+      {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
+      this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
       const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=(110-12*this.sd)*1.35*Math.sqrt(this.TS)*this.evK;this.spawnHorde();}

@@ -16,6 +16,15 @@
    (when it starts, what it never does) and WHERE to find it (e.g. "Impostazioni > Video"). Use the exact names the game shows: Zenny, Forziere, Sfera del Drago,
    Compagno, Kaioken, Esperienza (XP), Salute, Ricarica, Fortuna, Armatura, and the names of characters, companions, enemies and stages. */
 const PATCHES=[
+  {id:'2026-11-11e',date:'2026-11-11',
+    name:T("Si parte subito, e i nemici salgono di grado","Off from the first second, and enemies rank up"),
+    sum:T("La partita si anima dal primo secondo e ogni 5 minuti arrivano nemici più forti, colorati e con più Salute.","The run comes alive from the first second, and every 5 minutes stronger, recoloured enemies with more Health arrive."),
+    new:[
+      T("Gradi dei nemici: ogni 5 minuti di partita i nemici salgono di grado (fino a 5): Veterani (blu), Corazzati (verde), Furiosi (viola), Spietati (rosso), Divini (rosa). Arrivano con un'avanguardia e un avviso, poi sono il 20% dei nemici normali (fino al 46% al grado 5).","Enemy ranks: every 5 minutes of the run enemies rank up (up to 5): Veterans (blue), Armored (green), Berserkers (purple), Ruthless (red), Divine (pink). They arrive with a vanguard and a warning, then make up 20% of the regular enemies (up to 46% at rank 5)."),
+      T("Un nemico di grado N ha Salute x(1 + 0,7×N), danni +12% per grado, un po' di Armatura e velocità in più, è più grande, ha un'aura del suo colore e N rombi sopra la testa; dà +50% di Esperienza per grado.","A rank-N enemy has Health x(1 + 0.7×N), +12% damage per rank, a little more Armor and speed, is bigger, has an aura in its colour and N diamonds over its head; it gives +50% XP per rank.")],
+    bal:[
+      T("Inizio partita: dopo mezzo secondo arriva un primo gruppo di nemici tutto intorno, appena fuori dallo schermo.","Run start: after half a second a first group of enemies arrives from all sides, just off screen."),
+      T("Primi minuti: i nemici compaiono più spesso (x1,6 all'inizio, poi a scendere fino a x1 a 2:30) e appena fuori dallo schermo invece che molto più lontano (fino a 4 minuti, poi gradualmente come prima entro i 7).","First minutes: enemies appear more often (x1.6 at the start, easing to x1 by 2:30) and just off screen instead of much farther away (until 4 minutes, then gradually back to before by 7).")]},
   {id:'2026-11-11d',date:'2026-11-11',
     name:T("Le armi hanno la loro immagine","Weapons get their own picture"),
     sum:T("Al posto dei simboli giapponesi ogni arma ha un'icona disegnata: nel Grimorio, nelle carte di livello, negli scrigni, nella barra in partita e nei menu.","Instead of the Japanese symbols every weapon has a drawn icon: in the Grimoire, on the level-up cards, in chests, on the in-game bar and in the menus."),

@@ -168,7 +168,7 @@ Object.assign(Game.prototype,{
     const m=this.coopMate(nick);if(!m)return null;const me=m.h.p,R2=COOP_R*COOP_R,near=o=>(o.x-me.x)**2+(o.y-me.y)**2<R2,rd=v=>Math.round(v*10)/10;
     const E=[];for(const e of this.en){if(e.dead||!near(e))continue;if(!e.uid)e.uid=(this.coop.uid=(this.coop.uid||0)+1);
       const row=[e.uid,e.boss?(e.bdk||e.bid):e.def.id,e.boss?1:0,rd(e.x),rd(e.y),Math.round(100*e.hp/(e.max||1))/100,e.face|0,e.fl>0?1:0,rd(e.stun||0),rd(e.atk||0),e.st|0,rd(e.sq||0),rd(e.ph||0),rd(e.fuse||0),e.under?1:0,e.enr?1:0,e.elite?1:0,rd(e.mvs||0),Math.round(e.age||0),e.goldS?1:0];
-      if(e.boss)row.push(this.coopPlain(e,['tf','pf','lp','bar','telK','pwUntil','mini','final','r','max','hp','zoff','oa','rc','surprise','bid']),e.xf?this.coopPlain(e.xf):0,e.gd?this.coopPlain(e.gd):0,e.tel?this.coopPlain(e.tel):0);
+      if(e.boss)row.push(this.coopPlain(e,['tf','pf','lp','bar','telK','pwUntil','mini','final','r','max','hp','zoff','oa','rc','surprise','bid']),e.xf?this.coopPlain(e.xf):0,e.gd?this.coopPlain(e.gd):0,e.tel?this.coopPlain(e.tel):0);else row.push(e.tier|0);
       E.push(row);}
     const P=[];for(const b of this.pr){if(b.dead||!near(b))continue;P.push(this.coopPlain(b,null,['dmg','hit','wid','t0']));if(P.length>=COOP_MAXPR)break;}
     const EB=[];for(const b of this.eb){if(b.dead||!near(b))continue;EB.push([rd(b.x),rd(b.y),rd(b.r),b.c,b.cp?1:0]);}
@@ -313,7 +313,7 @@ const COOPV={
       if(!e){if(boss){const bd=BOSSES[id]||BOSSES[Object.keys(BOSSES)[0]],x0=r[20]||{};e=v.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},x,y);
           Object.assign(e,{ai:'boss',boss:true,bid:x0.bid||id,bd:Object.assign({},bd,{id:x0.bid||id}),final:!!x0.final,mini:!!x0.mini});}
         else{const d=ENEMIES[id]||MOBJ.defOf(id);if(!d)continue;e=v.mkEnemy(d,x,y);}e.uid=uid;E.set(uid,e);e.tx=x;e.ty=y;}
-      if(boss){const B=BOSSES[id];if(B&&e.bdk!==id){e.bdk=id;e.bd=Object.assign({},B,{id:e.bid});e.esid=undefined;}Object.assign(e,r[20]||{});e.xf=r[21]||null;e.gd=r[22]||null;e.tel=r[23]||null;}
+      if(boss){const B=BOSSES[id];if(B&&e.bdk!==id){e.bdk=id;e.bd=Object.assign({},B,{id:e.bid});e.esid=undefined;}Object.assign(e,r[20]||{});e.xf=r[21]||null;e.gd=r[22]||null;e.tel=r[23]||null;}else e.tier=r[20]|0;
       e.tx=x;e.ty=y;e.hp=hpk*(e.max||1);e.face=face;e.fl=fl?.07:0;e.stun=stun;e.atk=atk;e.st=st;e.sq=sq;e.ph=ph;e.fuse=fuse;e.under=!!under;e.enr=!!enr;e.elite=!!elite;e.mvs=mvs;e.age=age;e.goldS=!!gold;e.dead=false;out.push(e);}
     for(const [uid,e] of E)if(!seen.has(uid)){E.delete(uid);if(e.prop){if(Math.hypot(e.x-v.p.x,e.y-v.p.y)<900)MOBJ.debris(v,e);}else if(e.hp>0)v.addCorpse&&v.addCorpse(e);}
     v.en=out;

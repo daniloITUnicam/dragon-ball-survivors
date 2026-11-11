@@ -833,13 +833,17 @@ this.W=1;this.H=1;this.Z=1;
     const flash=e.fl>0||fuseFlash||warn||(e.tel&&e.telK>.45&&((t*16)|0)%2===0)||(e.vis&&e.vis.flash&&((t*(10+(e.bm?e.bm.t:0)*5))|0)%2===0);
     const esid=Sprites.enemySid(e);   /* pack art for this boss / enemy, if any */
     if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
-    const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1);
+    const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1)*(e.tier?1+TIER_R*e.tier:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
     ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();
     if(e.elite){      /* elite: golden halo, a pulsing ring on the ground and flickering sparks */
       GLOW.at(ctx,e.x,e.y-e.r,e.r*3.1,'#ffd23f',.5+.12*Math.sin(t*5+e.ph));
       ctx.save();ctx.strokeStyle='rgba(255,210,63,'+(.55+.25*Math.sin(t*6))+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.15,e.r*.4,0,0,TAU);ctx.stroke();
       ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ffe58a';for(let i=0;i<(FXL.on?0:4);i++){const a=t*2.4+i/4*TAU+e.ph,q=(t*1.3+i*.25+e.ph)%1;ctx.globalAlpha=1-q;ctx.fillRect(e.x+Math.cos(a)*e.r*1.0-1.2,e.y-e.r*.2-q*e.r*1.9-1.2,2.4,2.4);}ctx.restore();
+    }
+    if(e.tier>0){      /* rank: an aura and a ring on the ground in the rank's colour */
+      const c=TIER_C[e.tier];if(!FXL.on)GLOW.at(ctx,e.x,e.y-e.r,e.r*(2.2+.15*e.tier),c,.3+.08*Math.sin(t*5+e.ph));
+      ctx.save();ctx.strokeStyle=c;ctx.globalAlpha=.5+.2*Math.sin(t*6+e.ph);ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.1,e.r*.38,0,0,TAU);ctx.stroke();ctx.restore();
     }
     if(e.boss){
       GLOW.at(ctx,e.x,e.y-e.r,e.r*2.8,e.bd.c,.35+.1*Math.sin(t*5));
@@ -880,7 +884,7 @@ this.W=1;this.H=1;this.Z=1;
         if(e.tel)GLOW.at(ctx,e.x,e.y-e.r*1.1,e.r*(1.8+1.2*(e.telK||0)),e.tel,.35+.4*(e.telK||0));
         ctx.save();ctx.translate(e.x+ox,e.y+bob-zo+oy);ctx.rotate(rot);ctx.scale(e.face*k*sqx*sx,k*sqy*sy);ctx.globalAlpha=al*((e.def&&e.def.alpha)||1);
       }
-      ctx.imageSmoothingEnabled=true;ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
+      ctx.imageSmoothingEnabled=true;ctx.drawImage(e.tier&&!flash?tierTint(sp.c,e.tier):sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
       if(e.enr&&((t*10+e.ph)|0)%2===0){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=e.rc||'#ff3b2a';ctx.globalAlpha=.55;for(let i=0;i<3;i++){const fx=e.x+(i-1)*e.r*.55,fh=e.r*(.9+.5*Math.sin(t*12+i*2+e.ph));ctx.beginPath();ctx.moveTo(fx-3,e.y-e.r*.4);ctx.lineTo(fx+Math.sin(t*8+i)*2,e.y-e.r*.4-fh);ctx.lineTo(fx+3,e.y-e.r*.4);ctx.fill();}ctx.restore();}
       if(e.shield>0){ctx.save();ctx.strokeStyle=e.sk&&e.sk.cur?'#fff':'rgba(160,230,255,.9)';ctx.lineWidth=2.5;ctx.globalAlpha=.6+.3*Math.sin(t*12);ctx.fillStyle='rgba(140,220,255,.16)';ctx.beginPath();ctx.ellipse(e.x,e.y-e.r*.9,e.r*1.45,e.r*1.6,0,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}
       if(e.tel){ctx.fillStyle=e.tel;ctx.globalAlpha=.8+.2*Math.sin(t*30);ctx.font='bold '+(12+(e.telK||0)*6|0)+'px sans-serif';ctx.textAlign='center';ctx.fillText('!',e.x,e.y-e.r*2.5-Math.abs(Math.sin(t*14))*3);ctx.globalAlpha=1;}
@@ -898,6 +902,7 @@ this.W=1;this.H=1;this.Z=1;
     if(e.elite){const bw=e.r*2.6,bx=e.x-bw/2,by=topY-14;ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(bx-1,by-1,bw+2,6);ctx.fillStyle='#ffd23f';ctx.fillRect(bx,by,bw*clamp(e.hp/e.max,0,1),4);
       ctx.fillStyle='#ffd23f';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('★',e.x,by-4);}
     else if(!e.boss&&e.max>=100&&e.hp<e.max){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(e.x-e.r,topY-8,e.r*2,3);ctx.fillStyle='#e9503f';ctx.fillRect(e.x-e.r,topY-8,e.r*2*clamp(e.hp/e.max,0,1),3);}
+    if(e.tier>0&&!e.elite&&!e.boss){ctx.fillStyle=TIER_C[e.tier];ctx.strokeStyle='rgba(0,0,0,.7)';ctx.lineWidth=1;for(let i=0;i<e.tier;i++){const px=e.x+(i-(e.tier-1)/2)*6.5,py=topY-1;ctx.beginPath();ctx.moveTo(px,py-3.6);ctx.lineTo(px+2.8,py);ctx.lineTo(px,py+3.6);ctx.lineTo(px-2.8,py);ctx.closePath();ctx.fill();ctx.stroke();}}   /* rank pips */
   }
   /* the sprite sheet of the Dragon Balls, or null until the image has loaded (then the old vector drawing is used) */
   drawBallBar(g,ctx,W,H,m,U){
@@ -2101,3 +2106,10 @@ this.W=1;this.H=1;this.Z=1;
     const R=g.mo&&g.mo.ride;if(!R||!(R.lift>0))return dp0.call(this,g,t);
     const p=g.p,mv=p.mv,ctx=this.ctx;p.mv=false;ctx.save();ctx.translate(0,-R.lift);
     try{return dp0.call(this,g,t);}finally{ctx.restore();p.mv=mv;}};}
+
+/* v138: enemy ranks - the sprite recoloured towards the rank's colour (hue and saturation, the shading stays), cached per frame canvas */
+const TIER_TINT=new WeakMap();
+function tierTint(c,k){let a=TIER_TINT.get(c);if(!a)TIER_TINT.set(c,a=[]);if(a[k])return a[k];
+  const o=document.createElement('canvas');o.width=c.width;o.height=c.height;const x=o.getContext('2d');x.drawImage(c,0,0);
+  x.globalCompositeOperation='color';x.globalAlpha=.62;x.fillStyle=TIER_C[k];x.fillRect(0,0,o.width,o.height);
+  x.globalCompositeOperation='destination-in';x.globalAlpha=1;x.drawImage(c,0,0);return a[k]=o;}
