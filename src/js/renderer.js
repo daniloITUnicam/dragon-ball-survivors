@@ -460,6 +460,7 @@ this.W=1;this.H=1;this.Z=1;
         for(let i=0;i<28;i++){const an=i/28*TAU+f.max*.01,r1=R-30-((i*37)%60),r2=R+6;ctx.beginPath();ctx.moveTo(Math.cos(an)*r1,Math.sin(an)*r1);ctx.lineTo(Math.cos(an)*r2,Math.sin(an)*r2);ctx.stroke();}
         ctx.restore();continue;
       }
+      if(f.kfz){this.drawKiFizz(f);continue;}
       if(f.ring){const k=1-f.l/f.m;ctx.strokeStyle=f.c;ctx.globalAlpha=1-k;ctx.lineWidth=5*(1-k)+1;ctx.beginPath();ctx.arc(f.x,f.y,f.r*k,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
       else{ctx.fillStyle=f.c;ctx.globalAlpha=clamp(f.l/f.m*1.4,0,1);ctx.fillRect(f.x-f.s/2,f.y-f.s/2,f.s,f.s);ctx.globalAlpha=1;}
     }
@@ -835,13 +836,13 @@ this.W=1;this.H=1;this.Z=1;
     if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
     const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1)*(e.tier?1+TIER_R*e.tier:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
-    ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();
+    if(!this._snap){ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();}   /* _snap: the picture for the death animation, which casts its own shadow */
     if(e.elite){      /* elite: golden halo, a pulsing ring on the ground and flickering sparks */
       GLOW.at(ctx,e.x,e.y-e.r,e.r*3.1,'#ffd23f',.5+.12*Math.sin(t*5+e.ph));
       ctx.save();ctx.strokeStyle='rgba(255,210,63,'+(.55+.25*Math.sin(t*6))+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.15,e.r*.4,0,0,TAU);ctx.stroke();
       ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ffe58a';for(let i=0;i<(FXL.on?0:4);i++){const a=t*2.4+i/4*TAU+e.ph,q=(t*1.3+i*.25+e.ph)%1;ctx.globalAlpha=1-q;ctx.fillRect(e.x+Math.cos(a)*e.r*1.0-1.2,e.y-e.r*.2-q*e.r*1.9-1.2,2.4,2.4);}ctx.restore();
     }
-    if(e.tier>0){      /* rank: an aura and a ring on the ground in the rank's colour */
+    if(e.tier>0&&!this._snap){      /* rank: an aura and a ring on the ground in the rank's colour */
       const c=TIER_C[e.tier];if(!FXL.on)GLOW.at(ctx,e.x,e.y-e.r,e.r*(2.2+.15*e.tier),c,.3+.08*Math.sin(t*5+e.ph));
       ctx.save();ctx.strokeStyle=c;ctx.globalAlpha=.5+.2*Math.sin(t*6+e.ph);ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.1,e.r*.38,0,0,TAU);ctx.stroke();ctx.restore();
     }
@@ -2113,3 +2114,22 @@ function tierTint(c,k){let a=TIER_TINT.get(c);if(!a)TIER_TINT.set(c,a=[]);if(a[k
   const o=document.createElement('canvas');o.width=c.width;o.height=c.height;const x=o.getContext('2d');x.drawImage(c,0,0);
   x.globalCompositeOperation='color';x.globalAlpha=.62;x.fillStyle=TIER_C[k];x.fillRect(0,0,o.width,o.height);
   x.globalCompositeOperation='destination-in';x.globalAlpha=1;x.drawImage(c,0,0);return a[k]=o;}
+
+/* v139: a Ki Blast that reaches the end of its range disintegrates: the ball is a grid of pixels that come off one by one (a random order, the rim first),
+   each left behind as glowing dust that drifts back and out while the core shrinks, with a thin ring of light. f: {x,y,r,c,a (heading),sd (seed),l,m} */
+Renderer.prototype.drawKiFizz=function(f){
+  const ctx=this.ctx,k=clamp(1-f.l/f.m,0,1),N=FXL.on?4:6,R=f.r*1.25,cs=R*2/N,ca=Math.cos(f.a),sa=Math.sin(f.a);
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  GLOW.at(ctx,f.x,f.y,f.r*(3.2-1.6*k),f.c,.75*(1-k));
+  ctx.strokeStyle=f.c;ctx.globalAlpha=.8*(1-k);ctx.lineWidth=1+2.5*(1-k);ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.9+2.6*Math.sqrt(k)),0,TAU);ctx.stroke();
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const ux=(i+.5)/N*2-1,uy=(j+.5)/N*2-1,d=Math.hypot(ux,uy);if(d>1.02)continue;
+    const h=Math.abs(Math.sin(i*12.9898+j*78.233+f.sd)*43758.5453)%1,h2=Math.abs(Math.sin(i*39.3468+j*11.135+f.sd*1.7)*24634.6345)%1;
+    const thr=clamp(.05+.55*h+.3*(1-d),0,.9);                                    /* the rim goes first, the heart last */
+    let x=f.x+ux*R,y=f.y+uy*R,s=cs,a=1;
+    if(k>=thr){const u=(k-thr)/(1-thr),out=R*(.6+1.6*h2)*u,back=R*(1.2+2.2*h)*u;   /* loose: blown back along the path and outwards, shrinking */
+      x+=(d>.01?ux/d:0)*out-ca*back;y+=(d>.01?uy/d:0)*out-sa*back-6*u*u;s=cs*(1-.7*u);a=1-u;}
+    ctx.globalAlpha=a;ctx.fillStyle=d<.5&&k<thr?'#ffffff':(h2<.3?'#ffffff':f.c);ctx.fillRect(x-s/2,y-s/2,s,s);
+  }
+  ctx.restore();
+};

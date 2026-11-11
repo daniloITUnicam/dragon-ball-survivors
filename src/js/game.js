@@ -39,6 +39,7 @@ const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],W
 /* v139: hordes on a fixed clock (HORDE_FIRST, then every HORDE_EVERY s), each of ONE kind of enemy and led by at least one elite; apart from those, every regular
    spawn has ELITE_CHANCE to be an elite (x(1 + "elite spawn rate" trinkets), at most ELITE_ALIVE_MAX alive, never before ELITE_FROM s or during a boss fight).
    Regular enemies start with HP x(1+EARLY_HP), easing to x1 at EARLY_HP_P of the run, where the stage curve has taken over */
+const KI_FIZZ_T=.42;
 const HORDE_FIRST=120,HORDE_EVERY=300,ELITE_CHANCE=.002,ELITE_ALIVE_MAX=3,ELITE_FROM=30,EARLY_HP=1.2,EARLY_HP_P=.5;
 const OPEN_T=.6,OPEN_N=7,EARLY_RUSH=.6,EARLY_RUSH_T=150,EDGE_T0=240,EDGE_T1=420,TIER_EVERY=300,TIER_MAX=5,TIER_HP=.7,TIER_DMG=.12,TIER_ARM=.6,TIER_SPD=.03,TIER_R=.07,TIER_XP=.5,
   TIER_SHARE=[0,.2,.27,.34,.4,.46],TIER_VAN=6,TIER_C=['','#4ab0ff','#3ddc84','#b44bff','#ff3b3b','#ff5fc8'],
@@ -2375,7 +2376,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       const tr=b.tr||(b.tr=[]);tr.push([b.x,b.y]);if(tr.length>8)tr.shift();
       if(b.hm>0){b.hm-=dt;const ca=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);let da=Math.atan2(p.y-14-b.y,p.x-b.x)-ca;da=Math.atan2(Math.sin(da),Math.cos(da));const na=ca+clamp(da,-2.3*dt,2.3*dt);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp;}
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-      if(b.life<=0){b.dead=true;continue;}
+      if(b.life<=0){b.dead=true;   /* a Ki Blast at the end of its reach breaks up into pixels (Renderer.drawKiFizz) instead of just vanishing */
+        if(b.kb&&this.fx.length<380)this.fx.push({kfz:1,x:b.x,y:b.y,vx:b.vx*.3,vy:b.vy*.3,r:b.r,c:b.c,l:KI_FIZZ_T,m:KI_FIZZ_T,a:Math.atan2(b.vy,b.vx),sd:Math.random()*100});
+        continue;}
       if(this.eb.length)this.cutC(b.x,b.y,b.r);   /* a ki shot cancels the enemy bullet it meets (and keeps flying) */
       const G=EGRID,EN=this.en,R=G.maxR,nc=G.box(b.x-R*1.2-b.r-4,b.y-R-b.r-4,b.x+R*1.2+b.r+4,b.y+G.maxZ+R*4.3+b.r+12);
       for(let ci=0,ne=nc<0?EN.length:nc;ci<ne;ci++){const e=EN[nc<0?ci:G.cand[ci]];
