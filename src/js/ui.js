@@ -26,6 +26,8 @@ const banFx=kind=>{const L=[],r=i=>((i*73+17)%100)/100;
   else{L.push(h('i',{class:'bcl c1'}),h('i',{class:'bcl c2'}),h('i',{class:'bcl c3'}));
     for(let i=0;i<7;i++)L.push(h('i',{class:'bbolt b'+(i%4),style:'left:'+[3,16,30,47,63,79,91][i]+'%;--d:'+(r(i+5)*3.2).toFixed(2)+'s;--t:'+(2.2+r(i+2)*1.8).toFixed(2)+'s;--f:'+(i%2?-1:1)}));}
   return h('span',{class:'bfx '+kind,'aria-hidden':'true'},L);};
+/* v137: a trinket's icon (its picture, or its kanji while it has none) */
+const tGlyph=(id,c)=>{const u=typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(u){const e=imgGlyph(u,c);e.classList.add('timg');return e;}const t=trinDef(id)||{};return glyph(t.k||'?',c);};
 /* v137: an upgrade's icon (the shop picture it shares, or its kanji) */
 const pGlyph=(pid,c)=>{const P=PASS[pid]||{},u=typeof PASS_IMG!=='undefined'&&PASS_IMG[pid]&&SHOP_IMG[PASS_IMG[pid]];return u?imgGlyph(u,c||P.c):glyph(P.k||'?',c||P.c);};
 /* v137: a weapon's icon (its picture, or its kanji while it has none) */

@@ -1129,6 +1129,7 @@ this.W=1;this.H=1;this.Z=1;
     return this.stoneC[id]={c,ox:sp.ox,oy:sp.oy,s:sp.s};
   }
   /* shop / upgrade pixel-art icon as an image (null until it has decoded, or when that upgrade has none) */
+  trinketImg(id){const c=this.tImgC||(this.tImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   weaponImg(id){const c=this.wImgC||(this.wImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   shopImg(id){const c=this.shopImgC||(this.shopImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof SHOP_IMG!=='undefined'&&SHOP_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}
   statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
@@ -1809,7 +1810,8 @@ this.W=1;this.H=1;this.Z=1;
       if(perfect)GLOW.at(ctx,tx2+ts/2,ty+ts/2,ts*(1.05+.12*Math.sin(g.rt*4)),'#cfeaff',.4);
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(tx2,ty,ts,ts);ctx.fillStyle=hexA(tc,.16);ctx.fillRect(tx2,ty,ts,ts);
       ctx.strokeStyle=perfect?'#f4faff':tc;ctx.lineWidth=2*U;ctx.strokeRect(tx2,ty,ts,ts);
-      txt(t.k,tx2+ts/2,ty+ts*.68,tc,'center',F(19,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      {const tim=this.trinketImg(id);if(tim){ctx.save();ctx.imageSmoothingEnabled=true;ctx.drawImage(tim,tx2+2.5*U,ty+2.5*U,ts-5*U,ts-5*U);ctx.restore();}   /* v137: the trinket's picture */
+       else txt(t.k,tx2+ts/2,ty+ts*.68,tc,'center',F(19,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
       if(has){const bx=tx2+3*U,bw2=ts-6*U,by=ty+ts-6*U;ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(bx,by,bw2,3*U);ctx.fillStyle=perfColor(pf);ctx.fillRect(bx,by,bw2*pf/100,3*U);}
       tx2+=ts+3*U;
     }

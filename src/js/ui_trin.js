@@ -43,7 +43,7 @@ Object.assign(UI.prototype,{
   /* big card of a trinket for the side panels */
   tdet(id,r,p,f,extra){
     const i=this.tinfo(id,r,p,f),el=h('div',{class:'bagdet tdet'});el.style.setProperty('--c',i.c);
-    el.append(...[h('div',{class:'bdhead'},glyph(i.t.k,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar+(i.fu?' · ⚗':'')))),this.perfBar(i.perf),
+    el.append(...[h('div',{class:'bdhead'},tGlyph(i.t.id,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar+(i.fu?' · ⚗':'')))),this.perfBar(i.perf),
       ...(extra||[]),
       h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
       i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(i.t.x||i.t.d))):null,

@@ -37,7 +37,7 @@ Object.assign(UI.prototype,{
   tcard(id,r,o){
     o=o||{};const i=this.tinfo(id,r,o.p,o.fu);
     return h(o.btn?'button':'div',{class:'tcard r'+r+(o.sel?' sel':'')+(o.eq?' eq':'')+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c,'data-fid':o.fid,onclick:o.onclick,title:i.name+' · '+i.rar+(i.perf!=null?' · '+i.perf+'%':'')+'\n'+i.desc},
-      glyph(i.t.k,i.c),i.fu?h('span',{class:'tfz',title:this.tr(T('Cimelio fuso','Fused trinket'))},'⚗'):null,o.check!=null?h('span',{class:'tchk'+(o.check?' on':'')},o.check?'✓':''):null,h('div',{class:'col'},h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar+(i.perf!=null?' · '+i.perf+'%':'')),h('div',{class:'cd'},i.desc),this.perfBar(i.perf,true),o.badge||null));
+      tGlyph(i.t.id,i.c),i.fu?h('span',{class:'tfz',title:this.tr(T('Cimelio fuso','Fused trinket'))},'⚗'):null,o.check!=null?h('span',{class:'tchk'+(o.check?' on':'')},o.check?'✓':''):null,h('div',{class:'col'},h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar+(i.perf!=null?' · '+i.perf+'%':'')),h('div',{class:'cd'},i.desc),this.perfBar(i.perf,true),o.badge||null));
   },
   /* ---------- trinket slot in the character screen ---------- */
   trinketSlot(){
@@ -49,7 +49,7 @@ Object.assign(UI.prototype,{
       const sfx=n>1?String(i+1):'';
       const slot=h('button',{class:'tslot'+(t?' on r'+eq.r+(inf.perf!=null&&inf.perf>=100?' perfect':''):''),style:t?'--c:'+inf.c:'','data-fid':'tslot'+sfx,title:t?inf.name+' · '+inf.rar+'\n'+inf.desc:this.t('slotEmpty'),
         onclick:()=>{this.sfx();this.push('bag',{pick:true,slot:i});}},
-        t?[glyph(t.k,inf.c),h('span',{class:'tsn'},potara(),inf.name),this.perfBar(inf.perf,true)]:h('span',{class:'tplus'},'+'));
+        t?[tGlyph(t.id,inf.c),h('span',{class:'tsn'},potara(),inf.name),this.perfBar(inf.perf,true)]:h('span',{class:'tplus'},'+'));
       return h('div',{class:'tsone'},slot,
         t?h('button',{class:'btn tiny alt unq','data-fid':'tunq'+sfx,onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,i);this.rebuild(true);}},'✕ '+this.t('bagUnequip')):null);
     };
@@ -225,7 +225,7 @@ Object.assign(UI.prototype,{
         const tip=h('div',{class:'gtip'});ov.append(tip);
         const showTip=(el,x,i,ev)=>{
           const eff=i.t.x&&i.t.m?this.tr(i.t.x):'';
-          tip.replaceChildren(...[h('div',{class:'gtip-h',style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',null,h('b',{style:'color:'+i.c},potara(),i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(x.up!=null?' ↑':'')))),
+          tip.replaceChildren(...[h('div',{class:'gtip-h',style:'--c:'+i.c},tGlyph(i.t.id,i.c),h('div',null,h('b',{style:'color:'+i.c},potara(),i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(x.up!=null?' ↑':'')))),
             this.perfBar(i.perf),
             i.stats.length?h('div',{class:'stl'},i.stats.map(q=>h('span',{style:'color:#9affb0'},this.tr(q.t)))):h('div',{class:'gtip-d'},i.desc),
             eff?h('div',{class:'gtip-d'},eff):null,
@@ -242,7 +242,7 @@ Object.assign(UI.prototype,{
         const list=[...res].sort((p,q)=>q.r-p.r||((q.p||0)-(p.p||0))||((!q.dup)-(!p.dup)));
         list.forEach((x,ix)=>{
           const i=this.tinfo(x.id,x.r,x.p);bestSnd=Math.max(bestSnd,x.r);
-          const el=h('div',{class:'gtile r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':'')+(x.dup?'':' fresh')+(vid?' hid':''),tabindex:'0',style:'--c:'+i.c+';--d:'+Math.min(ix*.012,1.2)+'s'},potara('ptile'),glyph(i.t.k,i.c),
+          const el=h('div',{class:'gtile r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':'')+(x.dup?'':' fresh')+(vid?' hid':''),tabindex:'0',style:'--c:'+i.c+';--d:'+Math.min(ix*.012,1.2)+'s'},potara('ptile'),tGlyph(i.t.id,i.c),
             i.perf!=null?h('span',{class:'gtp',style:'--p:'+i.perf+'%;--pc:'+perfColor(i.perf)},h('i')):null,
             x.dup?null:h('span',{class:'gnd',title:this.t('gNew')}));
           el.addEventListener('pointerenter',ev=>showTip(el,x,i,ev));el.addEventListener('pointermove',ev=>{if(tip.classList.contains('on'))showTip(el,x,i,ev);});
@@ -264,12 +264,12 @@ Object.assign(UI.prototype,{
         else if(!skip)snd('gPop'+best);
       }
       else if(vid){   /* every card takes its place in the grid first (hidden), then they come out of the universe one by one */
-        const els2=res.map(x=>{const i=this.tinfo(x.id,x.r,x.p),el=h('div',{class:'gcard hid r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c},potara('pcard'),glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),h('div',{class:'cd'},i.desc),x.up!=null?h('span',{class:'gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null,
+        const els2=res.map(x=>{const i=this.tinfo(x.id,x.r,x.p),el=h('div',{class:'gcard hid r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c},potara('pcard'),tGlyph(i.t.id,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),h('div',{class:'cd'},i.desc),x.up!=null?h('span',{class:'gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null,
           x.dup?h('span',{class:'gdup'},this.t('gDup'),x.coins?[' · +',zAmt(x.coins,true)]:null):h('span',{class:'gnew'},this.t('gNew')));cards.append(el);bestSnd=Math.max(bestSnd,x.r);return el;});
         for(let j=0;j<res.length;j++){await fly(els2[j],res[j]);await wait(n>1?140:0);}
       }
       else for(const x of res){
-        const i=this.tinfo(x.id,x.r,x.p),el=h('div',{class:'gcard r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c},glyph(i.t.k,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),h('div',{class:'cd'},i.desc),x.up!=null?h('span',{class:'gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null,
+        const i=this.tinfo(x.id,x.r,x.p),el=h('div',{class:'gcard r'+x.r+(i.perf!=null&&i.perf>=100?' perfect':''),style:'--c:'+i.c},tGlyph(i.t.id,i.c),h('div',{class:'cn',style:'color:'+i.c},i.name),h('div',{class:'ctag'},i.rar),this.perfBar(i.perf),h('div',{class:'cd'},i.desc),x.up!=null?h('span',{class:'gup'},this.t('gPerfUp',{a:x.up,b:x.p})):null,
           x.dup?h('span',{class:'gdup'},this.t('gDup'),x.coins?[' · +',zAmt(x.coins,true)]:null):h('span',{class:'gnew'},this.t('gNew')));
         cards.append(el);bestSnd=Math.max(bestSnd,x.r);
         if(!skip){snd('gPop'+x.r);sparks(el,i.c,2+x.r*3,40);}
@@ -321,7 +321,7 @@ Object.assign(UI.prototype,{
     if(sel){
       const i=this.tinfo(sel.id,sel.r,sel.p,sel.f),isEq=eqks.includes(this.bagSel),eqSlot=isEq?(d.equips||[]).findIndex(e=>e&&trinketKey(e.id,e.r)===this.bagSel):-1;
       det.style.setProperty('--c',i.c);
-      det.append(...[h('div',{class:'bdhead'},glyph(i.t.k,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar))),this.perfBar(i.perf),
+      det.append(...[h('div',{class:'bdhead'},tGlyph(i.t.id,i.c),h('div',null,h('div',{class:'cn',style:'color:'+i.c},potara(),i.name),h('div',{class:'ctag'},i.rar))),this.perfBar(i.perf),
         isEq&&(slotSel==null||eqSlot===slotSel)?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,eqSlot);this.rebuild(true);}},this.t('bagUnequip')):
           h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r,slotSel);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip')),
         h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),

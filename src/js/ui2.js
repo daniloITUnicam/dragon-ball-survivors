@@ -316,7 +316,7 @@ Object.assign(UI.prototype,{
     if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
+    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,timg:r.id,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
@@ -324,7 +324,7 @@ Object.assign(UI.prototype,{
     return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       info.trin?potara('pcard'):null,
-      info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
+      info.timg&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[info.timg]?tGlyph(info.timg,info.c):info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+(CAT_COL[x.i]||fc||info.c)},h('b',null,this.tr(x.t))))):null,
@@ -381,7 +381,7 @@ Object.assign(UI.prototype,{
           return h('div',{class:'tsrow '+(va>vb?'up':va<vb?'down':'eq')},a?this.tr(a.t):'—',h('b',null,va>vb?' ▲':va<vb?' ▼':''));}));
         const sp=t.x||(t.sp?t.d:null);
         return h('div',{class:'tscol'+(pf!=null&&pf>=100?' perfect':''),style:'--c:'+RARITY[r].c},h('div',{class:'tstag'},tag),
-          h('div',{class:'tshead'},glyph(t.k,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},potara(),this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
+          h('div',{class:'tshead'},tGlyph(t.id,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},potara(),this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
           this.perfBar(pf),h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null,extra||null);};
       const rep=(i,lbl)=>h('button',{class:'btn'+(i===weak?' primary':' alt'),'data-focus':i===weak?true:null,onclick:()=>{this.sfx('chest');this.app.resolveModal(i);}},(multi?(i+1)+' · ':'')+lbl);
       const curCols=curs.map((c,i)=>{const ct=trinDef(c.id),cp=hasPfE(ct,c.fu)?(c.pf!=null?c.pf:PF_NOM):null,st=trinStats(ct,c.rar,c.pf,c.fu);
@@ -457,14 +457,14 @@ Object.assign(UI.prototype,{
   },
   /* tooltip content for a HUD zone (see Renderer.zones) */
   tipFor(z,g){
-    const hd=(c,glyphK,name,sub,wid)=>h('div',{class:'tiph'},wid?wGlyph(wid,c):glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
+    const hd=(c,glyphK,name,sub,wid,tid)=>h('div',{class:'tiph'},tid?tGlyph(tid,c):wid?wGlyph(wid,c):glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
     const T2=(it,en)=>this.tr(T(it,en)),box=kids=>h('div',{class:'tipbox'},kids);
     if(z.k==='weapon'){const w=g.weapons.get(z.id);if(!w)return null;
       return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX,w.id),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
         w.maxed&&w.evo<g.maxEvo(w.id)?h('p',{class:'tipnote'},this.tr(this.evoSentence(evoPass(w.id,w.evo),w.id,w.evo))):null]);}
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
-    if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),fu=g.tFu&&g.tFu[z.id],pf=hasPfE(t,fu)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')+(fu?' · ⚗':'')),h('p',null,this.tr(trinDesc(t,rr,pf,fu))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
+    if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),fu=g.tFu&&g.tFu[z.id],pf=hasPfE(t,fu)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')+(fu?' · ⚗':''),null,z.id),h('p',null,this.tr(trinDesc(t,rr,pf,fu))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
     if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
       ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
     if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}
