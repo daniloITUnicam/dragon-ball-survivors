@@ -3,7 +3,7 @@
 class App{
   constructor(){
     this.save=new SaveData();
-    this.i18n=new I18n();this.i18n.setLang(this.save.d.settings.lang);
+    this.i18n=new I18n();this.i18n.setLang(this.save.d.settings.lang);document.documentElement.lang=this.i18n.lang;   /* v137: the page language matches the game's, so phone browsers do not offer to translate it */
     this.t=(k,v)=>this.i18n.t(k,v);
     this.audio=new AudioSys(this.save.d.settings);
     this.input=new Input(this.save);
@@ -60,7 +60,10 @@ class App{
       /* the round buttons drawn on the canvas (pet, ability, dash, Senzu): a press uses them and flashes like a DOM button */
       if(this.state==='play'&&this.game){const R=this.renderer,k0=R.W/innerWidth,g=this.game;
         for(const [pb,fn] of [[R.petBtn,()=>g.usePet()],[R.abBtn,()=>g.useAbility()],[R.dashBtn,()=>g.dash()],[R.szBtn,()=>g.useSenzu()]])
-          if(pb&&Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){fn();if(!(this.save.d.settings&&this.save.d.settings.reduceFx))UI.sparkAt((pb.x-pb.r)/k0,(pb.y-pb.r)/k0,2*pb.r/k0,2*pb.r/k0,'50%');return;}}
+          if(pb&&Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){fn();if(!(this.save.d.settings&&this.save.d.settings.reduceFx))UI.sparkAt((pb.x-pb.r)/k0,(pb.y-pb.r)/k0,2*pb.r/k0,2*pb.r/k0,'50%');return;}
+        /* v137: the [E] button orbiting an altar: a tap or a click uses it */
+        {const x=e.clientX*k0,y=e.clientY*k0,z=(R.zones||[]).find(z=>z.k==='interact'&&x>=z.x&&x<=z.x+z.w&&y>=z.y&&y<=z.y+z.h);
+          if(z){g.input.interact=true;if(!(this.save.d.settings&&this.save.d.settings.reduceFx))UI.sparkAt(z.x/k0,z.y/k0,z.w/k0,z.h/k0,'50%');return;}}}
       if(e.pointerType==='mouse'||this.state!=='play'||this.joy.on)return;
       const k=this.renderer.W/innerWidth;
       this.joy={on:true,id:e.pointerId,ox:e.clientX*k,oy:e.clientY*k,x:0,y:0};this.renderer.joy=this.joy;
@@ -105,7 +108,7 @@ class App{
   }
   applySettings(){
     const s=this.save.d.settings;
-    this.i18n.setLang(s.lang);document.documentElement.lang=s.lang;
+    this.i18n.setLang(s.lang);document.documentElement.lang=this.i18n.lang;
     FXL.on=!!s.reduceFx;this.audio.s=s;this.audio.applyVolumes();
     this.renderer.resize();this.renderer.tt=(k,v)=>this.t(k,v);this.renderer.tr=o=>this.i18n.t(o);
     try{

@@ -9,7 +9,7 @@
    Art: assets/sprites/mappa/<id>.png, one row of equally wide frames (sprites.json "cols"), the object standing on the bottom of its frame.
    Any resolution: the opaque part of frame 0 is drawn MO_H world px tall and every frame of the sheet uses the same scale and foot line.
    brk<kind>.png: intact | damaged | debris. The act*.png frames are listed in MO_H. */
-const BRK_N=9,BRK_EVERY=1,BRK_FAR=2300,BRK_IN=.45,BRK_FX=2.6,BRK_AIM=420;
+const BRK_N=5,BRK_EVERY=3.5,BRK_SEED=3,BRK_FAR=2300,BRK_IN=.45,BRK_FX=2.6,BRK_AIM=420;
 const ACT_FIRST=40,ACT_EVERY=[50,80],ACT_MAX=2,DROP_FALL=2.2,NEST_T=20,NIMBUS_T=12,NIMBUS_IN=1.6,GRAV_T=25,GRAV_IN=1.5,GRAV_POP=.7,DIG_T=2.5,SENZU_N=3;
 /* h: world height of the intact object, r: footprint radius, hp: health (x the run's enemy health curve), c: splinter colour, s: sound, keep: never despawned by distance */
 const BRK={
@@ -31,12 +31,21 @@ const BRK_THEME={plains:['bush','bush','rock','crate'],beach:['amphora','barrel'
 const ACT_C={drop:'#59c8ff',nest:'#8be04a',nimbus:'#ffd23f',senzu:'#8be07a',gravity:'#ff6a5a',scouter:'#5aff8a'};
 const ACT_ICON={drop:'brksupply',nest:'brkpod',nimbus:'actnimbus',senzu:'actsenzu',gravity:'actgravity',scouter:'actscouter'};
 /* world height of the activity art (the opaque part of frame 0) */
-const MO_H={actchute:64,actnest:30,actnimbus:30,actsenzu:50,actgravity:58,actscouter:16,actdig:22};
+const MO_H={actchute:64,actnest:30,actnimbus:30,actsenzu:50,actgravity:58,actscouter:16,actdig:22,altsfida:150};
+/* v137: Challenge Altars (Altare Sfida): ALT_N[0]..ALT_N[1] per run at random times between ALT_FROM and ALT_UNTIL s (scaled to the run length), far from the hero.
+   Stand in the circle ALT_IN s to wake the evil dragon: every altar woken gives bosses and minibosses +ALT_K health, armor and damage (added up)
+   and +1 chest to every boss (minibosses: +1 every 2 altars). Art: altsfida.png, 8 frames: idle | glare | rise | dark orb | breath | roar down | roar up + smoke | sinking in smoke */
+const ALT_N=[4,6],ALT_FROM=75,ALT_UNTIL=1200,ALT_GAP=110,ALT_R=80,ALT_IN=2.2,ALT_WAKE=2.6,ALT_GONE=1.5,ALT_K=.15,ALT_C='#a24bff',ALT_SEQ=[2,3,3,4,5,6,6,5];
 
 const MOBJ={
   def(k){const D=this._d||(this._d={});return D[k]||(D[k]={id:'brk_'+k,prop:k,n:T('Oggetto','Object'),hp:BRK[k].hp,r:BRK[k].r,spd:0,dmg:0,xp:0,ai:'prop',sp:null});},
   defOf(id){const k=typeof id==='string'&&id.slice(0,4)==='brk_'?id.slice(4):null;return k&&BRK[k]?this.def(k):null;},
-  init(g){g.mo={bt:.2,n:0,seeded:false,acts:[],at:ACT_FIRST,last:null,fx:[],sfxT:0};},
+  init(g){g.mo={bt:.2,n:0,seeded:false,acts:[],at:ACT_FIRST,last:null,fx:[],sfxT:0,alts:[],altPlan:this.planAlt(g)};},
+  planAlt(g){
+    if(g.trial||g.coopView)return[];
+    const k=clamp((g.dur||1800)/1800,.4,1),a=ALT_FROM*k,b=ALT_UNTIL*k,n=ALT_N[0]+Math.floor(Math.random()*(ALT_N[1]-ALT_N[0]+1)),out=[];
+    for(let i=0;i<n*8&&out.length<n;i++){const t=rnd(a,b);if(out.every(x=>Math.abs(x-t)>=ALT_GAP*k))out.push(t);}
+    return out.sort((x,y)=>x-y);},
   ok(g){return !g.trial&&!g.tun&&!g.dying&&!g.ended&&!g.summon&&!g.vic&&!g.coopView;},
   say(g,a,b,col,c,d){g.say(g.env.tr(T(a,b)),col,2.6,c?g.env.tr(T(c,d)):undefined);},
   mk(g,k,x,y,grow){
@@ -83,17 +92,57 @@ const MOBJ={
     M.at-=dt;if(M.at<=0){M.at=rnd(ACT_EVERY[0],ACT_EVERY[1]);if(M.acts.length<ACT_MAX)this.spawnAct(g);}
     for(const a of M.acts){a.t+=dt;this['t_'+a.k](g,a,dt);}
     if(M.acts.some(a=>a.dead))M.acts=M.acts.filter(a=>!a.dead);
+    this.tickAlt(g,dt);
   },
+  /* ---------- Challenge Altars ---------- */
+  tickAlt(g,dt){
+    const M=g.mo;if(!M.alts)M.alts=[];if(!M.altPlan)M.altPlan=[];
+    if(M.altPlan.length&&g.t>=M.altPlan[0]&&!g.finalSpawned){M.altPlan.shift();this.spawnAlt(g);}
+    const p=g.p;
+    for(const a of M.alts){a.t+=dt;
+      /* the turbulence: dark smoke curling up, more when it wakes */
+      const rate=a.st==='idle'?9+a.pg*12:a.st==='wake'?46:a.st==='gone'?30:0;
+      if(rate&&a.ps.length<70&&Math.random()<dt*rate){const an=rnd(0,TAU),r=rnd(10,a.st==='idle'?46:70);a.ps.push({x:a.x+Math.cos(an)*r,y:a.y+Math.sin(an)*r*.4,vx:rnd(-14,14),vy:-rnd(18,a.st==='wake'?90:46),l:0,m:rnd(1,2.2),r:rnd(5,12),sw:rnd(0,TAU)});}
+      for(const q of a.ps){q.l+=dt;q.sw+=dt*3;q.x+=(q.vx+Math.sin(q.sw)*22)*dt;q.y+=q.vy*dt;q.r+=dt*7;}
+      if(a.ps.length&&a.ps[0].l>a.ps[0].m)a.ps=a.ps.filter(q=>q.l<q.m);
+      a.bt-=dt;if(a.bt<=0){a.bt=a.st==='wake'?rnd(.06,.18):a.st==='idle'?rnd(.5,1.6)/(1+a.pg):1e9;a.bolt=this.altBolt(a);a.bolt.t=0;}
+      if(a.bolt)a.bolt.t+=dt;
+      if(a.st==='idle'){
+        const d=Math.hypot(p.x-a.x,p.y-a.y);
+        if(d<ALT_R&&a.t>1){a.pg+=dt;a.ht-=dt;if(a.ht<=0){a.ht=.42;g.audio.sfx('altHum');}}else a.pg=Math.max(0,a.pg-dt*.6);
+        if(a.pg>=ALT_IN)this.wakeAlt(g,a);}
+      else if(a.st==='wake'){if(Math.random()<dt*5)g.shake=Math.max(g.shake,.12);if(a.t-a.t1>=ALT_WAKE){a.st='gone';a.t1=a.t;g.audio.sfx('altGone');}}
+      else if(a.st==='gone'&&a.t-a.t1>=ALT_GONE&&!a.ps.length)a.dead=true;
+    }
+    if(M.alts.some(a=>a.dead))M.alts=M.alts.filter(a=>!a.dead);
+  },
+  spawnAlt(g){
+    const s=MAPX.spot(g,760,1250,110);
+    g.mo.alts.push({x:s.x,y:s.y,st:'idle',t:0,t1:0,pg:0,ht:0,bt:.4,bolt:null,ps:[],ph:rnd(0,9)});
+    g.audio.sfx('altCall');
+    this.say(g,'Un Altare Sfida è apparso!','A Challenge Altar has appeared!',ALT_C,'Risveglialo: boss +15% vita, armatura e danni, ma +1 scrigno','Wake it: bosses +15% health, armor and damage, but +1 chest');},
+  wakeAlt(g,a){
+    a.st='wake';a.t1=a.t;a.bt=0;g.altarN=(g.altarN||0)+1;
+    const n=g.altarN,p=g.p;
+    g.audio.sfx('altWake');g.shake=Math.max(g.shake,.45);g.flash=Math.max(g.flash||0,.3);g.flashC='#5a1a8a';g.hitStop&&g.hitStop(.08,.06);
+    g.ring(a.x,a.y,160,ALT_C,.7);g.ring(a.x,a.y,260,'#3a0a5a',1);g.burst(a.x,a.y-90,30,ALT_C);
+    this.say(g,'Sfida accettata!','Challenge accepted!',ALT_C,'Boss +'+Math.round(n*ALT_K*100)+'% vita, armatura e danni · +'+n+' scrigni a boss','Bosses +'+Math.round(n*ALT_K*100)+'% health, armor and damage · +'+n+' chests per boss');
+    if(g.logEv)g.logEv(g.env.tr(T('Altare Sfida risvegliato ('+n+')','Challenge Altar woken ('+n+')')),ALT_C);},
+  /* a jagged dark-violet bolt from the statue's head to the ground around it */
+  altBolt(a){const x0=a.x+rnd(-30,30),y0=a.y-rnd(90,140),an=rnd(0,TAU),r=rnd(40,a.st==='wake'?150:95),x1=a.x+Math.cos(an)*r,y1=a.y+Math.sin(an)*r*.45,pts=[[x0,y0]];
+    for(let k=1;k<7;k++){const u=k/7;pts.push([x0+(x1-x0)*u+rnd(-14,14),y0+(y1-y0)*u+rnd(-10,10)]);}pts.push([x1,y1]);return{pts,t:0};},
+  /* boss multiplier from the woken altars */
+  altK(g){return 1+ALT_K*(g.altarN||0);},
   tickBrk(g,dt){
     const M=g.mo,p=g.p,far=BRK_FAR*BRK_FAR;M.bt-=dt;
     let n=0,all=0;
     for(const e of g.en){if(!e.prop||e.dead)continue;all++;if(BRK[e.prop].keep)continue;
       const dx=e.x-p.x,dy=e.y-p.y;if(M.bt<=0&&dx*dx+dy*dy>far){e.dead=true;all--;continue;}n++;}
     M.n=all;
-    if(M.bt>0)return;M.bt=BRK_EVERY;
+    if(M.bt>0)return;M.bt=BRK_EVERY*rnd(.7,1.3);
     const L=BRK_THEME[g.stage.theme]||BRK_THEME.plains;
     if(!M.seeded){M.seeded=true;   /* the first screen already has a few, popping out of the ground */
-      for(let i=0;i<6;i++){const s=MAPX.spot(g,170,640,30);if(Math.hypot(s.x-p.x,s.y-p.y)>120&&!this.crowded(g,s))this.mk(g,pick(L),s.x,s.y,true);}return;}
+      for(let i=0;i<BRK_SEED;i++){const s=MAPX.spot(g,170,640,30);if(Math.hypot(s.x-p.x,s.y-p.y)>120&&!this.crowded(g,s))this.mk(g,pick(L),s.x,s.y,true);}return;}
     if(n<BRK_N){const s=MAPX.spot(g,g.viewR+60,g.viewR+560,30);if(Math.hypot(s.x-p.x,s.y-p.y)>g.viewR*.8&&!this.crowded(g,s))this.mk(g,pick(L),s.x,s.y,false);}
   },
   crowded(g,s){for(const e of g.en)if(e.prop&&!e.dead&&Math.abs(e.x-s.x)<70&&Math.abs(e.y-s.y)<60)return true;return false;},
@@ -198,6 +247,7 @@ const MOBJ={
 
   /* off-screen arrows (Renderer HUD) */
   targets(g,out){const M=g.mo;if(!M||g.trial||g.tun)return;
+    for(const a of (M.alts||[]))if(a.st==='idle')out.push([a.x,a.y,ALT_C,{k:'mo',id:'@evil',f:0}]);
     for(const a of M.acts){if(a.done)continue;
       if(a.k==='scouter'&&a.st==='scan')out.push([a.dg.x,a.dg.y,ACT_C.scouter,{k:'mo',id:'actdig',f:0}]);
       else out.push([a.x,a.y,ACT_C[a.k],{k:'mo',id:ACT_ICON[a.k],f:0}]);}},
@@ -219,6 +269,7 @@ const MOBJ={
     return true;},
   /* beacon miniature: frame f of a sheet, cropped to its opaque box */
   icon(id,f){
+    if(id==='@evil')return this.evilBall();
     const S=Sprites.sheets[id];if(!S)return null;const C=this._ic||(this._ic={}),key=id+':'+f;if(C[key])return C[key];
     const b=this.box(S),h=b.bot-b.top+1,c=document.createElement('canvas');c.width=S.fw;c.height=h;
     c.getContext('2d').drawImage(S.img,(f|0)*S.fw,b.top,S.fw,h,0,0,S.fw,h);return C[key]=c;},
@@ -232,6 +283,54 @@ const MOBJ={
     ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=(w||4)+3;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,0,TAU);ctx.stroke();
     ctx.strokeStyle=col;ctx.lineWidth=w||4;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();},
 
+  /* the evil Dragon Ball (map and arrow icon of the Challenge Altar): a black-violet sphere with blood-red stars */
+  evilBall(){
+    if(this._eb)return this._eb;const S=64,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),r=S/2-3;
+    const gl=x.createRadialGradient(S/2,S/2,r*.6,S/2,S/2,S/2);gl.addColorStop(0,'rgba(162,75,255,.55)');gl.addColorStop(1,'rgba(162,75,255,0)');x.fillStyle=gl;x.fillRect(0,0,S,S);
+    const g=x.createRadialGradient(S/2-r*.35,S/2-r*.4,r*.05,S/2,S/2,r);g.addColorStop(0,'#c58cff');g.addColorStop(.35,'#6a24b0');g.addColorStop(.8,'#2a0848');g.addColorStop(1,'#0c0214');
+    x.fillStyle=g;x.beginPath();x.arc(S/2,S/2,r*.86,0,TAU);x.fill();x.lineWidth=2.5;x.strokeStyle='#05010a';x.stroke();
+    const star=(cx,cy,R)=>{x.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?R*.45:R;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.closePath();x.fill();};
+    x.fillStyle='#ff2246';for(const [dx,dy] of [[-.25,-.12],[.22,-.18],[-.12,.24],[.26,.2]])star(S/2+dx*r,S/2+dy*r,r*.2);
+    x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.ellipse(S/2-r*.38,S/2-r*.45,r*.16,r*.1,-.6,0,TAU);x.fill();
+    return this._eb=c;},
+  drawAltGround(ctx,g,a,t){
+    const x=a.x,y=a.y,wake=a.st==='wake',gone=a.st==='gone',fade=gone?clamp(1-(a.t-a.t1)/ALT_GONE,0,1):1,heat=wake?1:a.st==='idle'?clamp(a.pg/ALT_IN,0,1):0;
+    /* a slow vortex of dark ground under it, cracks glowing violet */
+    ctx.save();ctx.globalAlpha=.55*fade;
+    for(let i=0;i<3;i++){const rr=70+i*26+Math.sin(t*2+i)*4,an=t*(.6+i*.35)*(i%2?-1:1);
+      ctx.strokeStyle=i===1?'rgba(162,75,255,.5)':'rgba(40,8,64,.65)';ctx.lineWidth=6-i;ctx.beginPath();ctx.ellipse(x,y,rr,rr*.38,0,an,an+Math.PI*1.3);ctx.stroke();}
+    ctx.fillStyle='rgba(20,4,34,.45)';ctx.beginPath();ctx.ellipse(x,y,66,24,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=(.35+.35*heat+.15*Math.sin(t*7))*fade;ctx.strokeStyle='#b46cff';ctx.lineWidth=2;
+    for(let i=0;i<7;i++){const an=i*TAU/7+a.ph,r0=40,r1=r0+28+((i*13)%17);ctx.beginPath();ctx.moveTo(x+Math.cos(an)*r0,y+Math.sin(an)*r0*.38);ctx.lineTo(x+Math.cos(an+.12)*(r0+r1)/2,y+Math.sin(an+.12)*(r0+r1)/2*.38);ctx.lineTo(x+Math.cos(an)*r1,y+Math.sin(an)*r1*.38);ctx.stroke();}
+    ctx.restore();
+    if(a.st==='idle'&&a.pg>0)this.arc(ctx,x,y+2,ALT_R,a.pg/ALT_IN,ALT_C,5);
+    else if(a.st==='idle'){const k=(t*.7)%1;ctx.strokeStyle=hexA(ALT_C,(.5*(1-k)).toFixed(3));ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y,ALT_R*(.4+.6*k),ALT_R*(.4+.6*k)*.42,0,0,TAU);ctx.stroke();}
+    /* the statue */
+    let f=0;
+    if(a.st==='idle')f=((t+a.ph)%5)<.4?1:0;
+    else if(wake)f=ALT_SEQ[Math.min(ALT_SEQ.length-1,Math.floor((a.t-a.t1)/ALT_WAKE*ALT_SEQ.length))];
+    else f=7;
+    const jit=wake?rnd(-2,2):heat>.3?rnd(-1,1)*heat:0,sink=gone?(1-fade)*40:0;
+    ctx.save();ctx.globalAlpha=fade;this.shadow(ctx,x,y,58,.3);
+    GLOW.at(ctx,x,y-110,90+30*heat+10*Math.sin(t*3),'#7a2ab0',.28+.3*heat);
+    ctx.beginPath();ctx.rect(x-200,y-400,400,400+4);ctx.clip();   /* it sinks into the ground when it goes */
+    if(!this.img(ctx,'altsfida',f,x+jit,y+sink,MO_H.altsfida))this.blob(ctx,x,y+sink,120,'#4a2a8a');
+    if(wake||heat>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=fade*(wake?.18+.14*Math.sin(t*30):.15*heat);this.img(ctx,'altsfida',f,x+jit,y+sink,MO_H.altsfida);}
+    ctx.restore();
+    /* red eyes in the dark */
+    if(!gone&&(f===0||f===1)){const ex=x+(f?6:0),ey=y-118;GLOW.at(ctx,ex,ey,14+4*Math.sin(t*5),'#ff2246',.5+.3*heat);}},
+  drawAltAir(ctx,g,a,t){
+    const fade=a.st==='gone'?clamp(1-(a.t-a.t1)/ALT_GONE,0,1):1;
+    for(const q of a.ps){const u=q.l/q.m,al=Math.sin(Math.PI*u)*.55;if(al<=0)continue;
+      ctx.fillStyle='rgba(28,6,44,'+al.toFixed(3)+')';ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,TAU);ctx.fill();
+      if(q.r<9){ctx.fillStyle='rgba(162,75,255,'+(al*.5).toFixed(3)+')';ctx.beginPath();ctx.arc(q.x,q.y,q.r*.45,0,TAU);ctx.fill();}}
+    const b=a.bolt;if(b&&b.t<.16&&a.st!=='gone'){const al=(1-b.t/.16)*fade;
+      ctx.save();ctx.lineJoin='round';ctx.globalAlpha=al;
+      for(const [w,c] of [[6,'rgba(122,42,176,.6)'],[2.5,'#d9b0ff'],[1,'#ffffff']]){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();b.pts.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));ctx.stroke();}
+      ctx.restore();const e=b.pts[b.pts.length-1];GLOW.at(ctx,e[0],e[1],26,ALT_C,.5*al);}
+    if(a.st==='wake'){const k=clamp((a.t-a.t1)/ALT_WAKE,0,1),h=260*Math.sin(Math.PI*Math.min(1,k*1.4));   /* a pillar of dark energy */
+      ctx.save();ctx.globalCompositeOperation='lighter';const gr=ctx.createLinearGradient(0,a.y-h,0,a.y);gr.addColorStop(0,'rgba(162,75,255,0)');gr.addColorStop(1,'rgba(162,75,255,.35)');
+      ctx.fillStyle=gr;ctx.fillRect(a.x-34-8*Math.sin(t*20),a.y-h,68+16*Math.sin(t*20),h);ctx.restore();}},
   drawProp(R,e,t){
     const ctx=R.ctx,k=e.prop,B=BRK[k];if(!B)return;
     const q=e.hp/(e.max||1),f=q>.5?0:1,g0=Math.min(1,(e.age||0)/BRK_IN),gs=g0>=1?1:Math.max(0,easeOutBack(g0)),sq=e.sq>0?e.sq:0;
@@ -252,6 +351,7 @@ const MOBJ={
         if(!this.img(ctx,'brk'+f.k,2,0,0,B.h)){ctx.fillStyle=B.c;for(let i=0;i<5;i++)ctx.fillRect(-12+i*6,-3-(i%2)*3,4,3);}
         ctx.restore();}
       M.fx.length=w;}
+    for(const a of (M.alts||[]))this.drawAltGround(ctx,g,a,t);
     for(const a of M.acts){
       const x=a.x,y=a.y;
       if(a.k==='drop'){
@@ -298,6 +398,7 @@ const MOBJ={
   /* what is in the air: the falling crate under its parachute, the Nimbus flying in and away, the Senzu beans going to the hero */
   drawAir(R,g,t){
     const M=g.mo;if(!M)return;const ctx=R.ctx,now=performance.now(),p=g.p;
+    for(const a of (M.alts||[]))this.drawAltAir(ctx,g,a,t);
     for(const a of M.acts){
       if(a.k==='drop'&&!a.e){const q=clamp(a.t/DROP_FALL,0,1),e=q<.85?q/.85*.9:.9+(q-.85)/.15*.1,h=BRK.supply.h,y=a.y-380*(1-e),sw=Math.sin(a.t*2.6)*.14*(1-q);
         ctx.save();ctx.translate(a.x,y);ctx.rotate(sw);

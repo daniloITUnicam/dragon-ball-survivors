@@ -184,6 +184,8 @@ Object.assign(UI.prototype,{
     const stats=[krt('stHp',Math.round(p.hp)+' / '+p.maxHp,'hp'),krt('stPower','x'+S.might.toFixed(2),'might'),krt('stSpeed','x'+S.spd.toFixed(2),'spd'),krt('stCooldown','x'+S.cd.toFixed(2),'cd'),
       krt('stArmor',S.armor.toFixed(1),'armor'),krt('stRegen',S.regen.toFixed(1)+'/s','regen'),krt('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')','crit'),krt('stDodge',Math.round(S.dodge*100)+'%','dodge'),
       krt('stArea','x'+S.area.toFixed(2),'area'),krt('stProj','+'+(S.proj|0),'proj'),krt('stLuck',Math.round(S.luck*100)+'%','luck'),krt('stXp','x'+S.xp.toFixed(2),'xp'),krt('stGold','x'+S.gold.toFixed(2),'gold'),krt('stMagnet',Math.round(S.magnet),'magnet')];
+    if(S.eliteRate>0)stats.push(kr('stElite','+'+Math.round(S.eliteRate*100)+'%'));
+    if(g.altarN>0)stats.push(kr('stAlt',g.altarN+' (+'+Math.round(g.altarN*ALT_K*100)+'%)'));
     const fe=g.formEntry;
     const ups=[kr(null,g.passCount()+' / '+MAX_PASSIVES),kr('senzuTitle',g.senzu+' / '+SENZU_MAX),kr('formLabel',fe?this.tr(fe.n):t('baseForm')+' ('+g.formsUnlocked+'/'+g.formMax+')'),
       ...Object.keys(g.pass).filter(id=>g.pass[id]>0).map(id=>h('div',{class:'prow'},PASS_IMG[id]&&SHOP_IMG[PASS_IMG[id]]?imgGlyph(SHOP_IMG[PASS_IMG[id]],PASS[id].c):glyph(PASS[id].k,PASS[id].c),h('div',{class:'col'},h('div',{class:'cn'},this.tr(PASS[id].n)),pips(g.pass[id],passMax(id)),h('div',{class:'fx'},h('span',{class:'fxi',style:'--c:'+(CAT_COL[PASS_ICON[id]]||PASS[id].c)},h('b',null,this.tr(PASS[id].d))))))),
@@ -255,9 +257,33 @@ Object.assign(UI.prototype,{
   /* the map tab: a big canvas centred on the hero with the pickups, and the zoom buttons over its bottom-left corner */
   pauseMap(g){
     if(this.mapZ===undefined)this.mapZ=MAP_ZOOM0;
-    const mw=Math.max(420,Math.min(1600,innerWidth<=900?innerWidth-40:innerWidth-290)),mh=Math.max(260,Math.min(900,innerHeight-190)),cv=h('canvas',{class:'pmapcv',width:Math.round(mw),height:Math.round(mh)}),redraw=()=>this.app.renderer.drawPauseMap(cv,g,this.mapZ);
+    const mw=Math.max(420,Math.min(1600,innerWidth<=900?innerWidth-40:innerWidth-290)),mh=Math.max(260,Math.min(900,innerHeight-190)),cv=h('canvas',{class:'pmapcv',width:Math.round(mw),height:Math.round(mh)});
+    /* drag offset (world px) from the hero: kept across zoom / tab changes, dropped once the hero has moved (a new pause) */
+    let pan=this.mapPan;if(!pan||pan.hx!==g.p.x||pan.hy!==g.p.y)pan=this.mapPan={x:0,y:0,hx:g.p.x,hy:g.p.y};
+    let raf=0;const redraw=()=>{raf=0;this.app.renderer.drawPauseMap(cv,g,this.mapZ,pan);ctr.classList.toggle('on',!!(pan.x||pan.y));},later=()=>{if(!raf)raf=requestAnimationFrame(redraw);};
+    const recentre=()=>{if(!pan.x&&!pan.y)return;this.sfx('uiTab');pan.x=pan.y=0;redraw();};
+    /* press and drag (mouse, pen or finger) moves the view; double click / double tap brings it back on the hero */
+    let drag=null,tap=0;
+    /* v137: the icon under the cursor (or the tapped one on a phone) shows what it does */
+    const tipEl=h('div',{class:'pmtip'}),tr=o=>this.tr(o);
+    const hitAt=e=>{const r=cv.getBoundingClientRect(),k=cv.width/Math.max(1,r.width),x=(e.clientX-r.left)*k,y=(e.clientY-r.top)*k;let best=null,bd=1e9;
+      for(const q of (cv._hits||[])){const d=Math.hypot(q.x-x,q.y-y);if(d<q.r+6*k&&d<bd){bd=d;best=q;}}return best;};
+    const showTip=(e,q)=>{const t=q&&mapTipText(tr,q.tip.k,q.tip.rar);if(!t){tipEl.classList.remove('on');cv.style.cursor='';return;}
+      tipEl.replaceChildren(h('b',{style:t.c?'color:'+t.c:''},t.n),h('span',null,t.d));tipEl.classList.add('on');cv.style.cursor='help';
+      const w=el.getBoundingClientRect(),z=w.width/Math.max(1,el.offsetWidth)||1,x=(e.clientX-w.left)/z,y=(e.clientY-w.top)/z,right=x>el.offsetWidth*.6;
+      tipEl.style.left=(right?Math.max(4,x-14-tipEl.offsetWidth):x+14)+'px';tipEl.style.top=Math.max(4,Math.min(el.offsetHeight-tipEl.offsetHeight-4,y-tipEl.offsetHeight-10))+'px';};
+    cv.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();cv.setPointerCapture(e.pointerId);const r=cv.getBoundingClientRect();
+      drag={id:e.pointerId,x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,s:cv.width/Math.max(1,r.width)/MAP_ZOOMS[this.mapZ]};cv.classList.add('drag');
+      const n=performance.now();if(n-tap<320&&!hitAt(e)){tap=0;recentre();}else tap=n;});
+    cv.addEventListener('pointermove',e=>{
+      if(!drag||e.pointerId!==drag.id){if(e.pointerType==='mouse')showTip(e,hitAt(e));return;}
+      tipEl.classList.remove('on');pan.x-=(e.clientX-drag.x)*drag.s;pan.y-=(e.clientY-drag.y)*drag.s;drag.x=e.clientX;drag.y=e.clientY;if(Math.abs(pan.x)+Math.abs(pan.y)>2)tap=0;later();});
+    const up=e=>{if(drag&&e.pointerId===drag.id){const moved=Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>6;drag=null;cv.classList.remove('drag');
+      if(!moved&&e.type==='pointerup')showTip(e,hitAt(e));}};   /* a tap (no drag): the tip of what is under the finger, or none */
+    cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!drag)tipEl.classList.remove('on');});
+    const ctr=h('button',{class:'btn small pmctr','data-fid':'mapctr',title:this.tr(T('Torna su di te','Back to you')),onclick:recentre},'⌖');
     const zb=(txt,d,fid)=>h('button',{class:'btn small pmz '+(d>0?'plus':'minus'),'data-fid':fid,'aria-label':d>0?'+':'-',onclick:()=>{const n=Math.max(0,Math.min(MAP_ZOOMS.length-1,this.mapZ+d));if(n!==this.mapZ){this.sfx('uiTab');this.mapZ=n;redraw();}}},h('i',{class:'pzh'}),d>0?h('i',{class:'pzv'}):null);
-    const el=h('div',{class:'pmap'},cv,h('div',{class:'pmzoom'},zb('',1,'mapin'),zb('',-1,'mapout')));
+    const el=h('div',{class:'pmap'},cv,tipEl,h('div',{class:'pmzoom'},zb('',1,'mapin'),zb('',-1,'mapout'),ctr));
     setTimeout(redraw,0);   /* after the sprites are in the page */
     redraw();
     return el;

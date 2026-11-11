@@ -580,6 +580,16 @@ class AudioSys{
         [1568,0,1568].forEach((f,i)=>{if(f)this.toneAt(f,.09,'square',.07,0,.32+i*.09);});
         this.toneAt(2093,.6,'square',.07,900,.6);this.toneAt(1046,.6,'triangle',.07,0,.6);this.toneAt(523,.6,'square',.04,0,.6);
         this.noise(.5,.09,12000,2000,.6);this.thump(.3,80,.6,.6);break;
+      /* v137: the Challenge Altar (evil 8-bit): altCall = it appears (two low tritone tolls), altHum = the hum while you stand in its circle,
+         altWake = the evil dragon wakes (a descending chromatic shriek over a growling bass), altGone = it sinks back into black smoke */
+      case'altCall':[[147,0],[208,.22],[139,.5],[196,.72]].forEach(([f,d])=>{this.toneAt(f,.34,'square',.07,-f*.08,d);this.toneAt(f/2,.36,'sawtooth',.05,0,d);});
+        this.noise(.9,.05,900,90,.1);this.thump(.18,60,.6,0);break;
+      case'altHum':this.toneAt(110+Math.random()*6,.16,'sawtooth',.035,-12,0);this.toneAt(156,.12,'square',.02,0,.04);break;
+      case'altWake':[784,740,698,659,622,587,554,523,494,466,440,415].forEach((f,i)=>this.toneAt(f,.07,'square',.06,0,i*.045));
+        this.toneAt(110,1.3,'sawtooth',.09,-55,0);this.toneAt(82,1.3,'square',.06,-30,.05);this.toneAt(117,1.1,'square',.04,-40,.1);   /* growl: three detuned basses */
+        [[294,.62],[415,.62],[277,.86],[392,.86]].forEach(([f,d])=>this.toneAt(f,.3,'square',.06,-f*.3,d));   /* tritone stabs bending down */
+        this.noise(1.4,.11,2400,60,0);this.thump(.35,55,.9,.55);break;
+      case'altGone':[330,311,294,262,233,196].forEach((f,i)=>this.toneAt(f,.12,'triangle',.05,-f*.2,i*.07));this.noise(.8,.06,1500,80,.1);break;
       case'gPop0':this.toneAt(420,.07,'square',.04,260,0);break;
       case'gPop1':this.toneAt(560,.08,'square',.045,330,0);this.toneAt(1120,.09,'sine',.03,0,.03);break;
       case'gPop2':this.toneAt(700,.09,'square',.05,400,0);[1320,1760].forEach((f,i)=>this.toneAt(f,.12,'sine',.035,0,.04+i*.05));break;

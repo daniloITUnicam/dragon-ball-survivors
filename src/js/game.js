@@ -31,7 +31,7 @@ const KAI_TICK=2;
 const XF_LOCK=.6,XF_ZOOM=1.6,XF_ZOUT=.9;   /* v133: the Kaioken takes its health every KAI_TICK s, in one bite */
 const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_GIVE=130,PET_KAMI_SPD=560,PET_KAMI_T=2.6,PET_KAMI_R=620,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
-const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
+const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,ELITE_BONUS_MAX=1,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
 /* enemy walking speed follows the stage difficulty: x0.80 on the first stage up to the old x1.1 from difficulty 4.4 on */
 const stageSpd=sd=>Math.min(ENEMY_SPD_MUL,.8+.07*sd);
 /* v134: the 30-minute curve (all stages): enemy health x(1 + CURVE_HP * progress^CURVE_HP_E), damage x(1 + CURVE_DMG * progress), how many at once
@@ -63,6 +63,10 @@ const SPAR_COPY_MUL=.6,SPAR_COPY_P=1;   /* Room of Spirit and Time: the Master c
 const SPAR_HP_K=1.5,SPAR_ATK_K=1.3;   /* v132: the Master has 50% more health and attacks 30% more often (his attack interval / 1.3) */
 /* how the Master reproduces each weapon (v57): his copies look like yours (orbs, spears, the Kamehameha sprite beam, tinted zones); anything not listed here uses GHOST_KIND, else a blast on you */
 const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin:'spear',breaker:'beam',hellzone:'grenade',chrono:'rewind',shock:'shock',hakai:'erase',meteor:'meteor',dyn:'kick'};
+/* v137: boss health floor: the first boss has BOSS_HP0 at least, rising on a curve (run progress^BOSS_HP_E, up to the final boss's time) to BOSS_HPF for the final boss of every stage.
+   Minibosses: MINI_HPF of that curve, never below BOSS_HP0 */
+const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.on;   /* (called at run time: mobile.js loads last) */
+const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
@@ -166,7 +170,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
   /* ---------- stats ---------- */
   tMods(){
-    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0};
+    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0,elite:0};
     for(const id of this.trinkets){const t=trinDef(id);if(t&&(t.m||this.tFu[id])){const tmx=trinMods(t,this.trR(id),this.trP(id),this.tFu[id]);for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
@@ -190,7 +194,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
-    S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
@@ -487,22 +491,19 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   chestRewards(isFinal,boss,elite,rar){
     const r0=rar==null?0:clamp(rar,0,4),cf=CHEST_RAR[r0],R=[],zen=m=>({k:'zenny',v:Math.round(m*ZMUL*(1+this.sdR))}),used=[];
     const tr=(id,r)=>{used.push(id);return{k:'trinket',id,rar:this.endless?Math.min(r,END_RAR):r,pf:this.capPf(pfFloor(rollPf(this.S.luck,r===r0&&cf.pb?cf.pb:1),cf.pf))};};   /* Epic+: the perfection starts from cf.pf; Mythic: a better roll for its Mythic trinkets */
-    /* the weapon slot: a ready evolution, otherwise a character upgrade; then cf.t more character upgrades */
+    /* the weapon slot: a ready evolution, otherwise a character upgrade; cf.up upgrades in all (that slot included) */
     const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     const ev=elig.length?pick(elig).id:null;if(ev)R.push({k:'evo',id:ev});
     const fu=ev?null:this.fuseReady();if(fu)R.push({k:'fuse',id:fu.id});   /* v115: no evolution ready: a double evolution takes the slot */
-    const ups=this.chestUps(cf.t+(ev||fu?0:1),ev);
+    const ups=this.chestUps(cf.up-(ev||fu?1:0),ev);
     for(const o of ups)R.push({k:'up',o});
-    /* trinkets only once everything is maxed: what the upgrades could not fill (all of it when nothing was left), at most cf.tn, the first ones of the chest's own rarity */
-    const slots=cf.t+1-R.length;
-    if(slots>0){
-      const n=Math.min(cf.tn,R.length?slots:cf.tn),fixed=r0>=1?Math.min(cf.g,n):0;
-      for(let i=0;i<fixed;i++){
-        const c=pickTrinket(r0,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id))||pickTrinket(r0,t=>!used.includes(t.id));   /* none left that you do not carry: a copy that upgrades yours */
-        if(c)R.push(tr(c.id,r0));else R.push(zen(40));
-      }
-      for(let i=fixed;i<n;i++){const id=this.rollTrinket(used);if(!id){R.push(zen(40));continue;}R.push(tr(id,this.rarOf(id)));}
+    /* v137: cf.tr trinkets (the first cf.g of the chest's own rarity, the others random) + one random trinket for every upgrade nothing was left to fill */
+    const own=cf.tr,n=own+Math.max(0,cf.up-R.length),fixed=r0>=1?Math.min(cf.g,own):0;
+    for(let i=0;i<fixed;i++){
+      const c=pickTrinket(r0,t=>!this.trinkets.includes(t.id)&&!used.includes(t.id))||pickTrinket(r0,t=>!used.includes(t.id));   /* none left that you do not carry: a copy that upgrades yours */
+      if(c)R.push(tr(c.id,r0));else R.push(zen(40));
     }
+    for(let i=fixed;i<n;i++){const id=this.rollTrinket(used);if(!id){R.push(zen(40));continue;}R.push(tr(id,this.rarOf(id)));}
     if(!R.length)R.push(zen(40));
     return R;
   }
@@ -1065,6 +1066,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(e.boss&&e.mini){   /* miniboss: like an elite (chest, ticket, a little zenny); it does not count as a boss */
       this.bossAlive--;this.addTicket('t1',1,e);
       {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
+      this.altChests(e,Math.floor((this.altarN||0)/2));   /* v137: +1 chest every 2 woken Challenge Altars */
       const pay=Math.round(40*ZMUL*(this.sdR+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);this.burst(e.x,e.y-10,22,'#ffd23f');this.audio.sfx('coin');
       for(let i=0;i<5;i++)this.dropGem(e.x+rnd(-50,50),e.y+rnd(-50,50),18*XP_MUL);
       this.shake=.5;this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.2);
@@ -1078,6 +1080,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(!this.bossHit)this.run.perfect++;
       if(Math.random()<GACHA.bossChance)this.addTicket('t10',1,e);   /* 100%: a 10x ticket */
       {this.chests.push({...this.landAt(e.x,e.y,30),final:e.final,t:0,boss:true,rar:BOSSX.chestRar(this,e)});}
+      this.altChests(e,this.altarN||0);   /* v137: +1 chest per woken Challenge Altar */
       for(let i=0;i<6;i++)this.dropGem(e.x+rnd(-60,60),e.y+rnd(-60,60),25*XP_MUL);
       this.shake=.7;this.hitStop(HS_BOSS,ZP_BOSS);this.emote('happy',1.6);this.say(this.env.tr((BOSSES[e.bid]||e.bd).n)+' '+this.env.tr(T('sconfitto!','defeated!')),'#ffb13b',2.6);
       this.bossShock(e);   /* shock wave (corpse.js) */
@@ -1516,8 +1519,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     return out;
   }
   updateElites(){
+    /* v137: trinkets with "elite spawn rate" add extra elites on top of the plan: +X% = X% more elites per minute than the run's planned pace (they pile up while a fight holds them back) */
+    const dt=this.t-(this.eliteLT===undefined?this.t:this.eliteLT),er=this.S&&this.S.eliteRate||0,pl=this.elitePlan;this.eliteLT=this.t;
+    if(er>0&&pl.length&&dt>0&&dt<1)this.eliteX=Math.min(2,(this.eliteX||0)+dt*er*pl.length/Math.max(60,this.dur));
     if(this.bossAlive>0||this.finalSpawned||this.wave.ph==='surge')return;
-    for(const e of this.elitePlan)if(!e.done&&this.t>=e.t){e.done=true;this.spawnElite(e.i);break;}
+    for(const e of pl)if(!e.done&&this.t>=e.t){e.done=true;this.spawnElite(e.i);return;}
+    if(this.eliteX>=1&&this.t>90&&!this.en.some(e=>e.elite&&!e.dead)){const fin=this.bossQ.find(b=>b.final);if(fin&&this.t>fin.t-32)return;
+      this.eliteX-=1;this.spawnElite(pl.filter(e=>e.done).length);}
   }
   /* ---- minibosses: one every 5 minutes wherever the real bosses leave a gap (they never replace a boss); a smaller version of a stage boss, no transformations ---- */
   planMinis(){
@@ -1594,12 +1602,20 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     let bd=BOSSES[id];if(mini)bd=Object.assign({},bd,{n:T(bd.n.it+' (Mini)',bd.n.en+' (Mini)'),p2:0,morph:0});
     const p=this.p,a=rnd(0,TAU),d=this.viewR+60,[bx,by]=at?[at.x,at.y]:this.spawnSpot(a,d,0);
     const e=this.mkEnemy({n:bd.n,c:bd.c,xp:0,hp:bd.hp,r:bd.r,spd:bd.spd,dmg:bd.dmg,ai:'boss',sp:bd.sp},bx,by);
-    const bp=Math.min(1,this.prog()),hp=bossRef('hp',bp)*BOSS_HP_MUL*this.hardK*(1+CURVE_BOSS*this.prog())*this.D.hp*(this.x2?1.4*this.x2xK('bhp'):1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
+    const bp=Math.min(1,this.prog()),hp0=bossRef('hp',bp)*BOSS_HP_MUL*this.hardK*(1+CURVE_BOSS*this.prog())*this.D.hp*(this.x2?1.4*this.x2xK('bhp'):1)*(final?1.3:1)*((at&&at.k)||1)*(hk||1);
+    const ak=typeof MOBJ!=='undefined'?MOBJ.altK(this):1,hp=Math.round(Math.max(hp0,this.bossFloor(final,mini)*(this.x2?1.4*this.x2xK('bhp'):1)*((at&&at.k)||1))*ak);   /* v137: woken Challenge Altars: +15% each */
     Object.assign(e,{ai:'boss',boss:true,bid:id,bd,final:!!final,armor:1.2+1.2*this.sd+(final?2.6:0),hp,max:hp,r:bd.r,spd:bd.spd,dmg:bossRef('dmg',bp)*this.dmgMul()/this.norm.dmg*(final?.9:1)*(mini?MINI_DMG:1),sh:bd.cd,phase:0,spin:0,dashT:0,tf:0,xf:null,tfT:final?105:85,zoff:0,mini:!!mini});
+    if(ak>1){e.armor*=ak;e.dmg*=ak;e.altK=ak;}
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
     this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
+  }
+  altChests(e,n){for(let i=0;i<n;i++){const a=i/Math.max(1,n)*TAU+.4,r=70+16*(i%2);this.chests.push({...this.landAt(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.6,30),final:false,t:0,boss:true,alt:true,rar:this.rollChestRar()});}}
+  bossFloor(final,mini){
+    if(final)return BOSS_HPF;
+    const fin=this.bossQ.find(b=>b.final),q=Math.max(0,this.t/Math.max(60,fin?fin.t:this.dur)),v=BOSS_HP0*Math.pow(BOSS_HPF/BOSS_HP0,Math.pow(Math.min(1,q),BOSS_HP_E));
+    return mini?Math.max(BOSS_HP0,v*MINI_HPF):v;
   }
   bossAttack(e){
     const p=this.coop?this.coopTgt(e):this.p,bd=e.bd,aim=Math.atan2(p.y-18-e.y,p.x-e.x),d=e.dmg;
@@ -2065,7 +2081,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}else if(f.fol){f.x=f.fol.x;f.y=f.fol.y-18;}}
-    keepIf(this.fx,f=>f.l>0);this.updateCorpses(dt);
+    keepIf(this.fx,f=>f.l>0);if(this.fx.length>FX_MOB&&fxMob())this.fx.splice(0,this.fx.length-FX_MOB);   /* v137: phones keep the newest FX_MOB particles (late runs reached ~470) */
+    this.updateCorpses(dt);
     for(const t of this.tx)t.t+=dt;
     keepIf(this.tx,t=>t.t<t.l);   /* v121: the lists are compacted in place (no new arrays every frame) */
     keepIf(this.en,e=>!e.dead);keepIf(this.pr,b=>!b.dead);keepIf(this.eb,b=>!b.dead);
@@ -2538,7 +2555,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       l.t+=dt;this.drift(l,dt);
       const dx=p.x-l.x,dy=p.y-l.y,d=Math.hypot(dx,dy)||1;
       if(l.sx!=null&&d<S.magnet&&l.k!=='ball'&&l.k!=='sball')l.sx=l.sy=undefined;   /* drawn in by the pick-up range: it stops floating to the shore */
-      /* Dragon Balls are not attracted: you have to walk over them (tiny pick-up radius); the screen-edge arrows show where they are */
+      /* Dragon Balls ignore the pick-up range: from BALL_PULL_R away (v137, a medium reach of their own) they fly to you; the screen-edge arrows show where they are */
+      if((l.k==='ball'||l.k==='sball')&&!l.lock&&d<BALL_PULL_R){l.sx=l.sy=undefined;const sp=260+d*1.5;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
       /* every other pick-up on the ground (zenny, bags, hearts, Fortune, Magnet, capsules, the timed power-ups...) is drawn in by the whole pick-up range at the speed of the experience gems */
       if(l.k!=='ball'&&l.k!=='sball'&&d<S.magnet){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}
       if(l.att&&(l.k==='bag'||l.k==='coin'||l.k==='dmg'||l.k==='haste')){const sp=380+d;l.x+=dx/d*sp*dt;l.y+=dy/d*sp*dt;}   /* the Magnet pick-up drags zenny bags, coins and the timed power-ups too */
@@ -2829,6 +2847,7 @@ class MapDirector{
     }else if(f.kind==='font'){
       g.addXp(g.need*.4/g.S.xp);g.say(g.env.tr(T('Fonte dell\'esperienza','Experience font')),'#8ad8ff',2);g.audio.sfx('pickup');g.ring(f.x,f.y,100,'#8ad8ff',.5);
     }
+    g.shake=Math.max(g.shake,.16);g.hitStop&&g.hitStop(.05,.04);   /* v137: the altar answers (renderer: Renderer.featUseFx) */
     f.used=true;f.fade=0;
   }
 }

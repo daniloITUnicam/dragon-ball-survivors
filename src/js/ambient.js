@@ -2,6 +2,7 @@
 /* ====== Ambient: living stages (visual only, never touches gameplay).
    Organic lakes + biome tints, animated tiles/props/decor, drifting particles, wandering critters,
    parallax layers and periodic weather. Toggle: settings.ambient. Adaptive LOD keeps 60 fps. ====== */
+const SOFT_K=.25;
 const sstep=(a,b,x)=>{const k=clamp((x-a)/(b-a),0,1);return k*k*(3-2*k);};
 const vnoise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
 /* per-theme recipe: wt=lake threshold, tint=[dry,lush], parts=[kind,count], crit=[kind,count], ev=[kind,period,duration,offset]
@@ -387,16 +388,15 @@ const Ambient={
   ground(ctx,t){
     const c=this.cfg;if(!this.on||!c)return;
     const cx=this.cx,cy=this.cy,vw=this.vw,vh=this.vh;
-    if(c.shadow&&this.lod>=.5){
-      const f=1,cell=420,wdx=14+this.wd*18,sp=GLOW.spr('#000000');
-      ctx.globalAlpha=.1;
+    if(c.shadow&&this.lod>=.5)this.soft(ctx,X=>{
+      const cell=420,wdx=14+this.wd*18,sp=GLOW.spr('#000000');
+      X.globalAlpha=.1;
       for(let gx=Math.floor((cx-wdx*t)/cell)-1;gx<=Math.floor((cx+vw-wdx*t)/cell)+1;gx++)for(let gy=Math.floor(cy/cell)-1;gy<=Math.floor((cy+vh)/cell)+1;gy++){
         const h=hash(gx*3+4,gy*5+1);if(h>.5)continue;
         const x=(gx+hash(gx,gy+3))*cell+wdx*t,y=(gy+hash(gx+8,gy))*cell,r=170+h*300;
-        ctx.drawImage(sp,x-r*1.4,y-r*.8,r*2.8,r*1.6);
+        X.drawImage(sp,x-r*1.4,y-r*.8,r*2.8,r*1.6);
       }
-      ctx.globalAlpha=1;
-    }
+    });
     if(c.spot){
       ctx.save();ctx.globalCompositeOperation='lighter';
       for(let i=0;i<3;i++){const a=t*.35+i*2.1,x=cx+vw/2+Math.cos(a)*vw*.38,y=cy+vh/2+Math.sin(a*1.3+i)*vh*.34,r=130+30*Math.sin(t+i);
@@ -492,20 +492,33 @@ const Ambient={
     if(this.lod<.5)return;
     const cx=this.cx,cy=this.cy,vw=this.vw,vh=this.vh;
     if(c.nimbus)this.nimbus(ctx,cx,cy,vw,vh,t,1-this.nt*.55,(this.theme.charCodeAt(0)%7)/9);
-    const lay=(f,cell,dens,wdx,col,al,rmin,rmax)=>{
-      const ox=cx*f,oy=cy*f,sx=cx-ox,sy=cy-oy,sp=GLOW.spr(col);ctx.globalAlpha=al;
+    const lay=(X,f,cell,dens,wdx,col,al,rmin,rmax)=>{
+      const ox=cx*f,oy=cy*f,sx=cx-ox,sy=cy-oy,sp=GLOW.spr(col);X.globalAlpha=al;
       for(let gx=Math.floor((ox-wdx*t)/cell)-1;gx<=Math.floor((ox+vw-wdx*t)/cell)+1;gx++)for(let gy=Math.floor(oy/cell)-1;gy<=Math.floor((oy+vh)/cell)+1;gy++){
         const h=hash(gx*11+3,gy*13+7);if(h>dens)continue;
         const r=rmin+hash(gx+2,gy+5)*(rmax-rmin),x=sx+(gx+hash(gx,gy+9))*cell+wdx*t,y=sy+(gy+hash(gx+6,gy))*cell;
-        ctx.drawImage(sp,x-r*1.3,y-r*.7,r*2.6,r*1.4);
+        X.drawImage(sp,x-r*1.3,y-r*.7,r*2.6,r*1.4);
       }
-      ctx.globalAlpha=1;
     };
     const fm=this.wxOn&&this.evK==='fog'?this.evI:0;
-    if(c.mist)lay(1.18,520,.4,10+this.wd*14,c.mist[0],c.mist[1]+fm*.3,200,380);
-    if(fm>0.02)lay(1.1,380,.6,12,this.theme==='namek'?'#bfffe6':'#eef4f4',.34*fm,240,420);
-    if(c.hi){lay(1.32,380,.5,22+this.wd*30,'#ffffff',.55,150,300);lay(1.15,300,.3,15+this.wd*20,'#ffffff',.3,110,200);}
-    if(this.theme==='hell')lay(1.2,460,.35,12,'#3a0a08',.22,200,360);
+    if(!c.mist&&!(fm>0.02)&&!c.hi&&this.theme!=='hell')return;
+    this.soft(ctx,X=>{
+      if(c.mist)lay(X,1.18,520,.4,10+this.wd*14,c.mist[0],c.mist[1]+fm*.3,200,380);
+      if(fm>0.02)lay(X,1.1,380,.6,12,this.theme==='namek'?'#bfffe6':'#eef4f4',.34*fm,240,420);
+      if(c.hi){lay(X,1.32,380,.5,22+this.wd*30,'#ffffff',.55,150,300);lay(X,1.15,300,.3,15+this.wd*20,'#ffffff',.3,110,200);}
+      if(this.theme==='hell')lay(X,1.2,460,.35,12,'#3a0a08',.22,200,360);
+    });
+  },
+  /* v137: the big soft layers (cloud shadows, mist decks) are dozens of screen-sized glow sprites (~14 screens of overdraw a frame, the main cost on phones):
+     drawn into a buffer at SOFT_K of the canvas resolution with the same camera, then stretched over the canvas once. Same look, about 1/16 of the pixels */
+  soft(ctx,fn){
+    const cv=ctx.canvas,k=SOFT_K,w=Math.max(1,Math.ceil(cv.width*k)),h=Math.max(1,Math.ceil(cv.height*k));
+    if(!this.sb){this.sb=document.createElement('canvas');this.sbx=this.sb.getContext('2d');}
+    const b=this.sb,X=this.sbx;
+    if(b.width!==w||b.height!==h){b.width=w;b.height=h;}else{X.setTransform(1,0,0,1,0,0);X.clearRect(0,0,w,h);}
+    const m=ctx.getTransform();X.setTransform(m.a*k,m.b*k,m.c*k,m.d*k,m.e*k,m.f*k);X.globalAlpha=1;X.imageSmoothingEnabled=true;
+    fn(X);
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.imageSmoothingEnabled=true;ctx.drawImage(b,0,0,w,h,0,0,w/k,h/k);ctx.restore();
   },
   /* ---------- screen space: light rays, dawn/dusk, night, weather ---------- */
   screen(ctx,W,H,U,t){

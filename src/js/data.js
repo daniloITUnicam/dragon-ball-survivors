@@ -638,7 +638,8 @@ const RARITY=[{n:T('Comune','Common'),c:'#b8c4d0'},{n:T('Raro','Rare'),c:'#4ab0f
    v109: a chest gives character upgrades (t = weapon / upgrade levels besides the weapon slot); trinkets only come out once everything is maxed:
    tn = trinkets then (1 / 2 / 3 / 3 / 3), the first g of the chest's own rarity, pf = their perfection starts from this value (the roll is squeezed into pf..100) */
 const CHEST_W=[52,40,6,1.6,.4];
-const CHEST_RAR=[{w:1,t:0,tn:1,g:0,pf:0},{w:1,t:2,tn:2,g:1,pf:0},{w:1,t:3,tn:3,g:1,pf:35},{w:1,t:4,tn:3,g:1,pf:50},{w:1,t:5,tn:3,g:1,pf:75,pb:1.2}];
+/* v137: up = upgrades (the weapon slot included), tr = trinkets on top: Common 1, Rare 2, Epic 2 + 1, Legendary 3 + 2, Mythic 3 + 3; an upgrade that cannot be given (all maxed) becomes one more trinket */
+const CHEST_RAR=[{w:1,up:1,tr:0,g:0,pf:0},{w:1,up:2,tr:0,g:1,pf:0},{w:1,up:2,tr:1,g:1,pf:35},{w:1,up:3,tr:2,g:1,pf:50},{w:1,up:3,tr:3,g:1,pf:75,pb:1.2}];
 /* v121: trinket by id through a Map (rebuilt when the list grows: trinkets2.js adds to it at load) instead of a linear search */
 let TRIN_ID=null,TRIN_N=-1;
 function trinDef(id){if(TRIN_N!==TRINKETS.length){TRIN_ID=new Map();for(const t of TRINKETS)if(!TRIN_ID.has(t.id))TRIN_ID.set(t.id,t);TRIN_N=TRINKETS.length;}return TRIN_ID.get(id);}
@@ -677,8 +678,8 @@ const TRINKETS=[
 
 /* ---- trinket rarity instances: the same trinket can be found at any rarity (common .. mythic); stats scale with it and are capped per rarity ---- */
 const RS=[.35,.55,.75,1,1.33];                       /* stat scale per rarity, legendary = 1 */
-const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20};   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
-const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown']};
+const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20,elite:.3356};   /* elite: Mythic x Perfection 100 = +50% at most (.3356*1.33*1.12) */   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
+const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown'],elite:['comparsa élite','elite spawn rate']};
 /* Perfection (v54): every trinket you find or pull comes with a roll of 0-100% that moves its stats by -12% .. +12% around the rarity's value (50% = the nominal one).
    The ranges of two neighbouring rarities never overlap (the best Common is still below the worst Rare, ... the worst Mythic is above the best Legendary), so a higher rarity is always stronger.
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */

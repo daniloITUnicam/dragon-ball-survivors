@@ -8,6 +8,8 @@
   P.createRadialGradient=function(x0,y0,r0,x1,y1,r1){return rg.call(this,x0,y0,r0>0?r0:0,x1,y1,r1>0?r1:0);};
   if(rr)P.roundRect=function(x,y,w,h,r){return rr.call(this,x,y,w,h,r);};
 })();
+const FEAT_COL={shrine:'#ffd23f',spring:'#5ad0ff',altar:'#ff4a4a',font:'#8ad8ff',totem:'#8be07a',secret:'#ff6a6a',zenoportal:'#c890ff',chamber:'#c890ff',tunnel:'#ffd23f'};   /* v137: altar colours (use FX, the [E] button) */
+const MOB_DPR=1.5,MOB_ON=()=>typeof MOBILE!=='undefined'&&MOBILE.on;
 const THEMES={
   plains:{ground:['#4f9b4a','#56a552','#489244','#5aa955'],hi:'#7acb6a',lo:'#2f6a30',water:['#3b86c4','#4394d0','#3079b4'],sky:'#1d3a2a'},
   namek:{ground:['#3f9e6e','#46a877','#3a9567','#4aae7e'],hi:'#7ad6a6',lo:'#1f6a4a',water:['#2f86b8','#3790c4','#2a7aaa'],sky:'#14342c'},
@@ -97,7 +99,8 @@ this.W=1;this.H=1;this.Z=1;
     let iw,ih;
     if(s.res==='720'){ih=720;iw=Math.round(720*cw/ch);}
     else if(s.res==='1080'){ih=1080;iw=Math.round(1080*cw/ch);}
-    else{const sc=clamp(s.scale||1,.5,2)*Math.min(2,window.devicePixelRatio||1);iw=Math.round(cw*sc);ih=Math.round(ch*sc);}
+    else{const sc=clamp(s.scale||1,.5,2)*Math.min(MOB_ON()?MOB_DPR:2,window.devicePixelRatio||1);   /* v137: touch devices render at 1.5x the CSS pixels at most (fill rate) */
+    iw=Math.round(cw*sc);ih=Math.round(ch*sc);}
     const d=s.dynRes===false?1:(this.dyn||1);iw=Math.round(iw*d);ih=Math.round(ih*d);   /* v121: dynamic resolution */
     if(this.menuRes){iw=Math.round(iw*.5);ih=Math.round(ih*.5);}   /* v131: the menu backdrop is blurred by CSS: half the pixels each way, same picture (App.tick sets menuRes) */
     if(this.cv.width!==iw||this.cv.height!==ih){this.cv.width=iw;this.cv.height=ih;}this.cv.style.width=cw+'px';this.cv.style.height=ch+'px';   /* (a new size reallocates the canvas: not when it is the same) */
@@ -279,7 +282,7 @@ this.W=1;this.H=1;this.Z=1;
     const D=this.dd||(this.dd={acc:0,n:0,good:0,cool:0,fail:0,down:0}),now=performance.now();if(this.dyn==null)this.dyn=1;
     D.acc+=fd;D.n++;D.cool-=fd;if(D.acc<1.5)return;const fps=D.n/D.acc;D.acc=0;D.n=0;if(D.cool>0)return;
     if(D.down){const gain=fps>D.down*1.04;D.down=0;if(!gain){D.fail++;this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.cool=4;return;}}
-    if(fps<50&&this.dyn>.6&&D.fail<2){if(now-(D.up||-1e9)<12000)D.ban=now+60000;D.down=fps;this.dyn=Math.max(.6,+(this.dyn-.1).toFixed(2));this.dynPend=true;D.cool=1.5;D.good=0;return;}
+    const dmin=MOB_ON()?.5:.6;if(fps<50&&this.dyn>dmin&&D.fail<2){if(now-(D.up||-1e9)<12000)D.ban=now+60000;D.down=fps;this.dyn=Math.max(dmin,+(this.dyn-.1).toFixed(2));this.dynPend=true;D.cool=1.5;D.good=0;return;}
     if(fps>=57){if(++D.good>=4&&this.dyn<1&&now>(D.ban||0)){this.dyn=Math.min(1,+(this.dyn+.1).toFixed(2));this.dynPend=true;D.good=0;D.cool=1.5;D.up=now;}}else D.good=0;}   /* v132: a step up that has to come back down within 12 s stops the climbing for a minute (it went up and down every few seconds: a resize and a sharpness change each time) */
   /* the biome level of every tile (dry..lush, a noise lookup), kept per chunk of TCH x TCH tiles so it is not worked out again every frame */
   tChunk(c,r){const k=c*65536+r;let ch=this.tc.get(k);if(ch){ch.u=this._fr;return ch;}
@@ -1610,6 +1613,28 @@ this.W=1;this.H=1;this.Z=1;
       x.putImageData(im,0,0);out.secretDown={c,ox:sc.ox,oy:sc.oy,k:sc.k,gl:'#ff3b3b'};}
     this.featSp=out;return out;
   }
+  /* v137: an altar answers when used: a shock ring on the ground, a column of light in its colour, sparks spiralling up (and per kind: water for
+     the spring, red sparks for the sacrifice, blue orbs for the font, leaves for the totem). front=false: what goes behind the structure */
+  featUseFx(f,x,y,q,front){
+    const ctx=this.ctx,c=FEAT_COL[f.kind]||'#ffffff',e=1-Math.pow(1-q,3),H=118;
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    if(!front){
+      for(let k=0;k<2;k++){const u=clamp(q*1.6-k*.25,0,1);if(u<=0||u>=1)continue;
+        ctx.strokeStyle=hexA(k?'#ffffff':c,(.8*(1-u)).toFixed(3));ctx.lineWidth=(5-k*2)*(1-u)+1;ctx.beginPath();ctx.ellipse(x,y+2,20+130*u,(20+130*u)*.36,0,0,TAU);ctx.stroke();}
+      const cw=(26+14*Math.sin(q*30))*(q<.25?q/.25:1-(q-.25)/.75),ch=H+170*e;
+      if(cw>0){const gr=ctx.createLinearGradient(0,y-ch,0,y);gr.addColorStop(0,hexA(c,0));gr.addColorStop(.6,hexA(c,.35));gr.addColorStop(1,hexA('#ffffff',.55));ctx.fillStyle=gr;ctx.fillRect(x-cw/2,y-ch,cw,ch);}
+      GLOW.at(ctx,x,y-H*.5,90+60*Math.sin(Math.PI*Math.min(1,q*1.5)),c,.45*(1-q));
+    }else if(Ambient.on){
+      const n=f.kind==='spring'?22:18;
+      for(let i=0;i<n;i++){const u=(q*1.25+i/n*.6)%1,an=i*2.39+q*9,rr=(18+40*u)*(1-u*.3),px=x+Math.cos(an)*rr,py=y-10-u*(H+40)+Math.sin(an)*rr*.3,al=(1-u)*(1-q*.6);
+        if(f.kind==='spring'){ctx.fillStyle=hexA(i%3?'#9ff0ff':'#ffffff',al.toFixed(3));ctx.beginPath();ctx.ellipse(px,py,2.2,3.4,0,0,TAU);ctx.fill();}
+        else if(f.kind==='font'){ctx.fillStyle=hexA('#8ad8ff',(al*.8).toFixed(3));ctx.beginPath();ctx.arc(px,py,3+2*(1-u),0,TAU);ctx.fill();}
+        else if(f.kind==='totem'){ctx.save();ctx.translate(px,py);ctx.rotate(an+q*8);ctx.fillStyle=hexA(i%2?'#8be07a':'#d8ffb0',al.toFixed(3));ctx.beginPath();ctx.ellipse(0,0,4,1.8,0,0,TAU);ctx.fill();ctx.restore();}
+        else{ctx.fillStyle=hexA(i%3?c:'#ffffff',al.toFixed(3));ctx.fillRect(px-1.5,py-1.5,3,3);}}
+      if(q<.3){GLOW.at(ctx,x,y-H*.55,70*(1-q/.3)+30,'#ffffff',.6*(1-q/.3));}
+    }
+    ctx.restore();
+  }
   drawFeature(f,t,g,inner){
     const ctx=this.ctx,x=f.x,y=f.y,pulse=.5+.5*Math.sin(t*3+x);
     if(f.kind==='tunnel'){this.drawTunnelEntrance(f,t,g);return;}   /* tunnel.js */
@@ -1623,10 +1648,13 @@ this.W=1;this.H=1;this.Z=1;
       const FF=Sprites.sheets.featfade,fs=FF&&FF.rects&&{shrine:[0,5],font:[5,6],totem:[11,5],spring:[16,5],altar:[21,6]}[f.kind],FS0=fs&&this.getFeat(),sp0=FS0&&FS0[f.kind];
       if(fs&&sp0){
         const i=fs[0]+Math.min(fs[1]-1,Math.floor(fq*fs[1])),rc=FF.rects[i],an=FF.anch[i],k=sp0.c.width*sp0.k/FF.rects[fs[0]][2];
+        this.featUseFx(f,x,y,fq,false);
         ctx.save();ctx.globalAlpha=1;ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2);ctx.scale(k,k);ctx.drawImage(FF.img,rc[0],rc[1],rc[2],rc[3],-an[0],-an[1],rc[2],rc[3]);ctx.restore();ctx.imageSmoothingEnabled=false;
+        this.featUseFx(f,x,y,fq,true);
         return;
       }
     }
+    if(fq>=0&&f.kind!=='secret'){this.featUseFx(f,x,y,fq,false);this.featUseFx(f,x,y,fq,true);}
     if(fq>=0){
       ctx.save();ctx.globalAlpha=1-dis;ctx.translate(fq<.4?Math.sin(f.fade*70)*1.6:0,-dis*dis*26);
       const gc=f.kind==='totem'?'#8be07a':f.kind==='shrine'?'#ffd23f':f.kind==='altar'?'#ff5a5a':f.kind==='font'?'#8ad8ff':f.kind==='spring'?'#8be07a':'#ffffff';
@@ -1954,12 +1982,33 @@ this.W=1;this.H=1;this.Z=1;
       this.beaconIcon(ctx,ic,ix,iy,ir,col,g);
       txt(Math.round(dist/10)+'m',ix,Math.min(iy+ir+13*U,H-6*U),'#ffffff','center',F(12));
     }
-    /* altar prompt */
-    for(const f of g.feat)if(f.near&&!f.used&&f.fade===undefined){
-      const P={secret:['Premi il bottone misterioso','Press the mysterious button'],shrine:["Usa l'Altare del Potere",'Use the Altar of Power'],spring:['Bevi alla sorgente curativa','Drink from the healing spring'],font:["Attingi alla fonte dell'esperienza",'Draw from the experience font'],zenoportal:["Entra nel portale di Zeno-sama",'Enter Zeno-sama\'s portal'],tunnel:['Entra nel tunnel (senso unico, si sale)','Enter the tunnel (one way, upwards)']};
-      const s=P[f.kind]?tr2(P[f.kind][0],P[f.kind][1]):tt(f.kind==='altar'?'altarPrompt':f.kind==='totem'?'totemPrompt':'chamberPrompt');
-      txt('['+(this.keyHints.interact||'E')+'] '+s,W/2,H*.7,f.kind==='secret'?'#ff8a8a':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ff8a8a','center',F(16));
-    }
+    /* v137: the interact key as a small round button that orbits the altar, always on the side facing you (no more prompt text); a tap or a click on it uses the altar */
+    {const tn=performance.now()/1000,key=String(this.keyHints.interact||'E'),Z=this.Z;
+      for(const f of g.feat){
+        const on=f.near&&!f.used&&f.fade===undefined&&!g.modal;let B=f._eb;
+        if(!B){if(!on)continue;B=f._eb={a:Math.atan2(p.y-f.y,(p.x-f.x)||.001),s:0};}
+        B.s=clamp(B.s+(on?1:-1)*(dt||.016)*7,0,1);if(!on&&B.s<=0){f._eb=null;continue;}
+        const ta=Math.atan2(p.y-f.y,(p.x-f.x)||.001),da=((ta-B.a)%TAU+TAU*1.5)%TAU-Math.PI;B.a+=da*Math.min(1,(dt||.016)*8);
+        const col=f.kind==='tunnel'&&typeof TUNNELS!=='undefined'&&TUNNELS[g.stage.theme]?TUNNELS[g.stage.theme].gl:FEAT_COL[f.kind]||'#ffd23f';
+        const R=62+4*Math.sin(tn*3),hgt=f.kind==='tunnel'?26:50,wx=f.x+Math.cos(B.a)*R,wy=f.y-hgt+Math.sin(B.a)*R*.5+Math.sin(tn*4)*3;
+        const X=(wx-cx)*Z,Y=(wy-cy)*Z,sc=B.s>=1?1:Math.max(0,easeOutBack(B.s)),r=12*U*sc;if(r<1)continue;
+        const ax=(f.x-cx)*Z-X,ay=(f.y-hgt-cy)*Z-Y,al=Math.atan2(ay,ax);
+        ctx.save();ctx.globalAlpha=Math.min(1,B.s*1.5);
+        {const k=(tn*1.4)%1;ctx.strokeStyle=hexA(col,(.7*(1-k)).toFixed(3));ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(X,Y,r*(1.1+.9*k),0,TAU);ctx.stroke();}   /* calling pulse */
+        GLOW.at(ctx,X,Y,r*2.6,col,.35+.12*Math.sin(tn*5));
+        ctx.save();ctx.translate(X,Y);ctx.rotate(al);ctx.fillStyle=col;ctx.strokeStyle='#0a0f1c';ctx.lineWidth=2*U;   /* the little tail pointing at the altar */
+        ctx.beginPath();ctx.moveTo(r*1.55,0);ctx.lineTo(r*.75,-r*.42);ctx.lineTo(r*.75,r*.42);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();
+        ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(X,Y+r*1.15,r*.8,r*.25,0,0,TAU);ctx.fill();
+        const gb=ctx.createRadialGradient(X-r*.3,Y-r*.4,r*.1,X,Y,r);gb.addColorStop(0,'#3a2a66');gb.addColorStop(1,'#0c0a1e');
+        ctx.fillStyle=gb;ctx.beginPath();ctx.arc(X,Y,r,0,TAU);ctx.fill();
+        const gr=ctx.createLinearGradient(0,Y-r,0,Y+r);gr.addColorStop(0,'#fff3b0');gr.addColorStop(.5,col);gr.addColorStop(1,'#7a4a10');
+        ctx.lineWidth=2.6*U;ctx.strokeStyle=gr;ctx.stroke();
+        ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.2*U;ctx.beginPath();ctx.arc(X,Y,r*.72,Math.PI*1.1,Math.PI*1.6);ctx.stroke();   /* glint */
+        const fs=Math.round((key.length>1?11:16)*U*sc);ctx.font=fs+'px "Bangers","Rajdhani",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.lineWidth=3*U;ctx.strokeStyle='#0a0f1c';ctx.strokeText(key,X,Y+1*U);ctx.fillStyle='#ffffff';ctx.fillText(key,X,Y+1*U);ctx.textBaseline='alphabetic';
+        ctx.restore();
+        if(on)this.zones.push({x:X-r*1.4,y:Y-r*1.4,w:r*2.8,h:r*2.8,k:'interact'});
+      }}
     if(g.trial&&g.trial.zeno){
       const zt=g.trial,rem=Math.max(0,Math.ceil(zt.dur-zt.t)),bw=Math.min(360*U,W*.5);
       txt(tr2('SHOP DI ZENO','ZENO\'S SHOP')+'  '+rem+'s',W/2,H*.82,'#ffe9a0','center',F(26,400).replace('"Rajdhani"','"Bangers"'));

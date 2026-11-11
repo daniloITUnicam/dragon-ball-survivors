@@ -142,7 +142,7 @@ class Telemetry{
     try{
       if(this.m.T>1)this.closeMinute(Math.ceil(g.t/60),true);
       for(const b of this.boss){if(b.killed){this.finBoss(b);continue;}b.fin=1;b.dealt=Math.round(b.dealt);b.taken=Math.round(b.taken);b.dur=tlR1(g.t-b.t0);if(b.e)b.hpLeft=tlR2(Math.max(0,b.e.hp)/(b.e.max||1));}
-      const S=g.S,R={};for(const k of['might','spd','cd','armor','regen','crit','critDmg','dodge','area','luck','xp','gold','magnet','proj','taken','lootRate'])R[k]=tlR2(S[k]||0);
+      const S=g.S,R={};for(const k of['might','spd','cd','armor','regen','crit','critDmg','dodge','area','luck','xp','gold','magnet','proj','taken','lootRate','eliteRate'])R[k]=tlR2(S[k]||0);
       const run={id:this.id+(this.part>1?'-'+this.part:''),part:this.part,ts:Date.now(),ver:typeof BUILD_ID!=='undefined'?BUILD_ID:'',stage:g.stage.id,char:(g.C&&g.C.id)||'',diff:g.diffId,x2:g.x2?1:0,endless:g.endless?1:0,
         res:win?'win':(g.p.hp<=0||g.dying?'death':'quit'),dur:tlR1(g.t),lvl:g.lvl,kills:g.kills,bossKills:g.run.bossKills,coins:Math.round(g.run.coins),maxHp:Math.round(g.p.maxHp),
         forms:g.formsUnlocked,maxStreak:g.run.streak||0,senzu:g.senzu,revives:g.revives,S:R,

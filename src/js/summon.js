@@ -22,7 +22,7 @@ const SUMMON={
       clouds:Array.from({length:14},()=>({x:Math.random(),y:Math.random()*.75,r:rng(.18,.42),v:rng(-.012,.012),a:rng(.35,.75)})),
       bolts:[.35,1.1,1.9,3.5,3.9,4.6,5.6,6.3].map(t=>({t:t+rng(-.1,.1),x:rng(.08,.92),seed:Math.random()*1e4}))};
     g.summon=S;g.p.inv=Math.max(g.p.inv,1);if(typeof Sprites!=='undefined'&&Sprites.need)Sprites.need('dragons');   /* decoded now: the dragon comes out 3.4 s later */
-    if(g.audio.slowMusic)g.audio.slowMusic(.55);
+    /* v137: the music keeps its speed while the dragon is out (it was slowed to 55%) */
     g.audio.sfx('thunder');this.snd(g,'dark');
     this.bindSkip(g);
     return S;

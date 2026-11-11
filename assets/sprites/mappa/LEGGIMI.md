@@ -2,6 +2,8 @@
 
 Questi PNG sono segnaposto disegnati dal codice (`tools/gen_mapobj.py`). Sostituiscili con la versione buona tenendo **lo stesso nome file** e rifai la build: il gioco li prende da solo.
 
+**Stato (v137):** 16 su 18 sono già quelli definitivi (ritagliati dal fondo magenta con `tools/key_mapobj.py` + `tools/key_mapobj_fix.py`). Mancano ancora **actscouter.png** e **actdig.png**.
+
 ## Regole (valgono per tutti)
 
 - **Una riga di fotogrammi** affiancati, tutti larghi uguale. Il numero di fotogrammi è nella tabella (e in `assets/sprites/sprites.json`, chiave `cols`): se ne cambi il numero, cambia anche `cols`.

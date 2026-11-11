@@ -130,4 +130,12 @@ const TRINKETS_X=[
  {id:'cx_proj_might_cd',r:3,k:'弾',n:T("Tunica dei Mille Colpi","Tunic of a Thousand Blows"),d:T('',''),m:{proj:1,might:0.06,cd:0.08},minR:3},
  {id:'cx_proj_area_crit',r:3,k:'弾',n:T("Orologio della Raffica","Watch of the Barrage"),d:T('',''),m:{proj:1,area:0.12,crit:0.056},minR:3}
 ];
+/* v137: elite hunters: "elite spawn rate" (key elite, capped at +50% on a perfect Mythic); hand-made, not from gen_trinkets.py */
+TRINKETS_X.push(
+ {id:'el_redribbon',r:3,k:'軍',n:T("Distintivo del Red Ribbon","Red Ribbon Badge"),d:T('',''),m:{elite:0.3356}},
+ {id:'el_frieza',r:3,k:'帝',n:T("Scouter dell'Esercito di Freezer","Frieza Force Scouter"),d:T('',''),m:{elite:0.235,crit:0.07}},
+ {id:'el_ginyu',r:3,k:'隊',n:T("Emblema della Squadra Ginyu","Ginyu Force Emblem"),d:T('',''),m:{elite:0.235,might:0.075}},
+ {id:'el_saiyan',r:3,k:'猿',n:T("Sangue Saiyan","Saiyan Blood"),d:T('',''),m:{elite:0.235,xp:0.15}},
+ {id:'el_bounty',r:3,k:'賞',n:T("Taglia del Cacciatore","Hunter's Bounty"),d:T('',''),m:{elite:0.168,gold:0.3,lootRate:0.4}}
+);
 for(const t of TRINKETS_X){t.d=trinDesc(t,t.r);TRINKETS.push(t);}
