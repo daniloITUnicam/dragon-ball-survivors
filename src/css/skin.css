@@ -298,9 +298,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .btn{transition:transform .14s cubic-bezier(.3,1.7,.5,1),filter .14s,box-shadow .14s}
 .btn:hover:not(:disabled),.btn:focus-visible{transform:skewX(-4deg) translateY(-4px) scale(1.03);filter:brightness(1.14)}
 .btn:active:not(:disabled){transform:skewX(-4deg) translateY(4px) scale(.97);filter:brightness(.94);box-shadow:0 0 0 #07080c,inset 0 2px 0 rgba(255,255,255,.2);transition-duration:.05s}
-.btn.bflash{animation:bflash .4s ease-out}
-@keyframes bflash{0%{filter:brightness(1.95) saturate(1.3);box-shadow:0 0 0 2px #fff6c0,0 0 22px 6px rgba(255,225,74,.75)}100%{}}
 .bspk{position:fixed;z-index:9999;pointer-events:none;width:0;height:0}
 .bspk i{position:absolute;left:0;top:-1.5px;width:var(--l);height:3px;border-radius:2px;background:var(--c);box-shadow:0 0 6px var(--c),0 0 2px #fff;transform-origin:0 50%;opacity:0;animation:bspk .45s ease-out forwards;animation-delay:var(--dl)}
 @keyframes bspk{0%{opacity:1;transform:rotate(var(--a)) translateX(var(--d0)) scaleX(.3)}55%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d1)) scaleX(1)}}
-@media (prefers-reduced-motion:reduce){.bspk{display:none}.btn.bflash{animation:none}}
+@media (prefers-reduced-motion:reduce){.bspk,.bfl{display:none}}
+/* every other button of the game (cards, chips, sort buttons, slots, the touch buttons...): the same rise and press. translate / scale add up with
+   each button's own transform, so their layouts and animations stay as they are; no rise on touch screens (a finger has no hover) */
+button:not(.btn){transition:translate .14s cubic-bezier(.3,1.7,.5,1),scale .14s cubic-bezier(.3,1.7,.5,1)}
+@media (hover:hover){button:not(:disabled):not(.btn):not(.mb):hover{translate:0 -3px}}
+button:not(:disabled):not(.btn):not(.mb):active,button.mb.dn{translate:0 2px;scale:.95;transition-duration:.05s}
+.bfl{position:fixed;z-index:9998;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,235,.75),rgba(255,225,74,.35) 55%,rgba(255,225,74,0) 80%);
+  box-shadow:0 0 0 2px rgba(255,246,192,.9),0 0 22px 6px rgba(255,225,74,.6);mix-blend-mode:screen;animation:bfl .4s ease-out forwards}
+@keyframes bfl{0%{opacity:1}100%{opacity:0;transform:scale(1.1)}}

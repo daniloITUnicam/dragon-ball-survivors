@@ -231,24 +231,9 @@ Object.assign(UI.prototype,{
   /* v131: the trinkets found in this run, in their own window, with the same search / rarity / sort filters as the trinket bag */
   screen_runTrinkets(){
     const g=this.app.game,st=this.rtF||(this.rtF={q:'',rar:[1,1,1,1,1],sort:'new'});
-    const all=g?g.trinkets.map((id,n)=>{const r=g.trR(id),fu=g.tFu&&g.tFu[id],p=hasPfE(trinDef(id),fu)?g.trP(id):null;return{id,r,p,n,fu,i:this.tinfo(id,r,p,fu)};}):[];
-    const grid=h('div',{class:'baggrid'}),shown=h('span',{class:'achshown'});
-    const sorts={new:(x,y)=>y.n-x.n,old:(x,y)=>x.n-y.n,rar:(x,y)=>y.r-x.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.r-x.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.r-x.r};
-    const fill=()=>{
-      const q=RAR_NORM(st.q.trim()),list=all.filter(o=>st.rar[o.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
-      grid.replaceChildren(...(list.length?list.map(o=>this.tcard(o.id,o.r,{p:o.p,fu:o.fu})):[h('p',{class:'sub'},this.t(all.length?'bagNone':'runTrinNone'))]));
-      shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
-    };
-    const chips=h('div',{class:'rchips'},[0,1,2,3,4].map(r=>h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rtc'+r,onclick:e=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;e.currentTarget.classList.toggle('on',!!st.rar[r]);fill();}},this.tr(RARITY[r].n))));
-    const search=h('input',{type:'text',class:'achsearch','data-fid':'rtq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
-    const SORT_ICON={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
-    const sortBtns=['new','old','rar','perf','name'].map(k=>{const lab=this.t('bagSort_'+k);
-      return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'rts_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,'aria-pressed':st.sort===k?'true':'false',
-        onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sortBtns){const on=b.dataset.sort===k;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}fill();}},SORT_ICON[k]);});
-    fill();
-    return h('div',{class:'rtrin'},this.header('pauseTrinkets'),
-      h('div',{class:'achtools'},search,chips,shown),
-      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},sortBtns),grid));
+    const items=g?g.trinkets.map((id,n)=>{const r=g.trR(id),fu=g.tFu&&g.tFu[id];return{k:id,id,r,p:hasPfE(trinDef(id),fu)?g.trP(id):null,f:fu,at:n};}):[];
+    const L=this.tlist(st,items,{sorts:['new','old','rar','perf','name'],empty:'runTrinNone'});
+    return h('div',{class:'rtrin'},this.header('pauseTrinkets'),L.tools,h('div',{class:'bagsplit'},L.left,L.grid));
   },
   /* scales the Run tab down just enough to fit between the top row and the HUD; the inner block is made wider as it shrinks, so more columns appear */
   fitPause(root){

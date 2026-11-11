@@ -127,10 +127,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.revives=this.shopLv('revive');
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
-    {const T0=[],R0={},P0={},S0={};   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
-      for(const eq of (this.save.equips||[this.save.equip]).slice(0,this.tcap)){const td=eq&&trinDef(eq.id),be=td&&this.save.bag.find(b=>b.id===eq.id&&b.r===eq.r);
-        if(!be||R0[eq.id]!==undefined)continue;T0.push(eq.id);R0[eq.id]=eq.r;P0[eq.id]=be.p!=null?be.p:PF_NOM;S0[eq.id]='bag';if(isFused(be.f))this.tFu[eq.id]=be.f.slice();this.save.trin[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
-      if(T0.length){this.trinkets=T0;this.tRar=R0;this.tPf=P0;this.tSrc=S0;}}
+    this.loadBagTrinkets(this.save,this.save.trin);   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
     this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);MOBJ.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
@@ -396,6 +393,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.trinkets.splice(i,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];delete this.tFu[id];
     if(t&&t.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
     return i;
+  }
+  /* the trinkets equipped from the bag start the run in their slots (one copy of a trinket); also used for a co-op mate (coopHeroInit). seen: the codex to mark */
+  loadBagTrinkets(save,seen){
+    for(const eq of (save.equips||[save.equip]).slice(0,this.tcap)){
+      const td=eq&&trinDef(eq.id),be=td&&(save.bag||[]).find(b=>b.id===eq.id&&b.r===eq.r);if(!be||this.tRar[eq.id]!==undefined)continue;
+      this.trinkets.push(eq.id);this.tRar[eq.id]=eq.r;this.tPf[eq.id]=be.p!=null?be.p:PF_NOM;this.tSrc[eq.id]='bag';if(isFused(be.f))this.tFu[eq.id]=be.f.slice();
+      if(seen)seen[eq.id]=1;if(td.sp==='barrier')this.barrierReady=true;}
   }
   /* the slot of the weakest carried trinket (the one a full inventory gives up) */
   weakestTrinket(){let b=null,br=1e9;for(const id of this.trinkets){const r=this.trinScore(id,this.trR(id),this.trP(id));if(r<br){br=r;b=id;}}return b;}

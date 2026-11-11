@@ -26,23 +26,29 @@ const zAmt=(n,raw)=>h('span',{class:'zv'},zIcon(),raw?n:fmtN(n));
 const TK_LAB={t1:'1×',t10:'10×',l10:'10×'},TK_NAME={t1:T('Ticket 1×','1× Ticket'),t10:T('Ticket 10×','10× Ticket'),l10:T('Ticket Lucky 10×','Lucky 10× Ticket')};
 const tkChip=(kind,n)=>h('span',{class:'tkr',title:(APP_REF&&APP_REF.ui?APP_REF.ui.tr(TK_NAME[kind]):TK_NAME[kind].en)},'+'+(n||1)+' ',h('i',{class:'tkico '+kind},h('b',null,TK_LAB[kind])),kind==='l10'?h('small',{class:'tkl'},'Lucky'):null);
 
+/* the flash and the sparks of a pressed button, in viewport px (fixed elements on <body>: the zoom of #ui on phones does not apply to them) */
+const BTN_SPK=['#ffe14a','#5ad8ff'];
+function sparkBox(x,y){const box=document.createElement('div');box.className='bspk';box.style.left=x+'px';box.style.top=y+'px';return box;}
 class UI{
+  static sparkAt(x,y,w,hh,radius){
+    const fl=document.createElement('div');fl.className='bfl';fl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+hh+'px;border-radius:'+(radius||'10px');
+    const rx=w/2,ry=hh/2,n=Math.round(clamp(w/14,8,16)),box=sparkBox(x+rx,y+ry);
+    for(let i=0;i<n;i++){const a=i/n*TAU+Math.random()*.4,c=Math.cos(a),s=Math.sin(a),d0=rx*ry/Math.sqrt((ry*c)**2+(rx*s)**2)+2,k=document.createElement('i');
+      k.style.cssText='--a:'+a+'rad;--d0:'+d0.toFixed(1)+'px;--d1:'+(d0+12+Math.random()*14).toFixed(1)+'px;--l:'+(7+Math.random()*9).toFixed(1)+'px;--c:'+BTN_SPK[i%2]+';--dl:'+(Math.random()*.06).toFixed(3)+'s';box.append(k);}
+    document.body.append(fl,box);setTimeout(()=>{fl.remove();box.remove();},560);
+  }
   constructor(app){
     this.app=app;this.root=document.getElementById('ui');this.toastBox=document.getElementById('toasts');
     this.stack=[];this.sel={stage:0,diff:app.save.d.diff||'normal',x2:false,char:app.save.d.lastChar||'goku'};
     this.modalEl=null;this.sbEl=document.getElementById('sandbox');
     this.bindArcadeSounds();
   }
-  /* v136b: a pressed button flashes and throws yellow / cyan sparks from its edge (it rises under the pointer and sinks when pressed: skin.css) */
+  /* v136b: every pressed button of the game flashes and throws yellow / cyan sparks from its edge (they rise under the pointer and sink when pressed: skin.css).
+     The flash is an overlay, so the button's own animations are never touched. Also used for the round buttons drawn on the canvas (Renderer.pressFx). */
   btnFx(b){
     if(this.save.settings&&this.save.settings.reduceFx)return;
     const r=b.getBoundingClientRect();if(!r.width)return;
-    b.classList.remove('bflash');void b.offsetWidth;b.classList.add('bflash');
-    const rx=r.width/2,ry=r.height/2,n=Math.round(clamp(r.width/14,8,16)),box=document.createElement('div');
-    box.className='bspk';box.style.left=(r.left+rx)+'px';box.style.top=(r.top+ry)+'px';
-    for(let i=0;i<n;i++){const a=i/n*TAU+Math.random()*.4,c=Math.cos(a),s=Math.sin(a),d0=rx*ry/Math.sqrt((ry*c)**2+(rx*s)**2)+2,
-      k=document.createElement('i');k.style.cssText='--a:'+a+'rad;--d0:'+d0.toFixed(1)+'px;--d1:'+(d0+12+Math.random()*14).toFixed(1)+'px;--l:'+(7+Math.random()*9).toFixed(1)+'px;--c:'+(i%2?'#5ad8ff':'#ffe14a')+';--dl:'+(Math.random()*.06).toFixed(3)+'s';box.append(k);}
-    document.body.append(box);setTimeout(()=>box.remove(),560);
+    UI.sparkAt(r.left,r.top,r.width,r.height,getComputedStyle(b).borderRadius);
   }
   /* Arcade sounds for every DOM button (menus, modals, pause, level-up cards). Individual handlers may still
      call sfx() with a specific sound; the generic click only fires when none was played in the same instant. */
@@ -56,9 +62,12 @@ class UI{
     document.addEventListener('pointerdown',e=>{
       const b=btnOf(e);if(b&&b.disabled)au().sfx('uiErr');
     });
+    /* the touch buttons of a run (mobile.js) work on the press, not the click: their flash comes from here (capture: they stop the event) */
+    document.addEventListener('pointerdown',e=>{const b=btnOf(e);if(b&&!b.disabled&&b.classList.contains('mb'))this.btnFx(b);},true);
+    /* every other button: on the click, before its own handler runs (that may rebuild the screen and take the button away) */
+    document.addEventListener('click',e=>{const b=btnOf(e);if(b&&!b.disabled&&!b.classList.contains('mb'))this.btnFx(b);},true);
     document.addEventListener('click',e=>{
       const b=btnOf(e);if(!b||b.disabled)return;
-      this.btnFx(b);
       const a=au();if(performance.now()-(a.lastUi||0)<45)return;
       a.sfx(b.dataset.back!==undefined?'uiBack':b.classList.contains('primary')?'uiClick':b.classList.contains('tab')?'uiTab':'uiClick');
     });

@@ -1,6 +1,6 @@
 'use strict';
 /* ====== v136: trinket windows: the choice of the trinkets that go home after a win (tpick), the Reroll and the Fusion of the Gacha shop ====== */
-const TP_SORT={rar:'★',perf:'％',name:'Aa',new:'🆕'};
+const TP_SORT={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
 Object.assign(UI.prototype,{
   /* a yes / no question over everything; resolves true / false */
   ask(o){
@@ -17,20 +17,21 @@ Object.assign(UI.prototype,{
     return h('div',{class:'rarcol'},h('div',{class:'rarlbl'},this.t('gRarity')),[4,3,2,1,0].map(r=>{const b=h('button',{class:'rchip'+(st.rar[r]?' on':''),style:'--c:'+RARITY[r].c,'data-fid':'rc'+r,
       onclick:()=>{this.sfx('uiTab');st.rar[r]=st.rar[r]?0:1;b.classList.toggle('on',!!st.rar[r]);onChange();}},this.tr(RARITY[r].n));return b;}));
   },
-  /* a filterable trinket grid. st: the filters (kept by the caller), items: [{k,id,r,p,f,at}], o.onclick(it), o.card(it) -> extra tcard options */
+  /* a filterable trinket grid: the one of every trinket screen (bag, run trinkets, reroll, fusion, the choice after a win). st: the filters (kept by the
+     caller), items: [{k,id,r,p,f,at}], o.onclick(it) (none: plain cards), o.card(it) -> extra tcard options, o.sorts: the sort buttons, o.empty: text key when there is none */
   tlist(st,items,o){
     const grid=h('div',{class:'baggrid'}),shown=h('span',{class:'achshown'});
     for(const it of items)it.i=this.tinfo(it.id,it.r,it.p,it.f);
     const pv=it=>it.i.perf==null?-1:it.i.perf;
-    const sorts={rar:(x,y)=>y.r-x.r||pv(y)-pv(x)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>pv(y)-pv(x)||y.r-x.r,name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.r-x.r,new:(x,y)=>(y.at||0)-(x.at||0)};
+    const sorts={rar:(x,y)=>y.r-x.r||pv(y)-pv(x)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>pv(y)-pv(x)||y.r-x.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.r-x.r,new:(x,y)=>(y.at||0)-(x.at||0),old:(x,y)=>(x.at||0)-(y.at||0)};
     const fill=()=>{
       const q=RAR_NORM(st.q.trim()),list=items.filter(it=>st.rar[it.r]&&(!q||RAR_NORM(it.i.name+' '+it.i.desc+' '+it.i.rar).includes(q))).sort(sorts[st.sort]||sorts.rar);
-      grid.replaceChildren(...(list.length?list.map(it=>this.tcard(it.id,it.r,Object.assign({p:it.p,fu:it.f,btn:true,fid:'t'+it.k,onclick:()=>{this.sfx();o.onclick(it);}},o.card?o.card(it):{}))):[h('p',{class:'sub'},this.t(items.length?'bagNone':'bagEmpty'))]));
+      grid.replaceChildren(...(list.length?list.map(it=>this.tcard(it.id,it.r,Object.assign({p:it.p,fu:it.f,fid:'t'+it.k},o.onclick?{btn:true,onclick:()=>{this.sfx();o.onclick(it);}}:{},o.card?o.card(it):{}))):[h('p',{class:'sub'},this.t(items.length?'bagNone':(o.empty||'bagEmpty')))]));
       shown.textContent=this.t('bagShown',{a:list.length,b:items.length});
     };
     const chips=this.rarChips(st,fill);
     const search=h('input',{type:'text',class:'achsearch','data-fid':'tlq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
-    const sb=Object.keys(TP_SORT).filter(k=>k!=='new'||o.byNew!==false).map(k=>{const lab=this.t('bagSort_'+k);
+    const sb=(o.sorts||['rar','perf','name','new']).map(k=>{const lab=this.t('bagSort_'+k);
       return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'ts_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,
         onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sb)b.classList.toggle('on',b.dataset.sort===k);fill();}},TP_SORT[k]);});
     fill();

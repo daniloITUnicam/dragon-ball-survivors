@@ -314,17 +314,9 @@ Object.assign(UI.prototype,{
   /* ---------- trinket bag ---------- */
   screen_bag(a){
     a=a||{};const d=this.save,pick=!!a.pick,st=this.bagF||(this.bagF={q:'',rar:[1,1,1,1,1],sort:'new'});
-    const all=d.bag.map(b=>({b,i:this.tinfo(b.id,b.r,b.p,b.f)}));
     const eqks=(d.equips||[d.equip]).filter(Boolean).map(e=>trinketKey(e.id,e.r)),slotSel=a.slot!=null?a.slot:null,here=slotSel!=null&&d.equips&&d.equips[slotSel],eqk=here?trinketKey(here.id,here.r):(eqks[0]||'');
     if(!this.bagSel||!d.bag.some(b=>trinketKey(b.id,b.r)===this.bagSel))this.bagSel=eqk&&d.bag.some(b=>trinketKey(b.id,b.r)===eqk)?eqk:(d.bag[0]?trinketKey(d.bag[0].id,d.bag[0].r):'');
-    const grid=h('div',{class:'baggrid'}),det=h('div',{class:'bagdet'}),shown=h('span',{class:'achshown'});
-    const sorts={new:(x,y)=>y.b.at-x.b.at,old:(x,y)=>x.b.at-y.b.at,rar:(x,y)=>y.b.r-x.b.r||(y.i.perf||0)-(x.i.perf||0)||x.i.name.localeCompare(y.i.name),perf:(x,y)=>(y.i.perf==null?-1:y.i.perf)-(x.i.perf==null?-1:x.i.perf)||y.b.r-x.b.r||x.i.name.localeCompare(y.i.name),name:(x,y)=>x.i.name.localeCompare(y.i.name)||y.b.r-x.b.r};
-    const fill=()=>{
-      const q=RAR_NORM(st.q.trim());
-      const list=all.filter(o=>st.rar[o.b.r]&&(!q||RAR_NORM(o.i.name+' '+o.i.desc+' '+o.i.rar).includes(q))).sort(sorts[st.sort]||sorts.new);
-      grid.replaceChildren(...(list.length?list.map(o=>{const k=trinketKey(o.b.id,o.b.r);return this.tcard(o.b.id,o.b.r,{p:o.b.p,fu:o.b.f,btn:true,sel:k===this.bagSel,eq:eqks.includes(k),fid:'t'+k,onclick:()=>{this.sfx();this.bagSel=k;this.rebuild(true);}});}):[h('p',{class:'sub'},this.t(all.length?'bagNone':'bagEmpty'))]));
-      shown.textContent=this.t('bagShown',{a:list.length,b:all.length});
-    };
+    const det=h('div',{class:'bagdet'});
     const sel=d.bag.find(b=>trinketKey(b.id,b.r)===this.bagSel);
     if(sel){
       const i=this.tinfo(sel.id,sel.r,sel.p,sel.f),isEq=eqks.includes(this.bagSel),eqSlot=isEq?(d.equips||[]).findIndex(e=>e&&trinketKey(e.id,e.r)===this.bagSel):-1;
@@ -339,17 +331,10 @@ Object.assign(UI.prototype,{
         h('p',{class:'cd'},this.t('bagMarket')+': ',zAmt(ZENO_PRICE[sel.r],true)),
         sel.t?h('p',{class:'cd'},'🧪 Test'):null].filter(Boolean));
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
-    const chips=this.rarChips(st,()=>this.rebuild(true));
-    const search=h('input',{type:'text',class:'achsearch','data-fid':'bagq',placeholder:'🔍 '+this.t('bagSearch'),value:st.q,autocomplete:'off',spellcheck:'false',oninput:e=>{st.q=e.target.value;fill();}});
-    /* the sort options: a column of icons on the left, each with a tooltip */
-    const SORT_ICON={new:'🆕',old:'⏳',rar:'★',perf:'％',name:'Aa'};
-    const sortBtns=['new','old','rar','perf','name'].map(k=>{const lab=this.t('bagSort_'+k);
-      return h('button',{class:'bsortb'+(st.sort===k?' on':''),'data-sort':k,'data-fid':'bs_'+k,'data-tip':this.t('bagSortBy')+': '+lab,'aria-label':lab,'aria-pressed':st.sort===k?'true':'false',
-        onclick:()=>{this.sfx('uiTab');st.sort=k;for(const b of sortBtns){const on=b.dataset.sort===k;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}fill();}},SORT_ICON[k]);});
-    fill();
+    const items=d.bag.map(b=>({k:trinketKey(b.id,b.r),id:b.id,r:b.r,p:b.p,f:b.f,at:b.at}));
+    const L=this.tlist(st,items,{sorts:['new','old','rar','perf','name'],onclick:it=>{this.bagSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.bagSel,eq:eqks.includes(it.k)})});
     return h('div',null,this.header('bagTitle'),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,
-      h('div',{class:'achtools'},search,shown),
-      h('div',{class:'bagsplit'},h('div',{class:'bsorts'},h('div',{class:'bsorti'},sortBtns),chips),grid,h('div',{class:'bagside'},det)));
+      L.tools,h('div',{class:'bagsplit'},L.left,L.grid,h('div',{class:'bagside'},det)));
   },
   /* ---------- Super Shenron: the 7 Super Dragon Balls spent on a reward (opened from the stage menu) ---------- */
   screen_superWish(){

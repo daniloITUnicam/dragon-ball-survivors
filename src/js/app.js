@@ -57,10 +57,10 @@ class App{
     });
     document.addEventListener('pointerleave',()=>{tip.style.display='none';});
     cv.addEventListener('pointerdown',e=>{
-      if(this.state==='play'&&this.renderer.petBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.petBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.usePet();return;}}
-      if(this.state==='play'&&this.renderer.abBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.abBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useAbility();return;}}
-      if(this.state==='play'&&this.renderer.dashBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.dashBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.dash();return;}}
-      if(this.state==='play'&&this.renderer.szBtn&&this.game){const k0=this.renderer.W/innerWidth,pb=this.renderer.szBtn;if(Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){this.game.useSenzu();return;}}
+      /* the round buttons drawn on the canvas (pet, ability, dash, Senzu): a press uses them and flashes like a DOM button */
+      if(this.state==='play'&&this.game){const R=this.renderer,k0=R.W/innerWidth,g=this.game;
+        for(const [pb,fn] of [[R.petBtn,()=>g.usePet()],[R.abBtn,()=>g.useAbility()],[R.dashBtn,()=>g.dash()],[R.szBtn,()=>g.useSenzu()]])
+          if(pb&&Math.hypot(e.clientX*k0-pb.x,e.clientY*k0-pb.y)<pb.r+8){fn();if(!(this.save.d.settings&&this.save.d.settings.reduceFx))UI.sparkAt((pb.x-pb.r)/k0,(pb.y-pb.r)/k0,2*pb.r/k0,2*pb.r/k0,'50%');return;}}
       if(e.pointerType==='mouse'||this.state!=='play'||this.joy.on)return;
       const k=this.renderer.W/innerWidth;
       this.joy={on:true,id:e.pointerId,ox:e.clientX*k,oy:e.clientY*k,x:0,y:0};this.renderer.joy=this.joy;
