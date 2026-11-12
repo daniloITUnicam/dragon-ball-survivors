@@ -158,7 +158,7 @@ if(MOBILE.on)(()=>{
       const usable=ab.m==='kaioken'?g.kaiAvail:g.abReady;
       set(by('ab'),{glyph:ab.k,col:usable||act?ab.c:'#9aa6b8',prog,ready:usable,act,label});}
     {const q=g.pet;if(q){const d=q.d,rdy=q.cd<=0;set(by('pet'),{glyph:d.k,col:rdy?d.c:'#9aa6b8',prog:rdy?1:1-q.cd/d.cd,ready:rdy,label:rdy?'':Math.ceil(q.cd)+'s'});}else set(by('pet'),{show:false});}
-    {const near=(g.feat||[]).some(f=>f.near&&!f.used&&f.fade===undefined);
+    {const near=(g.feat||[]).some(f=>f.near&&!f.used&&f.fade===undefined)||MOBJ.altKeys(g).some(a=>a.near);
       set(by('e'),{col:near?'#ffd23f':'#c8d2e0',ready:near,label:near?tr(STR.use):''});}
   };
 

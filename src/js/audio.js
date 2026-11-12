@@ -150,8 +150,11 @@ const SFX8={
   pop:A=>{P8(A,mn(70),.06,.02,{to:mn(58),st:3});},
   transform:A=>{N8(A,.9,.07,8,2,{at:.15,hold:.5});P8(A,mn(45),.8,.045,{to:mn(81),st:16,vib:.03,vr:12});T8(A,mn(33),.9,.09,{to:mn(57),st:8});arp8(A,[69,73,76,81,85,88],.09,.14,.03,'square',.3);},
   xcharge:A=>{P8(A,mn(40),1.2,.04,{to:mn(64),st:24,vib:.05,vr:9,at:.1,hold:.8});T8(A,mn(28),1.2,.07,{to:mn(40),st:6,hold:.8});N8(A,1.2,.035,10,4,{at:.3,hold:.8});},
-  xburst:A=>{boom8(A,1.2);arp8(A,[64,69,73,76,81],.05,.12,.03,'square');},
-  xburst2:A=>{boom8(A,1.6);arp8(A,[57,64,69,73,76,81,85],.05,.14,.035,'square');T8(A,mn(28),.8,.08,{to:mn(40),st:6});},
+  /* v140: the transformation burst, 8-bit version of an anime power-up: a rising wavering scream (pulse sweep), a triangle rumble climbing under it, a crackling noise bed, a pulsing sparkle on top and a fast rising arpeggio */
+  xburst:A=>{boom8(A,1.2);P8(A,mn(48),1.3,.04,{to:mn(84),st:22,vib:.04,vr:14});T8(A,mn(31),1.3,.08,{to:mn(52),st:10,vib:.03,vr:10});N8(A,1.1,.04,9,3,{at:.02,hold:.5});
+    for(let i=0;i<10;i++)Q8(A,mn(96+(i*5)%12),.07,.018,{dl:.14+i*.09});arp8(A,[64,69,73,76,81,85,88],.045,.12,.03,'square');},
+  xburst2:A=>{boom8(A,1.6);P8(A,mn(45),1.8,.045,{to:mn(93),st:28,vib:.05,vr:16});T8(A,mn(28),1.8,.09,{to:mn(55),st:12,vib:.03,vr:9});N8(A,1.5,.05,10,2,{at:.02,hold:.7});
+    for(let i=0;i<15;i++)Q8(A,mn(100+(i*7)%14),.07,.02,{dl:.12+i*.09});arp8(A,[57,64,69,73,76,81,85,88,93],.045,.14,.035,'square');},
   kaioken:A=>{Q8(A,mn(50),.35,.05,{to:mn(62),st:6});N8(A,.4,.06,4,9);P8(A,mn(74),.25,.025,{dl:.08,vib:.04,vr:16});},
   kaioken2:A=>{Q8(A,mn(45),.45,.06,{to:mn(62),st:8});N8(A,.55,.075,3,10,{hold:.3});P8(A,mn(74),.35,.03,{dl:.08,vib:.05,vr:18});T8(A,mn(33),.45,.08,{to:mn(45),st:4});},
   broly:A=>{N8(A,.9,.09,6,13,{hold:.4});Q8(A,mn(33),.9,.06,{to:mn(28),st:4,vib:.05,vr:8});T8(A,mn(26),.9,.1,{hold:.5});},

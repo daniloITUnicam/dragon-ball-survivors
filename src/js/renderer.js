@@ -393,7 +393,7 @@ this.W=1;this.H=1;this.Z=1;
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,ta);
     }
-    if(!g.trial&&!g.tun)MOBJ.drawAir(this,g,t);
+    if(!g.trial&&!g.tun){MOBJ.drawAir(this,g,t);MOBJ.flushGauges(ctx,t);}
     if(g.vic)this.drawVictory(g.vic,t);
     if(g.sbc)this.drawSbc(g,t);
     if(g.held)this.drawHeld(g,t);
@@ -1998,13 +1998,13 @@ this.W=1;this.H=1;this.Z=1;
     }
     /* v137: the interact key as a small round button that orbits the altar, always on the side facing you (no more prompt text); a tap or a click on it uses the altar */
     {const tn=performance.now()/1000,key=String(this.keyHints.interact||'E'),Z=this.Z;
-      for(const f of g.feat){
+      for(const f of g.feat.concat(MOBJ.altKeys(g))){
         const on=f.near&&!f.used&&f.fade===undefined&&!g.modal;let B=f._eb;
         if(!B){if(!on)continue;B=f._eb={a:Math.atan2(p.y-f.y,(p.x-f.x)||.001),s:0};}
         B.s=clamp(B.s+(on?1:-1)*(dt||.016)*7,0,1);if(!on&&B.s<=0){f._eb=null;continue;}
         const ta=Math.atan2(p.y-f.y,(p.x-f.x)||.001),da=((ta-B.a)%TAU+TAU*1.5)%TAU-Math.PI;B.a+=da*Math.min(1,(dt||.016)*8);
-        const col=f.kind==='tunnel'&&typeof TUNNELS!=='undefined'&&TUNNELS[g.stage.theme]?TUNNELS[g.stage.theme].gl:FEAT_COL[f.kind]||'#ffd23f';
-        const R=62+4*Math.sin(tn*3),hgt=f.kind==='tunnel'?26:50,wx=f.x+Math.cos(B.a)*R,wy=f.y-hgt+Math.sin(B.a)*R*.5+Math.sin(tn*4)*3;
+        const col=f.kind==='alt'?'#c27bff':f.kind==='tunnel'&&typeof TUNNELS!=='undefined'&&TUNNELS[g.stage.theme]?TUNNELS[g.stage.theme].gl:FEAT_COL[f.kind]||'#ffd23f';
+        const R=62+4*Math.sin(tn*3),hgt=f.kind==='tunnel'?26:f.kind==='alt'?96:50,wx=f.x+Math.cos(B.a)*R,wy=f.y-hgt+Math.sin(B.a)*R*.5+Math.sin(tn*4)*3;
         const X=(wx-cx)*Z,Y=(wy-cy)*Z,sc=B.s>=1?1:Math.max(0,easeOutBack(B.s)),r=12*U*sc;if(r<1)continue;
         const ax=(f.x-cx)*Z-X,ay=(f.y-hgt-cy)*Z-Y,al=Math.atan2(ay,ax);
         ctx.save();ctx.globalAlpha=Math.min(1,B.s*1.5);
@@ -2083,14 +2083,15 @@ this.W=1;this.H=1;this.Z=1;
     /* banner */
     if(g.banner){
       const b=g.banner,a=Math.min(1,b.t/.15)*clamp((b.dur-b.t)/BANNER_FADE,0,1);   /* v109: quick fade in, BANNER_FADE s fade out */
+      const nbB=Math.min(2,g.en.filter(e=>(e.boss||e.sparring)&&!e.dead).length),BY=(70+nbB*40+(g.post>0?20:0)+34)*U;   /* v140: under the map bar (and the boss bars), no longer in the middle of the screen */
       ctx.globalAlpha=clamp(a,0,1);
-      txt(b.txt,W/2,H*.3,b.col,'center',F(Math.min(34,Math.max(18,W/U/24)),400).replace('"Rajdhani"','"Bangers"'));
+      txt(b.txt,W/2,BY,b.col,'center',F(Math.min(34,Math.max(18,W/U/24)),400).replace('"Rajdhani"','"Bangers"'));
       if(b.sub){   /* second line: a thin golden rule and a smaller sentence under the title (Endless notices) */
-        const lw=Math.min(W*.5,340*U),ly=H*.3+11*U,lg=ctx.createLinearGradient(W/2-lw/2,0,W/2+lw/2,0);
+        const lw=Math.min(W*.5,340*U),ly=BY+11*U,lg=ctx.createLinearGradient(W/2-lw/2,0,W/2+lw/2,0);
         lg.addColorStop(0,'rgba(255,210,63,0)');lg.addColorStop(.5,b.col);lg.addColorStop(1,'rgba(255,210,63,0)');
         ctx.fillStyle=lg;ctx.fillRect(W/2-lw/2,ly,lw,1.5*U);
         let fs=16;ctx.font=F(fs,600);while(ctx.measureText(b.sub).width>W*.92&&fs>9){fs-=.5;ctx.font=F(fs,600);}
-        txt(b.sub,W/2,H*.3+32*U,'#fff3cf','center',F(fs,600));
+        txt(b.sub,W/2,BY+32*U,'#fff3cf','center',F(fs,600));
       }
       ctx.globalAlpha=1;
     }

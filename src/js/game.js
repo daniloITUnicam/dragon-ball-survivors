@@ -155,19 +155,24 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   has(sp){return this.trinkets.some(id=>{const t=trinDef(id);return t&&t.sp===sp;});}
   /* v109: the banner never covers another one: a new message waits in a queue (bq) until the one on screen has been shown BANNER_MIN s, which then fades out in BANNER_FADE s;
      the same text already on screen or waiting is not repeated. Every message also goes into the run's event history (evLog, pause screen) */
-  say(txt,col,dur,sub){
-    const b={txt,col:col||'#ffd23f',t:0,dur:Math.max(BANNER_MIN+BANNER_FADE,dur||2.6),sub:sub||null},q=this.bq||(this.bq=[]),cur=this.banner;
+  say(txt,col,dur,sub,pri){
+    pri=pri|0;
+    const b={txt,col:col||'#ffd23f',t:0,dur:Math.max(BANNER_MIN+BANNER_FADE,(dur||2.6)*BANNER_K),sub:sub||null,pri},q=this.bq||(this.bq=[]),cur=this.banner;
     this.logEv(txt,b.col,sub);
     if(cur&&cur.txt===txt&&cur.t<cur.dur-BANNER_FADE)return;
     if(q.some(o=>o.txt===txt))return;
-    if(cur&&cur.t<cur.dur){q.push(b);if(q.length>8)q.shift();return;}
+    if(cur&&cur.t<cur.dur){   /* v140: the queue is ordered by priority (transformations, Kaioken x20, abilities, bosses first), first come first served among equals */
+      let i=q.findIndex(o=>(o.pri|0)<pri);if(i<0)i=q.length;q.splice(i,0,b);
+      if(q.length>8){let m=0;for(let k=1;k<q.length;k++)if((q[k].pri|0)<=(q[m].pri|0))m=k;q.splice(m,1);}
+      return;}
     this.banner=b;
   }
   tickBanner(dt){
     const b=this.banner,q=this.bq||(this.bq=[]);
     if(!b){if(q.length)this.banner=q.shift();return;}
     b.t+=dt;
-    if(q.length&&b.t>=BANNER_MIN&&b.dur-b.t>BANNER_FADE)b.dur=b.t+BANNER_FADE;   /* someone is waiting: start fading now */
+    /* someone is waiting: start fading once the minimum time has passed, a more important one cuts in after BANNER_PRE s, a long queue speeds it up */
+    if(q.length&&b.dur-b.t>BANNER_FADE&&(b.t>=(q.length>2?BANNER_MIN*.6:BANNER_MIN)||(q[0].pri|0)>(b.pri|0)&&b.t>=BANNER_PRE))b.dur=b.t+BANNER_FADE;
     if(b.t>=b.dur)this.banner=q.shift()||null;
   }
   /* event history: {t: run clock, txt, col, sub}; a repeat of the last line within 3 s is merged (count n) */
@@ -272,7 +277,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   fuseWeapons(fid){
     const f=FUSIONS.find(x=>x.id===fid),a=f&&this.weapons.get(f.a),b=f&&this.weapons.get(f.b);if(!a||!b||a.fz||b.fz)return false;
     a.fz=b.fz=f.id;b.fzB=true;this.run.fusions=(this.run.fusions||0)+1;this.audio.sfx('evolve');
-    this.say(this.env.tr(f.n)+'!',f.c,3.4,this.env.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')));
+    this.say(this.env.tr(f.n)+'!',f.c,3.4,this.env.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),2);
     this.flash=.6;this.flashC=f.c;this.hitStop(HS_EVO*1.4,ZP_EVO*1.4);this.ring(this.p.x,this.p.y,260,f.c,.8);this.ring(this.p.x,this.p.y,180,WEAPONS[f.b].c,.7);
     this.burst(this.p.x,this.p.y-20,56,f.c);this.pillar(this.p.x,this.p.y,f.c,1.2);this.bolt(this.p.x,this.p.y-20,200,f.c,8);
     this.recalc();return true;
@@ -280,7 +285,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   evolveWeapon(id){
     const w=this.weapons.get(id);if(!w||w.evo>=this.maxEvo(id))return false;
     w.evolve();this.run.evos++;this.audio.sfx('evolve');
-    this.say(this.env.tr(w.evoName)+'!',w.def.c,3);this.flash=.5;this.flashC=w.def.c;this.hitStop(HS_EVO,ZP_EVO);
+    this.say(this.env.tr(w.evoName)+'!',w.def.c,3,null,2);this.flash=.5;this.flashC=w.def.c;this.hitStop(HS_EVO,ZP_EVO);
     this.ring(this.p.x,this.p.y,220,w.def.c,.7);this.burst(this.p.x,this.p.y-20,40,w.def.c);
     this.pillar(this.p.x,this.p.y,w.def.c,1);this.bolt(this.p.x,this.p.y-20,160,w.def.c,6);
     this.recalc();return true;
@@ -677,7 +682,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         this.abBuf=Object.assign({t:f2?14:8},vv);this.recalc();this.pillar(p.x,p.y,c,1);this.ring(p.x,p.y,130,c,.6);this.burst(p.x,p.y-14,28,c);this.audio.sfx('abPower');break;}
     }
     if(f2){this.pillar(p.x,p.y,c,1.2);this.flash=Math.max(this.flash,.3);this.flashC=c;this.shake=Math.max(this.shake,.5);}
-    this.abCd=this.abCdMax;this.emote('smug',1.2);this.say(tr(a.n)+(f2?' ★':tier>=1?' +':'')+'!',c,1.8);
+    this.abCd=this.abCdMax;this.emote('smug',1.2);this.say(tr(a.n)+(f2?' ★':tier>=1?' +':'')+'!',c,1.8,null,3);
     return true;
   }
   updateAbility(dt){
@@ -951,7 +956,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.formsUnlocked++;this.formIdx=this.formsUnlocked-1;this.recalc();
     const e=this.formEntry,p=this.p,idx=this.formIdx;
     this.heal(p.maxHp*.35);
-    this.say(this.env.tr(e.n).toUpperCase()+'!',e.aura,3.4);
+    this.say(this.env.tr(e.n).toUpperCase()+'!',e.aura,3.4,null,5);
     this.emote('smug',2.4);
     this.xform={t:0,dur:4.2,rel:1.7,col:e.aura,idx,released:false,old:{pc:this.prevPc,key:this.prevKey}};
     this.audio.sfx('xcharge');
@@ -1299,7 +1304,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   revive(){
     const p=this.p;p.hp=p.maxHp*.5;p.inv=2.5;this.flash=.8;this.flashC='#ffffff';this.ring(p.x,p.y,320,'#ffffff',.8);
     for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;if(d<320){e.stun=Math.max(e.stun,2);if(!e.boss){e.kx+=dx/d*500;e.ky+=dy/d*500;}}}
-    this.say(this.env.tr(T('RESURREZIONE!','REVIVED!')),'#ffffff',2.5);this.audio.sfx('transform');
+    this.say(this.env.tr(T('RESURREZIONE!','REVIVED!')),'#ffffff',2.5,null,5);this.audio.sfx('transform');
   }
   /* v136: the trinkets found in this run that are still carried (not the ones brought from the bag) */
   foundTrinkets(){return this.trinkets.filter(id=>this.tSrc[id]==='run').map(id=>({id,r:this.trR(id),p:this.trP(id)}));}
@@ -1334,7 +1339,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.eb=[];this.bz=[];this.jbeams=[];this.rain=[];this.held=null;this.vortex=null;this.xform=null;this.kai=0;
     this.flash=.5;this.flashC='#ffffff';this.shake=.6;this.audio.sfx('death');if(this.audio.slowMusic)this.audio.slowMusic(.45);
     this.ring(p.x,p.y,120,'#ffffff',.9);this.burst(p.x,p.y-20,30,'#ffffff');this.burst(p.x,p.y-20,20,'#ff5a3d');
-    this.say(this.env.tr(T('SCONFITTA...','DEFEATED...')),'#ff5a3d',DEATH_T);
+    this.say(this.env.tr(T('SCONFITTA...','DEFEATED...')),'#ff5a3d',DEATH_T,null,5);
   }
   updateDying(rdt){
     const d=this.dying,p=this.p;d.t+=rdt;p.hp=0;
@@ -1366,7 +1371,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         this.ring(v.x,v.y-v.r,380,'#ffffff',1.1);this.ring(v.x,v.y-v.r,240,e.bd.c,.9);this.ring(v.x,v.y-v.r,520,'#ffd23f',1.4);
         this.burst(v.x,v.y-v.r,70,'#ffffff');this.burst(v.x,v.y-v.r,50,e.bd.c);this.bolt(v.x,v.y-v.r,420,'#ffffff',18);this.pillar(v.x,v.y,'#ffffff',1.6);
         this.audio.sfx('boom');this.audio.sfx('transform');
-        this.say(this.env.tr(T('VITTORIA!','VICTORY!')),'#ffd23f',VIC_T-2.6);
+        this.say(this.env.tr(T('VITTORIA!','VICTORY!')),'#ffd23f',VIC_T-2.6,null,5);
       }
     }
     for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}}this.fx=this.fx.filter(f=>f.l>0);
@@ -1503,7 +1508,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   tierPick(){const k=this.tier;return k<=1||Math.random()<.55?k:1+((Math.random()*(k-1))|0);}
   rankUp(e,k){if(!(k>0)||e.boss||e.prop||e.ai==='explode')return e;const h=1+TIER_HP*k;e.tier=k;e.hp*=h;e.max*=h;e.dmg*=1+TIER_DMG*k;e.armor+=TIER_ARM*k*(1+.4*this.sd);e.spd*=1+TIER_SPD*k;e.r*=1+TIER_R*k*.6;e.xpm*=1+TIER_XP*k;return e;}
   tierUp(k){
-    const c=TIER_C[k];this.say(this.env.tr(T('NEMICI PIÙ FORTI: ','STRONGER FOES: '))+this.env.tr(TIER_N[k]).toUpperCase()+'!',c,2.8,this.env.tr(T('Più Salute, più danni, più Esperienza','More Health, more damage, more XP')));
+    const c=TIER_C[k];this.say(this.env.tr(T('NEMICI PIÙ FORTI: ','STRONGER FOES: '))+this.env.tr(TIER_N[k]).toUpperCase()+'!',c,2.8,this.env.tr(T('Più Salute, più danni, più Esperienza','More Health, more damage, more XP')),2);
     this.audio.sfx('warn');this.shake=Math.max(this.shake,.3);if(this.finalOn)return;
     const n=Math.round((TIER_VAN+2*k)*ENEMY_N_K),a0=rnd(0,TAU);
     for(let i=0;i<n;i++){const a=a0+i/n*TAU,def=this.limitShooter(this.rosterPick());if(!def||def.ai==='explode')continue;const[x,y]=this.spawnSpot(a,this.spawnDist(a),i);this.en.push(this.rankUp(this.mkEnemy(def,x,y),k));}
@@ -1572,7 +1577,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   toElite(e){const k=1+1.8*Math.min(1,this.prog());   /* tougher as the run goes on (x1 -> x2.8, the old range) */
     Object.assign(e,{elite:true,tier:0,hp:e.hp*ELITE_HP*k,r:e.def.r*ELITE_R,dmg:e.dmg*1.45,armor:(e.armor||0)+1+.6*this.sd,spd:e.spd*.9,xpm:(e.xpm||1)*6});e.max=e.hp;return e;}
-  eliteCry(){this.say(this.env.tr(T('NEMICO ÉLITE!','ELITE ENEMY!')),'#ffd23f',2.4);this.audio.sfx('boss');this.shake=Math.max(this.shake,.3);}
+  eliteCry(){this.say(this.env.tr(T('NEMICO ÉLITE!','ELITE ENEMY!')),'#ffd23f',2.4,null,2);this.audio.sfx('boss');this.shake=Math.max(this.shake,.3);}
   spawnElite(n,def,quiet){
     if(!def){const t=this.nt,ok=[];
       for(const [id,from,wt,until] of this.stage.roster){if(t<from||(until&&t>=until))continue;const d=ENEMIES[id];if(d.ai==='explode'||d.ai==='ranged'||d.ai==='hover')continue;ok.push(d);}
@@ -1620,7 +1625,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.spawnRing(n,def,e=>{e.hp*=1.15;e.max=e.hp;});this.hordeBoost=HORDE_BOOST_T;   /* the horde also speeds up the regular spawns for 20 s (no message) */
     for(let i=0,ne=this.hordeN>=3?2:1;i<ne;i++)this.spawnElite(this.hordeN,def,true);   /* its leaders: one elite, two from the fourth horde on */
     const pl=this.elitePlan[this.hordeN];if(pl)pl.done=true;this.hordeN++;
-    this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6,def?this.env.tr(def.n)+' · '+this.env.tr(T('guidata da un Élite','led by an Elite')):null);this.audio.sfx('boss');this.shake=.4;
+    this.say(this.env.tr(T('ORDA IN ARRIVO!','HORDE INCOMING!')),'#ff5a3d',2.6,def?this.env.tr(def.n)+' · '+this.env.tr(T('guidata da un Élite','led by an Elite')):null,3);this.audio.sfx('boss');this.shake=.4;
   }
   spawnPack(){this.spawnRing(Math.round((5+this.sd+Math.min(1,this.prog())*(8+this.sd*2))*ENEMY_N_K),this.rosterPick());}
   spawnEnemyById(id,n){for(let i=0;i<(n||1);i++){const a=rnd(0,TAU),d=rnd(180,320),[x,y]=this.spawnSpot(a,d,i);this.en.push(this.mkEnemy(ENEMIES[id],x,y));}}
@@ -1634,7 +1639,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(ak>1){e.armor*=ak;e.dmg*=ak;e.altK=ak;}
     if(at&&at.tama)e.tama=at.tama;
     this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
-    this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3);this.audio.sfx('boss');this.shake=.4;
+    this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3,null,4);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
   }
   altChests(e,n){for(let i=0;i<n;i++){const a=i/Math.max(1,n)*TAU+.4,r=70+16*(i%2);this.chests.push({...this.landAt(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.6,30),final:false,t:0,boss:true,alt:true,rar:this.rollChestRar()});}}
@@ -1912,13 +1917,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* ---------- boss power-up when the fight drags on ---------- */
   startBossXform(e){
     e.xf={t:0,dur:3.0,rel:2.0,released:false};e.eb=0;
-    this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('si sta potenziando!','is powering up!')),'#ff5a3d',2.6);
+    this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('si sta potenziando!','is powering up!')),'#ff5a3d',2.6,null,2);
     this.audio.sfx('xcharge');this.ring(e.x,e.y,150,e.bd.c,.8);
   }
   /* boss that changes into its true form (Janemba): the same long charge-up as a power-up, then the form swap */
   startBossMorph(e){
     {const R=e.bd.xr||3.4;e.xf={t:0,dur:R+.8,rel:R,released:false,morph:true};}e.eb=0;this.eb=[];this.bz=[];this.jbeams=[];
-    this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('si sta trasformando!','is transforming!')),e.bd.c,3.2);
+    this.say(this.env.tr(e.bd.n)+' '+this.env.tr(T('si sta trasformando!','is transforming!')),e.bd.c,3.2,null,3);
     this.audio.sfx('xcharge');this.ring(e.x,e.y,180,e.bd.c,1);this.pillar(e.x,e.y,e.bd.c,1.2);
   }
   slashFx(e,aim){
@@ -1961,7 +1966,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         e.hp=Math.min(e.max,e.hp+e.max*(e.tf===1?.3:.22));
         e.dmg*=1.15;e.spd*=1.08;e.armor+=.6;e.bd=Object.assign({},e.bd,{cd:e.bd.cd*.85});e.sh=1.2;e.tfT=70;e.phase=0;
         this.eb=[];this.audio.sfx('xburst');
-        this.say(this.env.tr(e.bd.n).toUpperCase()+' '+this.env.tr(T('POTENZIATO!','POWERED UP!'))+(e.tf>=2?' ★':''),col,3.2);
+        this.say(this.env.tr(e.bd.n).toUpperCase()+' '+this.env.tr(T('POTENZIATO!','POWERED UP!'))+(e.tf>=2?' ★':''),col,3.2,null,3);
       }
     }
     if(x.t>=x.dur)e.xf=null;
@@ -1994,7 +1999,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     e.max*=K;e.hp=Math.min(e.max,e.hp*K+e.max*TRANS_HEAL);
     this.ring(e.x,e.y,320,nb.c,.9);this.pillar(e.x,e.y,nb.c,1.4);this.bolt(e.x,e.y-20,300,nb.c,14);this.burst(e.x,e.y-20,50,'#ffffff');
     this.flash=.7;this.flashC=nb.c;this.shake=.8;this.audio.sfx('transform');this.eb=[];
-    this.say(this.env.tr(nb.n).toUpperCase()+'!',nb.c,3.4,this.env.tr(T('Recupera il 50% della vita, statistiche +20%','Recovers 50% health, stats +20%')));
+    this.say(this.env.tr(nb.n).toUpperCase()+'!',nb.c,3.4,this.env.tr(T('Recupera il 50% della vita, statistiche +20%','Recovers 50% health, stats +20%')),3);
     this.floatText(e.x,e.y-e.r*2.4,'+50% HP',1);
     MOMENTS.bossCine(this,e,nb.n,nb.c);   /* v116 */
   }
@@ -2190,7 +2195,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p,f2=this.abTier>=2;this.bersMax=f2?BERS_T2:BERS_T;this.bers=this.bersMax;this.bersT=.15;if(f2)p.inv=Math.max(p.inv,1.5);this.recalc();
     this.flash=.6;this.flashC='#9aff4a';this.shake=Math.max(this.shake,.9);
     this.ring(p.x,p.y,320,'#8aff3a',.9);this.ring(p.x,p.y,180,'#ffffff',.6);this.pillar(p.x,p.y,'#8aff3a',1.4);this.bolt(p.x,p.y-20,260,'#c8ff6a',12);this.burst(p.x,p.y-18,50,'#8aff3a');
-    this.say(this.env.tr(T('BERSERK!','BERSERK!')),'#8aff3a',2.6);this.audio.sfx('broly');this.emote('pain',2);
+    this.say(this.env.tr(T('BERSERK!','BERSERK!')),'#8aff3a',2.6,null,3);this.audio.sfx('broly');this.emote('pain',2);
     for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;if(d<300+e.r){e.stun=Math.max(e.stun,e.boss?.5:1);if(!e.boss){e.kx+=dx/d*400;e.ky+=dy/d*400;}}}
     return true;
   }
@@ -2221,7 +2226,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p;
     if(this.kai>0){
       this.ring(p.x,p.y,this.kai===1?160:240,'#ff3b2f',.6);this.burst(p.x,p.y-18,this.kai===1?20:36,'#ff3b2f');this.pillar(p.x,p.y,'#ff3b2f',.6);this.shake=Math.max(this.shake,this.kai===1?.2:.4);
-      this.say('KAIOKEN x'+(this.kai===1?10:20)+'!','#ff3b2f',1.8);this.audio.sfx(this.kai===1?'kaioken':'kaioken2');this.emote('smug',1.2);
+      this.say('KAIOKEN x'+(this.kai===1?10:20)+'!','#ff3b2f',1.8,null,this.kai===1?3:4);this.audio.sfx(this.kai===1?'kaioken':'kaioken2');this.emote('smug',1.2);
     }else{this.say(this.env.tr(T('Kaioken disattivato','Kaioken off')),'#ffb0a0',1.4);this.audio.sfx('click');this.ring(p.x,p.y,90,'#ffb0a0',.4);}
     return true;
   }
@@ -2768,6 +2773,7 @@ class MapDirector{
       if(f.t>f.ttl){f.dead=true;continue;}
       if(f.near&&g.input.interact)this.use(f);   /* every altar, totem, spring, font, button and portal: [E] within the same radius as the prompt */
     }
+    if(g.input.interact&&g.mo&&MOBJ.useAlt(g))g.input.interact=false;   /* v140: [E] wakes the Challenge Altar you stand by */
     g.input.interact=false;
     g.feat=g.feat.filter(f=>!f.dead);
   }

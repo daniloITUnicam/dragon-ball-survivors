@@ -100,18 +100,17 @@ const MOBJ={
     const M=g.mo;if(!M.alts)M.alts=[];if(!M.altPlan)M.altPlan=[];
     if(M.altPlan.length&&g.t>=M.altPlan[0]&&!g.finalSpawned){M.altPlan.shift();this.spawnAlt(g);}
     const p=g.p;
-    for(const a of M.alts){a.t+=dt;
+    for(const a of M.alts){a.t+=dt;a.near=false;
       /* the turbulence: dark smoke curling up, more when it wakes */
-      const rate=a.st==='idle'?9+a.pg*12:a.st==='wake'?46:a.st==='gone'?30:0;
+      const rate=a.st==='idle'?9+a.pg*12:a.st==='wake'?46:0;   /* v140: no more smoke once it has woken (before, the smoke kept coming and the statue never went away) */
       if(rate&&a.ps.length<70&&Math.random()<dt*rate){const an=rnd(0,TAU),r=rnd(10,a.st==='idle'?46:70);a.ps.push({x:a.x+Math.cos(an)*r,y:a.y+Math.sin(an)*r*.4,vx:rnd(-14,14),vy:-rnd(18,a.st==='wake'?90:46),l:0,m:rnd(1,2.2),r:rnd(5,12),sw:rnd(0,TAU)});}
-      for(const q of a.ps){q.l+=dt;q.sw+=dt*3;q.x+=(q.vx+Math.sin(q.sw)*22)*dt;q.y+=q.vy*dt;q.r+=dt*7;}
+      for(const q of a.ps){q.l+=dt*(a.st==='gone'?3:1);q.sw+=dt*3;q.x+=(q.vx+Math.sin(q.sw)*22)*dt;q.y+=q.vy*dt;q.r+=dt*7;}
       if(a.ps.length&&a.ps[0].l>a.ps[0].m)a.ps=a.ps.filter(q=>q.l<q.m);
       a.bt-=dt;if(a.bt<=0){a.bt=a.st==='wake'?rnd(.06,.18):a.st==='idle'?rnd(.5,1.6)/(1+a.pg):1e9;a.bolt=this.altBolt(a);a.bolt.t=0;}
       if(a.bolt)a.bolt.t+=dt;
       if(a.st==='idle'){
         const d=Math.hypot(p.x-a.x,p.y-a.y);
-        if(d<ALT_R&&a.t>1){a.pg+=dt;a.ht-=dt;if(a.ht<=0){a.ht=.42;g.audio.sfx('altHum');}}else a.pg=Math.max(0,a.pg-dt*.6);
-        if(a.pg>=ALT_IN)this.wakeAlt(g,a);}
+        if(d<ALT_R&&a.t>1){a.near=true;a.pg=Math.min(ALT_IN,a.pg+dt);a.ht-=dt;if(a.ht<=0){a.ht=.42;g.audio.sfx('altHum');}}else a.pg=Math.max(0,a.pg-dt*.6);}   /* v140: it only wakes when you press [E] (useAlt); the heat is just the smoke and bolts getting stronger */
       else if(a.st==='wake'){if(Math.random()<dt*5)g.shake=Math.max(g.shake,.12);if(a.t-a.t1>=ALT_WAKE){a.st='gone';a.t1=a.t;g.audio.sfx('altGone');}}
       else if(a.st==='gone'&&a.t-a.t1>=ALT_GONE&&!a.ps.length)a.dead=true;
     }
@@ -119,9 +118,12 @@ const MOBJ={
   },
   spawnAlt(g){
     const s=MAPX.spot(g,760,1250,110);
-    g.mo.alts.push({x:s.x,y:s.y,st:'idle',t:0,t1:0,pg:0,ht:0,bt:.4,bolt:null,ps:[],ph:rnd(0,9)});
+    g.mo.alts.push({x:s.x,y:s.y,st:'idle',t:0,t1:0,pg:0,ht:0,bt:.4,bolt:null,ps:[],ph:rnd(0,9),kind:'alt'});
     g.audio.sfx('altCall');
-    this.say(g,'Un Altare Sfida è apparso!','A Challenge Altar has appeared!',ALT_C,'Risveglialo: boss +15% vita, armatura e danni, ma +1 scrigno','Wake it: bosses +15% health, armor and damage, but +1 chest');},
+    this.say(g,'Un Altare Sfida è apparso!','A Challenge Altar has appeared!',ALT_C,'Premi E accanto alla statua per risvegliarla: boss +15% vita, armatura e danni, ma +1 scrigno','Press E by the statue to wake it: bosses +15% health, armor and damage, but +1 chest');},
+  /* v140: [E] next to an idle Challenge Altar wakes it (also the round E button on touch screens) */
+  useAlt(g){const a=(g.mo.alts||[]).find(a=>a.st==='idle'&&a.near);if(!a)return false;this.wakeAlt(g,a);return true;},
+  altKeys(g){return g.mo&&g.mo.alts?g.mo.alts.filter(a=>a.st==='idle'):[];},
   wakeAlt(g,a){
     a.st='wake';a.t1=a.t;a.bt=0;g.altarN=(g.altarN||0)+1;
     const n=g.altarN,p=g.p;
@@ -283,9 +285,23 @@ const MOBJ={
   puff(ctx,x,y,q,R){
     for(let i=0;i<8;i++){const a=i*TAU/8+.4,d=R*(.25+.75*q)*(.6+.4*((i*.37)%1)),r=R*(.35+.45*q)*(.7+.3*((i*.61)%1));
       ctx.fillStyle='rgba(245,245,250,'+(.85*(1-q)).toFixed(3)+')';ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y-R*.5+Math.sin(a)*d*.6,r,0,TAU);ctx.fill();}},
-  arc(ctx,x,y,rx,q,col,w){
-    ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=(w||4)+3;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,0,TAU);ctx.stroke();
-    ctx.strokeStyle=col;ctx.lineWidth=w||4;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();},
+  /* v140: progress of everything that charges (altar, gravity room, nest, scouter dig): a thick glowing ring on the ground and a big labelled bar floating above it (drawn on top by flushGauges) */
+  arc(ctx,x,y,rx,q,col,w,hy,label){
+    w=Math.max(w||4,7);ctx.save();
+    ctx.strokeStyle='rgba(0,0,0,.65)';ctx.lineWidth=w+5;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,0,TAU);ctx.stroke();
+    ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.4;ctx.strokeStyle=col;ctx.lineWidth=w+7;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();
+    ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();ctx.restore();
+    this.gauge(x,y-(hy||60),q,col,label);},
+  gauge(x,y,q,col,label){const L=this.gq||(this.gq=[]);L.push([x,y,q,col,label]);if(L.length>12)L.shift();},
+  flushGauges(ctx,t){const L=this.gq;if(!L||!L.length)return;this.gq=[];
+    for(const [x,y,q0,col,lb] of L){const q=clamp(q0,0,1),GW=88,GH=13,bx=x-GW/2,by=y-GH/2;
+      ctx.save();GLOW.at(ctx,x,y,GW*.8,col,.22+.1*Math.sin(t*6));
+      ctx.fillStyle='rgba(8,12,24,.92)';ctx.fillRect(bx-4,by-4,GW+8,GH+8);ctx.fillStyle='#232c44';ctx.fillRect(bx,by,GW,GH);
+      const gr=ctx.createLinearGradient(0,by,0,by+GH);gr.addColorStop(0,'#ffffff');gr.addColorStop(.4,col);gr.addColorStop(1,col);ctx.fillStyle=gr;ctx.fillRect(bx,by,GW*q,GH);
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.strokeRect(bx-2,by-2,GW+4,GH+4);
+      const s=lb!==undefined?lb:Math.round(q*100)+'%';ctx.font='700 15px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=4;ctx.lineJoin='round';ctx.strokeStyle='#0a0f1c';ctx.strokeText(s,x,by-6);ctx.fillStyle='#ffffff';ctx.fillText(s,x,by-6);
+      ctx.restore();}},
 
   /* the evil Dragon Ball (map and arrow icon of the Challenge Altar): a black-violet sphere with blood-red stars */
   evilBall(){
@@ -307,8 +323,8 @@ const MOBJ={
     ctx.globalAlpha=(.35+.35*heat+.15*Math.sin(t*7))*fade;ctx.strokeStyle='#b46cff';ctx.lineWidth=2;
     for(let i=0;i<7;i++){const an=i*TAU/7+a.ph,r0=40,r1=r0+28+((i*13)%17);ctx.beginPath();ctx.moveTo(x+Math.cos(an)*r0,y+Math.sin(an)*r0*.38);ctx.lineTo(x+Math.cos(an+.12)*(r0+r1)/2,y+Math.sin(an+.12)*(r0+r1)/2*.38);ctx.lineTo(x+Math.cos(an)*r1,y+Math.sin(an)*r1*.38);ctx.stroke();}
     ctx.restore();
-    if(a.st==='idle'&&a.pg>0)this.arc(ctx,x,y+2,ALT_R,a.pg/ALT_IN,ALT_C,5);
-    else if(a.st==='idle'){const k=(t*.7)%1;ctx.strokeStyle=hexA(ALT_C,(.5*(1-k)).toFixed(3));ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y,ALT_R*(.4+.6*k),ALT_R*(.4+.6*k)*.42,0,0,TAU);ctx.stroke();}
+    if(a.st==='idle'){const k=(t*.7)%1;ctx.strokeStyle=hexA(ALT_C,(.5*(1-k)).toFixed(3));ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y,ALT_R*(.4+.6*k),ALT_R*(.4+.6*k)*.42,0,0,TAU);ctx.stroke();
+      if(a.near){ctx.strokeStyle=hexA(ALT_C,.8);ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(x,y+2,ALT_R,ALT_R*.42,0,0,TAU);ctx.stroke();}}
     /* the statue */
     let f=0;
     if(a.st==='idle')f=((t+a.ph)%5)<.4?1:0;
@@ -365,8 +381,7 @@ const MOBJ={
         ctx.save();ctx.globalAlpha=a.done?Math.max(0,1-(a.t-a.t1)/1.2):1;
         if(!this.img(ctx,'actnest',0,x,y+16,MO_H.actnest)){ctx.fillStyle='rgba(60,40,24,.75)';ctx.beginPath();ctx.ellipse(x,y+4,68,26,0,0,TAU);ctx.fill();}
         ctx.restore();
-        if(!a.done){const q=1-a.t/NEST_T,col=q>.5?ACT_C.nest:q>.25?'#ffd23f':'#ff5a3d';this.arc(ctx,x,y+4,78,q,col,4);
-          ctx.font='700 16px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#0a0f1c';const s=Math.ceil(NEST_T-a.t)+'s';ctx.strokeText(s,x,y-48);ctx.fillStyle=col;ctx.fillText(s,x,y-48);}}
+        if(!a.done){const q=1-a.t/NEST_T,col=q>.5?ACT_C.nest:q>.25?'#ffd23f':'#ff5a3d';this.arc(ctx,x,y+4,78,q,col,4,58,Math.ceil(NEST_T-a.t)+'s');}}
       else if(a.k==='nimbus'){
         if(a.st==='idle'){const bob=Math.sin(t*2.2)*3;this.shadow(ctx,x,y,24,.18);GLOW.at(ctx,x,y-14+bob,46,'#ffd23f',.35+.1*Math.sin(t*4));
           if(!this.img(ctx,'actnimbus',((t*6)|0)%4,x,y-8+bob,MO_H.actnimbus))this.blob(ctx,x,y-8+bob,26,'#ffe066');
@@ -384,8 +399,8 @@ const MOBJ={
           if(a.st==='on')GLOW.at(ctx,x,y-26,70,ACT_C.gravity,.3+.15*Math.sin(t*6));
           ctx.translate(x,y);ctx.scale(.6+.4*pop,.6+.4*pop);if(!this.img(ctx,'actgravity',a.st==='on'?1:0,0,0,MO_H.actgravity))this.blob(ctx,0,0,50,'#e8eef8');ctx.restore();}
         const pq=a.st==='out'?(a.t-a.t1)/GRAV_POP:a.t/GRAV_POP;if(pq<1)this.puff(ctx,x,y,clamp(pq,0,1),40);   /* capsule smoke */
-        if(a.st==='idle'&&a.pg>0)this.arc(ctx,x,y+2,58,a.pg/GRAV_IN,ACT_C.gravity,4);
-        if(a.st==='on'){const p=g.p;   /* the pressure on the hero: red rings closing in */
+        if(a.st==='idle'&&a.pg>0)this.arc(ctx,x,y+2,58,a.pg/GRAV_IN,ACT_C.gravity,4,86);
+        if(a.st==='on'){const p=g.p;this.gauge(x,y-86,1-(a.t-a.t1)/GRAV_T,ACT_C.gravity,Math.max(0,Math.ceil(GRAV_T-(a.t-a.t1)))+'s');   /* the pressure on the hero: red rings closing in; v140: the time left as a bar */
           for(let i=0;i<3;i++){const k=(t*1.2+i/3)%1;ctx.strokeStyle=hexA(ACT_C.gravity,(.5*k).toFixed(3));ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(p.x,p.y,24+46*(1-k),(24+46*(1-k))*.4,0,0,TAU);ctx.stroke();}}}
       else if(a.k==='scouter'){
         if(a.st==='idle'){this.shadow(ctx,x,y,12,.2);if(!this.img(ctx,'actscouter',((t*3)|0)%2,x,y,MO_H.actscouter))this.blob(ctx,x,y,12,'#5aff8a');
@@ -394,7 +409,7 @@ const MOBJ={
           ctx.save();if(a.st==='dug')ctx.globalAlpha=clamp(1-(a.t-a.t1-2)/1,0,1);
           if(!this.img(ctx,'actdig',a.st==='dug'?1:0,d.x,d.y+6,MO_H.actdig)){ctx.fillStyle='#7a5a3a';ctx.beginPath();ctx.ellipse(d.x,d.y,22,9,0,0,TAU);ctx.fill();}
           ctx.restore();
-          if(a.st==='scan'){GLOW.at(ctx,d.x,d.y-6,40,ACT_C.scouter,.25+.15*Math.sin(t*6));if(a.dp>0)this.arc(ctx,d.x,d.y+2,40,a.dp/DIG_T,ACT_C.scouter,4);
+          if(a.st==='scan'){GLOW.at(ctx,d.x,d.y-6,40,ACT_C.scouter,.25+.15*Math.sin(t*6));if(a.dp>0)this.arc(ctx,d.x,d.y+2,40,a.dp/DIG_T,ACT_C.scouter,4,46);
             if(a.dp>0&&Ambient.on&&Math.random()<.5)g.fx.push({x:d.x+rnd(-14,14),y:d.y-2,vx:rnd(-90,90),vy:-rnd(60,160),l:.4,m:.4,c:'#a0784a',s:3});}}}
     }
   },
