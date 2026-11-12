@@ -3,7 +3,7 @@
 Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
-ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','mapobj','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_trin','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
+ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','mapobj','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','hudpanel','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_trin','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
 js = '\n'.join((ROOT/'src/js'/f'{n}.js').read_text(encoding='utf8') for n in ORDER)
 import base64, os, json
 # ---- cloud (Supabase) settings: env vars (CI) or cloud.config.json; empty = cloud features hidden ----
@@ -61,6 +61,10 @@ _ti = {}
 for _f in sorted((ROOT/'assets'/'trinketicons').glob('*.webp')) if (ROOT/'assets'/'trinketicons').is_dir() else []:   # v137: trinket icons, file name = trinket id
     _ti[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__TRINKETICONS__*/{}', json.dumps(_ti, separators=(',', ':')))
+_hi = {}
+for _f in sorted((ROOT/'assets'/'hudicons').glob('*.webp')) if (ROOT/'assets'/'hudicons').is_dir() else []:   # v140: icons of the HUD effects panel (tools/hud_icons_from_mockup.py), file name = icon key
+    _hi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__HUDICONS__*/{}', json.dumps(_hi, separators=(',', ':')))
 _xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
 js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
 _hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)

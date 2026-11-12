@@ -1912,37 +1912,8 @@ this.W=1;this.H=1;this.Z=1;
       for(const e of (g.elitePlan||[])){const x=px+pw*clamp(e.t/g.dur,0,1),y=cy+14*U,r=3.8*U;ctx.save();ctx.globalAlpha=e.done||e.t<g.t?.3:.95;ctx.fillStyle='#ffd23f';ctx.strokeStyle='#0a0f1c';ctx.lineWidth=Math.max(1,U);ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();}   /* gold star = elite enemy */
       for(const b of g.bossQ){const x=px+pw*clamp(b.t/g.dur,0,1),past=b.done||b.t<g.t,soon=b===nextB&&b.t-g.t<30,pulse=soon?1+.18*Math.sin(g.rt*8):1,a=past?.35:1;
         if(b.final)drawShenron(ctx,x,cy-1*U,1.25*U*pulse,a);else drawSkull(ctx,x,cy-3*U,6.2*U*pulse,'#ff3b3b',a);}}
-    /* right side: kills, zenny, buffs */
-    const RX=W-m-(this.hudRP||0);   /* v137: phones keep the top-right corner for the menu gear */
-    txt(g.kills+' '+tt('kills'),RX,30*U,'#fff','right',F(15));
-    {const zs=String(Math.floor(g.run.coins));txt(zs,RX,50*U,'#ffd23f','right',F(14));ctx.font=F(14);const zw=ctx.measureText(zs).width,cr=7*U,cx0=RX-zw-cr-4*U,cy0=45*U;
-      ctx.fillStyle='#7a4e0c';ctx.beginPath();ctx.arc(cx0,cy0,cr,0,TAU);ctx.fill();ctx.fillStyle='#f2b51c';ctx.beginPath();ctx.arc(cx0,cy0,cr*.84,0,TAU);ctx.fill();
-      ctx.strokeStyle='#7a4e0c';ctx.lineWidth=1.6*U;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx0-cr*.38,cy0-cr*.38);ctx.lineTo(cx0+cr*.38,cy0-cr*.38);ctx.lineTo(cx0-cr*.38,cy0+cr*.38);ctx.lineTo(cx0+cr*.38,cy0+cr*.38);ctx.stroke();}
-    let by=70*U;
-    {const tk=g.run.tk||{},tn=(tk.t1||0)+(tk.t10||0)+(tk.l10||0);if(tn>0){txt(tt('hudTickets',{n:(tk.t1||0)+(tk.t10||0)*10+(tk.l10||0)*10}),W-m,by-2*U,'#ffd7f0','right',F(12));by+=16*U;}}
-    if(g.streak>=5){                                    /* kill streak: counter that pops on every kill + a bar that drains until the streak breaks */
-      const sc=g.streak,col=sc>=500?'#d86bff':sc>=200?'#ff5a3d':sc>=100?'#ff7b4a':sc>=50?'#ffb13b':'#ffe24d',pop=1+Math.min(.4,Math.max(0,g.streakPop)*1.6),bw=74*U;
-      txt(tr(T('SERIE','STREAK')),W-m,by,'#ffe7c0','right',F(11,800));
-      ctx.save();ctx.translate(W-m,by+20*U);ctx.scale(pop,pop);txt('x'+sc,0,0,col,'right',F(22,900));ctx.restore();
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(W-m-bw,by+25*U,bw,3*U);ctx.fillStyle=col;ctx.fillRect(W-m-bw,by+25*U,bw*clamp(g.streakT/(g.streakW||STREAK_WIN),0,1),3*U);
-      by+=36*U;
-      {const ct=comboTier(sc),nx=COMBO.find(c=>c.n>sc),lo=ct?ct.n:0;   /* v116: combo multiplier + the way to the next tier */
-        txt((ct?'COMBO ×'+ct.m:'COMBO')+(nx?'  → '+nx.n:''),W-m,by,ct?ct.c:'#cfd8ff','right',F(11,800));
-        if(nx){ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(W-m-bw,by+4*U,bw,2.5*U);ctx.fillStyle=nx.c;ctx.fillRect(W-m-bw,by+4*U,bw*clamp((sc-lo)/(nx.n-lo),0,1),2.5*U);}
-        by+=14*U;}
-    }
-    if(g.buffs.dmg>0){txt(tt('buffDmg')+' '+Math.ceil(g.buffs.dmg)+'s',W-m,by,'#ff7b4a','right',F(12));by+=16*U;}
-    if(g.buffs.haste>0){txt(tt('buffHaste')+' '+Math.ceil(g.buffs.haste)+'s',W-m,by,'#ffe24d','right',F(12));by+=16*U;}
-    if(g.riskT>0){txt(tt('buffRisk')+' '+Math.ceil(g.riskT)+'s',W-m,by,'#ff7a3a','right',F(12));by+=16*U;}
-    if(g.totemTag){const d=g.totemFx.storm?Math.ceil(Math.max(0,g.stormT)):g.totemFx.spirit?Math.ceil(Math.max(0,g.pulseT)):g.wealthT>0?Math.ceil(g.wealthT):0;txt(this.tr(g.totemTag)+(g.totemLuck>0?' x'+g.totemLuck:'')+(d?' '+d+'s':''),W-m,by,'#8be07a','right',F(12));by+=16*U;}
-    if(g.inHeal){txt(tt('inHeal'),W-m,by,'#8be07a','right',F(12));by+=16*U;}
-    {const wt=EXTRAS.wxTag(g);if(wt){txt(tr(wt),W-m,by,'#cfeaff','right',F(12));by+=16*U;}}   /* v117 */
-    if(g.bers>0){txt('BERSERK '+Math.ceil(g.bers)+'s  ·  +80% DMG  +5 ARM',W-m,by,'#8aff3a','right',F(14,900));by+=17*U;}
-    else if(g.berAvail){txt(g.bersCd>0?'Berserk '+Math.ceil(g.bersCd)+'s':'['+(this.keyHints.kaioken||'R')+'] Berserk',W-m,by,g.bersCd>0?'#8a9a8a':'#b8ff8a','right',F(11));by+=15*U;}
-    if(g.kai>0){txt('KAIOKEN x'+(g.kai===1?10:20)+'  -'+Math.round(g.kaiDrain*KAI_TICK)+' HP / '+KAI_TICK+' s  ['+(this.keyHints.kaioken||'R')+']',W-m,by,'#ff3b2f','right',F(13,900));by+=17*U;}
-    else if(g.kaiAvail){txt('['+(this.keyHints.kaioken||'R')+'] Kaioken x10 / x20',W-m,by,'#d89a8a','right',F(11));by+=15*U;}
-    if(g.slowT>0){txt(tt('buffSlow'),W-m,by,'#9fe8ff','right',F(12));by+=16*U;}
-    if(g.x2)txt('x2',W-m,by+4*U,'#ff7ad0','right',F(16,900));
+    /* right side: kills, zenny, tickets and the effects panel (hudpanel.js) */
+    HUDP.draw(this,g,dt,ctx,W,H,U,m,F,tt,tr);
     /* dragon balls, bottom-right (v136: bigger, on a bar; the ones you own bob, glow and twinkle; a new one pops in; all seven pulse together) */
     this.drawBallBar(g,ctx,W,H,m,U);
     /* boss bars */
