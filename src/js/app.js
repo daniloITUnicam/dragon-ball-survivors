@@ -129,6 +129,7 @@ class App{
   pickTrinkets(g,list,cb){this.state='end';this.ui.closeModal();this.ui.show('tpick',{g,list,cb});this.audio.play('menu');}
   startGame(o){
     this.lastOpts=o;this.ui.clear();this.ui.closeModal();this.ui.hideSandbox();
+    if(this.renderer.dynReset)this.renderer.dynReset();   /* every run starts at full resolution: the dynamic one measures again */
     Online.unseed();CLASH.unbind();if((o.week||o.coop||o.wait)&&o.seed)Online.seed(o.seed);   /* v115: the weekly challenge replays the week's random numbers */
     this.game=new Game(o,this.makeEnv());if(o.coop)this.game.coopInit(o.coop);
     if(!o.sandbox&&!o.coop&&this.cloud.uid&&this.cloud.nick){const g=this.game;this.cloud.runStart().then(id=>{if(id&&this.game===g)g.runId=id;}).catch(()=>{});}   /* v118: run token */
@@ -171,7 +172,7 @@ class App{
   endRunManually(){const g=this.game;this.ui.clear();if(g&&g.coopView){COOPG.stop();this.toMenu();return;}if(g&&!g.ended)g.finish(false);else this.toMenu();}
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
   retry(){if(this.lastOpts&&this.lastOpts.coop){this.toMenu();return;}if(this.lastOpts)this.startGame(this.lastOpts);}   /* a co-op run starts again from the room */
-  toMenu(){Online.unseed();CLASH.unbind();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');if(COOP.code){this.ui.push('coop');this.ui.push('coopRoom');}}   /* v120: after a co-op run, back to the room */
+  toMenu(){if(this.renderer.dynReset)this.renderer.dynReset();Online.unseed();CLASH.unbind();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');if(COOP.code){this.ui.push('coop');this.ui.push('coopRoom');}}   /* v120: after a co-op run, back to the room */
   keyHints(){
     const I=this.input,B=I.binds,pad=I.mode==='pad',h={};
     for(const a of['interact','pet','kaioken','senzu','dash','target'])h[a]=pad?Input.padLabel((B.pad[a]||[])[0]):Input.keyLabel((B.kb[a]||[])[0]);
@@ -210,7 +211,7 @@ class App{
         if(I.pressed('dash'))g.dash();
         if(I.pressed('target'))g.cycleTarget();
         if(I.pressed('debug')&&g.sandbox)this.ui.toggleSandbox(g);
-        g.update(dt);
+        {const u0=performance.now();g.update(dt);const PF=this.renderer._pf||(this.renderer._pf={});PF.upd=(PF.upd||0)*.92+(performance.now()-u0)*.08;}
         }
         this.trackT-=dt;
         if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?(trackUri('fboss'+g.stage.id)?'fboss'+g.stage.id:trackUri('bossgen')?'bossgen':'finalboss'):(trackUri('bossgen')?'bossgen':['boss','boss2','boss3'][g.stageIdx%3])):'stage'+g.stage.id);}

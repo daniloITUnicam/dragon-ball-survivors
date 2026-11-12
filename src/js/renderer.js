@@ -280,6 +280,7 @@ this.W=1;this.H=1;this.Z=1;
   /* v121: dynamic resolution - every 1.5 s of play the frame rate is checked: under 50 fps the canvas renders 10% fewer pixels per side (down to 60%),
      at 57+ fps for 6 s it climbs back by 10%. If rendering smaller did not help (the game is limited by something else, or the screen runs at 30 Hz)
      the step is undone, and after two such tries it stops lowering. Settings > Video > Dynamic resolution turns it off. */
+  dynReset(){this.dd=null;if((this.dyn||1)!==1){this.dyn=1;this.dynPend=false;this.resize();}}   /* a new run (or the menu): back to full resolution, and the fail / ban counters start over */
   dynTick(fd){const s=this.save.d.settings;if(s.dynRes===false){if((this.dyn||1)!==1){this.dyn=1;this.dynPend=true;}return;}
     const D=this.dd||(this.dd={acc:0,n:0,good:0,cool:0,fail:0,down:0}),now=performance.now();if(this.dyn==null)this.dyn=1;
     D.acc+=fd;D.n++;D.cool-=fd;if(D.acc<1.5)return;const fps=D.n/D.acc;D.acc=0;D.n=0;if(D.cool>0)return;
@@ -321,6 +322,7 @@ this.W=1;this.H=1;this.Z=1;
     {const xz=this.xfZoom(g);if(xz!==1)this.Z*=xz;}   /* v133: transformation close-up */
     {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+(g.bcine.intro?BOSS_INTRO_Z:.3)*f;}   /* v116: boss cinematic camera */
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
+    this._pt1=performance.now();
   }
   /* v133: the camera closes in on the hero while he transforms (XF_ZOOM at the burst), holds through XF_LOCK and eases back out in XF_ZOUT s */
   xfZoom(g){const x=g.xform;if(!x||typeof XF_ZOOM==='undefined')return 1;const e=v=>v*v*(3-2*v);
@@ -328,6 +330,7 @@ this.W=1;this.H=1;this.Z=1;
     const a=x.t-x.rel-XF_LOCK;return a<=0?XF_ZOOM:1+(XF_ZOOM-1)*(1-e(clamp(a/XF_ZOUT,0,1)));}
   drawFrame(g,dt){
     Sprites.warmStep();this.fdt=dt;
+    const PF=this._pf||(this._pf={});let pt=performance.now();const lap=k=>{const n=performance.now();PF[k]=(PF[k]||0)*.92+(n-pt)*.08;pt=n;};   /* phase timing for the FPS counter (settings > show FPS) */
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p,ta=g.rt;   /* v133: ta = real time for the sprite animations (in x2 the game clock t runs twice as fast) */
     FXL.a=(s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1))*this.fxCrowd(g,dt,s);FXL.m=1;this._crowd=g.en.length>CROWD_LOD;
     this.resetCtx();
@@ -412,7 +415,9 @@ this.W=1;this.H=1;this.Z=1;
       if(elv)ELEC.pt(ctx,b.x,b.y,b.r*1.5+3,b.c,t,elv,b.x*.13+b.y*.07);
     }
     this.fxEnd();
-    fxLoop(true);
+    lap('ter');fxLoop(true);
+    if(g.sbc)this.drawSbc(g,t);if(g.spheres.length)this.drawSpheres(g,t);   /* the Spirit Bomb and the ability spheres / comets (painted sprites) are weapons too */
+    lap('wpn');
     /* ground items */
     for(const gm of (g.trial?[]:g.gm)){
       if(gm.held)continue;   /* carried gems are drawn with the companion */
@@ -436,6 +441,7 @@ this.W=1;this.H=1;this.Z=1;
     for(const f of (g.trial?[]:g.feat))this.drawFeature(f,t,g);
     for(const c of (g.trial?[]:g.chests))this.drawChest(c,t);
     if(!g.trial&&!g.tun)MOBJ.drawGround(this,g,t);   /* v135: debris, activities */
+    lap('gnd');
     /* entities, depth sorted */
     const list=g.en.slice();
     if(!g.trial&&!g.tun){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
@@ -457,12 +463,11 @@ this.W=1;this.H=1;this.Z=1;
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
       this.drawEnemy(e,ta);
     }
+    lap('ent');
     if(!g.trial&&!g.tun){MOBJ.drawAir(this,g,t);MOBJ.flushGauges(ctx,t);}
     if(g.vic)this.drawVictory(g.vic,t);
-    if(g.sbc)this.drawSbc(g,t);
     if(g.held)this.drawHeld(g,t);
     if(g.rain.length)this.drawRainAir(g,t);
-    if(g.spheres.length)this.drawSpheres(g,t);
     if(g.ghosts)this.drawGhosts(g,t);
     if(Ambient.on)Ambient.air(ctx,t);
     if(theme==='snake'&&Ambient.on)SnakeArt.air(ctx,cx,cy,g.vw,g.vh,t);   /* birds, mist, the Flying Nimbus */
@@ -487,6 +492,7 @@ this.W=1;this.H=1;this.Z=1;
       SnakeArt.occlude(ctx,this._snIS,E,t,this.ballSheet());
     }
     if(theme==='void'&&!g.trial&&p.y<TOPARENA.TR*.4&&p.x>-130&&p.x<130&&p.y>-470){ctx.save();ctx.beginPath();ctx.rect(p.x-80,p.y-150,160,176);ctx.clip();TopArt.tower(ctx,t);ctx.restore();}
+    lap('fx');
     /* floating texts. Damage on enemies (c 0) and critical hits (c 6) are drawn as sprites of a clean medium-weight lettering (dmgSpr) and stay on screen DMG_T seconds; the rest keep the plain font */
     ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.7)';
     const smo=ctx.imageSmoothingEnabled;
@@ -539,7 +545,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,ta);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
       if(g.summon&&g.summon.ph!=='leave')return;   /* no HUD while the dragon is out */
     }
-    this.hud(g,dt,cx,cy);
+    {const h0=performance.now();this.hud(g,dt,cx,cy);const PF=this._pf||(this._pf={});PF.hud=(PF.hud||0)*.92+(performance.now()-h0)*.08;}
   }
   /* the lettering of the damage numbers: a clean, upright, medium-weight font (white for a hit, red for a critical hit) with a thin dark outline for contrast.
      It is drawn at twice the size and shown scaled down with smoothing, so the digits stay sharp and easy to read. One sprite per (text, critical?), cached */
@@ -2067,7 +2073,11 @@ this.W=1;this.H=1;this.Z=1;
       const j=this.joy;ctx.globalAlpha=.3;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(j.ox,j.oy,48*U,0,TAU);ctx.fill();
       ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(j.ox+j.x*38*U,j.oy+j.y*38*U,22*U,0,TAU);ctx.fill();ctx.globalAlpha=1;
     }
-    if(this.save.d.settings.fps){this.fa+=dt;this.fn++;if(this.fa>.5){this.fps=Math.round(this.fn/this.fa);this.fa=0;this.fn=0;}txt(this.fps+' FPS',W-m,H-26*U,'#9fe8ff','right',F(11));}
+    if(this.save.d.settings.fps){this.fa+=dt;this.fn++;if(this.fa>.5){this.fps=Math.round(this.fn/this.fa);this.fa=0;this.fn=0;}txt(this.fps+' FPS',W-m,H-26*U,'#9fe8ff','right',F(11));
+      /* what each phase costs (ms per frame, smoothed) and how many things are alive: when the frame rate drops, this says where it goes */
+      const PF=this._pf||{},f1=k=>(PF[k]||0).toFixed(1);
+      txt('upd '+f1('upd')+'  ter '+f1('ter')+'  wpn '+f1('wpn')+'  gnd '+f1('gnd')+'  ent '+f1('ent')+'  fx '+f1('fx')+'  hud '+f1('hud'),W-m,H-40*U,'#9fe8ff','right',F(10));
+      txt('en '+g.en.length+'  pr '+g.pr.length+'  fx '+g.fx.length+'  eb '+g.eb.length+'  co '+(g.corpses?g.corpses.length:0)+'  tx '+g.tx.length+'  loot '+g.loot.length+'  gm '+g.gm.length+'  feat '+g.feat.length+'  bz '+(g.bz?g.bz.length:0),W-m,H-54*U,'#9fe8ff','right',F(10));}
     if(g.sandbox)txt('SANDBOX',W/2,H-10*U,'#ff7ad0','center',F(12));
   }
 }

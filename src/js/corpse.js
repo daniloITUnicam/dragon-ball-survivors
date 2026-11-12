@@ -34,7 +34,7 @@ Game.prototype.addCorpse=function(e){
   if(this.trial||this.save.settings.deathAnim===false||e.sparring||e.ai==='explode'||(e.boss&&e.final)||typeof document==='undefined')return;
   const p=this.p;if(Math.hypot(e.x-p.x,e.y-p.y)>this.viewR*1.2)return;           /* off screen: nobody sees it */
   const a=this.corpses||(this.corpses=[]),nb=a.reduce((s,c)=>s+(c.boss?1:0),0);
-  if(e.boss?nb>=CORPSE_MAXB:a.length-nb>=CORPSE_MAX)return;
+  if(e.boss?nb>=CORPSE_MAXB:a.length-nb>=(this.en.length>150?CORPSE_MAX*.4:CORPSE_MAX))return;   /* a crowded screen keeps fewer dissolving bodies (each one repaints a whole canvas every frame) */
   let vx=clamp((e.kx||0)*.35,-90,90),vy=clamp((e.ky||0)*.35,-60,60);
   if(!e.boss){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1,v=Math.hypot(vx,vy);   /* always thrown back: at least CORPSE_PUSH, away from the hero when the blow gave no direction */
     if(v<CORPSE_PUSH){if(v>8){vx*=CORPSE_PUSH/v;vy*=CORPSE_PUSH/v;}else{vx=dx/d*CORPSE_PUSH;vy=dy/d*CORPSE_PUSH*.6;}}}
