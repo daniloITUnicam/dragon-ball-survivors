@@ -424,44 +424,18 @@
      "idle_n": 0
     },
     "6": {
-     "src": "VEGETA fases/Vegeta Blue",
-     "idle": 8,
+     "src": "VEGETA fases/Vegeta Blue Full Power",
+     "idle": 12,
      "walk": [
-      8,
-      8,
-      8,
-      8
+      12,
+      12,
+      12,
+      12
      ],
-     "wind": 39,
-     "thrust": 120,
-     "power": 117,
-     "dash": 33,
-     "recolor": [
-      [
-       "#89dde7",
-       "#e2c8ff"
-      ],
-      [
-       "#40cdda",
-       "#b48cff"
-      ],
-      [
-       "#4ab6c1",
-       "#9a70ee"
-      ],
-      [
-       "#239bb1",
-       "#8458d8"
-      ],
-      [
-       "#006f86",
-       "#5a34a8"
-      ],
-      [
-       "#004f60",
-       "#42247e"
-      ]
-     ],
+     "wind": 26,
+     "thrust": 62,
+     "power": 15,
+     "dash": 20,
      "fx_recolor": [
       [
        "#fe551d",
@@ -477,7 +451,7 @@
       ],
       [
        "#000000",
-       "#8458d8"
+       "#239bb1"
       ]
      ],
      "walk_dir": "camminata/vegeta_6",
@@ -550,7 +524,7 @@
        "#7a2cc0"
       ]
      ],
-     "walk_dir": "camminata/vegeta_7",
+     "walk_dir": "camminata/vegeta_6",
      "walk_n": [
       1,
       2,
@@ -578,7 +552,7 @@
      "#c4ccd6"
     ]
    ],
-   "note": "pack: Dragon Ball Sagas/VEGETA fases (+ GOKU fases/Goku 3 for the streak, recoloured). Forms 2 and 3 (SSJ2/SSJ3) have no sheet: they use vegeta_1. 6 = Vegeta Blue and 7 = Blue Full Power with an Ultra Ego hair palette (recolor). Walk: Gemini video cycles in camminata/vegeta* (8 frames). Forms 6/7 (Ultra Ego) reuse the Blue walk (vegeta_6 raw + recolor, vegeta_7 pre-baked purple) until videos on flat magenta exist."
+   "note": "pack: Dragon Ball Sagas/VEGETA fases (+ GOKU fases/Goku 3 for the streak, recoloured). Forms 2 and 3 (SSJ2/SSJ3) have no sheet: they use vegeta_1. 6 = Blue Full Power (Blue Evolved) and 7 = the same with an Ultra Ego hair palette (recolor). Walk: Gemini video cycles in camminata/vegeta* (8 frames). Form 6 = Blue Evolved (Blue Full Power pack, own video walk camminata/vegeta_6); form 7 = Ultra Ego = the same sheet and walk recoloured purple (recolor)."
   }
  },
  "weapons": {

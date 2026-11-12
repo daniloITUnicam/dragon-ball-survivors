@@ -137,8 +137,8 @@ const SSJ_FORMS=[F('Super Saiyan','Super Saiyan','#ffe24d','#ffe24d','#1aa79a'),
 /* Kaioken and Ultra Instinct belong to Goku only: the other lines have their own first form and stop before Ultra Instinct */
 const LINES={
   saiyan:[F('Kaioken','Kaioken','#ff3b2f',null,'#ff5a3d'),...SSJ_FORMS,F('Ultra Istinto (segno)','Ultra Instinct (Sign)','#9fb4ff','#cfd8e8','#cfd8e8'),F('Ultra Istinto Completo','Mastered Ultra Instinct','#ffffff','#eef4ff','#ffffff')],
-  /* Vegeta: basic colours up to Super Saiyan, then as always, and Ultra Ego (purple) as the final steps */
-  vegeta:[F('Orgoglio Saiyan','Saiyan Pride','#e8f0ff'),...SSJ_FORMS,F('Ultra Ego (risveglio)','Ultra Ego (Awakening)','#8a5aff','#4a2a8a','#e08aff'),F('Ultra Ego','Ultra Ego','#b46aff','#5a2ab0','#ffb0ff')],
+  /* Vegeta: basic colours up to Super Saiyan, then as always, then Blue Evolved, and Ultra Ego (purple) as the last step */
+  vegeta:[F('Orgoglio Saiyan','Saiyan Pride','#e8f0ff'),...SSJ_FORMS,F('Super Saiyan Blue Evoluto','Super Saiyan Blue Evolved','#4ab8ff','#4ab8ff','#4ab8ff'),F('Ultra Ego','Ultra Ego','#b46aff','#5a2ab0','#ffb0ff')],
   /* every other Saiyan: an invented first step instead of the Kaioken */
   saiyan2:[F('Furia Saiyan','Saiyan Fury','#ff8a3d'),...SSJ_FORMS],
   /* Gotenks fuses already as a Super Saiyan: no Saiyan Fury step, the line goes SSJ - SSJ2 - SSJ3 - God - Blue */

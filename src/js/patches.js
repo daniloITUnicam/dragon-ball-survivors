@@ -20,8 +20,8 @@ const PATCHES=[
     name:T("Vegeta cammina davvero","Vegeta really walks"),
     sum:T("Tutte le forme di Vegeta hanno una camminata animata a 8 fotogrammi, come Goku, e la sua trasformazione usa lo sprite di carica dedicato.","Every Vegeta form now has an 8-frame animated walk, like Goku, and his transformation uses the dedicated power-up sprite."),
     new:[
-      T("Vegeta: camminata a 8 fotogrammi per Orgoglio Saiyan, Super Saiyan, God e Blue (prima le gambe oscillavano su un'immagine ferma). Super Saiyan 2 e 3 usano il foglio del Super Saiyan.","Vegeta: 8-frame walk for Saiyan Pride, Super Saiyan, God and Blue (the legs used to swing on a still image). Super Saiyan 2 and 3 use the Super Saiyan sheet."),
-      T("Ultra Ego: usa la camminata del Blue con i capelli viola, finché non c'è un video dedicato.","Ultra Ego: uses the Blue walk with purple hair until a dedicated video exists."),
+      T("Vegeta: camminata a 8 fotogrammi per Orgoglio Saiyan, Super Saiyan, God, Blue e Blue Evoluto (prima le gambe oscillavano su un'immagine ferma). Super Saiyan 2 e 3 usano il foglio del Super Saiyan.","Vegeta: 8-frame walk for Saiyan Pride, Super Saiyan, God, Blue and Blue Evolved (the legs used to swing on a still image). Super Saiyan 2 and 3 use the Super Saiyan sheet."),
+      T("Vegeta: la settima forma «Ultra Ego (risveglio)» diventa «Super Saiyan Blue Evoluto» (capelli blu, aura blu), con la sua camminata dal video. Ultra Ego resta l'ultima forma: stesso sprite e stessa camminata in viola.","Vegeta: the seventh form «Ultra Ego (Awakening)» becomes «Super Saiyan Blue Evolved» (blue hair, blue aura), with its own walk from the video. Ultra Ego stays the last form: same sprite and walk in purple."),
       T("Trasformazione di Vegeta: usa lo sprite di carica della forma che sta raggiungendo (come Goku).","Vegeta's transformation: uses the power-up sprite of the form he is reaching (like Goku).")]},
   {id:'2026-11-11f',date:'2026-11-11',
     name:T("Orde a tema, Élite a sorpresa e nemici più resistenti","Themed hordes, surprise Elites and sturdier enemies"),

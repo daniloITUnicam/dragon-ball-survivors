@@ -682,7 +682,7 @@ this.W=1;this.H=1;this.Z=1;
   /* the painted aura of a form (its English name), or the white one tinted with the form's colour */
   auraOf(g,idx){
     const L=LINES[(g.C&&g.C.line)||'saiyan']||[],e=L[idx],n=e&&e.n&&e.n.en;
-    const id={'Kaioken':'aurakaio','Super Saiyan':'aurassj','Super Saiyan 2':'aurassj2','Super Saiyan 3':'aurassj3','Super Saiyan God':'auragod','Super Saiyan Blue':'aurablue',
+    const id={'Kaioken':'aurakaio','Super Saiyan':'aurassj','Super Saiyan 2':'aurassj2','Super Saiyan 3':'aurassj3','Super Saiyan God':'auragod','Super Saiyan Blue':'aurablue','Super Saiyan Blue Evolved':'aurablue',
       'Ultra Instinct (Sign)':'aurauis','Mastered Ultra Instinct':'auramui'}[n];
     return id&&Sprites.sheets[id]?{id,tint:null}:{id:'aurabase',tint:(e&&e.aura)||'#ffffff'};
   }
