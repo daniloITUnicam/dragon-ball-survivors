@@ -1805,26 +1805,11 @@ this.W=1;this.H=1;this.Z=1;
       {const pm=passMax(id);for(let i=0;i<pm;i++){ctx.fillStyle=i<lv?P.c:'rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(px0+ps/2+(i-(pm-1)/2)*6.4*U,py0+ps-5.5*U,2.3*U,0,TAU);ctx.fill();}}
       px0+=ps+4*U;
     }
-    /* trinkets: one slot per slot you own (empty ones are dashed), the frame in the rarity colour, a perfection bar under the icon and, at 100%, the Ultra Instinct halo */
-    let tx2=m;const ty0=(pshown?py0+ps:wy+sz)+7*U,ts=30*U,nslot=Math.max(g.tcap,g.trinkets.length),TPR=8;let ty=ty0;   /* v109: no cap in the run, so the slots wrap every TPR */
-    for(let si=0;si<nslot;si++){
-      if(si&&si%TPR===0){tx2=m;ty+=ts+3*U;}
-      const id=g.trinkets[si];
-      if(!id){ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(tx2,ty,ts,ts);ctx.save();ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.6*U;ctx.setLineDash([4*U,3*U]);ctx.strokeRect(tx2,ty,ts,ts);ctx.restore();
-        txt('+',tx2+ts/2,ty+ts*.68,'rgba(255,255,255,.35)','center',F(20,900));tx2+=ts+3*U;continue;}
-      this.zones.push({x:tx2,y:ty,w:ts,h:ts,k:'trinket',id});
-      const t=trinDef(id),rr=g.trR(id),tc=RARITY[rr].c,pf=g.trP(id),has=hasPf(t),perfect=has&&pf>=100;
-      if(perfect)GLOW.at(ctx,tx2+ts/2,ty+ts/2,ts*(1.05+.12*Math.sin(g.rt*4)),'#cfeaff',.4);
-      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(tx2,ty,ts,ts);ctx.fillStyle=hexA(tc,.16);ctx.fillRect(tx2,ty,ts,ts);
-      ctx.strokeStyle=perfect?'#f4faff':tc;ctx.lineWidth=2*U;ctx.strokeRect(tx2,ty,ts,ts);
-      {const tim=this.trinketImg(id);if(tim){ctx.save();ctx.imageSmoothingEnabled=true;ctx.drawImage(tim,tx2+2.5*U,ty+2.5*U,ts-5*U,ts-5*U);ctx.restore();}   /* v137: the trinket's picture */
-       else txt(t.k,tx2+ts/2,ty+ts*.68,tc,'center',F(19,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
-      if(has){const bx=tx2+3*U,bw2=ts-6*U,by=ty+ts-6*U;ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(bx,by,bw2,3*U);ctx.fillStyle=perfColor(pf);ctx.fillRect(bx,by,bw2*pf/100,3*U);}
-      tx2+=ts+3*U;
-    }
+    /* v140: the trinkets are no longer drawn on the HUD (a full set covered the screen); they are in the pause screen */
+    const ty0=(pshown?py0+ps:wy+sz)+7*U;
     /* form label */
     const fe=g.formEntry,nxt=g.formsUnlocked<g.formMax?FORM_TIERS[g.formsUnlocked].lvl:null;
-    const fy=ty+ts+16*U;
+    const fy=ty0+12*U;
     txt((fe?tr(fe.n):tt('baseForm'))+(nxt?'  ·  '+tt('nextForm')+' '+nxt:''),m,fy,fe?fe.aura:'#fff','left',F(12));
     /* weapon target (TAB): closest / most HP / least HP / boss; only the active one is shown */
     if(!g.ended){
