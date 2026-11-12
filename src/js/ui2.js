@@ -81,7 +81,7 @@ Object.assign(UI.prototype,{
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
         toggle(this.tr(T6('Risoluzione dinamica','Dynamic resolution','Resolución dinámica','Résolution dynamique','Dynamische Auflösung','Resolução dinâmica')),'dynRes',this.tr(T6('Se il gioco scende sotto i 50 fps, disegna meno pixel (fino al 60%) e risale quando torna fluido.','If the game drops under 50 fps it draws fewer pixels (down to 60%) and goes back up once it is smooth again.','Si el juego baja de 50 fps, dibuja menos píxeles (hasta el 60%) y vuelve a subir cuando va fluido.','Si le jeu passe sous 50 fps, il dessine moins de pixels (jusqu\'à 60 %) et remonte quand tout redevient fluide.','Fällt das Spiel unter 50 fps, zeichnet es weniger Pixel (bis 60 %) und geht wieder hoch, sobald es flüssig läuft.','Se o jogo cair abaixo de 50 fps, desenha menos pixels (até 60%) e volta a subir quando estiver fluido.'))),
         toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps'),
-        toggle(this.t('reduceFx'),'reduceFx',this.t('reduceFxDesc')),
+        toggle(this.t('reduceFx'),'reduceFx',this.t('reduceFxDesc')+' '+this.tr(T('Rende anche le tue armi più trasparenti in automatico: più effetti ci sono a schermo, più si abbassa l\'opacità (fino al 25%). Si somma al cursore dell\'opacità.','It also makes your weapons more transparent automatically: the more effects on screen, the lower the opacity (down to 25%). It stacks with the opacity slider.'))),
         slider(this.t('fxOpacity'),'fxAlpha',0,100,5,v=>Math.round(v)+'%',this.t('fxOpacityDesc'))];
     }else if(tab==='world'){
       const dn=v=>this.t('dayWord')+' '+Math.round(v)+'% · '+this.t('nightWord')+' '+(100-Math.round(v))+'%';

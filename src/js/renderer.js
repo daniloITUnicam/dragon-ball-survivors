@@ -83,6 +83,7 @@ const TCH=8,TCH_MAX=64;
 const RB={on:false,m:new Map(),
   add(col,x,y,w,h){let L=this.m.get(col);if(!L){L=[];this.m.set(col,L);}L.push(x,y,w,h);},
   flush(ctx){for(const [col,L] of this.m){if(!L.length)continue;ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<L.length;i+=4)ctx.rect(L[i],L[i+1],L[i+2],L[i+3]);ctx.fill();L.length=0;}this.on=false;}};
+const FX_CROWD0=120,FX_CROWD1=420;   /* load (projectiles + .3 per particle) where weapon effects start fading / are at half opacity */
 class Renderer{
   constructor(canvas,save){
     this.cv=canvas;this.ctx=canvas.getContext('2d');this.save=save;
@@ -307,6 +308,8 @@ this.W=1;this.H=1;this.Z=1;
   /* ---------- game ---------- */
   /* drop any state a half-finished frame could have left behind (blend mode, alpha, dash, clip stack) */
   /* the slider is applied with a gentle curve (a^1.7): the additive layers of an effect (glow + core + star) add up past 100%, so a straight scale would look unchanged until very low values */
+  /* setting reduceFx ("Reduced effects"): the more weapon effects are on screen (projectiles + particles) the more transparent they get, down to 25%, easing in and out (it used to be its own setting, dynFx) */
+  fxCrowd(g,dt,s){const want=!s.reduceFx?1:1-.75*clamp((g.pr.length+g.fx.length*.3-FX_CROWD0*.6)/((FX_CROWD1-FX_CROWD0)*.7),0,1);this._fxk=this._fxk===undefined?want:this._fxk+(want-this._fxk)*Math.min(1,(dt||.016)*(want<this._fxk?4:1.5));return this._fxk;}
   fxBegin(){if(FXL.a>=1)return;FXL.m=Math.pow(FXL.a,1.7);this.ctx.globalAlpha=1;}
   fxEnd(){if(FXL.m===1)return;FXL.m=1;this.ctx.globalAlpha=1;}
   resetCtx(){const c=this.ctx;try{for(let i=0;i<40;i++)c.restore();}catch(e){}c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.setLineDash([]);c.lineCap='butt';c.lineJoin='miter';c.shadowBlur=0;c.filter='none';}
@@ -325,7 +328,7 @@ this.W=1;this.H=1;this.Z=1;
   drawFrame(g,dt){
     Sprites.warmStep();this.fdt=dt;
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p,ta=g.rt;   /* v133: ta = real time for the sprite animations (in x2 the game clock t runs twice as fast) */
-    FXL.a=s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1);FXL.m=1;
+    FXL.a=(s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1))*this.fxCrowd(g,dt,s);FXL.m=1;
     this.resetCtx();
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
