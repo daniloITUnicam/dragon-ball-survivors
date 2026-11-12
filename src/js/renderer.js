@@ -73,7 +73,8 @@ function footShadow(c,ox,oy){
     for(let x=0;x<w;x++){let n=0;for(let y=y0;y<=bot;y++)if(op(x,y))n++;if(n>=2)cols.push(x);}
     if(cols.length<2)return null;
     const a=cols[Math.floor(cols.length*.1)],b=cols[Math.ceil(cols.length*.9)-1],rx=Math.max(6,(b-a)/2*.62),ry=rx*.3;
-    return{cx:(a+b)/2-ox,cy:Math.min(bot-oy,0)+Math.max(0,bot-oy)*.5-ry*.55,rx,ry};
+    const dn=bot-oy;   /* dn: how far the art goes below the anchor. A pile whose art sits well below it (bones) hid its whole shadow behind itself and looked afloat: its shadow now reaches past the lower edge */
+    return{cx:(a+b)/2-ox,cy:dn>(bot-top)*.06?dn-ry*.45:Math.min(dn,0)+Math.max(0,dn)*.5-ry*.55,rx,ry};
   }catch(e){return null;}   /* a tainted canvas (file:// without the sheet inlined): the old round shadow */
 }
 const LIFE_STEP=.04,LIFE_BREATH=.022;   /* v116: the alive layer (see Renderer.life); v122: no more lean / sway into the direction of movement */
@@ -83,6 +84,7 @@ const TCH=8,TCH_MAX=64;
 const RB={on:false,m:new Map(),
   add(col,x,y,w,h){let L=this.m.get(col);if(!L){L=[];this.m.set(col,L);}L.push(x,y,w,h);},
   flush(ctx){for(const [col,L] of this.m){if(!L.length)continue;ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<L.length;i+=4)ctx.rect(L[i],L[i+1],L[i+2],L[i+3]);ctx.fill();L.length=0;}this.on=false;}};
+const AURA_K=1.5;   /* size of every painted hero aura (forms, Kaioken) relative to the sprite height the callers ask for */
 const CROWD_LOD=110;   /* more enemies alive than this: the rank auras / rings and elite sparks are skipped (the rank dots stay) - fewer blend-mode switches per frame */
 const FX_CROWD0=120,FX_CROWD1=420;   /* load (projectiles + .3 per particle) where weapon effects start fading / are at half opacity */
 class Renderer{
@@ -684,6 +686,7 @@ this.W=1;this.H=1;this.Z=1;
      id: sheet id ('aurassj'...); x,y: the feet; h: flame height in world units; tint: colour for the white 'aurabase' (forms without their own aura).
      Returns false when the sheet is not there (the drawn-by-code aura stays) */
   auraSprite(id,x,y,h,al,tint){
+    h*=AURA_K;
     const S=Sprites.sheets[id];if(!S||!S.img)return false;
     let img=S.img;
     if(tint){const tc=S.tint||(S.tint={});img=tc[tint];
