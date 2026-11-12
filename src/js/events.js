@@ -9,6 +9,8 @@
      - 'tint'   the sky changes colour (the Full Moon)
    The drawing of the markers / the sky is in Renderer.drawEvents / eventOverlay. ============================================================ */
 /* T6 lives in util.js (v115) */
+const OOZ_HP=2.4,OOZ_ARM=2.5,   /* Full Moon apes: health multiplier and extra armor */
+  OOZ=T6('OOZARU!','GREAT APE!','¡OOZARU!','OOZARU !','OOZARU!','OOZARU!');
 const MAP_EVENTS={
   /* Saiyan Plains: the Saibaman seeds sprout, then the seedlings ripen into kamikazes */
   plains:{n:T6('SEMI DI SAIBAMAN!','SAIBAMAN SEEDS!','¡SEMILLAS DE SAIBAMAN!','GRAINES DE SAIBAIMAN !','SAIBAMAN-SAMEN!','SEMENTES DE SAIBAMAN!'),
@@ -54,12 +56,21 @@ const MAP_EVENTS={
     {at:21,a:'spots',kind:'chute',n:5,r:[190,300],tel:2.4,mix:[['rrs',1],['gun',1],['ninja',1]],per:2}]},
   /* Planet Vegeta: the Full Moon rises and the Saiyans become Great Apes */
   redrock:{n:T6('LUNA PIENA!','FULL MOON!','¡LUNA LLENA!','PLEINE LUNE !','VOLLMOND!','LUA CHEIA!'),
-    sub:T6('I Saiyan si trasformano in Oozaru.','The Saiyans turn into Great Apes.','Los Saiyans se transforman en Oozaru.','Les Saiyans deviennent des Oozaru.','Die Saiyajin werden zu Oozaru.','Os Saiyans transformam-se em Oozaru.'),col:'#c8a0ff',dur:36,first:[170,240],gap:[270,370],steps:[
-    {at:0.5,a:'tint',col:'#1a1048',k:.42,moon:1,dur:34},
+    sub:T6('I Saiyan si trasformano in Oozaru.','The Saiyans turn into Great Apes.','Los Saiyans se transforman en Oozaru.','Les Saiyans deviennent des Oozaru.','Die Saiyajin werden zu Oozaru.','Os Saiyans transformam-se em Oozaru.'),col:'#c8a0ff',dur:90,first:[170,240],gap:[270,370],steps:[
+    {at:0.5,a:'tint',col:'#1a1048',k:.42,moon:1,dur:88},
     {at:2,a:'spots',kind:'march',n:8,r:[290,330],tel:1.4,mix:[['srenegade',3],['sberserk',1]],per:1},
-    {at:9,a:'morph',map:{srenegade:'sberserk2',sberserk:'sberserk2'},max:5,col:'#ff5a3d',l:T6('OOZARU!','GREAT APE!','¡OOZARU!','OOZARU !','OOZARU!','OOZARU!'),roar:1},
-    {at:15,a:'spots',kind:'meteor',n:5,r:[120,250],tel:2,mix:[['magmabomb',1]],per:1,hz:1},
-    {at:23,a:'spots',kind:'march',n:6,r:[290,330],tel:1.4,mix:[['srenegade',2],['sberserk',1],['lakasei',1]],per:1}]},
+    {at:9,a:'morph',map:{srenegade:'sberserk2',sberserk:'sberserk2'},max:8,col:'#ff5a3d',l:OOZ,roar:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    /* the Great Apes come in waves for the whole minute and a half: tougher and armored (hpK / arm) */
+    {at:16,a:'spots',kind:'march',n:5,r:[290,330],tel:1.4,mix:[['sberserk2',1]],per:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:22,a:'spots',kind:'meteor',n:5,r:[120,250],tel:2,mix:[['magmabomb',1]],per:1,hz:1},
+    {at:30,a:'spots',kind:'march',n:6,r:[290,330],tel:1.4,mix:[['srenegade',2],['sberserk',1],['lakasei',1]],per:1},
+    {at:37,a:'morph',map:{srenegade:'sberserk2',sberserk:'sberserk2',lakasei:'sberserk2'},max:8,col:'#ff5a3d',l:OOZ,roar:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:44,a:'spots',kind:'march',n:6,r:[290,330],tel:1.4,mix:[['sberserk2',1]],per:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:52,a:'spots',kind:'meteor',n:6,r:[120,250],tel:2,mix:[['magmabomb',1]],per:1,hz:1},
+    {at:58,a:'spots',kind:'march',n:7,r:[290,330],tel:1.4,mix:[['sberserk2',2],['srenegade',1]],per:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:66,a:'morph',map:{srenegade:'sberserk2'},max:8,col:'#ff5a3d',l:OOZ,roar:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:73,a:'spots',kind:'march',n:8,r:[290,330],tel:1.4,mix:[['sberserk2',1]],per:1,hpK:OOZ_HP,arm:OOZ_ARM},
+    {at:80,a:'spots',kind:'meteor',n:5,r:[120,250],tel:2,mix:[['magmabomb',1]],per:1,hz:1}]},
   /* Cell Games: Cell Jr.s hatch from eggs, one by one they grow armored */
   arena:{n:T6('SCHIUSA DEI CELL JR.!','CELL JR. HATCHING!','¡ECLOSIÓN DE CELL JR.!','ÉCLOSION DES CELL JR. !','CELL-JR.-SCHLUPF!','ECLOSÃO DOS CELL JR.!'),
     sub:T6('Le uova si crepano sul ring.','The eggs crack open on the ring.','Los huevos se rompen en el ring.','Les œufs se fissurent sur le ring.','Die Eier reißen auf dem Ring auf.','Os ovos racham no ringue.'),col:'#8be05a',dur:36,first:[170,240],gap:[260,360],steps:[
@@ -142,15 +153,15 @@ Object.assign(Game.prototype,{
         if(s.line&&this.stage.theme!=='snake'){const d=rnd(s.r[0],s.r[1]),sp=(i-(n-1)/2)*46;x=p.x+Math.cos(lineA)*d-Math.sin(lineA)*sp;y=p.y+Math.sin(lineA)*d+Math.cos(lineA)*sp;}
         else{const a=a0+i/n*TAU+rnd(-.25,.25);[x,y]=this.spawnSpot(a,rnd(s.r[0],s.r[1]),i);}
         const hz=s.hz?(8+3*this.sd)*this.dmgMul()*s.hz:0;
-        ev.spots.push({x,y,t:-i*(s.line?.1:.14),tel:s.tel*rnd(.92,1.08),kind:s.kind,col:EV_COL[s.kind]||col,mix:s.mix,ids:deck.length?Array.from({length:s.per},(_,k)=>deck[(i*s.per+k)%deck.length]):null,per:s.per,hpK:s.hpK||1,hz,hzr:s.kind==='hakai'?70:56,ph:rnd(0,TAU)});
+        ev.spots.push({x,y,t:-i*(s.line?.1:.14),tel:s.tel*rnd(.92,1.08),kind:s.kind,col:EV_COL[s.kind]||col,mix:s.mix,ids:deck.length?Array.from({length:s.per},(_,k)=>deck[(i*s.per+k)%deck.length]):null,per:s.per,hpK:s.hpK||1,arm:s.arm||0,hz,hzr:s.kind==='hakai'?70:56,ph:rnd(0,TAU)});
       }
     }else if(s.a==='morph'){
       let k=0;const vr=this.viewR*1.2;
       for(const e of this.en){
         if(k>=(s.max||6))break;
-        const to=!e.dead&&!e.boss&&s.map[e.def.id];if(!to||!ENEMIES[to])continue;
+        const to=!e.dead&&!e.boss&&s.map[e.def.id];if(!to||!ENEMIES[to]||e.def===ENEMIES[to])continue;   /* (already in the target form: a form shares its base's id, so it would match the map again) */
         if(Math.hypot(e.x-p.x,e.y-p.y)>vr)continue;
-        this.skMorph(e,ENEMIES[to]);e.enr=1;e.rc=s.col||col;e.fl=.2;k++;
+        if(s.hpK>1){e.hpK=s.hpK;}if(s.arm)e.armor=(e.armor||0)+s.arm;this.skMorph(e,ENEMIES[to]);e.enr=1;e.rc=s.col||col;e.fl=.2;k++;
         this.ring(e.x,e.y,110,e.rc,.6);this.ring(e.x,e.y,56,'#ffffff',.4);this.burst(e.x,e.y-e.r,14,e.rc);
         if(k<=3)this.floatText(e.x,e.y-e.r*2.6,this.env.tr(s.l),1);
       }
@@ -175,6 +186,7 @@ Object.assign(Game.prototype,{
       const id=s.ids?s.ids[k]:wpick(s.mix,m=>m[1])[0],def=ENEMIES[id];if(!def)continue;
       const e=this.mkEnemy(def,s.x+rnd(-12,12),s.y+rnd(-8,8));
       if(s.hpK>1&&def.ai!=='explode'){e.hpK=s.hpK;e.hp*=s.hpK;e.max=e.hp;}   /* a step with hpK (March of the Guardians): elite-level health, kept through a morph (skMorph) */
+      if(s.arm&&def.ai!=='explode')e.armor=(e.armor||0)+s.arm;   /* a step with arm: extra armor (Full Moon apes) */
       this.en.push(e);
     }
   }

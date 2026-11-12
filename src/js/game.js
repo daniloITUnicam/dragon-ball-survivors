@@ -81,6 +81,9 @@ const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.o
 /* last LATE_SPAN seconds before the final boss: regular spawns have miniboss health and leave no chest (only LATE_CHEST_P of them do) */
 /* from minute 3 twice the spawn rate and twice the alive cap (eased in over 10 s, every stage and Endless); the alive cap never goes above DENSE_CAP */
 const DENSE_T=180,DENSE_K=2,DENSE_CAP=250;
+/* frame-rate governor: while the real frame rate stays under PERF_LOW (smoothed) for PERF_DOWN s the alive cap shrinks by PERF_STEP (down to PERF_MIN of itself);
+   once it is above PERF_HIGH for PERF_UP s it grows back. Existing enemies are never removed, only fewer new ones come */
+const PERF_LOW=32,PERF_HIGH=50,PERF_DOWN=2,PERF_UP=6,PERF_STEP=.1,PERF_MIN=.5;
 const LATE_SPAN=120,LATE_CHEST_P=.001;
 const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
@@ -1432,7 +1435,16 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
   denseK(){return 1+(DENSE_K-1)*clamp((this.t-DENSE_T)/10,0,1);}
-  spawnCap(){return Math.min(DENSE_CAP,Math.round(this.spawnCap0()*ENEMY_N_K*this.denseK()));}
+  spawnCap(){return Math.round(Math.min(DENSE_CAP,Math.round(this.spawnCap0()*ENEMY_N_K*this.denseK()))*(this.perfK||1));}
+  /* real time between two updates, smoothed: the governor above */
+  perfTick(){
+    const n=performance.now(),d=this.pt0?Math.min(.25,(n-this.pt0)/1000):0;this.pt0=n;if(!(d>0))return;
+    this.pfm=(this.pfm||.016)+(d-(this.pfm||.016))*.05;
+    if(this.pfm>1/PERF_LOW){this.pfs=(this.pfs||0)+d;this.pff=0;}else if(this.pfm<1/PERF_HIGH){this.pff=(this.pff||0)+d;this.pfs=0;}else{this.pfs=0;this.pff=0;}
+    const k=this.perfK||1;
+    if(this.pfs>PERF_DOWN&&k>PERF_MIN){this.perfK=Math.max(PERF_MIN,k-PERF_STEP);this.pfs=0;this.pfm=.02;}
+    else if(this.pff>PERF_UP&&k<1){this.perfK=Math.min(1,k+PERF_STEP/2);this.pff=0;}
+  }
   spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((CURVE_CAP0+CURVE_CAP1*Math.pow(pr,CURVE_CAP_E))*CAP_K*xk);}   /* v134: plenty from the first minute, hordes at the end */
   spawnRate(){return ENEMY_N_K*(CURVE_RATE0+CURVE_RATE1*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*this.denseK()*(this.x2?.85:1)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
@@ -1524,6 +1536,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   spawnRing(n,def,extra){
     if(this.stage.ringT)n=Math.min(n,Math.round(this.stage.ringT[this.snakeTier()]*ENEMY_N_K));
+    n=Math.min(n,Math.max(6,Math.round(this.spawnCap()*1.15)+8-this.en.length));   /* hordes and packs respect the alive cap too (plus a little room): they used to pile on top of it */
     for(let i=0;i<n;i++){const a=i/n*TAU,df=this.limitShooter(def||this.rosterPick());if(!df)continue;const[x,y]=this.spawnSpot(a,this.edgeD(a),i),e=this.mkEnemy(df,x,y);if(extra)extra(e);this.en.push(e);}
   }
   /* ---- wave rhythm: calm -> SURGE (15 s, many more enemies) -> REST (12 s, few enemies + a shower of gems) -> calm ... ---- */
@@ -2027,7 +2040,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.modal||this.ended)return;
     const rdt=dt;if(this.dying&&this.updateDying(rdt))return;if(this.vic){this.updateVictory(rdt);return;}
     if(this.post>0){this.post-=rdt;if(this.post<=0||(!this.chests.length&&!this.loot.length&&!this.gm.length&&!this.trial&&!this.tun)){this.post=0;this.finish(true);return;}}   /* loot time after the final boss: ends early once everything is picked up */
-    dt*=this.timeScale;
+    this.perfTick();dt*=this.timeScale;
     if(this.hs>0){this.hs-=rdt;return;}
     if(this.clash){CLASH.update(this,rdt);return;}
     if(MOMENTS.tickCine(this,rdt))return;   /* v116: a boss transformation cinematic */   /* v116: Ki Clash: everything else waits */   /* v116: hit-stop: the world holds still, the frame is still drawn */
@@ -2078,7 +2091,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
       {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
       this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
-      const cap=Math.min(DENSE_CAP,Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap));
+      const cap=Math.min(DENSE_CAP,Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap));   /* (spawnCap already carries the frame-rate governor) */
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=HORDE_EVERY;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}

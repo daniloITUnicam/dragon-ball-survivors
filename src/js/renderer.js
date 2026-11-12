@@ -83,6 +83,7 @@ const TCH=8,TCH_MAX=64;
 const RB={on:false,m:new Map(),
   add(col,x,y,w,h){let L=this.m.get(col);if(!L){L=[];this.m.set(col,L);}L.push(x,y,w,h);},
   flush(ctx){for(const [col,L] of this.m){if(!L.length)continue;ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<L.length;i+=4)ctx.rect(L[i],L[i+1],L[i+2],L[i+3]);ctx.fill();L.length=0;}this.on=false;}};
+const CROWD_LOD=110;   /* more enemies alive than this: the rank auras / rings and elite sparks are skipped (the rank dots stay) - fewer blend-mode switches per frame */
 const FX_CROWD0=120,FX_CROWD1=420;   /* load (projectiles + .3 per particle) where weapon effects start fading / are at half opacity */
 class Renderer{
   constructor(canvas,save){
@@ -328,7 +329,7 @@ this.W=1;this.H=1;this.Z=1;
   drawFrame(g,dt){
     Sprites.warmStep();this.fdt=dt;
     const ctx=this.ctx,s=this.save.d.settings,t=g.t,p=g.p,ta=g.rt;   /* v133: ta = real time for the sprite animations (in x2 the game clock t runs twice as fast) */
-    FXL.a=(s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1))*this.fxCrowd(g,dt,s);FXL.m=1;
+    FXL.a=(s.fxAlpha===undefined?1:clamp((+s.fxAlpha)/100,0,1))*this.fxCrowd(g,dt,s);FXL.m=1;this._crowd=g.en.length>CROWD_LOD;
     this.resetCtx();
     ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
@@ -844,11 +845,11 @@ this.W=1;this.H=1;this.Z=1;
     if(e.elite){      /* elite: golden halo, a pulsing ring on the ground and flickering sparks */
       GLOW.at(ctx,e.x,e.y-e.r,e.r*3.1,'#ffd23f',.5+.12*Math.sin(t*5+e.ph));
       ctx.save();ctx.strokeStyle='rgba(255,210,63,'+(.55+.25*Math.sin(t*6))+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.15,e.r*.4,0,0,TAU);ctx.stroke();
-      ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ffe58a';for(let i=0;i<(FXL.on?0:4);i++){const a=t*2.4+i/4*TAU+e.ph,q=(t*1.3+i*.25+e.ph)%1;ctx.globalAlpha=1-q;ctx.fillRect(e.x+Math.cos(a)*e.r*1.0-1.2,e.y-e.r*.2-q*e.r*1.9-1.2,2.4,2.4);}ctx.restore();
+      ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ffe58a';for(let i=0;i<(FXL.on||this._crowd?0:4);i++){const a=t*2.4+i/4*TAU+e.ph,q=(t*1.3+i*.25+e.ph)%1;ctx.globalAlpha=1-q;ctx.fillRect(e.x+Math.cos(a)*e.r*1.0-1.2,e.y-e.r*.2-q*e.r*1.9-1.2,2.4,2.4);}ctx.restore();
     }
     if(e.tier>0&&!this._snap){      /* rank: an aura and a ring on the ground in the rank's colour */
-      const c=TIER_C[e.tier];if(!FXL.on)GLOW.at(ctx,e.x,e.y-e.r,e.r*(2.2+.15*e.tier),c,.3+.08*Math.sin(t*5+e.ph));
-      ctx.save();ctx.strokeStyle=c;ctx.globalAlpha=.5+.2*Math.sin(t*6+e.ph);ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.1,e.r*.38,0,0,TAU);ctx.stroke();ctx.restore();
+      const c=TIER_C[e.tier];if(this._crowd){}else{if(!FXL.on)GLOW.at(ctx,e.x,e.y-e.r,e.r*(2.2+.15*e.tier),c,.3+.08*Math.sin(t*5+e.ph));
+      ctx.save();ctx.strokeStyle=c;ctx.globalAlpha=.5+.2*Math.sin(t*6+e.ph);ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.1,e.r*.38,0,0,TAU);ctx.stroke();ctx.restore();}
     }
     if(e.boss){
       GLOW.at(ctx,e.x,e.y-e.r,e.r*2.8,e.bd.c,.35+.1*Math.sin(t*5));

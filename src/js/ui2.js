@@ -367,7 +367,7 @@ Object.assign(UI.prototype,{
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,style:'animation-delay:1.4s',onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.t('collect'))));
     }else if(m.type==='pick'){
       const cs=m.opts.map((id,i)=>{const c=this.card(this.describeReward({k:'trinket',id,rar:(m.rars||[])[i],pf:(m.pfs||[])[i]}),i,()=>{this.sfx('chest');this.app.resolveModal(i);},m.opts.length>6?' tiny':'');c.style.setProperty('--d',(i*.07)+'s');return c;});
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('pickTitle')),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs));
+      el=h('div',{class:'screen modal'},h('div',{class:'lvban'},banFx('lv'),h('h2',null,bTxt(this.t('pickTitle')))),h('p',{class:'sub'},this.t('pickSub',{n:m.opts.length})),h('div',{class:'cards many'},cs));
     }else if(m.type==='tswap'){
       /* every trinket slot is taken: compare the new trinket with what you carry and choose which one to replace (or keep them all) */
       const nt=trinDef(m.nw.id),curs=m.curs,multi=curs.length>1,sn=trinStats(nt,m.nw.rar,m.nw.pf),G=this.app.game,sd=G?G.sd:0;
