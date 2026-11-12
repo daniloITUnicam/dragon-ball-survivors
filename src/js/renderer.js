@@ -353,6 +353,66 @@ this.W=1;this.H=1;this.Z=1;
     if(FXL.a>0){for(const w of g.weapons.values())if(w.drawGround)w.drawGround(ctx);
     const au=g.weapons.get('aura');if(au){au.draw(ctx);au.elecOverlay(ctx);}}
     this.fxEnd();
+    /* fx: wpn = the weapons' own effects (painted blasts, ability beams, beams), drawn behind the enemies; the rest (hits, rings, pillars...) stays on top */
+    const fxLoop=wpn=>{
+    this.fxBegin();
+    for(const f of (FXL.a>0?g.fx:[])){
+      if(!!(f.wfx||f.abfx||f.beam)!==wpn)continue;
+      if(f.wfx){WFX.fxDraw(ctx,f);continue;}   /* v127: painted weapon blasts */
+      if(f.abfx||(f.beam&&f.ab&&WFX.AB[f.ab])){if(WFX.abFx(ctx,f,g))continue;}   /* v123: painted character abilities */
+      if(f.beam){
+        const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
+        ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.a);ctx.globalCompositeOperation='lighter';
+        let gr=ctx.createLinearGradient(0,-w,0,w);gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.35,hexA(f.c,.75));gr.addColorStop(.5,'rgba(255,255,255,.95)');gr.addColorStop(.65,hexA(f.c,.75));gr.addColorStop(1,hexA(f.c,0));
+        ctx.globalAlpha=Math.min(1,a*1.3);ctx.fillStyle=gr;ctx.fillRect(0,-w,f.len,w*2);
+        GLOW.at(ctx,0,0,w*1.8,f.c,.9);GLOW.at(ctx,f.len,0,w*1.1,f.c,.6);
+        if(f.sbc){ctx.lineCap='round';for(const [col,ph,lw] of [[f.c,0,4],['#b46bff',Math.PI,4],['#ffffff',Math.PI/2,2]]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();for(let x=0;x<=f.len;x+=7){const yy=Math.sin(x*.05-k*46+ph)*w*.7;if(x)ctx.lineTo(x,yy);else ctx.moveTo(x,yy);}ctx.stroke();}}   /* Special Beam Cannon: the twisting spiral around the core */
+        ctx.strokeStyle='#ffffff';ctx.lineWidth=2;for(let q=0;q<6;q++){const x0=Math.random()*f.len,sp=w*.9;ctx.beginPath();ctx.moveTo(x0,(Math.random()-.5)*sp*2);for(let i=1;i<=4;i++)ctx.lineTo(x0+i*22,(Math.random()-.5)*sp*2);ctx.stroke();}
+        ctx.restore();continue;
+      }
+      if(f.bolt){
+        const a=clamp(f.l/f.m,0,1);ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineJoin='round';ctx.globalAlpha=a;
+        for(const [lw,col] of [[5,f.c],[2,'#ffffff']]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(f.pts[0][0],f.pts[0][1]);for(let i=1;i<f.pts.length;i++)ctx.lineTo(f.pts[i][0],f.pts[i][1]);ctx.stroke();}
+        ctx.restore();continue;
+      }
+      if(f.pillar){
+        const k=1-f.l/f.m,w=44*(1-k*.75),h=360;
+        ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1-k;
+        const gr=ctx.createLinearGradient(0,f.y-h,0,f.y);gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.7,hexA(f.c,.55));gr.addColorStop(1,hexA(f.c,.9));
+        ctx.fillStyle=gr;ctx.fillRect(f.x-w/2,f.y-h,w,h);ctx.fillStyle='#ffffff';ctx.globalAlpha=(1-k)*.6;ctx.fillRect(f.x-w*.18,f.y-h*.8,w*.36,h*.8);ctx.restore();continue;
+      }
+      if(f.shock){
+        const k=1-f.l/f.m,R=f.max*(1-Math.pow(1-k,2.2)),a=1-k;
+        ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(f.x,f.y);ctx.scale(1,.8);
+        const w=70+110*(1-k),r0=Math.max(1,R-w),gr=ctx.createRadialGradient(0,0,r0,0,0,R+8);
+        gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.72,hexA(f.c,.45*a));gr.addColorStop(.94,hexA('#ffffff',.95*a));gr.addColorStop(1,hexA(f.c,0));
+        ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,R+8,0,TAU);ctx.fill();
+        ctx.lineWidth=3+5*(1-k);ctx.strokeStyle=hexA('#ffffff',.8*a);ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.stroke();
+        ctx.lineWidth=2;ctx.strokeStyle=hexA(f.c,.6*a);ctx.beginPath();ctx.arc(0,0,R*.82,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,R*.64,0,TAU);ctx.stroke();
+        ctx.lineWidth=2;ctx.strokeStyle=hexA('#ffffff',.5*a);
+        for(let i=0;i<28;i++){const an=i/28*TAU+f.max*.01,r1=R-30-((i*37)%60),r2=R+6;ctx.beginPath();ctx.moveTo(Math.cos(an)*r1,Math.sin(an)*r1);ctx.lineTo(Math.cos(an)*r2,Math.sin(an)*r2);ctx.stroke();}
+        ctx.restore();continue;
+      }
+      if(f.kfz){this.drawKiFizz(f);continue;}
+      if(f.ring){const k=1-f.l/f.m;ctx.strokeStyle=f.c;ctx.globalAlpha=1-k;ctx.lineWidth=5*(1-k)+1;ctx.beginPath();ctx.arc(f.x,f.y,f.r*k,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
+      else{ctx.fillStyle=f.c;ctx.globalAlpha=clamp(f.l/f.m*1.4,0,1);ctx.fillRect(f.x-f.s/2,f.y-f.s/2,f.s,f.s);ctx.globalAlpha=1;}
+    }
+    this.fxEnd();
+    };
+    /* the weapons are in the background: everything they draw (orbiting / persistent effects, projectiles, painted blasts and beams) goes under every gem, chest, altar, object and enemy, so they all stay readable */
+    this.fxBegin();if(FXL.a>0)for(const w of g.weapons.values())if(w.draw&&w.id!=='aura'){w.draw(ctx);w.elecOverlay(ctx);}this.fxEnd();
+    /* projectiles */
+    const elv=ELEC.lvl(g);
+    this.fxBegin();
+    for(const b of (FXL.a>0?g.pr:[])){
+      if(b.wid&&WFX.proj(ctx,b,ta))continue;   /* v123: painted sheet */
+      if(b.tr)VFX.trail(ctx,b.tr,b.r*.9,b.c);
+      if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
+      else VFX.orb(ctx,b.x,b.y,b.r,b.c,t);
+      if(elv)ELEC.pt(ctx,b.x,b.y,b.r*1.5+3,b.c,t,elv,b.x*.13+b.y*.07);
+    }
+    this.fxEnd();
+    fxLoop(true);
     /* ground items */
     for(const gm of (g.trial?[]:g.gm)){
       if(gm.held)continue;   /* carried gems are drawn with the companion */
@@ -404,20 +464,8 @@ this.W=1;this.H=1;this.Z=1;
     if(g.rain.length)this.drawRainAir(g,t);
     if(g.spheres.length)this.drawSpheres(g,t);
     if(g.ghosts)this.drawGhosts(g,t);
-    this.fxBegin();if(FXL.a>0)for(const w of g.weapons.values())if(w.draw&&w.id!=='aura'){w.draw(ctx);w.elecOverlay(ctx);}this.fxEnd();
     if(Ambient.on)Ambient.air(ctx,t);
     if(theme==='snake'&&Ambient.on)SnakeArt.air(ctx,cx,cy,g.vw,g.vh,t);   /* birds, mist, the Flying Nimbus */
-    /* projectiles */
-    const elv=ELEC.lvl(g);
-    this.fxBegin();
-    for(const b of (FXL.a>0?g.pr:[])){
-      if(b.wid&&WFX.proj(ctx,b,ta))continue;   /* v123: painted sheet */
-      if(b.tr)VFX.trail(ctx,b.tr,b.r*.9,b.c);
-      if(b.spear!==undefined){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.spear);GLOW.at(ctx,0,0,b.r*3.4,b.c,.7);ctx.globalCompositeOperation='lighter';ctx.fillStyle=b.c;ctx.fillRect(-30,-2.2,38,4.4);ctx.fillStyle='#fff';ctx.fillRect(-26,-1,34,2);ctx.beginPath();ctx.moveTo(8,-6);ctx.lineTo(24,0);ctx.lineTo(8,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();}
-      else VFX.orb(ctx,b.x,b.y,b.r,b.c,t);
-      if(elv)ELEC.pt(ctx,b.x,b.y,b.r*1.5+3,b.c,t,elv,b.x*.13+b.y*.07);
-    }
-    this.fxEnd();
     for(const b of g.eb){if(b.cp)continue;GLOW.at(ctx,b.x,b.y,b.r*3,b.c,.9);ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*.45,0,TAU);ctx.fill();}
     if(g.eb.some(b=>b.cp)){   /* the Master's copies of your weapons: the same orbs and spears as your own shots */
       this.fxBegin();
@@ -426,49 +474,7 @@ this.W=1;this.H=1;this.Z=1;
         else VFX.orb(ctx,b.x,b.y,b.r*1.15,b.c,t);}
       this.fxEnd();
     }
-    /* fx */
-    this.fxBegin();
-    for(const f of (FXL.a>0?g.fx:[])){
-      if(f.wfx){WFX.fxDraw(ctx,f);continue;}   /* v127: painted weapon blasts */
-      if(f.abfx||(f.beam&&f.ab&&WFX.AB[f.ab])){if(WFX.abFx(ctx,f,g))continue;}   /* v123: painted character abilities */
-      if(f.beam){
-        const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
-        ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.a);ctx.globalCompositeOperation='lighter';
-        let gr=ctx.createLinearGradient(0,-w,0,w);gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.35,hexA(f.c,.75));gr.addColorStop(.5,'rgba(255,255,255,.95)');gr.addColorStop(.65,hexA(f.c,.75));gr.addColorStop(1,hexA(f.c,0));
-        ctx.globalAlpha=Math.min(1,a*1.3);ctx.fillStyle=gr;ctx.fillRect(0,-w,f.len,w*2);
-        GLOW.at(ctx,0,0,w*1.8,f.c,.9);GLOW.at(ctx,f.len,0,w*1.1,f.c,.6);
-        if(f.sbc){ctx.lineCap='round';for(const [col,ph,lw] of [[f.c,0,4],['#b46bff',Math.PI,4],['#ffffff',Math.PI/2,2]]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();for(let x=0;x<=f.len;x+=7){const yy=Math.sin(x*.05-k*46+ph)*w*.7;if(x)ctx.lineTo(x,yy);else ctx.moveTo(x,yy);}ctx.stroke();}}   /* Special Beam Cannon: the twisting spiral around the core */
-        ctx.strokeStyle='#ffffff';ctx.lineWidth=2;for(let q=0;q<6;q++){const x0=Math.random()*f.len,sp=w*.9;ctx.beginPath();ctx.moveTo(x0,(Math.random()-.5)*sp*2);for(let i=1;i<=4;i++)ctx.lineTo(x0+i*22,(Math.random()-.5)*sp*2);ctx.stroke();}
-        ctx.restore();continue;
-      }
-      if(f.bolt){
-        const a=clamp(f.l/f.m,0,1);ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineJoin='round';ctx.globalAlpha=a;
-        for(const [lw,col] of [[5,f.c],[2,'#ffffff']]){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(f.pts[0][0],f.pts[0][1]);for(let i=1;i<f.pts.length;i++)ctx.lineTo(f.pts[i][0],f.pts[i][1]);ctx.stroke();}
-        ctx.restore();continue;
-      }
-      if(f.pillar){
-        const k=1-f.l/f.m,w=44*(1-k*.75),h=360;
-        ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1-k;
-        const gr=ctx.createLinearGradient(0,f.y-h,0,f.y);gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.7,hexA(f.c,.55));gr.addColorStop(1,hexA(f.c,.9));
-        ctx.fillStyle=gr;ctx.fillRect(f.x-w/2,f.y-h,w,h);ctx.fillStyle='#ffffff';ctx.globalAlpha=(1-k)*.6;ctx.fillRect(f.x-w*.18,f.y-h*.8,w*.36,h*.8);ctx.restore();continue;
-      }
-      if(f.shock){
-        const k=1-f.l/f.m,R=f.max*(1-Math.pow(1-k,2.2)),a=1-k;
-        ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(f.x,f.y);ctx.scale(1,.8);
-        const w=70+110*(1-k),r0=Math.max(1,R-w),gr=ctx.createRadialGradient(0,0,r0,0,0,R+8);
-        gr.addColorStop(0,hexA(f.c,0));gr.addColorStop(.72,hexA(f.c,.45*a));gr.addColorStop(.94,hexA('#ffffff',.95*a));gr.addColorStop(1,hexA(f.c,0));
-        ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,R+8,0,TAU);ctx.fill();
-        ctx.lineWidth=3+5*(1-k);ctx.strokeStyle=hexA('#ffffff',.8*a);ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.stroke();
-        ctx.lineWidth=2;ctx.strokeStyle=hexA(f.c,.6*a);ctx.beginPath();ctx.arc(0,0,R*.82,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,R*.64,0,TAU);ctx.stroke();
-        ctx.lineWidth=2;ctx.strokeStyle=hexA('#ffffff',.5*a);
-        for(let i=0;i<28;i++){const an=i/28*TAU+f.max*.01,r1=R-30-((i*37)%60),r2=R+6;ctx.beginPath();ctx.moveTo(Math.cos(an)*r1,Math.sin(an)*r1);ctx.lineTo(Math.cos(an)*r2,Math.sin(an)*r2);ctx.stroke();}
-        ctx.restore();continue;
-      }
-      if(f.kfz){this.drawKiFizz(f);continue;}
-      if(f.ring){const k=1-f.l/f.m;ctx.strokeStyle=f.c;ctx.globalAlpha=1-k;ctx.lineWidth=5*(1-k)+1;ctx.beginPath();ctx.arc(f.x,f.y,f.r*k,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
-      else{ctx.fillStyle=f.c;ctx.globalAlpha=clamp(f.l/f.m*1.4,0,1);ctx.fillRect(f.x-f.s/2,f.y-f.s/2,f.s,f.s);ctx.globalAlpha=1;}
-    }
-    this.fxEnd();
+    fxLoop(false);
     /* the character model (and its aura) is always on top of every ability effect */
     this.drawPlayer(g,ta);
     if(g.coop||g.coopView)COOPG.drawOthers(this,g,ta);   /* v120: the other heroes, their weapons, names, the fallen */
