@@ -593,6 +593,9 @@ this.W=1;this.H=1;this.Z=1;
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(p.x,p.y,7*u,2.4*u,0,0,TAU);ctx.fill();
     this.fxBegin();
     if(dashing)this.dashTrail(g,pck,pcc,k,t);
+    const auA=this.save.d.settings.auraAlpha,au=auA===undefined?1:clamp(+auA/100,0,1),m0=FXL.m;   /* the aura opacity slider (Video): on top of the effect opacity, it covers the form auras, Kaioken, the berserk and the transformation charge */
+    if(au<1&&au>0){FXL.m=m0*Math.pow(au,1.7);this.ctx.globalAlpha=1;}
+    if(au>0){
     if(xf){
       const rt=g.rt,ch=xf.released?1:xf.t/xf.rel,ak=xf.released?1+Math.max(0,1-(xf.t-xf.rel)/(xf.dur-xf.rel))*1.7:.35+ch*2.1;
       const col=xf.col,R0=(46+xf.idx*5)*ak,ao=this.auraOf(g,xf.idx),pa=!!Sprites.sheets[ao.id],gk=pa?.4:1;   /* with a painted aura the glow is softer: it washed the flames out */
@@ -623,6 +626,8 @@ this.W=1;this.H=1;this.Z=1;
       GLOW.at(ctx,p.x,p.y-24,(40+g.formIdx*5)*f,g.formColor,.65);
       GLOW.at(ctx,p.x,p.y-24,(26+g.formIdx*3)*f,'#ffffff',.2);
     }
+    }
+    if(au<1&&au>0){FXL.m=m0;this.ctx.globalAlpha=1;}
     if(g.perfAura&&!g.dying){      /* a trinket at 100% perfection: the silver-white Ultra Instinct glow */
       const f=1+Math.sin(t*3.2)*.08;GLOW.at(ctx,p.x,p.y-24,52*f,'#cfeaff',.5);GLOW.at(ctx,p.x,p.y-24,30*f,'#ffffff',.24);
       if(!FXL.on){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle='rgba(235,246,255,.55)';for(let i=0;i<5;i++){const a=t*1.3+i*TAU/5,rr=17+4*Math.sin(t*3+i);ctx.fillRect(p.x+Math.cos(a)*rr-1,p.y-24+Math.sin(a)*rr*1.35-1,2,2);}ctx.restore();}
