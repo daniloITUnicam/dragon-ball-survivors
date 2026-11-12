@@ -54,6 +54,23 @@ Object.assign(UI.prototype,{
     return h('div',{class:'srow tbox'},h('div',{class:'sl'},h('b',null,tr(T('Giocatori autorizzati','Allowed players'))),h('small',null,tr(T('Possono usare la modalità test con il proprio account (le altre voci sono nel file tester.config.json).','They can use Test mode with their own account (the other ones are in tester.config.json).')))),
       h('div',{class:'tctl'},h('div',{class:'row'},sel,del),h('div',{class:'row'},inp,add)));
   },
+  /* Test environment > whitelist (owner only): one field (e-mail or nickname), "add to the whitelist" / "remove from the whitelist", and the people already in it (click one to fill the field) */
+  whitelistBox(){
+    const c=this.app.cloud;if(!c||!c.enabled||!c.isOwner)return null;
+    const st=this.wl||(this.wl={list:null,q:'',busy:false}),tr=x=>this.tr(x),again=()=>{if(this.top&&this.top.name==='sandboxCfg')this.rebuild(true);};
+    const say=m=>this.toast({type:'info',msg:m});
+    const fail=e=>{st.busy=false;const k=e&&e.message;say(k==='email'?tr(T('Indirizzo e-mail non valido.','Invalid e-mail address.')):k==='nick'?tr(T('Nickname non trovato.','Nickname not found.')):k==='notin'?tr(T('Non è nella whitelist.','Not in the whitelist.')):k==='nofn'?tr(T('Per cercare per nickname serve aggiornare il database (funzione tester_by_nick in supabase/schema.sql).','Searching by nickname needs a database update (function tester_by_nick in supabase/schema.sql).')):(this.cloudErrText(e)||tr(T('Operazione non riuscita.','The operation failed.'))));again();};
+    if(st.list===null&&!st.busy){st.busy=true;c.testers().then(l=>{st.list=l;st.busy=false;again();}).catch(e=>{st.list=[];fail(e);});}
+    const list=st.list||[];
+    const inp=h('input',{type:'text','data-fid':'wlq',placeholder:tr(T('e-mail o nickname del giocatore','player e-mail or nickname')),value:st.q,autocomplete:'off',autocapitalize:'off',spellcheck:'false',class:this.save.settings.streamer?'hide':null,oninput:()=>{st.q=inp.value;}});
+    const go=(fn,msg)=>()=>{if(!(st.q||'').trim()||st.busy)return;this.sfx();st.busy=true;fn(st.q).then(e=>{st.busy=false;st.q='';st.list=null;say(msg+' '+this.maskEmail(e));again();}).catch(fail);};
+    const add=h('button',{class:'btn small','data-fid':'wladd',disabled:st.busy,onclick:go(q=>c.addTester(q),tr(T('Aggiunto alla whitelist:','Added to the whitelist:')))},'＋ '+tr(T('Aggiungi alla whitelist','Add to the whitelist')));
+    const del=h('button',{class:'btn small bad','data-fid':'wldel',disabled:st.busy,onclick:go(async q=>{const e=await c.testerEmail(q);if(!(await c.testers()).includes(e))throw new Error('notin');return c.delTester(e);},tr(T('Rimosso dalla whitelist:','Removed from the whitelist:')))},'✕ '+tr(T('Rimuovi dalla whitelist','Remove from the whitelist')));
+    return h('div',{class:'srow tbox'},h('div',{class:'sl'},h('b',null,tr(T('Whitelist ambiente test','Test environment whitelist'))),
+        h('small',null,tr(T('Scrivi un\'e-mail o un nickname: chi è in lista può usare la modalità test con il proprio account (le altre voci sono nel file tester.config.json).','Type an e-mail or a nickname: whoever is listed can use Test mode with their own account (the other entries are in tester.config.json).')))),
+      h('div',{class:'tctl'},h('div',{class:'row'},inp),h('div',{class:'row'},add,del),
+        list.length?h('div',{class:'wlist'},list.map(e=>h('button',{class:'wlchip','data-fid':'wl_'+e,title:tr(T('Clicca per selezionarlo','Click to select')),onclick:()=>{st.q=e;this.rebuild(true);}},this.maskEmail(e)))):h('small',null,st.list===null?'…':tr(T('Nessun giocatore in lista.','Nobody in the list.')))));
+  },
   screen_account(){
     const c=this.app.cloud,st=this.acct||(this.acct={tab:'login',email:'',pw:'',pw2:'',code:'',step:1,msg:null,busy:false});
     const say=(k,text)=>{st.msg=text?{k,text}:null;st.busy=false;if(this.top&&this.top.name==='account')this.rebuild(true);};

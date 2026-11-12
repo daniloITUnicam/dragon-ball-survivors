@@ -318,6 +318,7 @@ Object.assign(UI.prototype,{
     const df=h('select',{'data-fid':'sbd',onchange:()=>{sel.diff=df.value;}},Object.keys(DIFF).map(k=>h('option',{value:k,selected:sel.diff===k},this.tr(DIFF[k].n))));
     return h('div',null,this.header('sandbox'),h('p',{class:'sub'},this.t('sbDesc')),
       h('div',{class:'settings'},h('div',{class:'srow'},h('b',null,this.t('chooseStage')),stage),h('div',{class:'srow'},h('b',null,this.t('chooseChar')),ch),h('div',{class:'srow'},h('b',null,this.t('difficulty')),df)),
+      this.whitelistBox?h('div',{class:'settings'},this.whitelistBox()):null,
       h('div',{class:'row'},this.btn('start',()=>{this.app.startGame({stage:sel.stage,char:sel.char,diff:sel.diff,x2:false,sandbox:true});},'primary')));
   },
   /* ---------- modals (level up / chest / wish) ---------- */

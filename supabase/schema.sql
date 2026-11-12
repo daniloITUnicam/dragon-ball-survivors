@@ -64,3 +64,16 @@ grant select, insert, delete on public.testers to authenticated;
 -- ---------------------------------------------------------------------------
 -- Online (v115): nicknames, scores, leaderboards, weekly challenge → see supabase/online.sql (run it once too)
 -- ---------------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------------
+-- Test mode whitelist by NICKNAME (optional; needs supabase/online.sql for public.profiles).
+-- Lets the owner type a nickname instead of an e-mail in Test environment > Whitelist: the function returns the account's e-mail,
+-- and only for the owner (anyone else gets null). Run it once in the SQL Editor.
+-- ---------------------------------------------------------------------------
+create or replace function public.tester_by_nick(p_nick text) returns text
+  language sql stable security definer set search_path = public as $$
+  select lower(u.email) from public.profiles p join auth.users u on u.id = p.user_id
+  where public.is_tester_owner() and lower(p.nick) = lower(p_nick) limit 1;
+$$;
+revoke all on function public.tester_by_nick(text) from public, anon;
+grant execute on function public.tester_by_nick(text) to authenticated;

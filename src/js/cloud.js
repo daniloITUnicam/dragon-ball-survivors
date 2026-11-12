@@ -68,13 +68,20 @@ class Cloud{
     this.saveTester();this.notify({type:'tester'});
   }
   async testers(){const t=await this.token(),j=await this.req('/rest/v1/testers?select=email,owner&order=email',{token:t});return(j||[]).filter(x=>!x.owner).map(x=>x.email);}
-  async addTester(email){
-    email=String(email||'').trim().toLowerCase();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>200)throw new Error('email');
+  /* an e-mail address, or a nickname (owner only: resolved by the SQL function tester_by_nick, supabase/schema.sql) -> the e-mail */
+  async testerEmail(q){
+    q=String(q||'').trim();
+    if(q.includes('@')){q=q.toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)||q.length>200)throw new Error('email');return q;}
+    if(!/^[A-Za-z0-9_ .-]{3,16}$/.test(q))throw new Error('nick');
+    let r;try{const t=await this.token();r=await this.req('/rest/v1/rpc/tester_by_nick',{method:'POST',token:t,body:{p_nick:q}});}catch(e){if(e&&e.net)throw e;throw new Error('nofn');}
+    const e=Array.isArray(r)?r[0]:r;if(!e||typeof e!=='string')throw new Error('nick');return e.toLowerCase();
+  }
+  async addTester(q){
+    const email=await this.testerEmail(q);
     const t=await this.token();await this.req('/rest/v1/testers?on_conflict=email',{method:'POST',token:t,headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},body:[{email}]});
     return email;
   }
-  async delTester(email){const t=await this.token();await this.req('/rest/v1/testers?email=eq.'+encodeURIComponent(String(email).toLowerCase()),{method:'DELETE',token:t});}
+  async delTester(q){const email=await this.testerEmail(q),t=await this.token();await this.req('/rest/v1/testers?email=eq.'+encodeURIComponent(email),{method:'DELETE',token:t});return email;}
   get uid(){return this.sess&&this.sess.user?this.sess.user.id:'';}
   setStatus(s,err){this.status=s;this.err=err||'';this.notify({type:'status'});}
   /* ---------- session storage ---------- */

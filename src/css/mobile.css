@@ -127,3 +127,7 @@ html.mphone .menu.mart{--aw:min(980px,calc(94vw / var(--mz) / 1.12),calc((71vh /
 html.mphone .screen.main .logoimg{max-height:calc(29vh / var(--mz) / 1.12)}
 html.mphone .screen.main .logo{margin-bottom:0}
 html.mphone .coop .chowc{padding:5px 9px 6px}html.mphone .coop .chowc b{font-size:12px;margin-bottom:3px}html.mphone .coop .chowc ol{font-size:10.5px;gap:3px 10px}html.mphone .coop .chowc li::before{width:15px;height:15px;font-size:9px}
+/* the GUI is zoomed by --mz on a phone: vh-based limits must be divided by it, or the trinket detail panel / modals end up too short and get cut */
+html.mphone .bagside{max-height:calc(100vh / var(--mz) - 40px)}
+html.mphone .uaskp{max-height:calc(94vh / var(--mz))}
+html.mphone .gov .gtiles{max-height:calc(100vh / var(--mz) - 230px)}

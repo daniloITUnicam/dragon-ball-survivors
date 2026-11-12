@@ -119,15 +119,13 @@ Object.assign(UI.prototype,{
     const b=this.rrSel&&P.bagGet(this.rrSel),side=h('div',{class:'bagside'});
     if(this.rrPend&&!this.rrOpen)this.rrPend=null;   /* a roll left without a choice keeps the old trinket */
     if(b){
-      const can=P.canWork(b),pfOk=hasPfE(trinDef(b.id),b.f),c=P.rerollCost('pf',b.r),ok=can&&pfOk&&d.zenny>=c&&P.freeStats(b).length>0,run=!!this.rrAutoOn;
+      const can=P.canWork(b),run=!!this.rrAutoOn;
       this.rrAutoEl=h('small',{class:'rrautost'});
       side.append(this.tdet(b.id,b.r,b.p,b.f,[
         run?h('button',{class:'btn','data-fid':'rrstop',onclick:()=>{this.rrAutoOn=false;}},'⏹ '+this.tr(T('Ferma l\'auto reroll','Stop auto reroll')))
-          :h('button',{class:'btn'+(ok?' primary':' alt'),disabled:!ok,'data-fid':'rrpf',title:this.tr(T('Un nuovo tiro di perfezione: poi scegli se tenere il nuovo o il vecchio (e puoi passare all\'auto reroll).','A new perfection roll: then you choose whether to keep the new or the old one (and you can switch to auto reroll).')),
-            onclick:async()=>{if(await this.rrWarn(b))this.rrRoll('pf');}},'🎲 '+this.tr(T('Rerolla la perfezione','Reroll perfection'))+' · ',c?zAmt(c,true):this.tr(T('gratis','free'))),
+          :h('button',{class:'btn primary','data-fid':'rrpf',title:this.tr(T('Apre il menù: blocca le statistiche, imposta l\'auto reroll e gli obiettivi, poi rerolla la perfezione.','Opens the menu: lock stats, set the auto reroll and the goals, then reroll the perfection.')),
+            onclick:()=>{this.sfx();this.rrOpen=true;this.rrModal();}},'🎲 '+this.tr(T('Menù rerolling','Rerolling menu'))),
         this.rrAutoEl,
-        h('div',{class:'rrlocked'},h('small',null,'🔒 '+this.tr(T('Blocca una statistica: i reroll non la toccano (','Lock a stat: rerolls leave it alone ('))+(P.keepFee(b.r)?P.keepFee(b.r)+' Z':this.tr(T('gratis','free')))+this.tr(T(' a statistica, sbloccare è gratis).',' per stat, unlocking is free).'))),
-          trinStats(trinDef(b.id),b.r,b.p,b.f).map(st=>h('div',{class:'rrsl'},h('span',null,this.tr(st.t)),this.rrLockBtn(st.k,()=>this.rebuild(true))))),
         test&&!can?h('p',{class:'bad'},this.tr(T('In modalità Test si possono rerollare solo i cimeli estratti in Test.','In Test mode only the trinkets pulled in Test can be rerolled.'))):null]));
     }else side.append(h('p',{class:'sub'},this.t('bagEmpty')));
     return h('div',{class:'gwork'},this.header(T('Reroll dei cimeli','Trinket reroll')),
@@ -193,7 +191,7 @@ Object.assign(UI.prototype,{
     this.sfx('gStop'+Math.min(3,o.r));this.rrPend=o;this.rrKind=kind;this.rrOpen=true;this.rebuild(true);this.rrModal();
   },
   rrModal(){
-    const P=this.app.progress,d=this.save,b=P.bagGet(this.rrSel),o=this.rrPend;if(!b||!o){this.rrOpen=false;return;}
+    const P=this.app.progress,d=this.save,b=P.bagGet(this.rrSel),o=this.rrPend,idle=!o;if(!b){this.rrOpen=false;return;}   /* idle: the menu opened before any roll (locks, auto reroll, goals) */
     const prev=this.modalEl,L=this.app.i18n.lang==='it'?0:1;
     const close=()=>{ov.remove();if(this.modalEl===ov)this.modalEl=prev;this.rrOpen=false;};
     const fee=P.keepFee(b.r),canKeep=d.zenny>=fee;
@@ -201,20 +199,24 @@ Object.assign(UI.prototype,{
       close();this.sfx(nw?'buy':'uiBack');
       if(nw){const k=P.rerollApply(this.rrSel,o);if(k)this.rrSel=k;this.toast({type:'info',msg:this.tr(T('Tenuto il nuovo cimelio','Kept the new trinket'))});}
       this.rrPend=null;this.rebuild(true);};
-    const tA=trinDef(b.id),tB=trinDef(o.id),pA=hasPfE(tA,b.f)?(b.p!=null?b.p:PF_NOM):null,pB=hasPfE(tB,o.f)?(o.p!=null?o.p:PF_NOM):null;
-    const oP=pB!=null?PFS(pB,b.ls):null,sA=trinStats(tA,b.r,pA!=null?pA:PF_NOM,b.f),sB=trinStats(tB,o.r,oP!=null?oP:PF_NOM,o.f);   /* locked stats keep their own perfection */
+    const tA=trinDef(b.id),tB=o?trinDef(o.id):tA,pA=hasPfE(tA,b.f)?(b.p!=null?b.p:PF_NOM):null,pB=o&&hasPfE(tB,o.f)?(o.p!=null?o.p:PF_NOM):null;
+    const oP=pB!=null?PFS(pB,b.ls):null,sA=trinStats(tA,b.r,pA!=null?pA:PF_NOM,b.f),sB=o?trinStats(tB,o.r,oP!=null?oP:PF_NOM,o.f):[];   /* locked stats keep their own perfection */
     let up=0,dn=0;
     const reopen=()=>{close();this.rrOpen=true;this.rrModal();};   /* a lock changes what the roll does to the stats: draw it again */
     const lockBtn=k=>this.rrLockBtn(k,reopen);
     const row=(lab,a,c,va,vb,lk)=>{const dir=vb>va?'up':vb<va?'down':'eq';if(dir==='up')up++;if(dir==='down')dn++;
       return h('div',{class:'rrrow '+dir},h('span',{class:'rrk'},lab),h('span',{class:'rra'},a||'—'),h('b',{class:'rrar'},dir==='up'?'▲':dir==='down'?'▼':'='),h('span',{class:'rrb'},c||'—'),lk?lockBtn(lk):h('span'));};
     const rows=[],rv=(k,v)=>k==='armor'||k==='regen'?Math.round(v*10):k==='proj'?v:Math.round(v*100);   /* compared as shown (a stat that rounds to the same number is unchanged) */
+    if(idle){if(pA!=null)rows.push(h('div',{class:'rrrow eq'},h('span',{class:'rrk'},this.tr(T('Perfezione','Perfection'))),h('span',{class:'rra'},pA+'%'),h('b',{class:'rrar'}),h('span',{class:'rrb'}),h('span')));
+      for(const x of sA)rows.push(h('div',{class:'rrrow eq'},h('span',{class:'rrk'},(TLAB[x.k]||[x.k,x.k])[L]),h('span',{class:'rra'},this.tr(x.t)),h('b',{class:'rrar'}),h('span',{class:'rrb'}),lockBtn(x.k)));}
+    else{
     if(pA!=null||pB!=null)rows.push(row(this.tr(T('Perfezione','Perfection')),pA!=null?pA+'%':null,pB!=null?pB+'%':null,pA||0,pB||0));
-    for(const k of [...new Set([...sA.map(x=>x.k),...sB.map(x=>x.k)])]){const a=sA.find(x=>x.k===k),c=sB.find(x=>x.k===k);
-      rows.push(row((TLAB[k]||[k,k])[L],a?this.tr(a.t):null,c?this.tr(c.t):null,a?rv(k,a.v):0,c?rv(k,c.v):0,a?k:null));}
-    const fxA=tA.x||(tA.sp?tA.d:null),fxB=tB.x||(tB.sp?tB.d:null);
-    if(o.id!==b.id&&(fxA||fxB))rows.push(h('div',{class:'rrrow fx'},h('span',{class:'rrk'},this.tr(T('Effetto','Effect'))),h('span',{class:'rra'},fxA?this.tr(fxA):'—'),h('b',{class:'rrar'},'⇄'),h('span',{class:'rrb'},fxB?this.tr(fxB):'—'),h('span')));
-    const verdict=up&&!dn?['up',T('Migliore','Better')]:dn&&!up?['down',T('Peggiore','Worse')]:up||dn?['mix',T('In parte migliore, in parte peggiore','Partly better, partly worse')]:['eq',T('Uguale','The same')];
+      for(const k of [...new Set([...sA.map(x=>x.k),...sB.map(x=>x.k)])]){const a=sA.find(x=>x.k===k),c=sB.find(x=>x.k===k);
+        rows.push(row((TLAB[k]||[k,k])[L],a?this.tr(a.t):null,c?this.tr(c.t):null,a?rv(k,a.v):0,c?rv(k,c.v):0,a?k:null));}
+      const fxA=tA.x||(tA.sp?tA.d:null),fxB=tB.x||(tB.sp?tB.d:null);
+      if(o.id!==b.id&&(fxA||fxB))rows.push(h('div',{class:'rrrow fx'},h('span',{class:'rrk'},this.tr(T('Effetto','Effect'))),h('span',{class:'rra'},fxA?this.tr(fxA):'—'),h('b',{class:'rrar'},'⇄'),h('span',{class:'rrb'},fxB?this.tr(fxB):'—'),h('span')));
+      }
+    const verdict=idle?['eq','']:up&&!dn?['up',T('Migliore','Better')]:dn&&!up?['down',T('Peggiore','Worse')]:up||dn?['mix',T('In parte migliore, in parte peggiore','Partly better, partly worse')]:['eq',T('Uguale','The same')];
     const kind='pf',c=P.rerollCost(kind,b.r),canAgain=P.canWork(b)&&d.zenny>=c,tg=this.rrTargetV();
     /* the stat goals: the best each stat can reach on this trinket (perfection 100), what it has now, and a value that stops the auto reroll (stats grow with the perfection, so
        every goal is just a minimum perfection: the highest of them, and the perfection chosen above, is the stop) */
@@ -229,12 +231,17 @@ Object.assign(UI.prototype,{
         return h('label',{class:'rrg'},h('span',{class:'rrgk'},(lkd?'🔒 ':'')+(TLAB[k]||[k,k])[L]),h('small',null,this.tr(T('max ','max '))+this.rrDisp(k,m.v)+(cur?' · '+this.tr(T('ora ','now '))+this.rrDisp(k,cur.v):'')),inp);}));
     const goalBtn=h('button',{class:'btn small alt rrgbtn','data-fid':'rrgoals',onclick:()=>{this.rrGoalOpen=!this.rrGoalOpen;goalPanel.style.display=this.rrGoalOpen?'':'none';}},'🎯 '+this.tr(T('Obiettivi statistiche','Stat goals')));
     const ov=h('div',{class:'uask rrm'},h('div',{class:'rrwrap'},h('div',{class:'uaskp rrmp'},
-      h('h3',null,'🎲 '+this.tr(T('Reroll della perfezione','Perfection reroll'))),
-      h('div',{class:'rrcards'},h('div',null,h('div',{class:'rrlab'},this.tr(T('Prima','Before'))),this.tcard(b.id,b.r,{p:b.p,fu:b.f})),h('div',{class:'rrarrow'},'→'),
-        h('div',{class:'rrnew '+verdict[0]},h('div',{class:'rrlab'},this.tr(T('Nuovo','New'))),this.tcard(o.id,o.r,{p:oP!=null?oP:o.p,fu:o.f}))),
-      h('div',{class:'rrverdict '+verdict[0]},this.tr(verdict[1])),
+      h('h3',null,'🎲 '+this.tr(T('Menù rerolling','Rerolling menu'))),
+      idle?h('div',{class:'rrcards'},h('div',null,this.tcard(b.id,b.r,{p:b.p,fu:b.f})))
+        :h('div',{class:'rrcards'},h('div',null,h('div',{class:'rrlab'},this.tr(T('Prima','Before'))),this.tcard(b.id,b.r,{p:b.p,fu:b.f})),h('div',{class:'rrarrow'},'→'),
+          h('div',{class:'rrnew '+verdict[0]},h('div',{class:'rrlab'},this.tr(T('Nuovo','New'))),this.tcard(o.id,o.r,{p:oP!=null?oP:o.p,fu:o.f}))),
+      idle?h('p',{class:'cd'},this.tr(T('Blocca le statistiche da non cambiare (sbloccare è gratis), poi rerolla o avvia l\'auto reroll.','Lock the stats you want to keep (unlocking is free), then reroll or start the auto reroll.'))):h('div',{class:'rrverdict '+verdict[0]},this.tr(verdict[1])),
+      idle&&!P.canWork(b)?h('p',{class:'bad'},this.tr(T('In modalità Test si possono rerollare solo i cimeli estratti in Test.','In Test mode only the trinkets pulled in Test can be rerolled.'))):null,
       h('div',{class:'rrtable'},rows),
-      h('div',{class:'row'},
+      idle?h('div',{class:'row'},
+        (()=>{const can=canAgain&&hasPfE(tA,b.f)&&P.freeStats(b).length>0;return h('button',{class:'btn'+(can?' primary':' alt'),disabled:!can,'data-fid':'rrnew',onclick:async()=>{if(await this.rrWarn(b)){close();this.rrRoll(kind);}}},'🎲 '+this.tr(T('Rerolla la perfezione','Reroll perfection'))+' · ',c?zAmt(c,true):this.tr(T('gratis','free')));})(),
+        h('button',{class:'btn alt','data-back':true,'data-fid':'rrclose',onclick:close},this.tr(T('Chiudi','Close'))))
+      :h('div',{class:'row'},
         h('button',{class:'btn primary','data-fid':'rrnew',onclick:()=>done(true)},'✓ '+this.tr(T('Tieni il nuovo','Keep the new one'))),
         h('button',{class:'btn'+(canAgain?'':' alt'),disabled:!canAgain,'data-fid':'rragain',title:this.tr(T('Scarta questo tiro (tieni il vecchio) e rerolla di nuovo','Discard this roll (keep the old one) and reroll again')),
           onclick:()=>{close();this.rrPend=null;this.rrRoll(kind);}},'🎲 '+this.tr(T('Riprova','Again'))+' · ',c?zAmt(c,true):this.tr(T('gratis','free'))),
