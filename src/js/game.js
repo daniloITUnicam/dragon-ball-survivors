@@ -79,6 +79,8 @@ const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin
    Minibosses: MINI_HPF of that curve, never below BOSS_HP0 */
 const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.on;   /* (called at run time: mobile.js loads last) */
 /* last LATE_SPAN seconds before the final boss: regular spawns have miniboss health and leave no chest (only LATE_CHEST_P of them do) */
+/* from minute 3 twice the spawn rate and twice the alive cap (eased in over 10 s); from minute 25 the cap stays at 300 (curve stages only, not Endless) */
+const DENSE_T=180,DENSE_K=2,DENSE_CAP_T=1500,DENSE_CAP=300;
 const LATE_SPAN=120,LATE_CHEST_P=.001;
 const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
@@ -1429,9 +1431,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   dmgMul(){return ENEMY_DMG_MUL*(1+CURVE_DMG*this.prog())*this.norm.dmg*this.hardK*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  spawnCap(){return Math.round(this.spawnCap0()*ENEMY_N_K);}
+  denseK(){return this.endless?1:1+(DENSE_K-1)*clamp((this.t-DENSE_T)/10,0,1);}
+  spawnCap(){const c=Math.round(this.spawnCap0()*ENEMY_N_K);if(this.endless||this.stage.capT)return c;return this.t>=DENSE_CAP_T?DENSE_CAP:Math.round(c*this.denseK());}
   spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((CURVE_CAP0+CURVE_CAP1*Math.pow(pr,CURVE_CAP_E))*CAP_K*xk);}   /* v134: plenty from the first minute, hordes at the end */
-  spawnRate(){return ENEMY_N_K*(CURVE_RATE0+CURVE_RATE1*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*(this.x2?.85:1)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
+  spawnRate(){return ENEMY_N_K*(CURVE_RATE0+CURVE_RATE1*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*this.denseK()*(this.x2?.85:1)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
     const e=this.mkEnemy0(def,x,y);if(def.sk)this.skillInit(e);return e;
   }
