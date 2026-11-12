@@ -461,7 +461,15 @@ class AudioSys{
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+Math.min(.04,dur/4));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     o.connect(ws);o2.connect(ws);ws.connect(g);g.connect(this.sfxG);o.start(t);o2.start(t);o.stop(t+dur+.03);o2.stop(t+dur+.03);
   }
+  /* evolved weapons firing more than one shot get quieter, the more shots they have (setting "quietEvo", on by default): the sound goes through its own gain node */
+  wkVol(){return this.wctx&&this.s.quietEvo!==false&&this.wevo>0&&this.wn>1?Math.max(.28,(this.wevo>1?.9:1)/Math.sqrt(this.wn)):1;}
   sfx(n){
+    const k=this.ctx?this.wkVol():1;
+    if(k>=1)return this.sfx0(n);
+    const real=this.sfxG,tmp=this.ctx.createGain();tmp.gain.value=k;tmp.connect(real);this.sfxG=tmp;
+    try{this.sfx0(n);}finally{this.sfxG=real;}
+  }
+  sfx0(n){
     if(!this.ctx)return;
     const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;

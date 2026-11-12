@@ -2114,7 +2114,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(p.atk>0)p.atk-=dt;
     if(this.fireT>0)this.fireT-=dt;
     const pn=this.pr.length;
-    if(!this.dying&&!p.down&&!this.xLock)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;this.audio.wctx=w.id;this.audio.wevo=w.evo|0;w.update(dt);this.audio.wctx=null;for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid){this.pr[i].wid=w.id;this.pr[i].we=w.evo|0;}if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
+    if(!this.dying&&!p.down&&!this.xLock)for(const w of this.weapons.values()){const n0=this.pr.length,cd0=w.cd;this.curW=w.id;this.audio.wctx=w.id;this.audio.wevo=w.evo|0;this.audio.wn=1+(w.xn|0);w.update(dt);this.audio.wctx=null;for(let i=n0;i<this.pr.length;i++)if(!this.pr[i].wid){this.pr[i].wid=w.id;this.pr[i].we=w.evo|0;}if(w.cd>cd0+.02&&w.cd>.6&&ARM_FIRE[w.id])this.armFire(w);}
     this.curW=null;
     if(this.pr.length>pn||this.cast)p.atk=.34;
     this.updateProjectiles(dt);

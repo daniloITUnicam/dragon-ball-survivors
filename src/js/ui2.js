@@ -75,7 +75,7 @@ Object.assign(UI.prototype,{
     }else if(tab==='audio'){
       const pc=v=>Math.round(v*100)+'%';
       body=[slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc),
-        ];
+        toggle(this.tr(T('Armi evolute più silenziose','Quieter evolved weapons')),'quietEvo',this.tr(T('Quando un\'arma evoluta spara più colpi alla volta (Quantità), il suo suono si abbassa in base a quanti sono, per non stancare le orecchie.','When an evolved weapon fires several shots at once (Quantity), its sound is lowered according to how many there are, to spare your ears.')))];
     }else if(tab==='video'){
       body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
