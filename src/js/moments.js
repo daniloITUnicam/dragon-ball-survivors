@@ -1,6 +1,6 @@
 'use strict';
 /* ====== v116: anime moments — Last Stand (once per run under 10% HP), an ally who drops in when things look bad, and the boss transformation as a short cinematic ====== */
-const LS_HP=.1,LS_T=8,ALLY_T=15,ALLY_CD=300,ALLY_FIRST=90,ALLY_HIT=1.1,ALLY_HP=.35,ALLY_CROWD=14,BCINE_T=1.6;
+const LS_HP=.1,LS_T=8,ALLY_T=15,ALLY_CD=300,ALLY_FIRST=90,ALLY_HIT=1.1,ALLY_HP=.35,ALLY_CROWD=14,BCINE_T=1.6,BOSS_INTRO_T=1.2,BOSS_INTRO_Z=.22;
 /* Last Stand lines by character line (original lines, short) */
 const LS_LINES={
   saiyan:T('Non è ancora finita... mi sto solo scaldando!','It is not over... I am just warming up!'),vegeta:T('Il principe dei Saiyan non cade così!','The Saiyan prince does not fall like this!'),
@@ -54,15 +54,15 @@ const MOMENTS={
     else{g.curW='ally';g.explodeAt(tg.x,tg.y,120,base*1.4,col);g.curW=null;}
   },
   /* ---- boss transformation cinematic: the camera flies to the boss, letterbox, its new name; the ground shakes when it ends ---- */
-  bossCine(g,e,n,c){if(g.trial||g.tun||e.mini)return;g.bcine={e,n,c,t:0};g.audio.sfx('xcharge');},
+  bossCine(g,e,n,c,intro){if(g.trial||g.tun||e.mini)return;g.bcine={e,n,c,t:0,intro:!!intro,T:intro?BOSS_INTRO_T:BCINE_T};if(!intro)g.audio.sfx('xcharge');},   /* intro: the short close-up when a boss appears (no bars, no burst) */
   tickCine(g,dt){const b=g.bcine;if(!b)return false;b.t+=dt;
-    if(b.t>=BCINE_T){const e=b.e;g.bcine=null;g.shake=1;g.flash=.4;g.flashC=b.c;g.audio.sfx('xburst');
+    if(b.t>=b.T){const e=b.e;g.bcine=null;if(b.intro){g.shake=Math.max(g.shake,.3);return false;}g.shake=1;g.flash=.4;g.flashC=b.c;g.audio.sfx('xburst');
       if(e&&!e.dead){g.fx.push({shock:true,x:e.x,y:e.y,max:520,l:1,m:1,c:b.c});for(const o of g.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y,l=Math.hypot(dx,dy)||1;if(l<420){o.kx+=dx/l*14;o.ky+=dy/l*14;}}}
       return false;}
     return true;},
   /* camera focus (0..1) on the boss while the cinematic runs */
-  cineF(g){const b=g.bcine;if(!b)return 0;const u=b.t,ein=clamp(u/.35,0,1),eout=clamp((BCINE_T-u)/.35,0,1);return Math.min(ein*ein*(3-2*ein),eout*eout*(3-2*eout));},
-  cineHud(R,g){const b=g.bcine;if(!b)return;const c=R.ctx,W=R.W,H=R.H,U=R.U,f=this.cineF(g),bar=H*.11*f;
+  cineF(g){const b=g.bcine;if(!b)return 0;const u=b.t,ein=clamp(u/.35,0,1),eout=clamp(((b.T||BCINE_T)-u)/.35,0,1);return Math.min(ein*ein*(3-2*ein),eout*eout*(3-2*eout));},
+  cineHud(R,g){const b=g.bcine;if(!b||b.intro)return;const c=R.ctx,W=R.W,H=R.H,U=R.U,f=this.cineF(g),bar=H*.11*f;
     c.fillStyle='#000';c.fillRect(0,0,W,bar);c.fillRect(0,H-bar,W,bar);
     const k=clamp((b.t-.25)/.3,0,1)*clamp((BCINE_T-b.t)/.3,0,1),y=H*.72,sl=(1-k)*W*.3;if(k<=0)return;
     c.save();c.globalAlpha=k;const gr=c.createLinearGradient(0,0,W,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.5,'rgba(0,0,0,.75)');gr.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gr;c.fillRect(0,y-40*U,W,62*U);

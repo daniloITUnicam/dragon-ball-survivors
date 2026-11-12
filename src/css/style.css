@@ -44,6 +44,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .card:hover,.card:focus-visible{border-color:var(--orange)}
 .card.sel{border-color:var(--orange);box-shadow:0 6px 0 -2px var(--orange-d)}
 .card.locked{opacity:.5;cursor:not-allowed}
+.card.xout{position:relative;cursor:not-allowed;filter:grayscale(1) brightness(.45)}
+.card.xout:hover,.card.xout:focus{transform:none;filter:grayscale(1) brightness(.55)}
+.card.xout .xbig{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:190px;line-height:1;color:#ff3b3b;text-shadow:0 0 18px rgba(0,0,0,.9);opacity:.9;pointer-events:none}
+.card.xout .xwhy{position:absolute;left:8px;right:8px;bottom:10px;padding:6px 8px;background:rgba(0,0,0,.85);border:1px solid #ff3b3b;border-radius:6px;font-size:13px;color:#fff;text-align:center;opacity:0;transition:opacity .15s;pointer-events:none}
+.card.xout:hover .xwhy,.card.xout:focus .xwhy{opacity:1}
 .card.stage{background:linear-gradient(160deg,var(--sky),var(--panel) 85%);min-height:150px}
 .stnum{font-size:12px;color:var(--hi);font-weight:700;letter-spacing:.12em}
 .cn{font-family:var(--display);font-size:17px}

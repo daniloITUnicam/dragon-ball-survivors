@@ -32,7 +32,7 @@ class App{
       const dg=/^(?:Digit|Numpad)(\d)$/.exec(e.code);
       if(dg){
         const i=+dg[1]===0?9:+dg[1]-1,n={level:(m.options||[]).length,totem:(m.opts||[0,1]).length,wish:(m.options||[]).length,tswap:(m.curs||[0]).length+1,pick:(m.opts||[]).length,chest:1,trial:(m.offers||[]).length+(m.trin?m.trin.length:0)}[m.type]||0;
-        if(i<n){if((m.type==='level'&&m.banMode)||m.type==='trial'){const b=this.ui.modalEl&&this.ui.modalEl.querySelector('[data-fid="o'+i+'"]');if(b&&!b.disabled)b.click();else if(m.type==='trial')this.ui.sfx('uiErr');}else this.resolveModal(i);}   /* ban mode: the number key bans that card */
+        if(i<n){if((m.type==='level'&&m.banMode)||m.type==='trial'||m.type==='wish'){const b=this.ui.modalEl&&this.ui.modalEl.querySelector('[data-fid="o'+i+'"]');if(b&&!b.disabled)b.click();else if(m.type==='trial')this.ui.sfx('uiErr');}else this.resolveModal(i);}   /* ban mode: the number key bans that card */
         return;
       }
       /* v132: Room of Spirit and Time - Space leaves the room (like «Leave the room»); not in the first 0.6 s, so a Space still pressed from the fight does not throw the rewards away */
@@ -213,7 +213,7 @@ class App{
         g.update(dt);
         }
         this.trackT-=dt;
-        if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?(trackUri('fboss'+g.stage.id)?'fboss'+g.stage.id:'finalboss'):(trackUri('bossgen')?'bossgen':['boss','boss2','boss3'][g.stageIdx%3])):'stage'+g.stage.id);}
+        if(this.trackT<=0){this.trackT=1;this.audio.play(g.bossAlive>0?(g.en.some(e=>e.boss&&e.final)?(trackUri('fboss'+g.stage.id)?'fboss'+g.stage.id:trackUri('bossgen')?'bossgen':'finalboss'):(trackUri('bossgen')?'bossgen':['boss','boss2','boss3'][g.stageIdx%3])):'stage'+g.stage.id);}
         if(g.dying&&g.modal)g.modal=null;
         if(g.modal&&!this.ui.modalEl&&!g.ended){this.state='modal';this.ui.openModal(g.modal,g);}
       }

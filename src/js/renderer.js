@@ -315,7 +315,7 @@ this.W=1;this.H=1;this.Z=1;
     if(this.dynPend){this.dynPend=false;this.resize();}   /* v132: before z0 is taken - inside, the finally below put back the zoom of the old size on the new canvas, and the view stayed zoomed in by a step until the next one */
     const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
     {const xz=this.xfZoom(g);if(xz!==1)this.Z*=xz;}   /* v133: transformation close-up */
-    {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+.3*f;}   /* v116: boss cinematic camera */
+    {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+(g.bcine.intro?BOSS_INTRO_Z:.3)*f;}   /* v116: boss cinematic camera */
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
   }
   /* v133: the camera closes in on the hero while he transforms (XF_ZOOM at the burst), holds through XF_LOCK and eases back out in XF_ZOUT s */

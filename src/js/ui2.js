@@ -417,7 +417,7 @@ Object.assign(UI.prototype,{
         return el;
       }).filter(Boolean);
       /* v132: the Master defeated - the free upgrade and one trinket out of 3 (numbered after the upgrades: number keys 1-5) */
-      const no=m.offers.length,done=()=>m.offers.every(x=>x.sold)&&(!m.trin||m.trin.every(x=>x.sold));
+      const no=m.offers.filter(x=>!x.sold).length,done=()=>m.offers.every(x=>x.sold)&&(!m.trin||m.trin.every(x=>x.sold));
       const tcs=m.trin&&!m.trin.every(x=>x.sold)?m.trin.map((o,k)=>{const c=this.card(this.describeReward({k:'trinket',id:o.id,rar:o.rar,pf:o.pf}),no+k,()=>{if(g.pickTrialTrinket(k)){this.sfx('chest');if(done())this.app.resolveModal(0);else this.openModal(g.modal,g);}else this.sfx('uiErr');});return c;}):null;
       const lbl=s=>h('div',{class:'trlbl'},this.tr(s));
       el=h('div',{class:'screen modal'},h('h2',null,this.t('trialShopTitle')),
@@ -437,7 +437,12 @@ Object.assign(UI.prototype,{
         legend:{k:'宝',c:'#ffb13b',n:T6('Cimelio leggendario','Legendary trinket','Reliquia legendaria','Relique légendaire','Legendäres Relikt','Relíquia lendária'),d:T6('Scegli un cimelio leggendario fra 3.','Pick a Legendary trinket out of 3.','Elige una reliquia legendaria entre 3.','Choisis une relique légendaire parmi 3.','Wähle ein legendäres Relikt aus 3.','Escolha uma relíquia lendária entre 3.')}},
         W=m.options.map(o=>WD[o]||WD.power);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('wishTitle')),h('p',{class:'sub'},this.t('wishDesc')),
-        h('div',{class:'cards'},W.map((w,i)=>this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{this.sfx('ball');this.app.resolveModal(i);}))));
+        h('div',{class:'cards'},W.map((w,i)=>{
+          const why=g.wishBlock(m.options[i]);
+          const c=this.card({k:w.k,c:w.c,n:w.n,tag:'🐉',d:w.d},i,()=>{if(why){this.sfx('uiErr');return;}this.sfx('ball');this.app.resolveModal(i);},why?' xout':'');
+          if(why){c.title=this.tr(why);c.append(h('span',{class:'xbig','aria-hidden':'true'},'✕'),h('span',{class:'xwhy'},this.tr(why)));}
+          return c;
+        })));
     }
     else if(m.type==='swish'){   /* v113: Porunga, in the run: a Lucky Ticket 10x or one of up to three characters you do not have */
       const W=m.options.map(o=>{

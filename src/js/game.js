@@ -72,12 +72,14 @@ const TGT_NAMES=[T('Bersaglio: più vicino','Target: closest'),T('Bersaglio: pi�
 const TOP_K=1.5;
 const DMG_T=1.1;   /* seconds a damage number stays on screen (every other floating text: .8 s) */
 const SPAR_COPY_MUL=.6,SPAR_COPY_P=1;   /* Room of Spirit and Time: the Master copies your weapons (and now and then your ability) with every attack, with 40% less damage; his own moves only when you have nothing to copy (v132: before, 7 attacks in 10) */
-const SPAR_HP_K=1.5,SPAR_ATK_K=1.3;   /* v132: the Master has 50% more health and attacks 30% more often (his attack interval / 1.3) */
+const SPAR_HP_K=1.5,SPAR_ATK_K=1.3,SPAR_MIN_K=.08;   /* Master: +8% health per minute played; */   /* v132: the Master has 50% more health and attacks 30% more often (his attack interval / 1.3) */
 /* how the Master reproduces each weapon (v57): his copies look like yours (orbs, spears, the Kamehameha sprite beam, tinted zones); anything not listed here uses GHOST_KIND, else a blast on you */
 const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin:'spear',breaker:'beam',hellzone:'grenade',chrono:'rewind',shock:'shock',hakai:'erase',meteor:'meteor',dyn:'kick'};
 /* v137: boss health floor: the first boss has BOSS_HP0 at least, rising on a curve (run progress^BOSS_HP_E, up to the final boss's time) to BOSS_HPF for the final boss of every stage.
    Minibosses: MINI_HPF of that curve, never below BOSS_HP0 */
 const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.on;   /* (called at run time: mobile.js loads last) */
+/* last LATE_SPAN seconds before the final boss: regular spawns have miniboss health and leave no chest (only LATE_CHEST_P of them do) */
+const LATE_SPAN=120,LATE_CHEST_P=.001;
 const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
@@ -133,7 +135,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.ballEvery=clamp(this.dur*.28,100,270)/this.scanK;this.ballAt=this.ballEvery*.75;
     /* last stages: no normal Dragon Balls; a Super Dragon Ball may land once per run (a chance, never when all 3 are owned), later and farther away, and a Tamagami statue guards it */
     this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<Math.min(1,SUP_CHANCE*this.scanK)?{at:this.dur*rnd(.28,.55),done:false}:null;
-    this.bossHit=false;this.finalSpawned=false;this.cleared=false;this.ended=false;this.post=0;
+    this.bossHit=false;this.finalSpawned=false;this.lateSaid=false;this.cleared=false;this.ended=false;this.post=0;
     this.slowT=0;this.slowCd=TR_SLOW_CD*.6;this.shockCd=TR_SHOCK_CD;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
     this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
     this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.takenBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
@@ -530,6 +532,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   banLevel(i){const m=this.modal;if(!m||m.type!=='level'||!(this.ru.bn>0))return false;const k=this.optKey(m.options[i]||{});if(!k)return false;
     this.ru.bn--;this.banRun.add(k);m.banMode=false;this.levelRedraw(m);return true;}
   /* v115: the wish window shows 4 wishes out of WISH_POOL (no transformation left: not offered) */
+  /* a wish that would do nothing is shown crossed out (reason returned), e.g. «Power» when every weapon is already maxed */
+  wishBlock(o){return o==='power'&&![...this.weapons.values()].some(w=>w.lv<WMAX)?T('Tutte le armi sono già al livello massimo.','Every weapon is already at max level.'):null;}
   wishOptions(){const pool=WISH_POOL.filter(w=>w!=='transform'||this.formsUnlocked<this.formMax);shuffle(pool);return pool.slice(0,4);}
   resolveModal(i){
     const m=this.modal;if(!m)return;
@@ -1102,6 +1106,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       return;
     }
     if(e.elite)this.eliteDown(e);
+    else if(e.late&&Math.random()<LATE_CHEST_P)this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});
     if(!e.sum)this.dropLoot(e);
     if(e.ai==='split'&&e.def.minion){for(let i=0;i<2;i++)this.en.push(this.mkEnemy(ENEMIES[e.def.minion],e.x+rnd(-14,14),e.y+rnd(-14,14)));}
     if(this.has('vamp'))this.heal(.4);
@@ -1356,7 +1361,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.vic={t:0,dur:VIC_T,x:e.x,y:e.y,r:e.r,boom:false,bt:0,nx:0,e:Object.assign({},e,{dead:false,fl:0,atk:0,stun:0,xf:null,tel:null,telK:0,fuse:0,bm:null,vis:null,sq:0})};
     this.eb=[];this.bz=[];this.jbeams=[];this.rain=[];this.held=null;this.vortex=null;this.xform=null;this.kai=0;this.sb.nospawn=true;
     for(const o of this.en)if(o!==e&&!o.dead){o.dead=true;this.burst(o.x,o.y-6,6,'#ffffff');}
-    this.ring(e.x,e.y,160,e.bd.c,.8);this.audio.sfx('boom');if(this.audio.slowMusic)this.audio.slowMusic(.55);
+    this.ring(e.x,e.y,160,e.bd.c,.8);this.audio.sfx('boom');   /* the music is never slowed here */
   }
   updateVictory(rdt){
     const v=this.vic,dt=rdt*.4;v.t+=rdt;this.rt+=dt;this.t+=dt*this.CR;
@@ -1439,7 +1444,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   mkEnemy0(def,x,y){
     const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*this.crowdK(LATE_HP)*xe.hp*(fb?1.35:1)*(1+F.hp*hs)*(def.prop?1:this.earlyHp());   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    return{def,ai:def.ai,x,y,hp,max:hp,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc)*this.crowdK(LATE_ARM),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*this.crowdK(LATE_DMG)*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
+    const late=!def.prop&&def.ai!=='boss'&&this.lateOn(),hpL=late?Math.max(hp,Math.round(this.bossFloor(false,true)*(this.x2?1.4:1))):hp;   /* final minutes: miniboss health */
+    return{def,ai:def.ai,x,y,hp:hpL,max:hpL,late,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc)*this.crowdK(LATE_ARM),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*this.crowdK(LATE_DMG)*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0,
       /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
@@ -1590,11 +1596,12 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* an elite fell: guaranteed chest (a normal upgrade plus a sure trinket), zenny and a handful of gems */
   eliteDown(e){
     this.run.elites=(this.run.elites||0)+1;this.addTicket('t1',1,e);   /* every Elite drops a 1x ticket */
-    {this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});}
+    const ch=!e.late||Math.random()<LATE_CHEST_P;
+    if(ch)this.chests.push({...this.landAt(e.x,e.y,30),final:false,t:0,elite:true,rar:this.rollChestRar()});
     const pay=Math.round(25*ZMUL*(this.sdR+1));this.addZenny(pay);this.floatText(e.x,e.y-e.r*2.4,'+Z '+pay,1);
     for(let i=0;i<4;i++)this.dropGem(e.x+rnd(-40,40),e.y+rnd(-40,40),12*XP_MUL);
     this.ring(e.x,e.y,110,'#ffd23f',.5);this.burst(e.x,e.y-e.r,24,'#ffd23f');this.pillar(e.x,e.y,'#ffd23f',.8);this.audio.sfx('coin');this.shake=Math.max(this.shake,.35);
-    this.say(this.env.tr(T('ÉLITE SCONFITTO! Apri il forziere','ELITE DEFEATED! Open the chest')),'#ffd23f',2.4);
+    if(ch)this.say(this.env.tr(T('ÉLITE SCONFITTO! Apri il forziere','ELITE DEFEATED! Open the chest')),'#ffd23f',2.4);
   }
   /* ---- the guaranteed Dragon Ball: one lands on the map every few minutes (never two at once, never during a boss fight); the arrow at the screen edge shows where ---- */
   updateSuperPlan(){
@@ -1641,8 +1648,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.en.push(e);this.bossAlive++;this.bossHit=false;BOSSX.onSpawn(this,e);EXTRAS.onBoss(this,e);   /* v116: guard bar, v117: weakness */
     this.say(this.env.tr(bd.n)+(mini?' - '+this.env.tr(T('MINIBOSS','MINIBOSS')):'')+(final?' - '+this.env.tr(T('BOSS FINALE','FINAL BOSS')):at&&at.tama?' - '+this.env.tr(T('GUARDIANO DELLA SUPER SFERA','SUPER DRAGON BALL GUARDIAN')):''),'#ff5a3d',3,null,4);this.audio.sfx('boss');this.shake=.4;
     if(final){this.finalSpawned=true;this.progress.reachedFinal(this);}
+    if(!mini)MOMENTS.bossCine(this,e,bd.n,bd.c,true);   /* short camera close-up on the boss that just appeared */
   }
   altChests(e,n){for(let i=0;i<n;i++){const a=i/Math.max(1,n)*TAU+.4,r=70+16*(i%2);this.chests.push({...this.landAt(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.6,30),final:false,t:0,boss:true,alt:true,rar:this.rollChestRar()});}}
+  lateOn(){if(this.endless||this.finalSpawned||this.trial||this.tun)return false;const fin=this.bossQ.find(b=>b.final),end=fin?fin.t:this.dur;return this.t>=end-LATE_SPAN&&this.t<end;}
   bossFloor(final,mini){
     if(final)return BOSS_HPF;
     const fin=this.bossQ.find(b=>b.final),q=Math.max(0,this.t/Math.max(60,fin?fin.t:this.dur)),v=BOSS_HP0*Math.pow(BOSS_HPF/BOSS_HP0,Math.pow(Math.min(1,q),BOSS_HP_E));
@@ -2063,6 +2072,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       this.updateWave();this.updateElites();this.updateMinis();this.updateBallPlan();this.updateSuperPlan();
       const wv=this.waveMul();
       if(this.hordeBoost>0)this.hordeBoost-=dt;
+      if(!this.lateSaid&&this.lateOn()){this.lateSaid=true;this.say(this.env.tr(T('ULTIMI 2 MINUTI: nemici con la vita dei miniboss, niente forzieri!','LAST 2 MINUTES: enemies with miniboss health, no chests!')),'#ff5a3d',3.2,null,4);}
       if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
       {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
       this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
@@ -2626,7 +2636,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p,idx=this.sd,C=this.C;
     const n=this.trialN++,big=1+.55*n;
     const sp={k:'human',u:(C.u||1.95)*big,cfg:Object.assign({},C.cfg,{skin:'#c8d0e8',outfit:'#262a46',legs:'#262a46',belt:'#6a7aff',under:'#3a4a8a',hair:'#e8eeff',eye:'#6a7aff',wrist:'#6a7aff',armor:null,emblem:0})};
-    const hp=(300+45*this.lvl*(1+.4*idx))*(1+.9*n)*2.1*SPAR_HP_K,dmg=(7+4*idx)*(1+.1*idx)*(1+.35*n);
+    const hp=(300+45*this.lvl*(1+.4*idx))*(1+.9*n)*2.1*SPAR_HP_K*(1+SPAR_MIN_K*this.t/60),dmg=(7+4*idx)*(1+.1*idx)*(1+.35*n);
     const def={n:n?T('Maestro dello Spirito (Furia)','Spirit Master (Fury)'):T('Maestro dello Spirito','Spirit Master'),c:'#aab4ff',xp:0,hp,r:16*big,spd:60+14*n,dmg,ai:'boss',sp};
     const bd={id:'spar',n:def.n,c:'#aab4ff',hp,spd:60+14*n,r:16*big,u:(C.u||1.95)*big,dmg,pats:n?['tri','sweep','meteor','burst','ring','slam']:['aim','slam','tri','burst','meteor'],cd:(n?1.9:2.4)/SPAR_ATK_K,sp};
     const e=this.mkEnemy(def,p.x+190,p.y);
