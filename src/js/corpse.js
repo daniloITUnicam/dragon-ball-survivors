@@ -31,7 +31,7 @@ const CorpsePool={
 };
 Game.prototype.corpseColor=function(e){const d=e.boss?e.bd:e.def,cf=d&&d.sp&&d.sp.cfg;return(d&&d.c)||(cf&&(cf.outfit||cf.skin))||'#ffffff';};
 Game.prototype.addCorpse=function(e){
-  if(this.trial||FXL.on||e.sparring||e.ai==='explode'||(e.boss&&e.final)||typeof document==='undefined')return;
+  if(this.trial||this.save.settings.deathAnim===false||e.sparring||e.ai==='explode'||(e.boss&&e.final)||typeof document==='undefined')return;
   const p=this.p;if(Math.hypot(e.x-p.x,e.y-p.y)>this.viewR*1.2)return;           /* off screen: nobody sees it */
   const a=this.corpses||(this.corpses=[]),nb=a.reduce((s,c)=>s+(c.boss?1:0),0);
   if(e.boss?nb>=CORPSE_MAXB:a.length-nb>=CORPSE_MAX)return;

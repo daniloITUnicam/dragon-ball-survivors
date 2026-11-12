@@ -1140,6 +1140,8 @@ this.W=1;this.H=1;this.Z=1;
   }
   /* shop / upgrade pixel-art icon as an image (null until it has decoded, or when that upgrade has none) */
   trinketImg(id){const c=this.tImgC||(this.tImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
+  /* a trinket's drawn icon centred at x,y (sz px), or its old symbol when the picture is not ready / does not exist */
+  drawTrin(id,x,y,sz,col,fs,txt){const im=this.trinketImg(id);if(im){const c=this.ctx;c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(im,x-sz/2,y-sz/2,sz,sz);c.restore();return;}const t=trinDef(id);if(t&&txt)txt(t.k,x,y+fs*.33,col,'center',fs);}
   weaponImg(id){const c=this.wImgC||(this.wImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   shopImg(id){const c=this.shopImgC||(this.shopImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof SHOP_IMG!=='undefined'&&SHOP_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}
   statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
@@ -1506,7 +1508,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='#fff6e6';ctx.beginPath();ctx.ellipse(ix,iy,24,9,0,0,TAU);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke();
       const by=iy-22-Math.abs(Math.sin(t*2.2+it.x*.05))*6;
       ctx.fillStyle='rgba(20,10,40,.85)';ctx.beginPath();ctx.arc(ix,by,17,0,TAU);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke();
-      ctx.font='bold 21px sans-serif';ctx.textAlign='center';ctx.fillStyle=col;ctx.fillText(tdef.k,ix,by+7);
+      {const im=this.trinketImg(it.id);if(im){ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(im,ix-14,by-14,28,28);ctx.restore();}else{ctx.font='bold 21px sans-serif';ctx.textAlign='center';ctx.fillStyle=col;ctx.fillText(tdef.k,ix,by+7);}}
       if(near&&tr.hold>0){ctx.strokeStyle='#ffffff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(ix,by,22,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,tr.hold/.7));ctx.stroke();}
       ctx.font='bold 13px sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';const aff=(this.zenoCoins||0)>=it.price;const pl=it.price>0?'Z '+it.price:this.tr(T('GRATIS','FREE'));ctx.strokeText(pl,ix,iy+24);ctx.fillStyle=it.free?'#ffe14a':aff?'#9affb0':'#ff9a9a';ctx.fillText(pl,ix,iy+24);
     }
@@ -2007,7 +2009,7 @@ this.W=1;this.H=1;this.Z=1;
         if(right){ctx.lineTo(px,ty+9*U);ctx.lineTo(tipX,iy-8*U);ctx.lineTo(px,ty-9*U);}
         ctx.lineTo(px,py+rr);ctx.quadraticCurveTo(px,py,px+rr,py);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
         GLOW.at(ctx,px+26*U,py+30*U,34*U,col,.5);
-        txt(td.k,px+26*U,py+39*U,col,'center',F(26));
+        this.drawTrin(it.id,px+26*U,py+30*U,36*U,col,26*U,(s2,x2,y2,c2,a2)=>txt(s2,x2,y2,c2,a2,F(26)));
         txt(tr(td.n),px+52*U,py+26*U,col,'left',F(17));
         txt(tr(RARITY[it.rar].n)+(ccd?'  ·  '+tr2('sostituirà','replaces')+' '+tr(ccd.n):(cc==='*'?'  ·  '+tr2('sostituirà un cimelio','replaces a trinket'):'')),px+52*U,py+44*U,'#c8c0e0','left',F(12));
         let yy=py+72*U;
