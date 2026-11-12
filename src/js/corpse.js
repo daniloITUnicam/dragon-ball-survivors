@@ -8,7 +8,7 @@
    current dissolve level are erased with a pre-made pattern ('destination-out') and the white-hot edge is painted on what is left ('source-atop').
    Canvases come from a small pool, at most CORPSE_MAX bodies at a time, none with "Reduce effects" on, none when the enemy dies off screen.
    Game side: Game.addCorpse (called by killEnemy), updateCorpses (after the fx update), bossShock. Renderer side: drawCorpse (depth sorted with the entities). */
-const CORPSE_T=.8,CORPSE_FALL=.48,CORPSE_PUSH=190,CORPSE_HB=1.9,CORPSE_TB=1.15,CORPSE_MAX=40,CORPSE_MAXB=10;
+const CORPSE_T=.8,CORPSE_FALL=.48,CORPSE_PUSH=190,CORPSE_HB=1.9,CORPSE_TB=1.15,CORPSE_MAX=24,CORPSE_MAXB=10;
 const Dissolve={
   N:14,T:96,CS:3,built:false,mask:[],edge:[],
   /* N nested masks: level l erases the cells whose random value is below (l+1)/N; the edge pattern holds the cells that go next (the white-hot front) */
@@ -24,9 +24,9 @@ const Dissolve={
   }
 };
 const CorpsePool={
-  sizes:[96,160,256,352,448],free:{},
+  sizes:[96,160,256,352,448],free:{},sc:{},   /* sc: ONE scratch canvas per size, shared by every body (it is only used inside one drawCorpse call): half the canvases, no render-target switch per body */
   size(need){for(const s of this.sizes)if(s>=need)return s;return this.sizes[this.sizes.length-1];},
-  get(S,q){const k=S+'x'+q,a=this.free[k]||(this.free[k]=[]);if(a.length)return a.pop();const mk=()=>{const c=document.createElement('canvas');c.width=c.height=S*q;return c;};return{S,q,a:mk(),b:mk()};},
+  get(S,q){const k=S+'x'+q,a=this.free[k]||(this.free[k]=[]);if(a.length)return a.pop();const mk=()=>{const c=document.createElement('canvas');c.width=c.height=S*q;return c;};return{S,q,a:mk(),b:this.sc[k]||(this.sc[k]=mk())};},
   put(o){if(!o)return;const k=o.S+'x'+o.q,a=this.free[k]||(this.free[k]=[]);if(a.length<24)a.push(o);}
 };
 Game.prototype.corpseColor=function(e){const d=e.boss?e.bd:e.def,cf=d&&d.sp&&d.sp.cfg;return(d&&d.c)||(cf&&(cf.outfit||cf.skin))||'#ffffff';};
@@ -34,7 +34,7 @@ Game.prototype.addCorpse=function(e){
   if(this.trial||this.save.settings.deathAnim===false||e.sparring||e.ai==='explode'||(e.boss&&e.final)||typeof document==='undefined')return;
   const p=this.p;if(Math.hypot(e.x-p.x,e.y-p.y)>this.viewR*1.2)return;           /* off screen: nobody sees it */
   const a=this.corpses||(this.corpses=[]),nb=a.reduce((s,c)=>s+(c.boss?1:0),0);
-  if(e.boss?nb>=CORPSE_MAXB:a.length-nb>=(this.en.length>150?CORPSE_MAX*.4:CORPSE_MAX))return;   /* a crowded screen keeps fewer dissolving bodies (each one repaints a whole canvas every frame) */
+  if(e.boss?nb>=CORPSE_MAXB:a.length-nb>=(this.en.length>150?8:CORPSE_MAX))return;   /* a crowded screen keeps fewer dissolving bodies (each one repaints a whole canvas every frame) */
   let vx=clamp((e.kx||0)*.35,-90,90),vy=clamp((e.ky||0)*.35,-60,60);
   if(!e.boss){const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1,v=Math.hypot(vx,vy);   /* always thrown back: at least CORPSE_PUSH, away from the hero when the blow gave no direction */
     if(v<CORPSE_PUSH){if(v>8){vx*=CORPSE_PUSH/v;vy*=CORPSE_PUSH/v;}else{vx=dx/d*CORPSE_PUSH;vy=dy/d*CORPSE_PUSH*.6;}}}

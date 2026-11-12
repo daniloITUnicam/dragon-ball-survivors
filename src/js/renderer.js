@@ -452,8 +452,10 @@ this.W=1;this.H=1;this.Z=1;
     if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
     this._snapN=0;
     list.sort((a,b)=>a.y-b.y);
+    const tm=this.save.d.settings.fps,Tm=PF.sub||(PF.sub={co:0,en:0,ob:0});/* with Show FPS: time of the corpses / enemies / scenery of the phase */
+    if(tm){Tm.c=Tm.e=Tm.o=0;}
     for(const e of list){
-      if(e.co){this.drawCorpse(e.co,ta);continue;}
+      if(e.co){if(tm){const t0=performance.now();this.drawCorpse(e.co,ta);Tm.c+=performance.now()-t0;}else this.drawCorpse(e.co,ta);continue;}
       if(e.tw){TopArt.tower(ctx,t);continue;}
       if(e.pil){this.drawPillar(e.pil);continue;}
       if(e.pet){this.drawPet(e.pet,ta,g);continue;}
@@ -461,8 +463,9 @@ this.W=1;this.H=1;this.Z=1;
       if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
       if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
-      this.drawEnemy(e,ta);
+      if(tm){const t0=performance.now();this.drawEnemy(e,ta);Tm.e+=performance.now()-t0;}else this.drawEnemy(e,ta);
     }
+    if(tm){Tm.co=(Tm.co||0)*.92+Tm.c*.08;Tm.en=(Tm.en||0)*.92+Tm.e*.08;}
     lap('ent');
     if(!g.trial&&!g.tun){MOBJ.drawAir(this,g,t);MOBJ.flushGauges(ctx,t);}
     if(g.vic)this.drawVictory(g.vic,t);
@@ -2076,7 +2079,7 @@ this.W=1;this.H=1;this.Z=1;
     if(this.save.d.settings.fps){this.fa+=dt;this.fn++;if(this.fa>.5){this.fps=Math.round(this.fn/this.fa);this.fa=0;this.fn=0;}txt(this.fps+' FPS',W-m,H-26*U,'#9fe8ff','right',F(11));
       /* what each phase costs (ms per frame, smoothed) and how many things are alive: when the frame rate drops, this says where it goes */
       const PF=this._pf||{},f1=k=>(PF[k]||0).toFixed(1);
-      txt('upd '+f1('upd')+'  ter '+f1('ter')+'  wpn '+f1('wpn')+'  gnd '+f1('gnd')+'  ent '+f1('ent')+'  fx '+f1('fx')+'  hud '+f1('hud'),W-m,H-40*U,'#9fe8ff','right',F(10));
+      txt('upd '+f1('upd')+'  ter '+f1('ter')+'  wpn '+f1('wpn')+'  gnd '+f1('gnd')+'  ent '+f1('ent')+'  fx '+f1('fx')+'  hud '+f1('hud')+'   [ent: bodies '+((PF.sub&&PF.sub.co)||0).toFixed(1)+' enemies '+((PF.sub&&PF.sub.en)||0).toFixed(1)+']',W-m,H-40*U,'#9fe8ff','right',F(10));
       txt('en '+g.en.length+'  pr '+g.pr.length+'  fx '+g.fx.length+'  eb '+g.eb.length+'  co '+(g.corpses?g.corpses.length:0)+'  tx '+g.tx.length+'  loot '+g.loot.length+'  gm '+g.gm.length+'  feat '+g.feat.length+'  bz '+(g.bz?g.bz.length:0),W-m,H-54*U,'#9fe8ff','right',F(10));}
     if(g.sandbox)txt('SANDBOX',W/2,H-10*U,'#ff7ad0','center',F(12));
   }
