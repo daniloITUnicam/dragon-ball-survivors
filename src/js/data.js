@@ -95,7 +95,7 @@ const PASS={
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
   growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'},
-  proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più.','+1 amount: every weapon fires one more projectile.'),k:'弾',c:'#ff7ac8',max:2}
+  proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (i raggi si caricano il 15% più a lungo).','+1 amount: every weapon fires one more projectile (beams charge 15% longer).'),k:'弾',c:'#ff7ac8',max:2}
 };
 const passMax=id=>(PASS[id]&&PASS[id].max)||5;   /* max level of a secondary upgrade (Quantità stops at 2) */
 
@@ -678,8 +678,8 @@ const TRINKETS=[
 
 /* ---- trinket rarity instances: the same trinket can be found at any rarity (common .. mythic); stats scale with it and are capped per rarity ---- */
 const RS=[.35,.55,.75,1,1.33];                       /* stat scale per rarity, legendary = 1 */
-const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20,elite:.3356};   /* elite: Mythic x Perfection 100 = +50% at most (.3356*1.33*1.12) */   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
-const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown'],elite:['comparsa élite','elite spawn rate']};
+const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20,bdur:.30,elite:.3356};   /* elite: Mythic x Perfection 100 = +50% at most (.3356*1.33*1.12) */   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
+const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown'],bdur:['durata raggi','beam duration'],elite:['comparsa élite','elite spawn rate']};
 /* Perfection (v54): every trinket you find or pull comes with a roll of 0-100% that moves its stats by -12% .. +12% around the rarity's value (50% = the nominal one).
    The ranges of two neighbouring rarities never overlap (the best Common is still below the worst Rare, ... the worst Mythic is above the best Legendary), so a higher rarity is always stronger.
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
@@ -896,10 +896,11 @@ const SHOP=[
  {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-5% ricarica per livello.','-5% cooldown per level.'),max:6,base:180,g:1.5},
  {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+5% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+5% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
  {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+4% probabilità di critico per livello.','+4% crit chance per level.'),max:6,base:180,g:1.5},
+ {id:'bdur',k:'延',n:T('Durata Raggi','Beam Duration'),d:T('+5% durata dei raggi per livello: Kamehameha, Big Bang e Cannone Garlick restano più a lungo alla massima estensione.','+5% beam duration per level: Kamehameha, Big Bang and Galick Gun stay longer at full reach.'),max:6,base:180,g:1.5},
  {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2880,g:3.2},
  {id:'broly',k:'怒',n:T('Urlo di Broly!','Broly\'s Roar!'),d:T('+5% frequenza dei nemici per livello: più nemici, più esperienza e bottino, ma anche più pericolo.','+5% enemy spawn rate per level: more enemies, more experience and loot, but more danger.'),max:5,base:500,g:1.7},
  {id:'scan',k:'探',n:T('Scanner Sfere del Drago','Dragon Ball Scanner'),d:T('+5% frequenza delle Sfere del Drago per livello, anche Super e quelle dei nemici.','+5% Dragon Ball spawn rate per level, Super ones and enemy drops too.'),max:2,base:10000,g:3},
- {id:'proj',k:'弾',n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più.','+1 amount: every weapon fires one more projectile.'),max:2,base:3000,g:3},
+ {id:'proj',k:'弾',n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (i raggi si caricano il 15% più a lungo).','+1 amount: every weapon fires one more projectile (beams charge 15% longer).'),max:2,base:3000,g:3},
  {id:'tslot',k:'袋',n:T('Cimelio Extra','Extra Trinket'),d:T('+1 slot cimelio: porti fino a 3 cimeli insieme.','+1 trinket slot: carry up to 3 trinkets at once.'),max:2,base:3600,g:3},
  {id:'ban',k:'禁',n:T('Lista Nera Armi','Weapon Blacklist'),d:T('+1 arma bandita: le armi bandite non compaiono più tra i potenziamenti, così le altre escono più spesso. Scegli quali bandire dalla scheda.','+1 banned weapon: banned weapons never show up among the upgrades, so the others come up more often. Pick which ones from this card.'),max:10,base:420,g:1.4},
  {id:'rr',k:'換',n:T('Reroll','Reroll'),d:T('+1 reroll a partita: al level-up ritira tutte e 3 le carte potenziamento.','+1 reroll per run: on a level-up, redraws all 3 upgrade cards.'),max:5,base:500,g:1.6},
@@ -908,7 +909,7 @@ const SHOP=[
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
 /* text colour of every shop upgrade (health red, agility blue, ...) */
-const SHOP_COL={gold:'#ffe14a',exp:'#ffb52e',hp:'#ff5a5a',regen:'#5fe08a',might:'#ff7a1a',speed:'#4ab0ff',magnet:'#b98cff',armor:'#7fe7ff',cd:'#3fe3c8',luck:'#c4ee4a',crit:'#ff4d7a',revive:'#f4f0ff',broly:'#7bd02a',scan:'#ffa63d',proj:'#ff7ad9',tslot:'#d9a066',ban:'#9aa4b8',rr:'#8f9bff',sk:'#c8ced8',bn:'#ff8a8a'};
+const SHOP_COL={gold:'#ffe14a',exp:'#ffb52e',hp:'#ff5a5a',regen:'#5fe08a',might:'#ff7a1a',speed:'#4ab0ff',magnet:'#b98cff',armor:'#7fe7ff',cd:'#3fe3c8',luck:'#c4ee4a',crit:'#ff4d7a',revive:'#f4f0ff',bdur:'#6ad8ff',broly:'#7bd02a',scan:'#ffa63d',proj:'#ff7ad9',tslot:'#d9a066',ban:'#9aa4b8',rr:'#8f9bff',sk:'#c8ced8',bn:'#ff8a8a'};
 for(const it of SHOP)it.c=SHOP_COL[it.id]||'#ffd23f';
 const shopCost=(it,lv)=>Math.round(it.base*Math.pow(it.g,lv));
 

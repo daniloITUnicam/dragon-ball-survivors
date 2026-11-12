@@ -185,6 +185,7 @@ Object.assign(UI.prototype,{
     const stats=[krt('stHp',Math.round(p.hp)+' / '+p.maxHp,'hp'),krt('stPower','x'+S.might.toFixed(2),'might'),krt('stSpeed','x'+S.spd.toFixed(2),'spd'),krt('stCooldown','x'+S.cd.toFixed(2),'cd'),
       krt('stArmor',S.armor.toFixed(1),'armor'),krt('stRegen',S.regen.toFixed(1)+'/s','regen'),krt('stCrit',Math.round(S.crit*100)+'% (x'+S.critDmg+')','crit'),krt('stDodge',Math.round(S.dodge*100)+'%','dodge'),
       krt('stArea','x'+S.area.toFixed(2),'area'),krt('stProj','+'+(S.proj|0),'proj'),krt('stLuck',Math.round(S.luck*100)+'%','luck'),krt('stXp','x'+S.xp.toFixed(2),'xp'),krt('stGold','x'+S.gold.toFixed(2),'gold'),krt('stMagnet',Math.round(S.magnet),'magnet')];
+    if(S.bdur>0)stats.push(krt('stBdur','+'+Math.round(S.bdur*100)+'%','bdur'));
     if(S.eliteRate>0)stats.push(kr('stElite','+'+Math.round(S.eliteRate*100)+'%'));
     if(g.altarN>0)stats.push(kr('stAlt',g.altarN+' (+'+Math.round(g.altarN*ALT_K*100)+'%)'));
     const fe=g.formEntry;

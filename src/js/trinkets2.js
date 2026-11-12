@@ -138,4 +138,18 @@ TRINKETS_X.push(
  {id:'el_saiyan',r:3,k:'猿',n:T("Sangue Saiyan","Saiyan Blood"),d:T('',''),m:{elite:0.235,xp:0.15}},
  {id:'el_bounty',r:3,k:'賞',n:T("Taglia del Cacciatore","Hunter's Bounty"),d:T('',''),m:{elite:0.168,gold:0.3,lootRate:0.4}}
 );
+/* v141: beam-duration trinkets (key bdur: the beams of Kamehameha, Big Bang and Galick Gun stay longer at full reach): alone, or with one other stat, or with Quantità (longer charge, longer beam) */
+TRINKETS_X.push(
+ {id:'bd_solo',r:3,k:'延',n:T("Gemma del Raggio Eterno","Gem of the Eternal Beam"),d:T('',''),m:{bdur:0.30}},
+ {id:'bd_might',r:3,k:'力',n:T("Guanti del Raggio Possente","Gloves of the Mighty Beam"),d:T('',''),m:{bdur:0.21,might:0.105}},
+ {id:'bd_spd',r:3,k:'速',n:T("Stivali del Raggio Veloce","Boots of the Swift Beam"),d:T('',''),m:{bdur:0.21,spd:0.21}},
+ {id:'bd_area',r:3,k:'範',n:T("Lente del Raggio Largo","Lens of the Wide Beam"),d:T('',''),m:{bdur:0.21,area:0.21}},
+ {id:'bd_cd',r:3,k:'時',n:T("Cristallo del Flusso Continuo","Crystal of the Steady Flow"),d:T('',''),m:{bdur:0.21,cd:0.14}},
+ {id:'bd_crit',r:3,k:'眼',n:T("Occhio del Raggio Mortale","Eye of the Deadly Beam"),d:T('',''),m:{bdur:0.21,crit:0.098}},
+ {id:'bd_xp',r:3,k:'学',n:T("Pergamena del Maestro dei Raggi","Scroll of the Beam Master"),d:T('',''),m:{bdur:0.21,xp:0.21}},
+ {id:'bd_hpPct',r:3,k:'命',n:T("Medaglione del Raggio Vitale","Medallion of the Vital Beam"),d:T('',''),m:{bdur:0.21,hpPct:0.315}},
+ {id:'bd_armor',r:3,k:'盾',n:T("Bracciale del Raggio Saldo","Bracer of the Steadfast Beam"),d:T('',''),m:{bdur:0.21,armor:2.8}},
+ {id:'bd_regen',r:3,k:'癒',n:T("Fiala del Raggio Curativo","Vial of the Healing Beam"),d:T('',''),m:{bdur:0.21,regen:1.1}},
+ {id:'bd_proj',r:3,k:'弾',n:T("Corona del Raggio Moltiplicato","Crown of the Multiplied Beam"),d:T('',''),m:{proj:1,bdur:0.15},minR:3}
+);
 for(const t of TRINKETS_X){t.d=trinDesc(t,t.r);TRINKETS.push(t);}

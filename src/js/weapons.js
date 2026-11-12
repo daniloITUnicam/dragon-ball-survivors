@@ -106,6 +106,10 @@ const VFX={
   }
 };
 
+/* Beams (Kamehameha, Big Bang, Galick Gun): Amount (xn) makes them charge BEAM_XCH longer per point, to balance the extra beams; the beam-duration stat (bx, shop + trinkets) keeps the beam
+   at full reach for bx x its duration more: beamT maps the real time t onto the beam's own clock (base duration d), which stands still at the middle of the beam for the extra x seconds */
+const BEAM_XCH=.15;
+const beamT=(t,d,x)=>t<d*.5?t:t<d*.5+x?d*.5:t-x;
 const XQ_GAP=.16;   /* seconds between a hit and the next extra hit given by Quantità */
 class Weapon{
   constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];this.xl=0;}
@@ -133,6 +137,8 @@ class Weapon{
   /* Quantità (shop, trinkets, forms: g.S.proj): the extra hits are never fired on top of the first one. Each follows the previous after a short gap and is aimed again,
      so they read as separate hits and may even reach another enemy. extras(fn,gap) queues them, tickQ(dt) (first line of update) fires them when due */
   get xn(){return Math.max(0,Math.round(this.g.S.proj||0));}
+  get chK(){return 1+BEAM_XCH*this.xn;}
+  get bx(){return Math.max(0,this.g.S.bdur||0);}
   extras(fn,gap){const n=this.xn,q=this.q||(this.q=[]);for(let k=1;k<=n;k++)q.push({t:k*(gap||XQ_GAP),k,fn});}
   tickQ(dt){const q=this.q;if(!q||!q.length)return;let due=null;for(const o of q){o.t-=dt;if(o.t<=0)(due||(due=[])).push(o);}if(!due)return;this.q=q.filter(o=>o.t>0);for(const o of due)o.fn(o.k);}
   update(dt){}
@@ -190,17 +196,17 @@ class KameWeapon extends Weapon{
   /* how long the beam stays out: longer at the first levels (the weapon struggled early on), shorter at the last ones to compensate (it ticks every 0.1 s, so this is its damage per cast) */
   get fireDur(){const b=this.lvB;return this.evo>=2?.78-.04*b:this.evo?.8-.03*b:KAME_DUR[Math.min(4,this.lv-1)];}
   /* the head shoots out of the hands in the first ~22% of the beam's life (ease-out), then the beam stays at full reach */
-  static ext(b){const u=Math.min(1,b.t/(b.dur*.22));return 1-Math.pow(1-u,3);}
+  static ext(b){const u=Math.min(1,beamT(b.t,b.bd,b.xd)/(b.bd*.22));return 1-Math.pow(1-u,3);}
   fire(a){
     const g=this.g,s=this.st,L=this.L,A=g.S.area*this.e2a;
     const angs=this.evo>=2?[a,a+Math.PI]:this.evo?[a]:this.lv>=5?[a,a+Math.PI]:[a];
     const WM=this.evo?(this.evo>=2?KAME_WM2:KAME_WM1):KAME_WM0,LM=(this.evo?1.12:1)*(1+Math.min(.3,.01*(g.lvl-1)));   /* +1% reach per character level, capped at +30% */
     const dur=this.fireDur;
-    g.fireT=Math.max(g.fireT||0,dur);   /* arm extended while the beam is out */
-    g.armAct('kamef',a,{w:0,h:dur,r:.22,col:this.color});
-    const B=EXTRAS.takeBoost(g),bd=dur*(1+.2*B);   /* v117: a charged beam (held ability key) */
-    if(B>0){g.fireT=Math.max(g.fireT,bd);g.shake=Math.max(g.shake,.3+.5*B);g.flash=.25*B;g.flashC=this.color;if(B>.6)g.hitStop(.05,.04);}
-    for(const ang of angs)this.beams.push({a:ang,t:0,dur:bd,ext:0,tk:0,dmg:s.dmg[L]*this.dm*(1+1.5*B),wid:s.wid[L]*A*WM*(1+.8*B),len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
+    const B=EXTRAS.takeBoost(g),bd=dur*(1+.2*B),xd=bd*this.bx,td=bd+xd;   /* v117: a charged beam (held ability key); xd: extra seconds at full reach */
+    g.fireT=Math.max(g.fireT||0,td);   /* arm extended while the beam is out */
+    g.armAct('kamef',a,{w:0,h:td,r:.22,col:this.color});
+    if(B>0){g.shake=Math.max(g.shake,.3+.5*B);g.flash=.25*B;g.flashC=this.color;if(B>.6)g.hitStop(.05,.04);}
+    for(const ang of angs)this.beams.push({a:ang,t:0,dur:td,bd,xd,ext:0,tk:0,dmg:s.dmg[L]*this.dm*(1+1.5*B),wid:s.wid[L]*A*WM*(1+.8*B),len:s.len[L]*A*LM,elec:!!this.evo,evo:this.evo|0});
   }
   update(dt){
     const g=this.g,p=g.p,s=this.st,L=this.L;
@@ -209,7 +215,7 @@ class KameWeapon extends Weapon{
       this.cd-=dt;
       if(this.cd<=0){
         const t=g.nearest(p.x,p.y,600);
-        if(t){this.charge={t:0,dur:this.evo?.65:.5,jit:g.aimJit(),a:Math.atan2(t.y-p.y,t.x-p.x)};g.audio.sfx(this.evo?'kameChargeEvo':'kameCharge');}
+        if(t){this.charge={t:0,dur:(this.evo?.65:.5)*this.chK,jit:g.aimJit(),a:Math.atan2(t.y-p.y,t.x-p.x)};g.audio.sfx(this.evo?'kameChargeEvo':'kameCharge');}
         else this.cd=.1;
       }
     }else{
@@ -235,7 +241,7 @@ class KameWeapon extends Weapon{
   draw(ctx){
     const g=this.g,p=g.p;
     for(const b of this.beams){
-      const k=Math.sin(Math.min(1,b.t/b.dur)*Math.PI);
+      const T=beamT(b.t,b.bd,b.xd),k=Math.sin(Math.min(1,T/b.bd)*Math.PI);
       /* the original Kamehameha is a lighter sky blue with a dense, deep blue glow around it; a transformation still tints it */
       const c=b.evo?this.color:(g.formColor||'#8fe3ff');
       const sk=WFX.sid('kame',b.evo),off=WFX.has(sk)?26:14;   /* v123: the painted beam starts in front of the hero, not inside */
@@ -247,7 +253,7 @@ class KameWeapon extends Weapon{
         ctx.globalAlpha=.85*k;ctx.fillStyle=gr;ctx.fillRect(-6,-b.wid*1.1*k,L+8,b.wid*2.2*k);
         GLOW.at(ctx,0,0,b.wid*1.9,'#2a63ff',.8*k);GLOW.at(ctx,L,0,b.wid*1.6,'#2a63ff',.7*k);ctx.restore();
       }
-      if(!WFX.beam(ctx,sk,L,b.wid*(.55+.4*k)*(b.evo?.72:1),g.rt,Math.min(1,k*2.5),3,5,b.t/b.dur))VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);   /* v123: painted beam */
+      if(!WFX.beam(ctx,sk,L,b.wid*(.55+.4*k)*(b.evo?.72:1),g.rt,Math.min(1,k*2.5),3,5,T/b.bd))VFX.beam(ctx,L,b.wid,c,k,g.rt,b.a*3,b.elec,true);   /* v123: painted beam */
       ctx.restore();
       if(Math.random()<.9&&g.fx.length<420){const d=rnd(30,b.len),cs=Math.cos(b.a),sn=Math.sin(b.a),o=rnd(-.5,.5)*b.wid;g.fx.push({x:p.x+cs*d-sn*o,y:p.y-18+sn*d+cs*o,vx:cs*60+rnd(-40,40),vy:sn*60+rnd(-40,40)-20,l:rnd(.25,.5),m:.5,c:Math.random()<.5?'#ffffff':c,s:rnd(2,4)});}
     }

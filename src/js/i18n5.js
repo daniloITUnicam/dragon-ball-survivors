@@ -30,6 +30,7 @@
     evLog:['Cronologia Eventi','Event History','Historial de eventos','Historique des événements','Ereignisverlauf','Histórico de eventos'],
     evLogEmpty:['Ancora nessun evento in questa partita.','No events in this run yet.','Aún no hay eventos en esta partida.','Aucun événement pour l\'instant dans cette partie.','Noch keine Ereignisse in dieser Runde.','Ainda não há eventos nesta partida.'],
     stProj:['Quantità','Amount','Cantidad','Quantité','Anzahl','Quantidade'],
+    stBdur:['Durata raggi','Beam duration','Duración de rayos','Durée des rayons','Strahldauer','Duração dos raios'],
     statBreakNote:['L\'ultima riga somma abilità, Kaioken, totem e altri effetti attivi.','The last row adds up abilities, Kaioken, totems and other active effects.','La última fila suma habilidades, Kaioken, tótems y otros efectos activos.','La dernière ligne regroupe techniques, Kaioken, totems et autres effets actifs.','Die letzte Zeile fasst Fähigkeiten, Kaioken, Totems und andere aktive Effekte zusammen.','A última linha soma habilidades, Kaioken, totens e outros efeitos ativos.'],
   };
   for(const k in ADD)ADD[k].forEach((v,i)=>{STR[L[i]][k]=v;});

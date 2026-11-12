@@ -435,12 +435,12 @@ class SweepWeapon extends NW{
       this.cd-=dt;
       if(this.cd<=0){
         const t=g.nearest(p.x,p.y,520);
-        if(t){this.act={a:Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),t:0,dur:s.dur[L]};g.audio.sfx(this.evo?'kameFireEvo':'kameFire');}
+        if(t){this.act={a:Math.atan2(t.y-p.y,t.x-p.x)+g.aimJit(),t:0,d0:s.dur[L],dur:s.dur[L]*(1+this.bx)};   /* the sweep keeps its speed: the extra time is more turn */g.audio.sfx(this.evo?'kameFireEvo':'kameFire');}
         else this.cd=.2;
       }
     }else{
       const a=this.act;a.t+=dt;g.fireT=Math.max(g.fireT||0,.12);g.cast={a:a.a,t:Math.min(a.t,.4),dur:.4,color:this.color,kind:'kame'};
-      a.cur=a.a+a.t/a.dur*TAU*1.15;this.tk-=dt;
+      a.cur=a.a+a.t/a.d0*TAU*1.15;this.tk-=dt;
       if(this.tk<=0){
         this.tk=.12;const len=s.len[L]*this.area()*this.reach()*SweepWeapon.ext(a),wid=s.wid[L]*this.area(),angs=this.evo>=2?[a.cur,a.cur+TAU/3,a.cur+TAU*2/3]:this.evo?[a.cur,a.cur+Math.PI]:[a.cur];
         for(const ang of angs){const cs=Math.cos(ang),sn=Math.sin(ang);g.cutBeam(p.x,p.y-18,cs,sn,len,wid);
@@ -565,8 +565,8 @@ class GalickWeapon extends NW{
   fire(t,charge){
     const g=this.g,p=g.p,s=this.st,L=this.L,A=this.area(),ev=this.evo|0;
     const len=s.len[L]*A*(ev>=2?1.2:ev?1.1:1),wid=s.wid[L]*A*(ev>=2?1.45:ev?1.3:1);
-    const a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit();
-    this.bs.push({t:charge?-GL_CH:0,a,tg:t,len,wid,dur:GL_DUR*(ev?1.1:1),tk:0,dmg:s.dmg[L]*this.dm,kb:ev>=2?210:ev?160:110,ev,boom:ev>=2});
+    const a=Math.atan2(t.y-8-(p.y-18),t.x-p.x)+g.aimJit(),d0=GL_DUR*(ev?1.1:1),xd=d0*this.bx,ch=GL_CH*this.chK;
+    this.bs.push({t:charge?-ch:0,ch,a,tg:t,len,wid,dur:d0+xd,d0,xd,tk:0,dmg:s.dmg[L]*this.dm,kb:ev>=2?210:ev?160:110,ev,boom:ev>=2});
     g.audio.sfx(charge?'kameCharge':'abBeam');
   }
   update(dt){
@@ -580,13 +580,13 @@ class GalickWeapon extends NW{
       const was=b.t;b.t+=dt;
       if(b.t<0){if(b.tg&&!b.tg.dead)b.a=Math.atan2(b.tg.y-8-(p.y-18),b.tg.x-p.x);continue;}   /* charging: the aim follows the target */
       if(was<0)g.audio.sfx('abBeam');
-      const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x+cs*18,oy=p.y-18+sn*18,ext=1-Math.pow(1-Math.min(1,b.t/(b.dur*.15)),3),len=b.len*ext;
+      const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x+cs*18,oy=p.y-18+sn*18,ext=1-Math.pow(1-Math.min(1,beamT(b.t,b.d0,b.xd)/(b.d0*.15)),3),len=b.len*ext;
       if(g.eb.length)g.cutBeam(ox,oy,cs,sn,len,b.wid);
       b.tk-=dt;
       if(b.tk<=0){b.tk=.1;
         for(const e of g.en){if(e.dead)continue;const rx=e.x-ox,ry=e.y-8-oy,al=rx*cs+ry*sn;
           if(al>-10&&al<len&&Math.abs(-rx*sn+ry*cs)<b.wid/2+e.r)g.hit(e,b.dmg,cs*b.kb,sn*b.kb);}}
-      if(b.boom&&b.t>=b.dur*.55){b.boom=false;const ex=ox+cs*b.len,ey=oy+sn*b.len,R=b.wid*1.6;   /* second evolution: the end of the beam bursts */
+      if(b.boom&&beamT(b.t,b.d0,b.xd)>=b.d0*.55){b.boom=false;const ex=ox+cs*b.len,ey=oy+sn*b.len,R=b.wid*1.6;   /* second evolution: the end of the beam bursts */
         g.explodeAt(ex,ey,R,b.dmg*3,this.color);g.shake=Math.max(g.shake,.25);g.audio.sfx('boom');if(typeof WFX!=='undefined')WFX.boom(g,'galickxev2',ex,ey,R,0,3,.5);}
     }
     if(this.bs.length)keepIf(this.bs,b=>b.t<b.dur);
@@ -595,16 +595,16 @@ class GalickWeapon extends NW{
     const g=this.g,p=g.p,t=g.rt,c=this.color,cid=WFX.sid('galick',this.evo),bid=WFX.sid('galickb',this.evo),sh=WFX.has(cid)&&WFX.has(bid),M=WFX.meta(bid);
     for(const b of this.bs){
       const cs=Math.cos(b.a),sn=Math.sin(b.a),ox=p.x+cs*18,oy=p.y-18+sn*18;
-      if(b.t<0){const k=1+b.t/GL_CH,r=b.wid*(.25+.45*k);
+      if(b.t<0){const k=1+b.t/b.ch,r=b.wid*(.25+.45*k);
         GLOW.at(ctx,ox,oy,r*1.6,c,.2+.25*k);
         if(sh){const n=WFX.n(cid,0);WFX.ball(ctx,cid,Math.min(n-1,k*(n-1)),ox,oy,0,b.a,1,r*1.6);}
         else{ctx.fillStyle='#f0d8ff';ctx.beginPath();ctx.arc(ox,oy,r*.5,0,TAU);ctx.fill();}
         continue;}
-      const u=b.t/b.dur,ext=1-Math.pow(1-Math.min(1,b.t/(b.dur*.15)),3),len=b.len*ext,fa=u>.8?(1-u)/.2:1;
+      const T=beamT(b.t,b.d0,b.xd),u=T/b.d0,ext=1-Math.pow(1-Math.min(1,T/(b.d0*.15)),3),len=b.len*ext,fa=u>.8?(1-u)/.2:1;
       GLOW.at(ctx,ox,oy,b.wid*.9,c,.3*fa);
       if(sh){const lp=M.loop||[0,WFX.n(bid,0)-1],en=M.end;
-        let f;if(b.t<b.dur*.12)f=b.t/(b.dur*.12)*lp[0];else if(en&&u>.72)f=en[0]+Math.min(1,(u-.72)/.28)*(en[1]-en[0]);else f=lp[0]+b.t*14;
-        WFX.strip(ctx,bid,f,ox-cs*4,oy-sn*4,b.a,len*1.06,b.wid*1.55,en?1:fa,en&&u>.72?null:(b.t<b.dur*.12?null:lp));
+        let f;if(T<b.d0*.12)f=T/(b.d0*.12)*lp[0];else if(en&&u>.72)f=en[0]+Math.min(1,(u-.72)/.28)*(en[1]-en[0]);else f=lp[0]+b.t*14;
+        WFX.strip(ctx,bid,f,ox-cs*4,oy-sn*4,b.a,len*1.06,b.wid*1.55,en?1:fa,en&&u>.72?null:(T<b.d0*.12?null:lp));
         continue;}
       ctx.save();ctx.translate(ox,oy);ctx.rotate(b.a);VFX.beam(ctx,len,b.wid,c,Math.sin(Math.min(1,u)*Math.PI),t,b.a*3,b.ev>0,true);ctx.restore();
     }

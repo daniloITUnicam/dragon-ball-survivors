@@ -216,7 +216,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
   /* ---------- stats ---------- */
   tMods(){
-    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0,elite:0};
+    const m={might:0,spd:0,cd:0,xp:0,gold:0,crit:0,armor:0,regen:0,dodge:0,area:0,magnet:0,hpPct:0,lootRate:0,proj:0,elite:0,bdur:0};
     for(const id of this.trinkets){const t=trinDef(id);if(t&&(t.m||this.tFu[id])){const tmx=trinMods(t,this.trR(id),this.trP(id),this.tFu[id]);for(const k in tmx)m[k]+=tmx[k];}}
     return m;
   }
@@ -240,6 +240,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
+    S.bdur=.05*sl('bdur')+(tm.bdur||0);   /* beam duration: extra time the beams stay at full reach (shop + trinkets) */
     S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
@@ -292,6 +293,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
     mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[T('Totem','Totem'),1+(tf.magnet||0)]]);
     addS('proj',S.proj,[[FORM,fm?(fm.idx>=6?2:fm.idx>=3?1:0):0],[shopN('proj'),sl('proj'),lvS('proj')],[PASS.proj.n,P.proj||0,lvP('proj')],[TRIN,tm.proj||0]],(v,s)=>s?ad(v,0):nm(v,0));
+    addS('bdur',S.bdur,[[shopN('bdur'),.05*sl('bdur'),lvS('bdur')],[TRIN,tm.bdur||0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     return out;
   }
 

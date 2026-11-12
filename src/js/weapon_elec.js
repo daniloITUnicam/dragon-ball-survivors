@@ -90,7 +90,7 @@ const ELEC={
 Weapon.prototype.elecOverlay=function(ctx){};
 KameWeapon.prototype.elecOverlay=function(ctx){
   const g=this.g,p=g.p,lv=ELEC.lvl(g);if(!lv)return;
-  for(const b of this.beams){const k=Math.sin(Math.min(1,b.t/b.dur)*Math.PI);ELEC.seg(ctx,p.x+Math.cos(b.a)*14,p.y-18+Math.sin(b.a)*14,b.a,b.len*(b.ext||.01),b.wid*.5,this.color,g.rt,lv,k,b.a*3);}
+  for(const b of this.beams){const k=Math.sin(Math.min(1,beamT(b.t,b.bd,b.xd)/b.bd)*Math.PI);ELEC.seg(ctx,p.x+Math.cos(b.a)*14,p.y-18+Math.sin(b.a)*14,b.a,b.len*(b.ext||.01),b.wid*.5,this.color,g.rt,lv,k,b.a*3);}
 };
 DiscWeapon.prototype.elecOverlay=function(ctx){
   const g=this.g,lv=ELEC.lvl(g);if(!lv)return;const k=this.evo?1.5:1;
