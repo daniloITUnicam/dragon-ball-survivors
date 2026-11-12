@@ -95,10 +95,19 @@ const PASS={
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
   growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'},
-  proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (i raggi si caricano il 15% più a lungo).','+1 amount: every weapon fires one more projectile (beams charge 15% longer).'),k:'弾',c:'#ff7ac8',max:2}
+  proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (i raggi si caricano il 15% più a lungo).','+1 amount: every weapon fires one more projectile (beams charge 15% longer).'),k:'弾',c:'#ff7ac8',max:2},
+  luck:{n:T('Fortuna','Luck'),d:T('+4% fortuna: ricompense, loot e carte migliori.','+4% luck: better rewards, loot and cards.'),k:'運',c:'#c4ee4a'}   /* v141 */
 };
 const passMax=id=>(PASS[id]&&PASS[id].max)||5;   /* max level of a secondary upgrade (Quantità stops at 2) */
 
+/* v141: rarity of the level-up cards. The stats printed on the cards used to be the Epic ones, so CARD_M scales what a card gives (Epic = x1); CARD_W are the odds at Luck 0
+   (Legendary 1 card in 80, Mythic 1 in 200) and CARD_LK how fast Luck pushes each rarity up (weights are multiplied by 1 + Luck x k; Common goes down) */
+const CARD_M=[.85,.93,1,1.3,1.8],CARD_W=[50,35,13,1.25,.5],CARD_LK=[-.8,1,3,4,3];
+const rollCardRar=luck=>{const L=Math.max(0,luck||0),w=CARD_W.map((x,i)=>x*Math.max(.15,1+L*CARD_LK[i]));let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;};
+/* secondary upgrades whose card shows "old -> new": value per level, unit, sign and label (Quantita and Scouter are whole numbers / have no stat: they never change with rarity) */
+const PASS_E={might:{v:10,u:'%',l:T('Danno','Damage')},vit:{v:20,u:'',l:T('Salute','Health')},speed:{v:6,u:'%',l:T('Velocità','Speed')},haste:{v:-5,u:'%',l:T('Ricarica','Cooldown')},armor:{v:1,u:'',l:T('Armatura','Armor')},
+  regen:{v:.5,u:'/s',l:T('Rigenerazione','Regen')},growth:{v:8,u:'%',l:T('Esperienza','Experience')},luck:{v:4,u:'%',l:T('Fortuna','Luck')},proj:{v:1,u:'',l:T('Quantità','Amount')}};
+const PASS_NOR=['proj','magnet'];   /* plain levels: no rarity scaling */
 /* Evolution recipes: a weapon at max level + the listed passive (any level) -> next evolution (opened from a chest).
    [first evolution passive, second evolution passive] */
 const EVO_RECIPE={

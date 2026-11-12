@@ -82,6 +82,7 @@ const MOBJ={
     else if(r<.9){if(hr<.85&&!(g.lootCd.heal>0))g.spawnLoot('heal',x,y);else g.dropGem(x,y,4*xu);}
     else if(r<.95+.03*L){const q=g.pickLoot();g.spawnLoot(q||'coin',x,y);}
     else g.spawnLoot('coin',x,y);
+    if(Math.random()<.012*(1+L))g.spawnLoot('luck',...sp(8));   /* v141: a clover (Fortuna), rarely, from any breakable */
     if(Math.random()<.004*(1+2*L))g.spawnLoot('capsule',...sp(10));
     if(Math.random()<.003*(1+2*L))g.addTicket('t1',1,e);
   },
@@ -123,7 +124,7 @@ const MOBJ={
     this.say(g,'Un Altare Sfida è apparso!','A Challenge Altar has appeared!',ALT_C,'Premi E accanto alla statua per risvegliarla: boss +15% vita, armatura e danni, ma +1 scrigno','Press E by the statue to wake it: bosses +15% health, armor and damage, but +1 chest');},
   /* v140: [E] next to an idle Challenge Altar wakes it (also the round E button on touch screens) */
   useAlt(g){const a=(g.mo.alts||[]).find(a=>a.st==='idle'&&a.near);if(!a)return false;this.wakeAlt(g,a);return true;},
-  altKeys(g){return g.mo&&g.mo.alts?g.mo.alts.filter(a=>a.st==='idle'):[];},
+  altKeys(g){return g.mo&&g.mo.alts?g.mo.alts.filter(a=>a.st==='idle').concat(g.mo.acts.filter(a=>a.k==='senzu'&&a.n>0&&a.wt===undefined&&a.t>=1)):[];},   /* things [E] can use: idle Challenge Altars and Senzu plants */
   wakeAlt(g,a){
     a.st='wake';a.t1=a.t;a.bt=0;g.altarN=(g.altarN||0)+1;
     const n=g.altarN,p=g.p;
@@ -153,7 +154,7 @@ const MOBJ={
   /* ---------- activities ---------- */
   spawnAct(g){
     const M=g.mo,hr=g.p.hp/g.p.maxHp,t=g.t;
-    const c=[['drop',3],['nest',t>=90?3:0],['nimbus',2.2],['senzu',hr<.6?5:1.6],['gravity',t>=60?2.4:0],['scouter',t>=100?2:0]]
+    const c=[['drop',3],['nest',t>=90?3:0],['nimbus',2.2],['senzu',g.pk.nosenzu?0:g.senzu<SENZU_MAX?3:.8],['gravity',t>=60?2.4:0],['scouter',t>=100?2:0]]
       .filter(x=>x[1]>0&&x[0]!==M.last&&!M.acts.some(a=>a.k===x[0]));
     if(!c.length)return;
     const k=wpick(c,x=>x[1])[0],a=this['s_'+k](g);if(!a)return;
@@ -205,20 +206,22 @@ const MOBJ={
       if(a.t-a.t1>=NIMBUS_T){a.st='out';a.t1=a.t;a.sd=(g.input.x||0)<0?-1:1;g.mo.ride=null;}
       else if(Math.random()<dt*16)g.fx.push({x:p.x+rnd(-14,14),y:p.y+2,vx:rnd(-30,30)-(g.input.x||0)*80,vy:rnd(-14,4)-(g.input.y||0)*40,l:.5,m:.5,c:'#ffe58a',s:rnd(3,6)});}
     if(a.st==='out'&&a.t-a.t1>1.3)a.dead=true;},
-  /* a Senzu plant with SENZU_N beans: one bean every second while you stand by it hurt (25% of your health each) */
+  /* a Senzu plant with SENZU_N beans: [E] next to it puts them in the Senzu bag (what does not fit stays on the plant); it withers once picked clean */
   s_senzu(g){const s=MAPX.spot(g,180,320,36);
-    this.say(g,'Pianta di Senzu!','Senzu plant!',ACT_C.senzu,'Avvicinati quando sei ferito: ogni fagiolo cura il 25%','Come close when hurt: each bean heals 25%');
-    return{x:s.x,y:s.y,n:SENZU_N,cd:0};},
-  t_senzu(g,a,dt){const p=g.p;a.cd-=dt;
-    if(a.wt!==undefined){a.wt+=dt;if(a.wt>3.2)a.dead=true;return;}
-    if(a.t>120){a.wt=0;a.done=true;return;}
-    if(a.t<1||Math.hypot(p.x-a.x,p.y-a.y)>=60){a.told=0;return;}
-    if(a.cd>0||a.n<=0)return;
-    if(p.hp<p.maxHp*.92){a.n--;a.cd=1;g.heal(p.maxHp*.25);g.audio.sfx('senzu');g.ring(p.x,p.y,50,ACT_C.senzu,.4);
-      g.floatText(p.x,p.y-50,g.env.tr(T('Fagiolo di Senzu!','Senzu bean!')),2);g.mo.fx.push({bean:1,x:a.x,y:a.y-28,w0:performance.now()});
-      if(!a.n){a.wt=0;a.done=true;}}
-    else if(!a.told){a.told=1;g.floatText(a.x,a.y-58,g.env.tr(T('Torna quando sei ferito','Come back when hurt')),5);}
-  },
+    this.say(g,'Pianta di Senzu!','Senzu plant!',ACT_C.senzu,'Premi E accanto alla pianta: raccogli i fagioli Senzu (fino a '+SENZU_MAX+' in borsa)','Press E by the plant: pick the Senzu beans (up to '+SENZU_MAX+' in the bag)');
+    return{x:s.x,y:s.y,n:SENZU_N,kind:'senzu',near:false};},
+  t_senzu(g,a,dt){const p=g.p;
+    if(a.wt!==undefined){a.wt+=dt;a.near=false;if(a.wt>3.2)a.dead=true;return;}
+    if(a.t>120){a.wt=0;a.done=true;a.near=false;return;}
+    a.near=a.t>=1&&Math.hypot(p.x-a.x,p.y-a.y)<90;},
+  useSenzuPlant(g){const a=g.mo.acts.find(a=>a.k==='senzu'&&a.near&&a.n>0&&a.wt===undefined);if(!a)return false;
+    const room=SENZU_MAX-g.senzu;
+    if(room<=0){g.floatText(a.x,a.y-58,g.env.tr(T('Borsa piena ('+SENZU_MAX+'/'+SENZU_MAX+')','Bag full ('+SENZU_MAX+'/'+SENZU_MAX+')')),5);return true;}
+    const n=Math.min(room,a.n);a.n-=n;g.senzu+=n;
+    g.audio.sfx('senzu');g.ring(a.x,a.y,60,ACT_C.senzu,.45);g.mo.fx.push({bean:1,x:a.x,y:a.y-28,w0:performance.now()});
+    g.floatText(g.p.x,g.p.y-56,g.env.tr(T('Senzu in borsa +'+n+' · '+g.senzu+'/'+SENZU_MAX,'Senzu bagged +'+n+' · '+g.senzu+'/'+SENZU_MAX)),2);
+    if(!a.n){a.wt=0;a.done=true;a.near=false;}
+    return true;},
   /* a gravity room pops out of its capsule; stand by it GRAV_IN s: GRAV_T s of 10x gravity, +60% XP and -20% speed */
   s_gravity(g){const s=MAPX.spot(g,200,340,56);
     this.say(g,'Camera Gravitazionale!','Gravity Room!',ACT_C.gravity,'Restaci accanto: gravità ×10 per '+GRAV_T+' s (XP +60%, velocità −20%)','Stand by it: 10x gravity for '+GRAV_T+' s (XP +60%, speed −20%)');
@@ -287,7 +290,7 @@ const MOBJ={
       ctx.fillStyle='rgba(245,245,250,'+(.85*(1-q)).toFixed(3)+')';ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y-R*.5+Math.sin(a)*d*.6,r,0,TAU);ctx.fill();}},
   /* v140: progress of everything that charges (altar, gravity room, nest, scouter dig): a thick glowing ring on the ground and a big labelled bar floating above it (drawn on top by flushGauges) */
   arc(ctx,x,y,rx,q,col,w,hy,label){
-    w=Math.max(w||4,7);ctx.save();
+    w=Math.max(w||4,9);ctx.save();
     ctx.strokeStyle='rgba(0,0,0,.65)';ctx.lineWidth=w+5;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,0,TAU);ctx.stroke();
     ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.4;ctx.strokeStyle=col;ctx.lineWidth=w+7;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();
     ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.ellipse(x,y,rx,rx*.42,0,-Math.PI/2,-Math.PI/2+TAU*clamp(q,0,1));ctx.stroke();
@@ -295,12 +298,12 @@ const MOBJ={
     this.gauge(x,y-(hy||60),q,col,label);},
   gauge(x,y,q,col,label){const L=this.gq||(this.gq=[]);L.push([x,y,q,col,label]);if(L.length>12)L.shift();},
   flushGauges(ctx,t){const L=this.gq;if(!L||!L.length)return;this.gq=[];
-    for(const [x,y,q0,col,lb] of L){const q=clamp(q0,0,1),GW=88,GH=13,bx=x-GW/2,by=y-GH/2;
-      ctx.save();GLOW.at(ctx,x,y,GW*.8,col,.22+.1*Math.sin(t*6));
+    for(const [x,y,q0,col,lb] of L){const q=clamp(q0,0,1),GW=128,GH=19,bx=x-GW/2,by=y-GH/2;
+      ctx.save();GLOW.at(ctx,x,y,GW*.85,col,.3+.12*Math.sin(t*6));
       ctx.fillStyle='rgba(8,12,24,.92)';ctx.fillRect(bx-4,by-4,GW+8,GH+8);ctx.fillStyle='#232c44';ctx.fillRect(bx,by,GW,GH);
       const gr=ctx.createLinearGradient(0,by,0,by+GH);gr.addColorStop(0,'#ffffff');gr.addColorStop(.4,col);gr.addColorStop(1,col);ctx.fillStyle=gr;ctx.fillRect(bx,by,GW*q,GH);
       ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.strokeRect(bx-2,by-2,GW+4,GH+4);
-      const s=lb!==undefined?lb:Math.round(q*100)+'%';ctx.font='700 15px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=4;ctx.lineJoin='round';ctx.strokeStyle='#0a0f1c';ctx.strokeText(s,x,by-6);ctx.fillStyle='#ffffff';ctx.fillText(s,x,by-6);
+      const s=lb!==undefined?lb:Math.round(q*100)+'%';ctx.font='700 20px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=5;ctx.lineJoin='round';ctx.strokeStyle='#0a0f1c';ctx.strokeText(s,x,by-7);ctx.fillStyle='#ffffff';ctx.fillText(s,x,by-7);
       ctx.restore();}},
 
   /* the evil Dragon Ball (map and arrow icon of the Challenge Altar): a black-violet sphere with blood-red stars */
@@ -374,6 +377,7 @@ const MOBJ={
     for(const a of (M.alts||[]))this.drawAltGround(ctx,g,a,t);
     for(const a of M.acts){
       const x=a.x,y=a.y;
+      if(!a.done&&a.st!=='on'&&a.k!=='nimbus'&&!(a.k==='drop'&&!a.e))R.markI(x,y+4,a.k==='nest'?72:a.k==='gravity'?54:a.k==='scouter'?36:26,ACT_C[a.k]||'#ffffff',t);   /* v141 */
       if(a.k==='drop'){
         if(!a.e){const q=clamp(a.t/DROP_FALL,0,1);this.shadow(ctx,x,y,10+22*q,.12+.2*q);}
         else{const q=clamp((a.t-a.land)/1.6,0,1);if(q<1){ctx.save();ctx.globalAlpha=1-q;if(!this.img(ctx,'actchute',1,x+30,y+4,20)){ctx.fillStyle='#f0f0f0';ctx.fillRect(x+14,y-6,34,10);}ctx.restore();}}}
@@ -391,7 +395,7 @@ const MOBJ={
         const gq=clamp(a.t/.9,0,1),sc=gq>=1?1:Math.max(0,easeOutBack(gq)),al=a.wt!==undefined?clamp(1-(a.wt-2.4)/.8,0,1):1;
         if(gq<1&&Ambient.on&&Math.random()<.4)g.fx.push({x:x+rnd(-14,14),y:y-rnd(0,30),vx:rnd(-40,40),vy:-rnd(30,80),l:.5,m:.5,c:'#8be07a',s:3});
         ctx.save();ctx.globalAlpha=al;this.shadow(ctx,x,y,18*sc);
-        if(a.n>0&&g.p.hp<g.p.maxHp*.92)GLOW.at(ctx,x,y-24,44,ACT_C.senzu,.25+.12*Math.sin(t*5));
+        if(a.n>0)GLOW.at(ctx,x,y-24,44,ACT_C.senzu,(a.near?.38:.22)+.12*Math.sin(t*5));
         ctx.translate(x,y);ctx.scale(1,sc);if(!this.img(ctx,'actsenzu',SENZU_N-a.n,0,0,MO_H.actsenzu))this.blob(ctx,0,0,40,'#5fb04a');ctx.restore();}
       else if(a.k==='gravity'){
         const pop=a.st==='out'?1-clamp((a.t-a.t1)/GRAV_POP,0,1):clamp((a.t-GRAV_POP*.4)/(GRAV_POP*.4),0,1);

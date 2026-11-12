@@ -86,6 +86,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .formsList .lbl{grid-column:1/-1}
 .frm{color:var(--c);display:flex;gap:6px}.frm i{color:var(--mute);font-style:normal;min-width:34px}
 .settings{display:flex;flex-direction:column;gap:8px;width:100%;max-width:760px}
+.settings .ssec{margin:14px 0 2px;padding:0 0 4px;font:700 15px/1.1 var(--title,'Rajdhani'),sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#ffd23f;border-bottom:1px solid rgba(255,210,63,.35);text-align:left}
+.settings .ssec:first-child{margin-top:2px}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:14px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px 14px}
 .sl{display:flex;flex-direction:column}.sl small{color:var(--mute);font-size:12px}
 .srow>.sl{flex:1;min-width:0;text-align:left}.srow>.btn{flex:none;width:auto;min-width:120px;justify-content:center;white-space:nowrap}   /* Yes / No switches: one fixed size, beside the label */

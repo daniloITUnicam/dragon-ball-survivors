@@ -65,6 +65,10 @@ _hi = {}
 for _f in sorted((ROOT/'assets'/'hudicons').glob('*.webp')) if (ROOT/'assets'/'hudicons').is_dir() else []:   # v140: icons of the HUD effects panel (tools/hud_icons_from_mockup.py), file name = icon key
     _hi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__HUDICONS__*/{}', json.dumps(_hi, separators=(',', ':')))
+_cfr = {}
+for _f in sorted((ROOT/'assets'/'cardframes').glob('*.webp')) if (ROOT/'assets'/'cardframes').is_dir() else []:   # v141: rarity frames of the level-up cards (9-slice borders + the Mythic crown), file name = CSS variable name
+    _cfr[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__CARDFRAMES__*/{}', json.dumps(_cfr, separators=(',', ':')))
 _xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
 js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
 _hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)

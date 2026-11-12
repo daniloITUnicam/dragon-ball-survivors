@@ -310,3 +310,34 @@ button:not(:disabled):not(.btn):not(.mb):active,button.mb.dn{translate:0 2px;sca
 .bfl{position:fixed;z-index:9998;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,235,.75),rgba(255,225,74,.35) 55%,rgba(255,225,74,0) 80%);
   box-shadow:0 0 0 2px rgba(255,246,192,.9),0 0 22px 6px rgba(255,225,74,.6);mix-blend-mode:screen;animation:bfl .4s ease-out forwards}
 @keyframes bfl{0%{opacity:1}100%{opacity:0;transform:scale(1.1)}}
+
+/* ---- v141: card rarity (level-up / chest upgrade cards): 9-slice frame per rarity (assets/cardframes) with a pulsing glow and the Mythic crown.
+   --k scales the frames, --frN are set by shop_icons.js ---- */
+.card.opt.rar{--rc:#b8c4d0;--k:1.1;position:relative;padding:24px 22px 20px;border-color:transparent!important;background-clip:padding-box;border-radius:10px;overflow:visible}
+.card.opt.rar>*{position:relative;z-index:1}
+.card.opt.rar>.key{position:absolute;z-index:5}
+.card.opt.rar::before{content:'';position:absolute;inset:-3px;border:1px solid transparent;border-image-repeat:stretch;pointer-events:none;z-index:3}
+.card.opt.rar>.rtop{position:absolute;z-index:4;left:50%;top:calc(-41px*var(--k) - 4px);width:calc(88px*var(--k));height:calc(48px*var(--k));translate:-50% 0;background:var(--frt4) 0 0/100% 100% no-repeat;pointer-events:none}
+.card.opt.rar .col{text-shadow:0 1px 2px #000,0 0 7px rgba(0,0,0,.75)}
+.card.opt.rar .cn .lvt{color:var(--rc);border-color:var(--rc)}
+.card.opt.r0{--rc:#c3cbd4;background-image:linear-gradient(165deg,#3a3c40,#1e1f22 75%)}
+.card.opt.r0::before{border-image-source:var(--fr0);border-image-slice:22;border-image-width:calc(22px*var(--k));border-image-outset:calc(6px*var(--k))}
+.card.opt.r0::after{content:'';position:absolute;inset:3px;border-radius:8px;pointer-events:none;z-index:2;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.16) 50%,transparent 58%);background-size:260% 100%;animation:rarsh 4.2s linear infinite}
+.card.opt.r1{--rc:#59b4ff;background-image:linear-gradient(165deg,#1d3150,#0e1829 75%);box-shadow:0 0 16px rgba(70,160,255,.35)}
+.card.opt.r1::before{border-image-source:var(--fr1);border-image-slice:36;border-image-width:calc(36px*var(--k));border-image-outset:calc(6px*var(--k))}
+.card.opt.r2{--rc:#c26bff;background-image:linear-gradient(165deg,#3a1f5c,#160c27 75%);box-shadow:0 0 22px rgba(190,100,255,.5)}
+.card.opt.r2::before{border-image-source:var(--fr2);border-image-slice:38;border-image-width:calc(38px*var(--k));border-image-outset:calc(8px*var(--k))}
+.card.opt.r3{--rc:#ffc93c;--k:.95;background-image:linear-gradient(165deg,#5a3a08,#241506 75%);box-shadow:0 0 26px rgba(255,200,60,.6)}
+.card.opt.r3::before{border-image-source:var(--fr3);border-image-slice:50 54 36 54;border-image-width:calc(50px*var(--k)) calc(54px*var(--k)) calc(36px*var(--k)) calc(54px*var(--k));border-image-outset:calc(20px*var(--k)) calc(24px*var(--k)) calc(6px*var(--k)) calc(24px*var(--k))}
+.card.opt.r4{--rc:#ff5fb4;background-image:linear-gradient(165deg,#3a0f33,#150818 70%);box-shadow:0 0 30px rgba(255,80,180,.65)}
+.card.opt.r4::before{border-image-source:var(--fr4);border-image-slice:78 62 56 58;border-image-width:calc(78px*var(--k)) calc(62px*var(--k)) calc(56px*var(--k)) calc(58px*var(--k));border-image-outset:calc(32px*var(--k)) calc(16px*var(--k)) calc(10px*var(--k)) calc(12px*var(--k))}
+.card.opt.r2::before,.card.opt.r3::before,.card.opt.r4::before{animation:rarglow 1.8s ease-in-out infinite alternate}
+.cards:has(.card.opt.r3,.card.opt.r4){padding-top:24px}   /* room for the wings and the crown above the frames */
+@keyframes rarglow{from{filter:drop-shadow(0 0 2px var(--rc))}to{filter:drop-shadow(0 0 7px var(--rc))}}
+.card.opt.rar:hover,.card.opt.rar:focus-visible{box-shadow:0 0 34px var(--rc)}
+@keyframes rarsh{from{background-position:150% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.card.opt.rar::before,.card.opt.rar::after{animation:none}}
+@media (max-width:640px){
+  .card.opt.rar{--k:.8;padding:16px 26px}
+  .card.opt.r3,.card.opt.r4{margin:0 16px;width:calc(100% - 32px)}
+}

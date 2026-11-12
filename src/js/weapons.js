@@ -109,15 +109,29 @@ const VFX={
 /* Beams (Kamehameha, Big Bang, Galick Gun): Amount (xn) makes them charge BEAM_XCH longer per point, to balance the extra beams; the beam-duration stat (bx, shop + trinkets) keeps the beam
    at full reach for bx x its duration more: beamT maps the real time t onto the beam's own clock (base duration d), which stands still at the middle of the beam for the extra x seconds */
 const BEAM_XCH=.15;
+/* a table step scaled by a card's rarity multiplier m: cooldown steps are ratios (a big step x1.8 would reach 0) and never go below 70% of the table */
+const rarStep=(k,cur,p,n,m)=>k==='cd'?Math.max(n*.7,cur*Math.pow(n/p,m)):cur+(n-p)*m;
+const RAR_KEYS=['dmg','cd','rad','r','wid','len','stun'];   /* the table rows a rarity card changes (counts, pierce, speed, arc stay whole) */
 const beamT=(t,d,x)=>t<d*.5?t:t<d*.5+x?d*.5:t-x;
 const XQ_GAP=.16;   /* seconds between a hit and the next extra hit given by Quantità */
 class Weapon{
-  constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];this.xl=0;}
+  constructor(g,id){this.g=g;this.id=id;this.lv=1;this.evo=false;this.cd=.3;this.def=WEAPONS[id];this.xl=0;this._cm=0;this.mi=[];this._sv=0;}   /* _cm: the longest cooldown since the weapon was last ready (HUD shadow) */
   get L(){return this.evo?5:Math.min(4,this.lv-1);}
   /* every tier has 5 levels: base (table), evolution 1 and evolution 2 (each level of an evolution: damage, cooldown, area) */
-  get lvB(){return this.evo?Math.max(0,this.lv-1):0;}
+  /* Card rarity (CARD_M): mi[i] is the multiplier of the card that gave level i+1 of the current tier (mi[0]: the card that brought the weapon in). A level of the base tier adds
+     the table's step x its multiplier (the cached table below); an evolution level counts as much as its multiplier in lvB. No record (sandbox, wishes, old saves) = x1 */
+  mf(i){const v=this.mi[i];return v==null?1:v;}
+  setM0(m){this.mi[0]=m;this._sv++;}
+  get lvB(){if(!this.evo)return 0;let v=0;for(let i=1;i<this.lv;i++)v+=this.mf(i);return v;}
   get tier(){return this.evo>=2?1.1+.05*this.lvB:this.evo?.8+.05*this.lvB:1;}
-  get st(){return WS[this.id];}
+  get st(){
+    const b=WS[this.id];if(this.evo)return b;   /* the evolved column (index 5) is not rarity-scaled: its levels go through lvB */
+    if(this._sc&&this._sk===this._sv&&this._sl===this.lv)return this._sc;
+    const o=Object.assign({},b);
+    for(const k of RAR_KEYS){const a=b[k];if(!a)continue;const c=a.slice();c[0]=k==='dmg'?a[0]*this.mf(0):a[0];for(let i=1;i<5;i++)c[i]=rarStep(k,c[i-1],a[i-1],a[i],this.mf(i));
+      o[k]=c;}
+    this._sc=o;this._sk=this._sv;this._sl=this.lv;return o;
+  }
   get color(){return this.g.formColor||this.def.c;}
   get maxed(){return this.lv>=WMAX;}
   /* evolved weapons scale with the active transformation */
@@ -132,8 +146,8 @@ class Weapon{
   get e2a(){return(this.evo>=2?1.2:1)*(1+.02*this.lvB)*this.xlA;}
   get e2n(){return this.evo>=2?2:0;}
   get evoName(){return this.evo>=2?this.def.evo2:this.def.evo;}
-  upgrade(){if(this.lv<WMAX)this.lv++;else if(this.canXl())this.xl++;}
-  evolve(){this.lv=1;this.evo=(this.evo||0)+1;}
+  upgrade(m){if(this.lv<WMAX){this.mi[this.lv]=m==null?1:m;this.lv++;this._sv++;}else if(this.canXl())this.xl++;}
+  evolve(){this.lv=1;this.evo=(this.evo||0)+1;this.mi=[];this._sv++;}
   /* Quantità (shop, trinkets, forms: g.S.proj): the extra hits are never fired on top of the first one. Each follows the previous after a short gap and is aimed again,
      so they read as separate hits and may even reach another enemy. extras(fn,gap) queues them, tickQ(dt) (first line of update) fires them when due */
   get xn(){return Math.max(0,Math.round(this.g.S.proj||0));}

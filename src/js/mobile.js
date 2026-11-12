@@ -32,10 +32,12 @@ if(MOBILE.on)(()=>{
   {const v=document.querySelector('meta[name=viewport]');if(v)v.content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';}
 
   /* ---------- size: the DOM menus are zoomed to the short side of a phone (the PC layout, smaller, never re-flowed by hand) ---------- */
+  const MOB_GUI_K=.88,MOB_HUD_K=.74,MOB_BTN_K=.84;   /* menus, canvas HUD and touch buttons on a phone, against the old size */
   const fit=()=>{
     const w=innerWidth,h=innerHeight;
-    M.z=M.phone?clamp(Math.min(h/540,w/860),.55,1):1;
+    M.z=M.phone?clamp(Math.min(h/540,w/860)*MOB_GUI_K,.5,1):1;   /* v141: the whole GUI smaller on a phone (MOB_GUI_K), more of the game visible */
     root.style.setProperty('--mz',M.z);
+    {const mc=document.getElementById('mobctl');if(mc)mc.style.zoom=M.phone?String(MOB_BTN_K):'';}
     for(const id of['ui','toasts','sandbox']){const el=document.getElementById(id);if(el)el.style.zoom=M.z===1?'':String(M.z);}
     root.classList.toggle('mport',h>w);root.classList.toggle('mwide',M.phone&&w/M.z>900);root.classList.toggle('mw11',M.phone&&w/M.z>=1100);
     rotCheck();
@@ -76,7 +78,7 @@ if(MOBILE.on)(()=>{
   Renderer.prototype.resize=function(){rs0.call(this);
     const st=this.save.d.settings,d=st.dynRes===false?1:(this.dyn||1),sh=Math.max(1,short()),sc=this.W/Math.max(1,innerWidth)/d;   /* sc: canvas px per CSS px before the dynamic resolution (device ratio, scale setting) */
     this.Z=clamp(sh*sc/560,.6,3.4)*d;   /* v132: x d after the clamp: a resolution step never moves the zoom nor the HUD */
-    if(M.phone)this.U=Math.max(.8,sh*sc/720)*clamp(560/sh,1,1.45)*d;   /* bigger HUD on a phone; measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
+    if(M.phone)this.U=Math.max(.8,sh*sc/720)*clamp(560/sh,1,1.45)*MOB_HUD_K*d;   /* HUD unit on a phone (v141: smaller, MOB_HUD_K); measured on the short side, so portrait (Play anyway) gets the same HUD as landscape */
   };
   /* a tap on the weapon target panel cycles the target (it is only a hover zone with a mouse) */
   const tapZone=e=>{

@@ -6,5 +6,8 @@ const SHOP_IMG=/*__SHOPICONS__*/{};
 const WEAPON_IMG=/*__WEAPONICONS__*/{};
 /* v137: trinket icons (assets/trinketicons/<trinket id>.webp): a trinket without a file keeps its kanji */
 const TRINKET_IMG=/*__TRINKETICONS__*/{};
+/* v141: rarity card art (assets/cardframes): exposed as CSS variables (--fr0..--fr4, --frt4) so the style sheet can use them as images */
+const CARD_ART=Object.assign({},/*__CARDFRAMES__*/{});
+for(const k in CARD_ART)document.documentElement.style.setProperty('--'+k,'url('+CARD_ART[k]+')');
 /* passive upgrade of a run -> the shop icon that shows it */
-const PASS_IMG={might:'might',vit:'hp',speed:'speed',armor:'armor',growth:'exp',haste:'cd',magnet:'magnet',regen:'regen',proj:'proj'};   /* haste/magnet/regen reuse the icons of Ritmo, Magnetismo and Rigenerazione */
+const PASS_IMG={might:'might',vit:'hp',speed:'speed',armor:'armor',growth:'exp',haste:'cd',magnet:'magnet',regen:'regen',proj:'proj',luck:'luck'};   /* haste/magnet/regen reuse the icons of Ritmo, Magnetismo and Rigenerazione */

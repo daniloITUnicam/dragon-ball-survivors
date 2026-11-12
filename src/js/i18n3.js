@@ -134,8 +134,6 @@
     evoReady:['Pronta all\'evoluzione: apri un forziere!','Ready to evolve: open a chest!','Lista para evolucionar: ¡abre un cofre!','Prête à évoluer : ouvre un coffre !','Bereit zur Evolution: öffne eine Truhe!','Pronta para evoluir: abra um baú!'],
     act_senzu:['Fagiolo Senzu','Senzu bean','Judía Senzu','Haricot magique','Senzu-Bohne','Feijão Senzu'],
     senzuTitle:['Borsa Senzu','Senzu bag','Bolsa Senzu','Sac de Senzu','Senzu-Beutel','Bolsa Senzu'],
-    senzuBagged:['Nella borsa: {a}/{b} · premi H per usarlo','In the bag: {a}/{b} · press H to use it','En la bolsa: {a}/{b} · pulsa H para usarla','Dans le sac : {a}/{b} · appuie sur H','Im Beutel: {a}/{b} · drücke H zum Benutzen','Na bolsa: {a}/{b} · aperte H para usar'],
-    senzuFull:['Borsa piena ({b}/{b}): lo mangi subito: recuperi il 50% di vita e sale un parametro.','Bag full ({b}/{b}): you eat it right away: recover 50% HP and a stat rises.','Bolsa llena ({b}/{b}): te la comes al instante: recuperas el 50% de salud y sube un parámetro.','Sac plein ({b}/{b}) : tu le manges aussitôt : récupères 50 % de vie et une stat monte.','Beutel voll ({b}/{b}): du isst sie sofort: 50 % Leben zurück und ein Wert steigt.','Bolsa cheia ({b}/{b}): você come na hora: recupera 50% de vida e um atributo sobe.'],
     act_dash:['Scatto','Dash','Impulso','Dash','Sprint','Investida'],
     act_target:['Bersaglio armi','Weapon target','Objetivo de armas','Cible des armes','Waffenziel','Alvo das armas'],
     act_pet:['Abilità compagno','Companion ability','Habilidad del compañero','Capacité du compagnon','Begleiter-Fähigkeit','Habilidade do companheiro'],

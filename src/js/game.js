@@ -136,7 +136,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false,atk:0};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
-    this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
+    this.weapons=new Map();this.pass={};this.passM={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
     this.buffs={dmg:0,haste:0};this.tempBuffs=[];this.szStat={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0};this.szN=0;this.tgt=(this.save.settings&&this.save.settings.tgt)|0;this.autoZ=false;this.lavaT=0;this.lavaF=0;this.luckBonus=0;this.wishLog=[];this.cast=null;this.pa=null;this.pfd=0;this.pfdUntil=0;this.ru={rr:Math.min(5,this.shopLv('rr')),sk:Math.min(5,this.shopLv('sk')),bn:Math.min(5,this.shopLv('bn'))};this.ru0=Object.assign({},this.ru);this.banRun=new Set()   /* Reroll / Skip / Ban charges of this run (shop) */;
     this.endless=false;this.enMile=0;this.en0=null;this.xpAcc=0;this.xpRate=0;
@@ -156,7 +156,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.supPlan=this.stage.sup&&(this.sandbox||this.save.sball.length<SB_TOTAL)&&Math.random()<Math.min(1,SUP_CHANCE*this.scanK)?{at:this.dur*rnd(.28,.55),done:false}:null;
     this.bossHit=false;this.finalSpawned=false;this.lateSaid=false;this.cleared=false;this.ended=false;this.post=0;
     this.slowT=0;this.slowCd=TR_SLOW_CD*.6;this.shockCd=TR_SHOCK_CD;this.barrierT=0;this.barrierReady=false;this.auraAcc=0;this.ck=0;
-    this.timeScale=1;this.sb={god:false,nospawn:false};this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
+    this.timeScale=1;this.sb={god:false,nospawn:false,luck:0,spawn:1,dmg:1,xp:1,rar:-1};   /* test environment knobs: Luck added, spawn rate x, damage x, XP x, forced card rarity */this.showNums=this.save.settings.dmgNum;FXL.on=!!this.save.settings.reduceFx;
     this.bossAlive=0;this.trial=null;this.tun=null;this.swap={might:0,spd:0,cd:0,hp:0};this.bombOn=false;this.ev=null;{const D=MAP_EVENTS[this.stage.theme];this.bombT=D?rnd(D.first[0],D.first[1])*this.evK:1e9;}this.bombEnd=0;this.shootOn=false;this.shootQ=0;this.shootQT=8;this.shootT=this.stage.no===1?1e9:rnd(170,230)*this.evK;this.shootEnd=0;this.bz=[];this.jbeams=[];this.dying=null;this.dmgBy={};this.takenBy={};this.curW=null;this.vortex=null;this.seenT=1;this.newSeen=false;
     this.map=new MapDirector(this);
     {const F=o.fusion&&CHAR_FUSIONS.find(f=>f.id===o.fusion&&f.id===o.char);this.fz=F?{id:F.id,k:F.k,parents:[F.a,F.b]}:null;   /* v116: a fusion run */
@@ -221,14 +221,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     return m;
   }
   recalc(){
-    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
+    const C=this.C,P=this.passEff(),sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,sh={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
     for(const b of this.tempBuffs)sh[b.k]+=b.v;
     for(const k in this.szStat)sh[k]+=this.szStat[k];   /* Senzu beans eaten this run */
     if(this.mastP)for(const k in this.mastP)sh[k]+=this.mastP[k];
     if(this.fz){sh.might+=FUSE_MIGHT;sh.hp+=FUSE_HP;}
     if(this.dmut){sh.spd+=this.dmut.spd||0;sh.magnet+=this.dmut.magnet||0;}   /* v116: a fused warrior is stronger than either parent */   /* v115: the character's mastery passive (Lv 5) */
     const S={};
-    S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1);
+    S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1)*this.sb.dmg;
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
     S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.05*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
     S.magnet=100*(C.mag||1)*(1+.05*sl('magnet')+tm.magnet+sh.magnet);
@@ -241,7 +241,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
     S.bdur=.05*sl('bdur')+(tm.bdur||0);   /* beam duration: extra time the beams stay at full reach (shop + trinkets) */
-    S.luck=Math.min(.9,.05*sl('luck')+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,this.sb.luck+.05*sl('luck')+.04*(P.luck||0)+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
@@ -262,7 +262,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* v109: where each stat of the pause screen comes from (its tooltip): rows {l: label (T or text), x: suffix, v: value text}; the last row ("other") closes the gap
      to the real value - abilities, Kaioken, Berserk, totems, the swap, temporary effects - so the rows always add up to what the stat shows */
   statBreak(){
-    const C=this.C,P=this.pass,sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,S=this.S,tf=this.totemFx||{},sz=this.szStat||{},tb={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
+    const C=this.C,P=this.passEff(),sl=id=>this.shopLv(id),tm=this.tMods(),fm=this.form,S=this.S,tf=this.totemFx||{},sz=this.szStat||{},tb={might:0,spd:0,cd:0,hp:0,regen:0,magnet:0,xp:0};
     for(const b of this.tempBuffs)tb[b.k]+=b.v;
     const shopN=id=>{const it=SHOP.find(x=>x.id===id);return it?it.n:T(id,id);},fe=this.formEntry;
     const OTH=T('Altro (abilità, Kaioken, totem, effetti attivi)','Other (abilities, Kaioken, totems, active effects)');
@@ -275,7 +275,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const mulS=(key,fin,base,bl,parts)=>{const rows=[{l:bl,x:'',v:nm(base)}];let pr=base;for(const [l,k,x] of parts){if(Math.abs(k-1)<1e-6)continue;pr*=k;rows.push({l,x:x||'',v:mx(k)+' ('+pc(k-1)+')'});}
       const r=pr?fin/pr:1;if(Math.abs(r-1)>.004)rows.push({l:OTH,x:'',v:mx(r)+' ('+pc(r-1)+')',o:1});out[key]=rows;};
     const FORM=fe?fe.n:T('Trasformazione','Form'),TRIN=T('Cimeli','Trinkets'),SZ=T('Fagioli Senzu mangiati','Senzu beans eaten'),TMP=T('Potenziamenti a tempo','Timed boosts'),BASE=T('Base del personaggio','Character base');
-    const lvP=id=>' Lv '+(P[id]||0),lvS=id=>' Lv '+sl(id);
+    const lvP=id=>' Lv '+(this.pass[id]||0),lvS=id=>' Lv '+sl(id);
     /* health */
     {const add=C.hp+20*(P.vit||0)+20*sl('hp')+(sz.hp||0)+tb.hp,k1=1+tm.hpPct+(tf.hp||0),k2=1+this.swap.hp;
      addS('hp',this.p.maxHp,[[BASE,C.hp],[PASS.vit.n,20*(P.vit||0),lvP('vit')],[shopN('hp'),20*sl('hp'),lvS('hp')],[SZ,sz.hp||0],[TMP,tb.hp],[TRIN,add*tm.hpPct],[T('Totem','Totem'),add*(tf.hp||0)],[T('Scambio','Swap'),add*k1*(k2-1)]],(v,s)=>(s?ad(v,0):nm(v,0)));}
@@ -288,7 +288,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     addS('crit',S.crit,[[T('Base','Base'),.05],[shopN('crit'),.04*sl('crit'),lvS('crit')],[TRIN,tm.crit]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     addS('dodge',S.dodge,[[FORM,fm?fm.dodge:0],[TRIN,tm.dodge]],(v,s)=>s?pc(v):Math.round(v*1000)/10+'%');
     addS('area',S.area,[[T('Base','Base'),1],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
-    addS('luck',S.luck,[[shopN('luck'),.05*sl('luck'),lvS('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.03:0],[T('Compagno','Companion'),this.petLuckT>0?.05:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
+    addS('luck',S.luck,[[shopN('luck'),.05*sl('luck'),lvS('luck')],[PASS.luck.n,.04*(P.luck||0),lvP('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.03:0],[T('Compagno','Companion'),this.petLuckT>0?.05:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     mulS('xp',S.xp,C.xpm/Math.pow(this.TS,XP_TS_E),BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
     addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
     mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[T('Totem','Totem'),1+(tf.magnet||0)]]);
@@ -335,18 +335,24 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     for(const id in PASS){const lv=this.pass[id]||0;if(lv<passMax(id)&&(lv>0||slots<MAX_PASSIVES))pool.push({type:'p',id,lv});}
     return this.banRun&&this.banRun.size?pool.filter(o=>!this.banRun.has(this.optKey(o))):pool;
   }
+  /* secondary upgrades at their real strength: each level counts as much as the rarity of the card that gave it (CARD_M); levels with no record (sandbox, old runs) count 1 */
+  passEff(){
+    const o={};
+    for(const id in this.pass){const n=this.pass[id]||0;if(n<=0)continue;if(PASS_NOR.includes(id)){o[id]=n;continue;}
+      const m=this.passM[id]||[];let v=0;for(let i=0;i<n;i++)v+=m[i]!=null?m[i]:1;o[id]=v;}
+    return o;
+  }
+  rollCardRar(){return this.sb.rar>=0?this.sb.rar:rollCardRar(this.S?this.S.luck:0);}
   levelOptions(){
     const pool=this.upgradePool();
     if(this.wCount()<this.maxW)for(const id in WEAPONS)if(!this.weapons.has(id)&&this.unlockedW(id)&&!(this.shopLv('ban')>0&&this.save.banned.includes(id))&&!this.banRun.has('w:'+id))pool.push({type:'w',id,lv:0});   /* blacklisted weapons never come up */
     shuffle(pool);
-    const sz=!this.pk.nosenzu&&this.senzu<SENZU_MAX&&Math.random()<.09;
     /* a maxed weapon waiting for its evolution passive makes that passive show up more often */
     const need=this.neededPass().filter(id=>pool.some(o=>o.type==='p'&&o.id===id));
     if(need.length&&Math.random()<.55){const nid=pick(need),i=pool.findIndex(o=>o.type==='p'&&o.id===nid);if(i>2){const t=pool[i];pool.splice(i,1);pool.unshift(t);}}
     if(!pool.length){const c=this.coinValue();return[3,4.5,6].map(k=>({type:'z',v:Math.round(c*k),max:true}));}   /* nothing left to upgrade: pick a bag of zenny */
     const out=pool.slice(0,3);
-    while(out.length<3)out.push({type:'h'});
-    if(sz&&!out.some(o=>o.type==='h'))out[2]={type:'h'};   /* a Senzu bean sometimes shows up among the level-up cards */
+    for(const o of out)if(o.xl==null&&(o.type==='w'||o.type==='p'))o.r=this.rollCardRar();   /* Endless extra levels have no rarity */
     return out;
   }
   /* level-up advice: index of the card to mark with a star + why ('evo' passive that evolves an owned weapon, 'wevo' weapon about to evolve, 'hp' low health, 'armor' low armor) */
@@ -364,15 +370,15 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       }else if(o.type==='w'&&o.lv>0){
         const w=this.weapons.get(o.id);
         if(w&&w.evo<this.maxEvo(w.id)&&w.lv>=WMAX-2){const owned=this.pass[evoPass(w.id,w.evo)]>0;sc=owned?105:80;w2='wevo';}
-      }else if(o.type==='h'&&hpLow){sc=70;w2='hp';}
+      }
       if(sc>bs){bs=sc;best=i;why=w2;}
     });
     return bs>=60?{i:best,why}:null;
   }
   applyOption(o){
-    if(o.type==='w'){const w=this.addWeapon(o.id);if(o.lv>0)w.upgrade();}
-    else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<passMax(o.id)&&(cur>0||this.passCount()<MAX_PASSIVES))this.pass[o.id]=cur+1;else this.heal(this.p.maxHp*.2);}
-    else if(o.type==='h'){if(this.senzu<SENZU_MAX){this.senzu++;this.floatText(this.p.x,this.p.y-48,this.env.tr(T('Senzu in borsa ','Senzu bagged '))+this.senzu+'/'+SENZU_MAX,2);}else this.eatSenzu();}
+    const m=o.r!=null?CARD_M[o.r]:1;
+    if(o.type==='w'){const had=this.weapons.has(o.id),w=this.addWeapon(o.id);if(!had)w.setM0(m);if(o.lv>0)w.upgrade(m);}
+    else if(o.type==='p'){const cur=this.pass[o.id]||0;if(cur<passMax(o.id)&&(cur>0||this.passCount()<MAX_PASSIVES)){this.pass[o.id]=cur+1;(this.passM[o.id]||(this.passM[o.id]=[]))[cur]=m;}else this.heal(this.p.maxHp*.2);}
     else if(o.type==='z')this.addZenny(o.v);
     this.recalc();
   }
@@ -518,7 +524,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   capPf(p){return this.endless&&p!=null?Math.min(p,END_PF):p;}
   /* n character upgrades (weapon levels and secondary upgrades, also new ones while a slot is free) for a chest: the same one can come up more than once, never past its max.
      Weapons first (60%), owned upgrades before new ones, and an upgrade a maxed weapon waits for jumps the queue. */
-  chestUps(n,evoId){   /* evoId: the weapon this chest evolves - it restarts at Lv 1 of its new tier, so its levels count again */
+  chestUps(n,evoId,rar){   /* evoId: the weapon this chest evolves - it restarts at Lv 1 of its new tier, so its levels count again */
     const out=[],add={},ban=k=>this.banRun&&this.banRun.has(k),need=this.neededPass();let newP=0;
     for(let i=0;i<n;i++){
       const ws=[],ps=[];
@@ -527,7 +533,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(!ws.length&&!ps.length)break;
       const nd=ps.filter(o=>need.includes(o.id)&&!(add['p:'+o.id]>0)),own=ps.filter(o=>o.lv>0);
       const o=nd.length?pick(nd):ws.length&&(!ps.length||Math.random()<.6)?pick(ws):pick(own.length&&Math.random()<.7?own:ps);
-      const k=o.type+':'+o.id;if(o.type==='p'&&o.lv===0&&!(this.pass[o.id]>0))newP++;add[k]=(add[k]||0)+1;out.push(o);
+      const k=o.type+':'+o.id;if(o.type==='p'&&o.lv===0&&!(this.pass[o.id]>0))newP++;add[k]=(add[k]||0)+1;o.r=Math.max(2,rar||0);out.push(o);
     }
     return out;
   }
@@ -540,7 +546,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const elig=[...this.weapons.values()].filter(w=>this.evoReady(w));
     const ev=elig.length?pick(elig).id:null;if(ev)R.push({k:'evo',id:ev});
     const fu=ev?null:this.fuseReady();if(fu)R.push({k:'fuse',id:fu.id});   /* v115: no evolution ready: a double evolution takes the slot */
-    const ups=this.chestUps(cf.up-(ev||fu?1:0),ev);
+    const ups=this.chestUps(cf.up-(ev||fu?1:0),ev,r0);
     for(const o of ups)R.push({k:'up',o});
     /* v137: cf.tr trinkets (the first cf.g of the chest's own rarity, the others random) + one random trinket for every upgrade nothing was left to fill */
     const own=cf.tr,n=own+Math.max(0,cf.up-R.length),fixed=r0>=1?Math.min(cf.g,own):0;
@@ -920,7 +926,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   /* ---------- progression ---------- */
   get comboMul(){const c=comboTier(this.streak);return c?c.m:1;}
-  addXp(v){const a=v*this.S.xp*this.pk.xp*this.comboMul*(this.dmut.xp||1);this.xp+=a;this.xpAcc+=a;}
+  addXp(v){const a=v*this.sb.xp*this.S.xp*this.pk.xp*this.comboMul*(this.dmut.xp||1);this.xp+=a;this.xpAcc+=a;}
   levelUp(){
     this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('levelup');
     if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
@@ -960,16 +966,16 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   setPrio(list){this.save.settings.lvPrio=list.slice(0,MAX_WEAPONS+MAX_PASSIVES);this.env.save.write();}
   optKey(o){return o.type==='w'?'w:'+o.id:o.type==='p'?'p:'+o.id:null;}
-  /* the card to take when nobody is choosing: the best-ranked owned item; then owned weapons/upgrades; a needed evolution passive before the rest; a Senzu when hurt */
+  /* the card to take when nobody is choosing: the best-ranked owned item; then owned weapons/upgrades; a needed evolution passive before the rest */
   autoPick(opts){
-    const pr=this.enPrio(),need=this.neededPass(),hpLow=this.p.hp<this.p.maxHp*.45;
+    const pr=this.enPrio(),need=this.neededPass();
     let best=0,bs=1e9;
     opts.forEach((o,i)=>{
       const k=this.optKey(o);let s;
       if(k&&pr.includes(k))s=pr.indexOf(k);
       else if(o.type==='p'&&need.includes(o.id))s=15;
       else if(o.type==='w'||o.type==='p')s=o.lv>0?20:25;
-      else if(o.type==='h')s=hpLow?-1:60;else if(o.type==='z')s=50-(o.v||0)/1000;else s=70;
+      else if(o.type==='z')s=50-(o.v||0)/1000;else s=70;
       if(s<bs){bs=s;best=i;}
     });
     return best;
@@ -978,7 +984,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(o.type==='w'){const w=this.weapons.get(o.id),lv=w?w.lvShow+1:1;return this.env.tr(WEAPONS[o.id].n)+' Lv '+lv;}
     if(o.type==='p')return this.env.tr(PASS[o.id].n)+' Lv '+((this.pass[o.id]||0)+1);
     if(o.type==='z')return '+'+o.v+' zenny';
-    return this.env.tr(T('Senzu','Senzu'));
+    return this.env.tr(T('Zenny','Zenny'));
   }
   autoLevel(lm){
     const o=lm.options[this.autoPick(lm.options)]||lm.options[0];
@@ -2114,8 +2120,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(!this.lateSaid&&this.lateOn()){this.lateSaid=true;this.say(this.env.tr(T('ULTIMI 2 MINUTI: nemici con la vita dei miniboss, niente forzieri!','LAST 2 MINUTES: enemies with miniboss health, no chests!')),'#ff5a3d',3.2,null,4);}
       if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
       {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
-      this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
-      const cap=Math.min(DENSE_CAP,Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap));   /* (spawnCap already carries the frame-rate governor) */
+      this.spAcc+=this.sb.spawn*this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
+      const cap=Math.min(DENSE_CAP,Math.round(this.sb.spawn*this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap));   /* (spawnCap already carries the frame-rate governor) */
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=HORDE_EVERY;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
@@ -2820,7 +2826,7 @@ class MapDirector{
       if(f.t>f.ttl){f.dead=true;continue;}
       if(f.near&&g.input.interact)this.use(f);   /* every altar, totem, spring, font, button and portal: [E] within the same radius as the prompt */
     }
-    if(g.input.interact&&g.mo&&MOBJ.useAlt(g))g.input.interact=false;   /* v140: [E] wakes the Challenge Altar you stand by */
+    if(g.input.interact&&g.mo&&(MOBJ.useAlt(g)||MOBJ.useSenzuPlant(g)))g.input.interact=false;   /* v140: [E] wakes the Challenge Altar you stand by; v141: or picks the beans of a Senzu plant */
     g.input.interact=false;
     g.feat=g.feat.filter(f=>!f.dead);
   }

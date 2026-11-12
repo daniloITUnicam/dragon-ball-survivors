@@ -104,7 +104,7 @@ this.W=1;this.H=1;this.Z=1;
     this.dd=null;this.dyn=1;this.dynPend=false;this.fdt=0;this.featSp=undefined;this.gameRef=undefined;this.lootC=undefined;this.menuBg=undefined;this.obst=undefined;this.petBtn=null;
     this.shopImgC=undefined;this.statC=undefined;this.stoneC=undefined;this.szBtn=null;this.tImgC=undefined;this.tc=undefined;this.tcKey=undefined;this.tcTheme=undefined;
     this.tgtAt=0;this.tgtG=undefined;this.tgtMode=undefined;this.wImgC=undefined;this.zenoCoins=undefined;this.zenoPl=undefined;this.zones=undefined;
-    this._hl=null;this._el=[];this._ew=[];this._eln=0;this._ewn=0;this._ky=new Float64Array(1024);this._ix=new Uint16Array(1024);this.menuRes=false;this.mobBtns=undefined;
+    this._hl=null;this._el=[];this._ew=[];this._eln=0;this._ewn=0;this._ky=new Float64Array(1024);this._ix=new Uint16Array(1024);this.menuRes=false;this.mobBtns=undefined;this.zlabT=0;
     this.tiles={};this.decor={};this.vign=null;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
     try{if(document.fonts)document.fonts.load('12px "Anton"','0123456789');}catch(e){}   /* the damage-number lettering */
     this.hint=null;this.joy=null;this.keyHints={};this.tr=(x)=>typeof x==='string'?x:x.it;this.tt=(k)=>k;
@@ -331,12 +331,14 @@ this.W=1;this.H=1;this.Z=1;
   /* v116: camera punch — the zoom grows for a moment and eases back (g.zoomP decays here, with the real frame time) */
   draw(g,dt){
     if(this.dynPend){this.dynPend=false;this.resize();}   /* v132: before z0 is taken - inside, the finally below put back the zoom of the old size on the new canvas, and the view stayed zoomed in by a step until the next one */
-    const z0=this.Z;if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
+    const z0=this.Z;{const uz=this.zoomK();if(uz!==1)this.Z*=uz;}   /* v141: the player's zoom (setting + mouse wheel) */
+    if(g.zoomP>0){this.Z=z0*(1+g.zoomP);g.zoomP=Math.max(0,g.zoomP-(dt||0)*.45);}
     {const xz=this.xfZoom(g);if(xz!==1)this.Z*=xz;}   /* v133: transformation close-up */
     {const f=g.bcine?MOMENTS.cineF(g):0,e=g.bcine&&g.bcine.e;this.camOff=f&&e?{x:(e.x-g.p.x)*f,y:(e.y-g.p.y)*f}:null;if(f)this.Z*=1+(g.bcine.intro?BOSS_INTRO_Z:.3)*f;}   /* v116: boss cinematic camera */
     this._fr=(this._fr||0)+1;try{this.drawFrame(g,dt);}finally{this.Z=z0;}
     this._pt1=performance.now();
   }
+  zoomK(){const z=this.save.d.settings.zoom;return z>0?clamp(z/100,.5,1.6):1;}
   /* v133: the camera closes in on the hero while he transforms (XF_ZOOM at the burst), holds through XF_LOCK and eases back out in XF_ZOUT s */
   xfZoom(g){const x=g.xform;if(!x||typeof XF_ZOOM==='undefined')return 1;const e=v=>v*v*(3-2*v);
     if(!x.released)return 1+(XF_ZOOM-1)*e(clamp(x.t/x.rel,0,1));
@@ -1266,6 +1268,15 @@ this.W=1;this.H=1;this.Z=1;
   lootBody(ctx,k,R,fn){const S=Math.min(5,Math.ceil(this.Z*1.5)),key=k+S,L=this.lootC||(this.lootC={});let c=L[key];
     if(!c){c=document.createElement('canvas');c.width=c.height=Math.ceil(2*R*S);const g=c.getContext('2d');g.scale(S,S);g.translate(R,R);fn(g);L[key]=c;}
     ctx.imageSmoothingEnabled=true;ctx.drawImage(c,-R,-R,2*R,2*R);ctx.imageSmoothingEnabled=false;}
+  /* v141: marker under everything you can pick up or use (chests, power-ups, features, activities): a dark pad (the weapons are drawn in the background, their effects must not hide it) and a pulsing coloured ring */
+  markI(x,y,rx,col,t,a){
+    const ctx=this.ctx,p=.5+.5*Math.sin(t*4+x*.01),ry=rx*.4;
+    ctx.save();if(a!=null)ctx.globalAlpha*=a;
+    ctx.fillStyle='rgba(6,8,18,.34)';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill();
+    ctx.lineWidth=5.5;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.stroke();
+    ctx.lineWidth=2.8;ctx.strokeStyle=hexA(col,(.62+.33*p).toFixed(3));ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.stroke();
+    ctx.restore();
+  }
   drawLoot(l,t){
     if(l.k==='ball'){const im=this.ballSheet();if(im){this.drawBall(l,im);return;}}
     if(l.k==='sball'){this.drawSuperBall(l);return;}
@@ -1276,6 +1287,7 @@ this.W=1;this.H=1;this.Z=1;
     if(l.ttl&&l.ttl-l.t<8&&((l.t*6)|0)%2===0)ctx.globalAlpha=.4;
     const lift=hop+bh+(pk>=1?1:0),sq=pk>=1&&bh<1.6?1-(1.6-bh)*.09:1;   /* flattens a little when it touches the ground */
     ctx.fillStyle='rgba(0,0,0,'+(.26-Math.min(.12,lift*.006))+')';ctx.beginPath();ctx.ellipse(l.x,l.y+4,Math.max(1.5,7-lift*.12),Math.max(.6,2.5-lift*.04),0,0,TAU);ctx.fill();
+    if(pk>=1&&!l.flat)this.markI(l.x,l.y+3,k==='coin'?7:11,col,T0,k==='coin'?.7:1);
     if(k!=='coin'&&pk>=1){                              /* pulsing ground ring + orbiting sparkles on the special items */
       const rp=(T0*.9+ph)%1;ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha*=.35*(1-rp);ctx.strokeStyle=col;ctx.lineWidth=1.5;
       ctx.beginPath();ctx.ellipse(l.x,l.y+4,6+rp*14,2.2+rp*5,0,0,TAU);ctx.stroke();ctx.restore();
@@ -1540,6 +1552,7 @@ this.W=1;this.H=1;this.Z=1;
     const CS=Sprites.sheets.chests,fr=(CS&&CS.rects&&CS.rects.length>=25)?rar*5:-1;
     if(rar>=3&&op===undefined){const g=ctx.createLinearGradient(0,y-110,0,y-10);g.addColorStop(0,hexA(col,0));g.addColorStop(1,hexA(col,.45));ctx.fillStyle=g;ctx.fillRect(x-9*s,y-110,18*s,100);}
     GLOW.at(ctx,x,y-10*s,(30+8*pulse+6*rar)*s*(op!==undefined?1+op*1.4:1),col,Math.min(1,.5+.08*rar+.25*pulse+(op!==undefined?op*.5:0)));
+    if(op===undefined)this.markI(x,y+2,19*s+4,col,t);   /* v141: the closed chest reads against the weapon effects */
     ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+3,14*s,4*s,0,0,TAU);ctx.fill();
     if(fr>=0){
       /* painted chests (assets/sprites/props/chests.png): 5 per rarity = closed, closed (breath), lid rising, open, open (settled) */
@@ -1739,6 +1752,7 @@ this.W=1;this.H=1;this.Z=1;
     if(!inner&&f.kind==='zenoportal'&&f.t<ZENO_IN&&!f.used){this.zenoWarp(f,t,g);return;}
     if(!inner&&f.t<FEAT_IN&&f.fade===undefined&&!f.used){this.featSpawn(f,t,g);return;}
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
+    if(!inner&&f.fade===undefined&&!f.used)this.markI(x,y+2,34,'#ffe27a',t,.85);   /* v141 */
     /* used (E pressed): a bright flash with a little shake and swell, then it rises a bit and dissolves in sparkles (FEAT_FADE s) */
     const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis;
     /* painted vanishing animation (assets/sprites/props/featfade.png) for the kinds that have one: frame = progress through FEAT_FADE; same world size as the resting sprite */
@@ -1872,6 +1886,10 @@ this.W=1;this.H=1;this.Z=1;
         if(wim){const s=sz-4*U;ctx.save();ctx.imageSmoothingEnabled=true;ctx.beginPath();ctx.rect(ix+2*U,wy+2*U,s,s-6*U);ctx.clip();ctx.drawImage(wim,ix+2*U,wy+2*U-3*U,s,s);ctx.restore();
           ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy+sz-8*U,sz,8*U);}
         else txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
+      {const cd=w.cd||0;if(cd<=0)w._cm=0;else if(cd>w._cm)w._cm=cd;   /* v141: cooldown as a shadow over the icon, clearing from the top down until the next attack (retries of .2 s while nothing is in reach do not count) */
+        if(cd>0&&w._cm>.45){const cf=Math.min(1,cd/w._cm),sy=wy+sz*(1-cf),gr=Math.min(7*U,sz*cf);
+          ctx.fillStyle='rgba(4,6,16,.66)';ctx.fillRect(ix,sy+gr,sz,sz*cf-gr);
+          const gg=ctx.createLinearGradient(0,sy,0,sy+gr);gg.addColorStop(0,'rgba(4,6,16,0)');gg.addColorStop(1,'rgba(4,6,16,.66)');ctx.fillStyle=gg;ctx.fillRect(ix,sy,sz,gr);}}
       {const pw=(sz-6*U)/WMAX;for(let i=0;i<WMAX;i++){ctx.fillStyle=i<w.lv?(w.evo?'#ffd23f':'#fff'):'rgba(255,255,255,.2)';ctx.fillRect(ix+3*U+i*pw,wy+sz-5*U,pw-1.5*U,3.2*U);}}
       if(w.evo)txt(w.evo>=2?'★★':'★',ix+sz-9*U,wy+12*U,'#ffd23f','center',F(13));
       if(w.xl>0)txt(String(w.lvShow),ix+sz-4*U,wy+sz-9*U,'#ffd23f','right',F(12,900));   /* Endless: the level beyond 5 */
@@ -2048,7 +2066,7 @@ this.W=1;this.H=1;this.Z=1;
         if(!B){if(!on)continue;B=f._eb={a:Math.atan2(p.y-f.y,(p.x-f.x)||.001),s:0};}
         B.s=clamp(B.s+(on?1:-1)*(dt||.016)*7,0,1);if(!on&&B.s<=0){f._eb=null;continue;}
         const ta=Math.atan2(p.y-f.y,(p.x-f.x)||.001),da=((ta-B.a)%TAU+TAU*1.5)%TAU-Math.PI;B.a+=da*Math.min(1,(dt||.016)*8);
-        const col=f.kind==='alt'?'#c27bff':f.kind==='tunnel'&&typeof TUNNELS!=='undefined'&&TUNNELS[g.stage.theme]?TUNNELS[g.stage.theme].gl:FEAT_COL[f.kind]||'#ffd23f';
+        const col=f.kind==='alt'?'#c27bff':f.kind==='senzu'?'#8be07a':f.kind==='tunnel'&&typeof TUNNELS!=='undefined'&&TUNNELS[g.stage.theme]?TUNNELS[g.stage.theme].gl:FEAT_COL[f.kind]||'#ffd23f';
         const R=62+4*Math.sin(tn*3),hgt=f.kind==='tunnel'?26:f.kind==='alt'?96:50,wx=f.x+Math.cos(B.a)*R,wy=f.y-hgt+Math.sin(B.a)*R*.5+Math.sin(tn*4)*3;
         const X=(wx-cx)*Z,Y=(wy-cy)*Z,sc=B.s>=1?1:Math.max(0,easeOutBack(B.s)),r=12*U*sc;if(r<1)continue;
         const ax=(f.x-cx)*Z-X,ay=(f.y-hgt-cy)*Z-Y,al=Math.atan2(ay,ax);
@@ -2125,6 +2143,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(255,210,63,.85)';ctx.fillRect(bx+8*U,by+bh-4*U,(bw-16*U)*clamp(1-hc.t/HINT_DUR,0,1),1.5*U);
       txt('💡',bx+18*U,by+bh/2+5*U,'#ffd23f','center',F(15));txt(s,bx+34*U,by+bh/2+5*U,'#fff3cf','left',F(fs,600));ctx.globalAlpha=1;
     }
+    if(this.zlabT>0){const a=Math.min(1,this.zlabT*3);ctx.globalAlpha=a;txt('Zoom '+Math.round(this.save.d.settings.zoom||100)+'%',W/2,H*.84,'#ffffff','center',F(18,700));ctx.globalAlpha=1;this.zlabT=Math.max(0,this.zlabT-(dt||.016));}   /* v141 */
     /* banner */
     if(g.banner){
       const b=g.banner,a=Math.min(1,b.t/.15)*clamp((b.dur-b.t)/BANNER_FADE,0,1);   /* v109: quick fade in, BANNER_FADE s fade out */

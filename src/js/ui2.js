@@ -24,6 +24,17 @@ function wsFx(id,a,b){
   }
   return out.length?out:null;
 }
+/* level-up card of a weapon with a rarity: the weapon's current value -> the value after this card (the table's step x the rarity multiplier m) */
+function wsFxR(wp,id,lv,m){
+  const b=WS[id];if(!b)return null;const out=[];
+  for(const k in WS_LAB){
+    const a=b[k];if(!a||a[lv]===undefined||a[lv-1]===undefined||a[lv]===a[lv-1])continue;
+    const cur=wp?wp.st[k][lv-1]:a[lv-1],u=k==='cd'||k==='stun'?'s':'',t=_f(cur)+'→'+_f(rarStep(k,cur,a[lv-1],a[lv],m))+u;
+    out.push({i:WS_ICON[k]||'star',t:T(WS_LAB[k][0]+' '+t,WS_LAB[k][1]+' '+t)});
+    if(out.length>=3)break;
+  }
+  return out.length?out:null;
+}
 const BUFF_NAMES={might:T('Danno','Damage'),spd:T('Velocità','Speed'),cd:T('Ricarica','Cooldown'),hp:T('Salute','Health'),regen:T('Rigenerazione','Regeneration'),magnet:T('Raccolta','Pickup'),xp:T('Esperienza','Experience')};
 const WISH_NAMES={revive:T('Seconda vita','Second life'),power:T('Potere','Power'),fortune:T('Fortuna','Fortune'),tickets:T('10 Ticket','10 Tickets'),immortal:T('Immortalità','Immortality'),transform:T('Trasformazione','Transformation'),legend:T('Cimelio leggendario','Legendary trinket'),lucky:T('Ticket 10× Fortunato (Porunga)','Lucky Ticket 10× (Porunga)'),char:T('Un personaggio (Porunga)','A character (Porunga)')};
 Object.assign(UI.prototype,{
@@ -43,12 +54,12 @@ Object.assign(UI.prototype,{
       const sel=h('select',{'data-fid':'sel'+key,onchange:()=>{s[key]=sel.value;apply();this.rebuild(true);}},opts.map(([v,l])=>h('option',{value:v,selected:s[key]===v},l)));
       return row(label,sel);
     };
+    const sec=(it,en)=>h('h3',{class:'ssec'},this.tr(T(it,en)));   /* v141: a heading that groups the settings below it */
     let body;
     if(tab==='general'){
-      body=[select(this.t('lang'),'lang',LANGS),
-        toggle(this.t('fullscreen'),'fullscreen'),
-        toggle(this.t('showFps'),'fps'),
+      body=[sec('Lingua e streaming','Language and streaming'),select(this.t('lang'),'lang',LANGS),
         toggle(this.t('streamerMode'),'streamer',this.t('streamerDesc')),
+        sec('Dati e test','Data and testing'),
         this.app.cloud.canTest?row(this.t('sandboxOpt'),h('button',{class:'btn small'+(s.sandbox?'':' alt'),'data-fid':'tsandbox',onclick:()=>{
           if(!this.sbArm){this.sbArm=true;this.toast({type:'info',msg:this.t(s.sandbox?'sbWarnOff':'sbWarnOn')});setTimeout(()=>{if(this.sbArm){this.sbArm=false;if(this.top&&this.top.name==='settings')this.rebuild(true);}},6000);this.sfx();this.rebuild(true);return;}
           this.sbArm=false;this.sfx();
@@ -62,33 +73,41 @@ Object.assign(UI.prototype,{
           else{this.resetArm=true;this.toast({type:'info',msg:this.t('resetConfirm')});setTimeout(()=>{this.resetArm=false;},4000);}
         }},this.t('reset')))];
     }else if(tab==='gameplay'){
-      body=[toggle(this.t('shake'),'shake'),toggle(this.t('dmgNums'),'dmgNum'),
-        toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
+      body=[sec('Combattimento e feedback','Combat and feedback'),
+        toggle(this.t('dmgNums'),'dmgNum'),toggle(this.t('shake'),'shake'),
         toggle(this.tr(T6('Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop','Hit-stop')),'hitstop',this.tr(T6('Un attimo di pausa e uno zoom sui colpi grossi (evoluzioni, boss, critici enormi, combo).','A split-second freeze and a zoom on big hits (evolutions, bosses, huge crits, combos).','Una pausa breve y un zoom en los golpes grandes (evoluciones, jefes, críticos enormes, combos).','Une micro-pause et un zoom sur les gros coups (évolutions, boss, critiques énormes, combos).','Ein kurzer Stopp und ein Zoom bei großen Treffern (Entwicklungen, Bosse, riesige Krits, Combos).','Uma pausa rápida e um zoom nos golpes grandes (evoluções, chefes, críticos enormes, combos).'))),
+        toggle(this.tr(T6('Evocazione del drago ×2','Dragon summoning ×2','Invocación del dragón ×2','Invocation du dragon ×2','Drachenbeschwörung ×2','Invocação do dragão ×2')),'summonX2',this.tr(T6('Shenron e Porunga appaiono a velocità doppia (durante l\'evocazione: pulsante ×2 in basso o tasto X).','Shenron and Porunga appear at double speed (during the summoning: ×2 button at the bottom or the X key).','Shenron y Porunga aparecen a doble velocidad (durante la invocación: botón ×2 abajo o tecla X).','Shenron et Porunga apparaissent à double vitesse (pendant l\'invocation : bouton ×2 en bas ou touche X).','Shenron und Porunga erscheinen doppelt so schnell (während der Beschwörung: Knopf ×2 unten oder Taste X).','Shenron e Porunga aparecem em velocidade dupla (durante a invocação: botão ×2 embaixo ou tecla X).'))),
+        sec('Telecamera','Camera'),
+        slider(this.tr(T('Zoom','Zoom')),'zoom',50,150,10,v=>Math.round(v)+'%',this.tr(T('Quanto vedi del campo di gioco: sotto il 100% vedi più mappa, sopra ingrandisci. In partita puoi usare anche la rotella del mouse.','How much of the field you see: below 100% shows more map, above zooms in. In a run you can also use the mouse wheel.'))),
+        sec('Potenziamenti e ticket','Upgrades and tickets'),
+        row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
+        toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
+        toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.'))),
+        sec('Aiuti e menu','Hints and menus'),
         toggle(this.tr(T6('Suggerimenti','Hints','Consejos','Astuces','Tipps','Dicas')),'hints',this.tr(T6('Brevi consigli la prima volta che incontri qualcosa di nuovo.','Short tips the first time you meet something new.','Consejos breves la primera vez que encuentras algo nuevo.','De courts conseils la première fois que tu rencontres quelque chose de nouveau.','Kurze Tipps, wenn dir zum ersten Mal etwas Neues begegnet.','Dicas curtas na primeira vez que você encontra algo novo.'))),
         row(this.tr(T6('Rivedi i suggerimenti','Show hints again','Volver a ver los consejos','Revoir les astuces','Tipps erneut zeigen','Rever as dicas')),h('button',{class:'btn small alt','data-fid':'hintsReset',onclick:()=>{Hints.reset(this.save);this.save.settings.hints=true;this.app.save.write();this.sfx();this.toast({type:'info',msg:this.tr(T6('I suggerimenti torneranno nella prossima partita.','Hints will show again next run.','Los consejos volverán en la próxima partida.','Les astuces reviendront à la prochaine partie.','Die Tipps erscheinen in der nächsten Runde wieder.','As dicas voltarão na próxima partida.'))});this.rebuild(true);}},this.tr(T6('Ripristina','Reset','Restablecer','Réinitialiser','Zurücksetzen','Redefinir')))),
         select(this.tr(T('Scheda iniziale della pausa','Pause menu opens on')),'pauseTab',[['map',this.t('mapTab')],['run',this.t('runTab')],['last',this.tr(T('Ultima usata','Last used'))]]),
-        row(this.t('lvAuto'),h('button',{class:'btn small','data-fid':'prioOpen',onclick:()=>{this.sfx('uiTab');this.push('priority');}},this.t('prioBtn')+' ›'),this.t('prioRowD')),
-        s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */
-        toggle(this.tr(T('Scelta automatica a potenziamenti al massimo','Auto-choose when everything is maxed')),'zAuto',this.tr(T('Quando ogni arma e potenziamento è al massimo, il sacco di zenny più grande viene scelto da solo a ogni livello.','When every weapon and upgrade is maxed, the biggest bag of zenny is picked by itself on every level-up.'))),
-        toggle(this.tr(T('Apertura automatica ticket','Auto-open tickets')),'tkAuto',this.tr(T('Dopo aver aperto un ticket 1× o 10×, apre da solo il successivo, uno alla volta. Puoi fermarlo in qualsiasi momento.','After opening a 1× or 10× ticket, the next one opens by itself, one at a time. You can stop it at any moment.')))];
+        s.sandbox&&this.app.cloud.canTest?row(this.t('teleTitle'),h('button',{class:'btn small','data-fid':'teleOpen',onclick:()=>{this.sfx('uiTab');this.push('telemetry');}},this.t('teleExp')+' ›'),this.t('teleRowD')):null,   /* only while Test mode is on; the data are recorded in the background anyway */];
     }else if(tab==='audio'){
       const pc=v=>Math.round(v*100)+'%';
-      body=[slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc),
+      body=[sec('Volume','Volume'),slider(this.t('master'),'master',0,1,.05,pc),slider(this.t('music'),'music',0,1,.05,pc),slider(this.t('sfxVol'),'sfx',0,1,.05,pc),
+        sec('Effetti sonori','Sound effects'),
         toggle(this.tr(T('Armi evolute più silenziose','Quieter evolved weapons')),'quietEvo',this.tr(T('Quando un\'arma evoluta spara più colpi alla volta (Quantità), il suo suono si abbassa in base a quanti sono, per non stancare le orecchie.','When an evolved weapon fires several shots at once (Quantity), its sound is lowered according to how many there are, to spare your ears.')))];
     }else if(tab==='video'){
-      body=[select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
+      body=[sec('Schermo e prestazioni','Screen and performance'),select(this.t('resolution'),'res',[['native',this.t('resNative')],['720','1280×720 (HD)'],['1080','1920×1080 (Full HD)']]),
         s.res==='native'?slider(this.t('renderScale'),'scale',.5,2,.25,v=>Math.round(v*100)+'%'):null,
         toggle(this.tr(T6('Risoluzione dinamica','Dynamic resolution','Resolución dinámica','Résolution dynamique','Dynamische Auflösung','Resolução dinâmica')),'dynRes',this.tr(T6('Se il gioco scende sotto i 50 fps, disegna meno pixel (fino al 60%) e risale quando torna fluido.','If the game drops under 50 fps it draws fewer pixels (down to 60%) and goes back up once it is smooth again.','Si el juego baja de 50 fps, dibuja menos píxeles (hasta el 60%) y vuelve a subir cuando va fluido.','Si le jeu passe sous 50 fps, il dessine moins de pixels (jusqu\'à 60 %) et remonte quand tout redevient fluide.','Fällt das Spiel unter 50 fps, zeichnet es weniger Pixel (bis 60 %) und geht wieder hoch, sobald es flüssig läuft.','Se o jogo cair abaixo de 50 fps, desenha menos pixels (até 60%) e volta a subir quando estiver fluido.'))),
         toggle(this.t('fullscreen'),'fullscreen'),toggle(this.t('showFps'),'fps'),
+        sec('Effetti e visibilità','Effects and visibility'),
         toggle(this.t('reduceFx'),'reduceFx',this.t('reduceFxDesc')+' '+this.tr(T('Rende anche le tue armi più trasparenti in automatico: più effetti ci sono a schermo, più si abbassa l\'opacità (fino al 25%). Si somma al cursore dell\'opacità.','It also makes your weapons more transparent automatically: the more effects on screen, the lower the opacity (down to 25%). It stacks with the opacity slider.'))),
         slider(this.t('fxOpacity'),'fxAlpha',0,100,5,v=>Math.round(v)+'%',this.t('fxOpacityDesc')),
         slider(this.tr(T('Opacità dell\'aura','Aura opacity')),'auraAlpha',0,100,5,v=>Math.round(v)+'%',this.tr(T('Rende più o meno visibile l\'aura del tuo personaggio: forme, Kaioken, Furia e carica della trasformazione. 0% la nasconde. Si somma all\'opacità degli effetti.','Makes your character\'s aura more or less visible: forms, Kaioken, Berserk and the transformation charge. 0% hides it. Stacks with the effect opacity.'))),
         toggle(this.tr(T('Animazioni di morte','Death animations')),'deathAnim',this.tr(T('I nemici colpiti a morte volano all\'indietro, cadono e si dissolvono a pixel. Spegnerlo toglie questi corpi dallo schermo (più leggero con tanti nemici). Non dipende più da «Effetti ridotti».','Enemies that die fly backwards, fall and dissolve into pixels. Turning it off removes these bodies from the screen (lighter with many enemies). It no longer depends on «Reduced effects».')))];
     }else if(tab==='world'){
       const dn=v=>this.t('dayWord')+' '+Math.round(v)+'% · '+this.t('nightWord')+' '+(100-Math.round(v))+'%';
-      body=[toggle(this.t('ambientFx'),'ambient',this.t('ambientFxDesc')),
+      body=[sec('Atmosfera','Atmosphere'),toggle(this.t('ambientFx'),'ambient',this.t('ambientFxDesc')),
         toggle(this.t('weatherFx'),'weather',this.t('weatherFxDesc')),
+        sec('Giorno e notte','Day and night'),
         toggle(this.t('dayNight'),'dayNight',this.t('dayNightDesc')),
         s.dayNight?slider(this.t('dnShare'),'dnDay',0,100,5,dn):null,
         s.dayNight?select(this.t('dnLen'),'dnLen',[['180','3 min'],['300','5 min'],['480','8 min']]):null,
@@ -178,7 +197,8 @@ Object.assign(UI.prototype,{
     /* v109: hovering (or focusing) a stat shows what makes it up: base + every upgrade, form, trinket... (Game.statBreak) */
     const SB=g.statBreak?g.statBreak():{};
     const krt=(k,v,sk)=>{const rows=SB[sk];if(!rows||!rows.length)return kr(k,v);
-      return h('div',{class:'krow sbk',tabindex:'0','data-fid':'sb'+sk},h('span',null,t(k)),h('b',null,v),
+      const sIc=sk==='bdur'&&SHOP_IMG.bdur?h('img',{src:SHOP_IMG.bdur,alt:'',draggable:'false',style:'width:22px;height:22px;margin-right:6px;vertical-align:-6px;border-radius:4px;image-rendering:pixelated'}):null;   /* v141: the beam-duration hourglass */
+      return h('div',{class:'krow sbk',tabindex:'0','data-fid':'sb'+sk},h('span',null,sIc,t(k)),h('b',null,v),
         h('div',{class:'wtip sbtip'},h('div',{class:'wth'},h('b',null,t(k)),h('i',null,v)),
           h('div',{class:'wtr'},rows.map(r=>h('div',{class:'wtrow'},h('span',null,(typeof r.l==='object'?this.tr(r.l):r.l)+(r.x||'')),h('b',null,r.v)))),
           rows.some(r=>r.o)?h('small',null,this.t('statBreakNote')):null));};
@@ -303,16 +323,21 @@ Object.assign(UI.prototype,{
   /* ---------- modals (level up / chest / wish) ---------- */
   describe(o){
     if(o.type==='w'){const w=WEAPONS[o.id],g=this.app.game,wp=g&&g.weapons.get(o.id),ev=wp?wp.evo:0,pid=evoPass(o.id,ev);
-      const evoNow=((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo;
-      const fx=o.xl!=null?[{i:'dmg',t:'+'+(XL_DMG*100).toString().replace('.',',')+'% '+this.t('xlDmg')},{i:'area',t:'+'+(XL_AREA*100).toString().replace('.',',')+'% '+this.t('xlArea')},{i:'cd',t:'−'+(XL_CD*100).toString().replace('.',',')+'% '+this.t('xlCd')}]:evoNow?[{i:'dmg',t:T('+5% danno','+5% damage')},{i:'cd',t:T('−1,5% ricarica','−1.5% cooldown')},{i:'area',t:T('+2% area','+2% area')}]:(o.lv?wsFx(o.id,o.lv-1,o.lv):null);
-      return{k:w.k,wimg:o.id,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.xl!=null?'Lv '+(o.lv+o.xl)+'→'+(o.lv+o.xl+1):o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),d:(fx?null:w.d),
+      const evoNow=((this.app.game&&this.app.game.weapons.get(o.id))||{}).evo,mm=o.r!=null?CARD_M[o.r]:1;
+      const fx=o.xl!=null?[{i:'dmg',t:'+'+(XL_DMG*100).toString().replace('.',',')+'% '+this.t('xlDmg')},{i:'area',t:'+'+(XL_AREA*100).toString().replace('.',',')+'% '+this.t('xlArea')},{i:'cd',t:'−'+(XL_CD*100).toString().replace('.',',')+'% '+this.t('xlCd')}]:evoNow?[{i:'dmg',t:T('+'+_f(5*mm)+'% danno','+'+_f(5*mm)+'% damage')},{i:'cd',t:T('−'+_f(1.5*mm)+'% ricarica','−'+_f(1.5*mm)+'% cooldown')},{i:'area',t:T('+'+_f(2*mm)+'% area','+'+_f(2*mm)+'% area')}]:(o.lv?(o.r!=null?wsFxR(wp,o.id,o.lv,mm):wsFx(o.id,o.lv-1,o.lv)):(o.r!=null?[{i:'dmg',t:T('Danno '+_f(WS[o.id].dmg[0]*mm),'Damage '+_f(WS[o.id].dmg[0]*mm))}]:null));
+      return{k:w.k,wimg:o.id,c:w.c,n:w.n,cat:evoNow?'dmg':(fx?fx[0].i:'wpn'),fx,lvt:o.xl!=null?'Lv '+(o.lv+o.xl)+'→'+(o.lv+o.xl+1):o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('wpnTag'):this.t('newWeapon'),r:o.r,d:(fx&&(o.lv||o.xl!=null)?null:w.d),
         hints:pid&&(!g||ev<g.maxEvo(o.id))?[{pid,wid:o.id,evo:ev}]:null};}
     if(o.type==='p'){const p=PASS[o.id],g=this.app.game,used=g?g.passCount():0;
       const hints=g?[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===o.id).map(w=>({pid:o.id,wid:w.id,evo:w.evo,ready:w.maxed})):null;
-      return{k:p.k,c:p.c,img:PASS_IMG[o.id],n:p.n,cat:PASS_ICON[o.id],fx:[{i:PASS_ICON[o.id],t:p.d}],lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('upgTag'):this.t('newPass'),d:null,hints:hints&&hints.length?hints:null};}
-    if(o.type==='z')return{k:'金',c:'#ffd23f',cat:'coin',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
-    {const gg=this.app.game,n=gg?gg.senzu:0,full=n>=SENZU_MAX;
-      return{k:'豆',c:'#8be07a',cat:'hp',n:T('Fagiolo Senzu','Senzu Bean'),tag:this.t('senzuTitle'),d:T(full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}),full?this.t('senzuFull',{b:SENZU_MAX}):this.t('senzuBagged',{a:n+1,b:SENZU_MAX}))};}
+      return{k:p.k,c:p.c,img:PASS_IMG[o.id],n:p.n,cat:PASS_ICON[o.id],fx:this.passFx(o,p),r:o.r,lvt:o.lv?'Lv '+o.lv+'→'+(o.lv+1):'Lv 1',tag:o.lv?this.t('upgTag'):this.t('newPass'),d:null,hints:hints&&hints.length?hints:null};}
+    return{k:'金',c:'#ffd23f',cat:'coin',n:T('Zenny','Zeni'),tag:this.t('treasure'),d:T('+'+o.v+' zenny','+'+o.v+' zenny')};
+  },
+  /* a secondary upgrade's card, like a weapon's: "Damage +20% → +31%" (what the run has now -> after this card, rarity included); the first level shows just the value; Scouter keeps its text */
+  passFx(o,p){
+    const e=PASS_E[o.id],g=this.app.game;
+    if(!e||o.r==null||!g)return[{i:PASS_ICON[o.id],t:p.d}];
+    const cur=(g.passEff()[o.id]||0)*e.v,nx=cur+(PASS_NOR.includes(o.id)?1:CARD_M[o.r])*e.v,f=v=>(v<0?'−':'+')+(Math.abs(v)>=10?Math.round(Math.abs(v)):_f(Math.abs(v)))+e.u,t=(cur?f(cur)+'→':'')+f(nx);
+    return[{i:PASS_ICON[o.id],t:T(e.l.it+' '+t,e.l.en+' '+t)}];
   },
   describeReward(r){
     if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,wimg:r.id,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
@@ -323,14 +348,15 @@ Object.assign(UI.prototype,{
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
-    const fc=info.cat&&CAT_COL[info.cat];
-    return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
+    const fc=null,rc=info.r!=null?'var(--rc)':info.c;   /* v141: no colour by category (health red, XP yellow...): the frame and the accents are the rarity's */
+    return h('button',{class:'card opt'+(info.evo?' evo':'')+(fc?' cat':'')+(info.r!=null?' rar r'+info.r:'')+(extra||''),style:'--d:'+(.12+i*.1)+'s'+(fc?';--fc:'+fc:''),'data-fid':'o'+i,title:info.hints?info.hints.map(x=>this.tr(this.evoSentence(x.pid,x.wid,x.evo))).join('\n'):null,onclick},
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       info.trin?potara('pcard'):null,
+      info.r===4?h('span',{class:'rtop','aria-hidden':'true'}):null,   /* Mythic: the crystal crown on the top edge */
       info.timg&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[info.timg]?tGlyph(info.timg,info.c):info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
-        h('div',{class:'cl',style:'color:'+(fc||info.c)},info.tag),
-        info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+(CAT_COL[x.i]||fc||info.c)},h('b',null,this.tr(x.t))))):null,
+        h('div',{class:'cl',style:'color:'+rc},info.r!=null?info.tag+' · '+this.tr(RARITY[info.r].n):info.tag),
+        info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+rc},h('b',null,this.tr(x.t))))):null,
         info.d?h('div',{class:'cd'},this.tr(info.d)):null,
         info.pf!=null?this.perfBar(info.pf):null,
         info.hints?info.hints.map(x=>this.evoHint(x.pid,x.wid,x.evo,x.ready)):null),
@@ -621,6 +647,10 @@ Object.assign(UI.prototype,{
     const fsel=sel(['shrine','spring','altar','font','tunnel'].map(k=>[k,k]));
     const frm=sel([[-1,this.t('baseForm')],...LINES[g.C.line||'saiyan'].map((f,i)=>[i,(i+1)+'. '+this.tr(f.n)])],g.formIdx);
     const spd=sel([[0,'0x'],[.5,'0.5x'],[1,'1x'],[2,'2x'],[4,'4x']],g.timeScale);
+    const ss=(opts,val,fn)=>{const e=sel(opts,val);e.onchange=()=>{fn(+e.value);this.sfx('click');};return e;};   /* a select that applies on change */
+    const L=(it,en)=>this.tr(T(it,en)),sb=g.sb;
+    const psel=sel(Object.keys(PASS).map(id=>[id,this.tr(PASS[id].n)]));
+    const rsel=ss([[-1,L('Auto','Auto')],...RARITY.map((r,i)=>[i,this.tr(r.n)])],sb.rar,v=>{sb.rar=v;});
     const close=h('button',{class:'btn tiny alt',onclick:()=>this.hideSandbox()},'✕');
     this.sbEl.innerHTML='';
     this.sbEl.append(h('div',{class:'sbhead'},h('b',null,'SANDBOX'),close),
@@ -634,6 +664,14 @@ Object.assign(UI.prototype,{
       row(this.t('sbLoot'),lsel,b('go',()=>g.spawnLoot(lsel.value,p.x+40,p.y)),fsel,b('go',()=>{g.feat.push({kind:fsel.value,x:p.x+120,y:p.y,t:0,ttl:100,used:false,dead:false});})),
       row(this.t('sbChest'),b(this.t('sbNormal'),()=>g.spawnChestHere(false)),b(this.t('sbFinal'),()=>g.spawnChestHere(true)),b(this.t('sbWish'),()=>{g.balls=6;g.spawnLoot('ball',p.x+30,p.y);}),b(this.t('sbTrial'),()=>g.startTrial())),
       row(this.t('sbPlayer'),b(this.t('sbHeal'),()=>g.heal(g.p.maxHp)),b('-50%',()=>{g.p.hp=Math.max(1,g.p.hp*.5);}),b(g.sb.god?'God ✓':'God',()=>{g.sb.god=!g.sb.god;this.buildSandbox(g);}),b(g.sb.nospawn?'NoSpawn ✓':'NoSpawn',()=>{g.sb.nospawn=!g.sb.nospawn;this.buildSandbox(g);}),
-        b('+XP',()=>{g.addXp(g.need);})));
+        b('+XP',()=>{g.addXp(g.need);})),
+      row(L('Fortuna','Luck'),ss([[0,'+0%'],[.1,'+10%'],[.25,'+25%'],[.5,'+50%'],[.9,'+90%']],sb.luck,v=>{sb.luck=v;g.recalc();})),
+      row(L('Spawn','Spawn rate'),ss([[.25,'0.25x'],[.5,'0.5x'],[1,'1x'],[2,'2x'],[4,'4x'],[8,'8x']],sb.spawn,v=>{sb.spawn=v;})),
+      row(L('Danno','Damage'),ss([[1,'1x'],[2,'2x'],[5,'5x'],[10,'10x'],[100,'100x']],sb.dmg,v=>{sb.dmg=v;g.recalc();})),
+      row('XP',ss([[1,'1x'],[2,'2x'],[5,'5x'],[10,'10x'],[50,'50x']],sb.xp,v=>{sb.xp=v;})),
+      row(L('Rarità card','Card rarity'),rsel,b(L('Level-up','Level-up'),()=>{g.modal={type:'level',options:g.levelOptions()};}),
+        psel,b('+',()=>{const id=psel.value,cur=g.pass[id]||0;if(cur<passMax(id))g.applyOption({type:'p',id,lv:cur,r:sb.rar>=0?sb.rar:2});})),
+      row(L('Risorse','Resources'),b('+1k Z',()=>g.addZenny(1000,true)),b('+10k Z',()=>g.addZenny(10000,true)),b(L('Senzu +1','Senzu +1'),()=>{g.senzu=Math.min(SENZU_MAX,g.senzu+1);}),
+        b(L('Pianta Senzu','Senzu plant'),()=>{const a=MOBJ.s_senzu(g);a.k='senzu';a.t=2;g.mo.acts.push(a);}),b(L('Uccidi anche boss','Kill incl. bosses'),()=>{for(const e of g.en)if(!e.dead&&!e.prop)g.damageEnemy(e,1e12);})));
   }
 });

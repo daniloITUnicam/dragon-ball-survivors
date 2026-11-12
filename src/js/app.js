@@ -22,6 +22,12 @@ class App{
     addEventListener('resize',()=>this.renderer.resize());
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.state==='play')this.pause();});
     addEventListener('blur',()=>{if(this.state==='play')this.pause();});
+    /* v141: mouse wheel = camera zoom while playing (50%..150%, steps of 10%; also in Settings > Gameplay) */
+    addEventListener('wheel',e=>{
+      if(this.state!=='play'||e.ctrlKey||!this.game||this.game.modal)return;
+      const s=this.save.d.settings,z=Math.round(((s.zoom>0?s.zoom:100)-Math.sign(e.deltaY)*10)/10)*10;
+      s.zoom=clamp(z,50,150);this.renderer.zlabT=1.2;clearTimeout(this._zw);this._zw=setTimeout(()=>this.save.write(),600);e.preventDefault();
+    },{passive:false});
     document.addEventListener('fullscreenchange',()=>{const s=this.save.d.settings,on=!!document.fullscreenElement;if(s.fullscreen!==on){s.fullscreen=on;this.save.write();if(this.ui.active&&this.ui.top.name==='settings')this.ui.rebuild(true);}});
     const unlock=()=>{this.audio.unlock();this.audio.applyVolumes();if(this.state==='menu')this.audio.play('menu');};
     addEventListener('pointerdown',unlock);addEventListener('keydown',unlock);addEventListener('gamepadconnected',unlock);
