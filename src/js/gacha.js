@@ -63,7 +63,7 @@ Object.assign(Progress.prototype,{
       const pf=hasPf(trinDef(g.id))?rollPf(K.lucky?.5:0):PF_NOM,res={id:g.id,r:g.r,dup,coins:0,at:now+i,p:pf};
       if(dup){
         if(!test){res.coins=dupPayout(g.r);d.zenny+=res.coins;d.stats.zenny+=res.coins;}
-        const ob=d.bag.find(x=>x.id===g.id&&x.r===g.r);if(ob&&hasPf(trinDef(g.id))&&pf>(ob.p!=null?ob.p:PF_NOM)){res.up=ob.p!=null?ob.p:PF_NOM;ob.p=pf;}   /* a duplicate with a better roll upgrades the one you own (and still pays zenny) */
+        const ob=d.bag.find(x=>x.id===g.id&&x.r===g.r);if(ob&&hasPf(trinDef(g.id))&&pf>(ob.p!=null?ob.p:PF_NOM)){res.up=ob.p!=null?ob.p:PF_NOM;ob.p=PFS(pf,ob.ls);}   /* a duplicate with a better roll upgrades the one you own (and still pays zenny) */
       }
       else{own.add(key);const b={id:g.id,r:g.r,at:now+i,p:pf};if(test)b.t=1;d.bag.push(b);}
       if(!test){const gs=d.gacha;gs.pulls++;if(g.r===4)gs.mythics++;if(g.r===3)gs.legend++;}
@@ -73,25 +73,21 @@ Object.assign(Progress.prototype,{
   }
   ,bagGet(k){return this.d.bag.find(b=>trinketKey(b.id,b.r)===k)||null;}
   /* Test mode: only the trinkets pulled in Test can be rerolled or fused (they go away with it), for free */
-  ,canWork(b){return !!b&&(!this.d.settings.sandbox||!!b.t);}
+  ,canWork(b){return !!b;}   /* Test mode: every trinket can be rerolled / fused / locked, not only the ones pulled in Test */
   ,rerollCost(kind,r){return this.d.settings.sandbox?0:(REROLL_COST[kind]||[])[r]||0;}
   ,keepFee(r){return this.d.settings.sandbox?0:REROLL_KEEP[r]||0;}
-  /* v141: a locked stat (b.lk: stat keys, bought per stat at the keep price of the trinket's rarity, unlocked for free) can never come out worse from a perfection reroll:
-     lockBreaks(b,o) tells whether the roll o would lower one of them (shown as the cards show it), and such a roll is thrown away */
-  ,lockStat(k,key){const b=this.bagGet(k),f=b?this.keepFee(b.r):0;if(!b||(b.lk||[]).includes(key)||this.d.zenny<f)return false;this.d.zenny-=f;b.lk=(b.lk||[]).concat(key);this.save.write();return true;}
-  ,unlockStat(k,key){const b=this.bagGet(k);if(!b||!b.lk)return;b.lk=b.lk.filter(x=>x!==key);if(!b.lk.length)delete b.lk;this.save.write();}
-  ,lockBreaks(b,o){
-    if(!b||!b.lk||!b.lk.length||!o)return false;
-    const dv=(k,v)=>k==='armor'||k==='regen'?Math.round(v*10):k==='proj'?v:Math.round(v*100),pf=(t,x)=>hasPfE(t,x.f)?(x.p!=null?x.p:PF_NOM):PF_NOM,tA=trinDef(b.id),tB=trinDef(o.id);
-    const A=trinStats(tA,b.r,pf(tA,b),b.f),C=trinStats(tB,o.r,pf(tB,o),o.f);
-    return b.lk.some(k=>{const a=A.find(x=>x.k===k),c=C.find(x=>x.k===k);return a&&(!c||dv(k,c.v)<dv(k,a.v));});
-  }
+  /* v141: a stat can be locked (bought per stat at the keep price of the trinket's rarity, unlocked for free): a perfection reroll no longer touches it, the others still
+     change. b.ls = {stat key: its frozen perfection}; the number b.p is the perfection of every other stat (see PFS) */
+  ,lockStat(k,key){const b=this.bagGet(k),f=b?this.keepFee(b.r):0;if(!b||(b.ls&&b.ls[key]!=null)||this.d.zenny<f)return false;this.d.zenny-=f;b.ls=Object.assign({},b.ls,{[key]:+(b.p!=null?b.p:PF_NOM)});b.p=PFS(+b.p,b.ls);this.save.write();return true;}
+  ,unlockStat(k,key){const b=this.bagGet(k);if(!b||!b.ls)return;const ls=Object.assign({},b.ls);delete ls[key];if(Object.keys(ls).length)b.ls=ls;else delete b.ls;b.p=PFS(+b.p,b.ls);this.save.write();}
+  /* the stat keys a perfection reroll of b can still change */
+  ,freeStats(b){const t=trinDef(b.id);return trinStats(t,b.r,PF_NOM,b.f).map(x=>x.k).filter(k=>!(b.ls&&b.ls[k]!=null));}
   ,payKeep(r){const f=this.keepFee(r);if(this.d.zenny<f)return false;this.d.zenny-=f;this.save.write();return true;}
   /* spends the zenny and returns the candidate {id,r,p,f} (nothing changes in the bag until rerollApply), or null */
   ,rerollRoll(kind,k){
     const d=this.d,b=this.bagGet(k);if(!this.canWork(b))return null;const c=this.rerollCost(kind,b.r);if(d.zenny<c)return null;
     let o=null;
-    if(kind==='pf'&&hasPfE(trinDef(b.id),b.f))o={id:b.id,r:b.r,p:rollPf(0),f:b.f};
+    if(kind==='pf'&&hasPfE(trinDef(b.id),b.f)&&this.freeStats(b).length)o={id:b.id,r:b.r,p:rollPf(0),f:b.f};
     if(!o)return null;
     d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;this.save.write();return o;
   }
@@ -99,7 +95,7 @@ Object.assign(Progress.prototype,{
     const d=this.d,b=this.bagGet(k);if(!b||!o||(o.id!==b.id&&this.bagHas(o.id,b.r)))return null;
     const eqs=d.equips||[];
     for(let i=0;i<eqs.length;i++){const e=eqs[i];if(!e)continue;if(e.id===b.id&&e.r===b.r)eqs[i]={id:o.id,r:b.r};else if(e.id===o.id)eqs[i]=null;}   /* the slot follows; another rarity of the new trinket leaves its slot */
-    b.id=o.id;b.p=o.p;if(isFused(o.f)){b.f=o.f.filter(e=>e.id!==o.id);if(!b.f.length)delete b.f;}
+    b.id=o.id;b.p=PFS(+o.p,b.ls);if(isFused(o.f)){b.f=o.f.filter(e=>e.id!==o.id);if(!b.f.length)delete b.f;}
     if(d.trin)d.trin[o.id]=1;d.equip=eqs[0]||null;this.save.write();return trinketKey(b.id,b.r);
   }
   /* three bag trinkets -> one: the rarity of the rarest (that one is the base: its trinket and its effect; ties: the better perfection), the stats of all three
@@ -113,14 +109,14 @@ Object.assign(Progress.prototype,{
     const have=new Set(Object.keys(trinMods0(trinDef(base.id),r,PF_NOM))),f=[];
     for(const b of bs)if(b!==base){const s=trinBestStat(b.id,b.f,r,have);if(s){f.push(s);have.add(s.k);}}
     const k=trinketKey(base.id,r),block=this.d.bag.some(b=>trinketKey(b.id,b.r)===k&&!bs.includes(b));
-    return{base,id:base.id,r,p:p<0?PF_NOM:p,f:f.slice(0,FUSE_MAX),block};
+    return{base,id:base.id,r,p:p<0?PF_NOM:+p,f:f.slice(0,FUSE_MAX),block};
   }
   ,fuse(keys){
     const d=this.d,P=this.fusePlan(keys);if(!P||P.block)return null;const bs=keys.map(k=>this.bagGet(k));if(bs.some(b=>!this.canWork(b)))return null;
     const eqs=d.equips||(d.equips=[null,null,null]);let slot=-1;
     eqs.forEach((e,i)=>{if(e&&bs.some(b=>b.id===e.id&&b.r===e.r)){if(slot<0)slot=i;eqs[i]=null;}});
     d.bag=d.bag.filter(b=>!bs.includes(b));
-    const nb={id:P.id,r:P.r,at:Date.now(),p:P.p};if(P.f.length)nb.f=P.f;if(bs.some(b=>b.t))nb.t=1;d.bag.push(nb);
+    const nb={id:P.id,r:P.r,at:Date.now(),p:+P.p};if(P.f.length)nb.f=P.f;if(bs.some(b=>b.t))nb.t=1;d.bag.push(nb);
     if(slot>=0)eqs[slot]={id:nb.id,r:nb.r};d.equip=eqs[0]||null;d.gacha.fused=(d.gacha.fused||0)+1;this.save.write();
     return trinketKey(nb.id,nb.r);
   }

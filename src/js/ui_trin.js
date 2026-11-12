@@ -119,14 +119,14 @@ Object.assign(UI.prototype,{
     const b=this.rrSel&&P.bagGet(this.rrSel),side=h('div',{class:'bagside'});
     if(this.rrPend&&!this.rrOpen)this.rrPend=null;   /* a roll left without a choice keeps the old trinket */
     if(b){
-      const can=P.canWork(b),run=!!this.rrAutoOn;
+      const run=!!this.rrAutoOn;
       this.rrAutoEl=h('small',{class:'rrautost'});
       side.append(this.tdet(b.id,b.r,b.p,b.f,[
         run?h('button',{class:'btn','data-fid':'rrstop',onclick:()=>{this.rrAutoOn=false;}},'⏹ '+this.tr(T('Ferma l\'auto reroll','Stop auto reroll')))
           :h('button',{class:'btn primary','data-fid':'rrpf',title:this.tr(T('Apre il menù: blocca le statistiche, imposta l\'auto reroll e gli obiettivi, poi rerolla la perfezione.','Opens the menu: lock stats, set the auto reroll and the goals, then reroll the perfection.')),
             onclick:()=>{this.sfx();this.rrOpen=true;this.rrModal();}},'🎲 '+this.tr(T('Menù rerolling','Rerolling menu'))),
         this.rrAutoEl,
-        test&&!can?h('p',{class:'bad'},this.tr(T('In modalità Test si possono rerollare solo i cimeli estratti in Test.','In Test mode only the trinkets pulled in Test can be rerolled.'))):null]));
+        ]));
     }else side.append(h('p',{class:'sub'},this.t('bagEmpty')));
     return h('div',{class:'gwork'},this.header(T('Reroll dei cimeli','Trinket reroll')),
       h('p',{class:'sub'},this.tr(T('Scegli un cimelio della sacca e rerolla la sua perfezione. Paghi il tiro, poi decidi tu: tenere il nuovo (gratis) o il vecchio (a pagamento, in base alla rarità). Dal menù del risultato puoi passare all\'auto reroll.','Pick a trinket from your bag and reroll its perfection. You pay for the roll, then you decide: keep the new one (free) or the old one (paid, by rarity). From the result menu you can switch to auto reroll.'))),
@@ -236,7 +236,6 @@ Object.assign(UI.prototype,{
         :h('div',{class:'rrcards'},h('div',null,h('div',{class:'rrlab'},this.tr(T('Prima','Before'))),this.tcard(b.id,b.r,{p:b.p,fu:b.f})),h('div',{class:'rrarrow'},'→'),
           h('div',{class:'rrnew '+verdict[0]},h('div',{class:'rrlab'},this.tr(T('Nuovo','New'))),this.tcard(o.id,o.r,{p:oP!=null?oP:o.p,fu:o.f}))),
       idle?h('p',{class:'cd'},this.tr(T('Blocca le statistiche da non cambiare (sbloccare è gratis), poi rerolla o avvia l\'auto reroll.','Lock the stats you want to keep (unlocking is free), then reroll or start the auto reroll.'))):h('div',{class:'rrverdict '+verdict[0]},this.tr(verdict[1])),
-      idle&&!P.canWork(b)?h('p',{class:'bad'},this.tr(T('In modalità Test si possono rerollare solo i cimeli estratti in Test.','In Test mode only the trinkets pulled in Test can be rerolled.'))):null,
       h('div',{class:'rrtable'},rows),
       idle?h('div',{class:'row'},
         (()=>{const can=canAgain&&hasPfE(tA,b.f)&&P.freeStats(b).length>0;return h('button',{class:'btn'+(can?' primary':' alt'),disabled:!can,'data-fid':'rrnew',onclick:async()=>{if(await this.rrWarn(b)){close();this.rrRoll(kind);}}},'🎲 '+this.tr(T('Rerolla la perfezione','Reroll perfection'))+' · ',c?zAmt(c,true):this.tr(T('gratis','free')));})(),
@@ -303,7 +302,6 @@ Object.assign(UI.prototype,{
     return h('div',{class:'gwork'},this.header(T('Fusione dei cimeli','Trinket fusion')),
       h('p',{class:'sub'},this.tr(T('Tre cimeli della sacca diventano uno: resta quello con la perfezione più alta, portato alla rarità più alta dei tre, e prende la statistica migliore di ciascuno degli altri due. Al massimo 2 statistiche in più: se fondi di nuovo un cimelio fuso, le vecchie vengono sostituite.',
         'Three trinkets from your bag become one: the one with the highest perfection stays, raised to the highest rarity of the three, and takes the best stat of each of the other two. 2 extra stats at most: fusing a fused trinket again replaces the old ones.'))),
-      test?h('p',{class:'good'},this.tr(T('Modalità Test: si fondono solo i cimeli estratti in Test.','Test mode: only the trinkets pulled in Test can be fused.'))):null,
       done?h('div',{class:'fdone'},h('b',null,'⚗ '+this.tr(T('Fusione riuscita!','Fusion done!'))),this.tcard(done.id,done.r,{p:done.p,fu:done.f})):null,
       h('div',{class:'fwb'},slot(0),slot(1),slot(2),h('div',{class:'fwarr'},'═▶'),res),
       L.tools,h('div',{class:'bagsplit'},L.left,L.grid));
