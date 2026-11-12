@@ -22,7 +22,9 @@ const PATCHES=[
     new:[
       T("Vegeta: camminata a 8 fotogrammi per Orgoglio Saiyan, Super Saiyan, God, Blue e Blue Evoluto (prima le gambe oscillavano su un'immagine ferma). Super Saiyan 2 e 3 usano il foglio del Super Saiyan.","Vegeta: 8-frame walk for Saiyan Pride, Super Saiyan, God, Blue and Blue Evolved (the legs used to swing on a still image). Super Saiyan 2 and 3 use the Super Saiyan sheet."),
       T("Vegeta: la settima forma «Ultra Ego (risveglio)» diventa «Super Saiyan Blue Evoluto» (capelli blu, aura blu), con la sua camminata dal video. Ultra Ego resta l'ultima forma: stesso sprite e stessa camminata in viola.","Vegeta: the seventh form «Ultra Ego (Awakening)» becomes «Super Saiyan Blue Evolved» (blue hair, blue aura), with its own walk from the video. Ultra Ego stays the last form: same sprite and walk in purple."),
-      T("Trasformazione di Vegeta: usa lo sprite di carica della forma che sta raggiungendo (come Goku).","Vegeta's transformation: uses the power-up sprite of the form he is reaching (like Goku).")]},
+      T("Trasformazione di Vegeta: usa lo sprite di carica della forma che sta raggiungendo (come Goku).","Vegeta's transformation: uses the power-up sprite of the form he is reaching (like Goku)."),],
+    fix:[
+      T("Nuvola d'oro: l'aura della forma non la copre più, la nuvola sta davanti all'aura e sotto i piedi dell'eroe.","Golden Nimbus: the form's aura no longer covers it; the cloud is drawn in front of the aura and under the hero's feet.")]},
   {id:'2026-11-11f',date:'2026-11-11',
     name:T("Orde a tema, Élite a sorpresa e nemici più resistenti","Themed hordes, surprise Elites and sturdier enemies"),
     sum:T("La prima orda arriva a 2 minuti e poi una ogni 5, ognuna di un solo tipo di nemico e guidata da un Élite. I nemici all'inizio hanno più Salute: non cadono più con un colpo solo.","The first horde arrives at 2 minutes, then one every 5, each made of a single kind of enemy and led by an Elite. Enemies start with more Health: they no longer fall to a single hit."),

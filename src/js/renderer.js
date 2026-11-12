@@ -619,6 +619,7 @@ this.W=1;this.H=1;this.Z=1;
       if(g.clones){for(const q of g.clones){if(q.x===undefined)continue;const s2=Sprites.player(pck,pcc,frame,false,null);ctx.save();ctx.globalAlpha=.55;ctx.translate(q.x,q.y);ctx.scale(p.face*k,k);ctx.imageSmoothingEnabled=!s2.px;ctx.drawImage(s2.c,-s2.ox,-s2.oy);ctx.restore();ctx.imageSmoothingEnabled=false;GLOW.at(ctx,q.x,q.y-22,26,ab.c,.35);}}
     }
     this.fxEnd();
+    MOBJ.drawRide(this,g,t);   /* the Nimbus is in front of the aura, under the hero */
     const bob=p.mv&&!sp.px?-Math.abs(Math.sin(t*9))*1.2:0;   /* pack sprites bob inside their own walk frames */
     const Z=pz?Pose.build(g,pz,u,fd,Sprites.pose(fm).bob,bob):null,blink=!g.dying&&p.inv>0&&p.inv<.45,whiteArm=flash&&!xf;
     const LF=g.dying?null:this.life(g,t),lft=()=>{if(LF){ctx.translate(p.x,p.y+bob-(LF.oy||0));ctx.scale(LF.sx,LF.sy);ctx.translate(-p.x,-(p.y+bob));}};   /* v116: the alive layer moves the painted arms with the body */
