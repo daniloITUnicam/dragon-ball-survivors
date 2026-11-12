@@ -56,9 +56,9 @@ Game.prototype.updateCorpses=function(dt){
 /* boss shock wave: three rings of light (colour of the boss, white, gold), a ring on the ground, a white flash (not for the final boss: its victory sequence does that) and a strong shake */
 Game.prototype.bossShock=function(e){
   const x=e.x,y=e.y-e.r*.5,c=(e.bd&&e.bd.c)||'#ffffff',R=Math.max(420,e.r*10);
-  this.fx.push({shock:true,x,y,max:R,l:1.3,m:1.3,c});
-  this.fx.push({shock:true,x,y,max:R*.66,l:.95,m:.95,c:'#ffffff'});
-  if(!FXL.on)this.fx.push({shock:true,x,y,max:R*1.3,l:1.7,m:1.7,c:'#ffd23f'});
+  this.fx.push(FXS({shock:true,x,y,max:R,l:1.3,m:1.3,c}));
+  this.fx.push(FXS({shock:true,x,y,max:R*.66,l:.95,m:.95,c:'#ffffff'}));
+  if(!FXL.on)this.fx.push(FXS({shock:true,x,y,max:R*1.3,l:1.7,m:1.7,c:'#ffd23f'}));
   this.ring(x,y,R*.5,'#ffffff',.55);
   if(!e.final){this.flash=Math.max(this.flash||0,.5);this.flashC='#ffffff';}
   this.shake=Math.max(this.shake,e.final?.7:.95);

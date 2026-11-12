@@ -40,12 +40,12 @@ class Sprites{
     const gr=og.createLinearGradient(0,0,o.width,o.height);
     gr.addColorStop(0,'rgba(255,255,255,.16)');gr.addColorStop(.5,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,40,.30)');
     og.fillStyle=gr;og.fillRect(0,0,o.width,o.height);
-    return{c:o,ox:ox*S+pad,oy:oy*S+pad};
+    return SPR(o,ox*S+pad,oy*S+pad,0,false,null);
   }
   static flashOf(sp){
     const c=document.createElement('canvas');c.width=sp.c.width;c.height=sp.c.height;const g=c.getContext('2d');
     g.drawImage(sp.c,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#ffffff';g.fillRect(0,0,c.width,c.height);
-    return{c,ox:sp.ox,oy:sp.oy,s:sp.s,px:sp.px};
+    return SPR(c,sp.ox,sp.oy,sp.s,sp.px,sp.sheet);
   }
   static circ(R,cx,cy,r,col){for(let y=-r;y<=r;y++){const hw=Math.sqrt(r*r-y*y);R(cx-hw,cy+y,hw*2,1,col);}}
 

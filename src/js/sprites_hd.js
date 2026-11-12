@@ -44,7 +44,7 @@ Sprites.paintHD=function(W,H,ox,oy,draw,S){
   const gr=og.createLinearGradient(0,0,o.width*.8,o.height);
   gr.addColorStop(0,'rgba(255,255,255,.13)');gr.addColorStop(.5,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,40,.24)');
   og.fillStyle=gr;og.fillRect(0,0,o.width,o.height);
-  return{c:o,ox:ox*S+pad,oy:oy*S+pad,s:S};
+  return SPR(o,ox*S+pad,oy*S+pad,S,false,null);
 };
 
 /* ---- painter helpers (art units, any fraction) ---- */

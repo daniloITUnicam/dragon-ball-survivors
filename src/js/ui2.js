@@ -363,7 +363,9 @@ Object.assign(UI.prototype,{
           return c;})),
         tools.length?h('div',{class:'row lvtools'},tools):null);
     }else if(m.type==='chest'){
-      el=h('div',{class:'screen modal'},h('h2',null,this.t('chestTitle'),' ',h('span',{style:'color:'+RARITY[m.rar||0].c+';text-shadow:0 0 14px '+RARITY[m.rar||0].c},this.tr(RARITY[m.rar||0].n))),
+      const rc=RARITY[m.rar||0].c,rn=this.tr(RARITY[m.rar||0].n);   /* v141: same banner as the level-up; the rarity word and the frame glow take the rarity colour */
+      el=h('div',{class:'screen modal'},h('div',{class:'lvban',style:'border-color:'+rc+';box-shadow:0 0 0 2px #110503,inset 0 0 0 2px rgba(255,150,70,.16),inset 0 0 26px rgba(0,0,0,.85),0 10px 22px rgba(0,0,0,.6),0 0 30px '+rc+'88'},banFx('lv'),
+          h('h2',null,bTxt(this.t('chestTitle')),' ',(()=>{const w=bTxt(rn);w.style.setProperty('--g','linear-gradient(180deg,#fff 0%,'+rc+' 38%,'+rc+' 62%,color-mix(in srgb,'+rc+' 55%,#000) 100%)');return w;})())),
         h('div',{class:'cards'+(m.rewards.length>4?' many':'')},m.rewards.map((r,i)=>this.card(this.describeReward(r),i,null,' reveal'+(m.rewards.length>6?' tiny':'')))),
         h('div',{class:'row'},h('button',{class:'btn primary','data-focus':true,style:'animation-delay:1.4s',onclick:()=>{this.sfx('chest');this.app.resolveModal(0);}},this.t('collect'))));
     }else if(m.type==='pick'){

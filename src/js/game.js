@@ -90,6 +90,8 @@ const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK
 'use strict';
 /* ====== Game core (no DOM access: UI/renderer observe it) ====== */
 /* v121: keep only the items for which f holds, in place (order kept) */
+/* v141: the same, for the lists that drop what is .dead (one plain loop: no function made and called per element) */
+function keepAlive(a){let j=0;for(let i=0;i<a.length;i++){const x=a[i];if(!x.dead)a[j++]=x;}a.length=j;return a;}
 function keepIf(a,f){let j=0;for(let i=0;i<a.length;i++){const x=a[i];if(f(x))a[j++]=x;}a.length=j;return a;}
 /* v121: spatial hash of the enemies, rebuilt each frame without allocations: buckets of 40-unit cells chained through typed arrays.
    Used for the crowd push-apart and for the shots (which then only test the enemies near them, in the original array order). */
@@ -110,6 +112,18 @@ const EGRID={S:40,M:4095,head:new Int32Array(4096),next:new Int32Array(512),mark
 class Game{
   constructor(o,env){
     this.env=env;this.save=env.save.d;this.audio=env.audio;this.progress=env.progress;
+    /* v141 (frame pacing): every field that the game used to add to this object later, in the middle of a run (the first horde, the first boss, the first gem
+       combo...), exists from the start. Adding a field to a live object changes its hidden class: the engine then throws away the optimized code of every
+       function that touches the game and runs them slowly until it has rebuilt it - a hitch at every "first time" */
+    this.S=undefined;this._alT=undefined;this._boom=undefined;this._seenT=undefined;this.abMsgT=undefined;this.bersMax=undefined;this.bkills=undefined;this.bq=undefined;
+    this.dashC=undefined;this.dashV=undefined;this.dashWave=undefined;this.evLog=undefined;this.finisher=undefined;this.fireT=undefined;this.gemCombo=undefined;
+    this.gemFxN=undefined;this.gemFxT=undefined;this.gemT=undefined;this.haloUsed=undefined;this.hordeBoost=undefined;this.hsCd=undefined;this.kaiAcc=undefined;
+    this.novaT=undefined;this.ovkCd=undefined;this.pc=undefined;this.pcKey=undefined;this.perfK=undefined;this.pet=undefined;this.pff=undefined;this.pfm=undefined;
+    this.pfs=undefined;this.prevKey=undefined;this.prevPc=undefined;this.pt0=undefined;this.rainSfx=undefined;this.rrar=undefined;this.sbk=undefined;this.snkR=undefined;
+    this.streakW=undefined;this.tPicked=undefined;this.trapSfx=undefined;this.vic=undefined;this.wealthT=undefined;this.ally=undefined;this.bcine=undefined;
+    this.clash=undefined;this.cev=undefined;this.kBoost=undefined;this.kch=undefined;this.lsT=undefined;this.lsUsed=undefined;this.gsT=undefined;this.kcNext=undefined;
+    this.wkills=undefined;this.cKeys=undefined;this.runId=undefined;this.altarN=undefined;this.gtrail=undefined;this.corpses=undefined;this.ghost=undefined;
+    this.tunX=undefined;
     this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sdR=this.stage.dif!==undefined?this.stage.dif:o.stage;this.sd=CURVE_SD;this.spdK=stageSpd(this.sd);this.hardK=1+Math.min(STAGE_HARD_MAX,STAGE_HARD*(this.stage.pos||0));{const N=stageNorm(this.stage);this.norm=N;}   /* v134: sdR = the stage's step (rewards), sd = the shared curve; norm = this stage's enemies brought to the first stage's strength */MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
     this.diffId='normal';this.D=DIFF.normal;
     this.week=o.week||null;this.pacts=o.sandbox||o.week?[]:(o.pacts||[]).filter(id=>PACTS.some(p=>p.id===id));this.pk=pactFx(this.pacts);
@@ -119,7 +133,7 @@ class Game{
     {const m=o.week||o.sandbox?null:PROGX.forStage(o.stage);this.dmut=m?m.fx:{};this.dmutN=m?m.n:null;if(this.dmut.ehp)this.D=Object.assign({},this.D,{hp:this.D.hp*this.dmut.ehp});}   /* v116: today's mutator */
 this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.t=0;this.kills=0;this.lvl=1;this.xp=0;this.need=xpNeed(1);
-    this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false};
+    this.p={x:0,y:this.stage.theme==='snake'?Snake.f(0):this.stage.theme==='void'?TOPARENA.TR+110:0,hp:1,maxHp:1,face:1,inv:0,mv:false,atk:0};
     this.input={x:0,y:0,interact:false};
     this.en=[];this.pr=[];this.eb=[];this.gm=[];this.rg=null;this.loot=[];this.lootCd={};this.feat=[];this.chests=[];this.fx=[];this.tx=[];this.corpses=[];
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
@@ -190,7 +204,15 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   /* v116: freeze the world for d s and punch the camera in by z (Settings > Gameplay > Hit-stop) */
   hitStop(d,z){if(this.save.settings&&this.save.settings.hitstop===false)return;this.hs=Math.max(this.hs||0,d);this.zoomP=Math.max(this.zoomP||0,z||0);}
-  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(!dm&&c!==4&&c!==7&&typeof s==='string')this.logEv(s,c===1?'#ffd23f':c===2?'#ffb0b0':c===3?'#9fe8ff':'#ffffff');if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
+  /* v141: the clocks and the motion of the particles and of the floating texts, each in its own small function. They were lines of update(), which is so long and
+     takes so many rare turns that the engine keeps dropping its optimized code: there every sum made a new number object (~30 KB of garbage per frame) */
+  tickFx(dt){
+    const a=this.fx;let j=0;
+    for(let i=0;i<a.length;i++){const f=a[i];f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}else if(f.fol){f.x=f.fol.x;f.y=f.fol.y-18;}if(f.l>0)a[j++]=f;}
+    a.length=j;
+  }
+  tickTx(dt){const a=this.tx;let j=0;for(let i=0;i<a.length;i++){const t=a[i];t.t+=dt;if(t.t<t.l)a[j++]=t;}a.length=j;}
+  floatText(x,y,s,c){c=c||0;const dm=c===0||c===6;if(!dm&&c!==4&&c!==7&&typeof s==='string')this.logEv(s,c===1?'#ffd23f':c===2?'#ffb0b0':c===3?'#9fe8ff':'#ffffff');if(this.tx.length<(dm?46:70))this.tx.push({x,y,t:0,s,c,l:dm?DMG_T:.8,oy:0});}   /* c: 0 damage on an enemy, 6 critical hit (both stay DMG_T s), 1 gold label, 2 buff, 3 cyan, 4 damage taken, 5 white label */
 
   /* ---------- stats ---------- */
   tMods(){
@@ -618,14 +640,14 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         const ang=near?Math.atan2(near.y-8-(p.y-18),near.x-p.x):(p.face>0?0:Math.PI);
         const fire=(a2,dm,len,w)=>{const cs=Math.cos(a2),sn=Math.sin(a2);
           for(const e of this.en){if(e.dead)continue;const rx=e.x-p.x,ry=e.y-8-(p.y-18),t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<w/2+e.r)this.hit(e,dm,cs*220,sn*220);}
-          this.fx.push({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c,ab:this.C.id,fol:p,t2:f2});};   /* fol: the beam stays on the hero who fired it */
+          this.fx.push(FXS({beam:true,x:p.x,y:p.y-18,a:a2,len,w,l:.75,m:.75,c,ab:this.C.id,fol:p,t2:f2}));};   /* fol: the beam stays on the hero who fired it */
         const dmg=(30+L*3)*v;
         if(f2){fire(ang,dmg*1.7,1020,168);fire(ang+Math.PI,dmg*1.0,720,120);}   /* final form: a huge beam, and another one behind you */
         else fire(ang,dmg,640,64);
         this.shake=Math.max(this.shake,f2?.9:.5);this.flash=.25;this.flashC=c;this.audio.sfx('abBeam');break;}
       case'nova':{
         const R=230*v*(f2?1.85:1),nd=(28+L*2.4)*v*(f2?1.7:1);   /* final form: the small wave becomes huge */
-        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-14,R,l:f2?.9:.7,m:f2?.9:.7,t2:f2});   /* v123: painted Supernova / Death Beam */
+        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push(FXS({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-14,R,l:f2?.9:.7,m:f2?.9:.7,t2:f2}));   /* v123: painted Supernova / Death Beam */
         this.ring(p.x,p.y,R,c,.7);this.ring(p.x,p.y,R*.6,'#ffffff',.5);if(f2){this.ring(p.x,p.y,R*.8,c,.9);this.ring(p.x,p.y,R*.35,'#ffffff',.6);}this.burst(p.x,p.y-14,f2?60:34,c);this.bolt(p.x,p.y-14,R*.9,c,f2?18:10);this.shake=Math.max(this.shake,f2?.9:.45);this.flash=.2;this.flashC=c;
         for(const e of this.en){if(e.dead)continue;const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){this.hit(e,nd,0,0);e.stun=Math.max(e.stun,f2?1.2:.4);if(!e.boss){e.kx+=dx/d*(f2?500:380);e.ky+=dy/d*(f2?500:380);}}}
         this.audio.sfx('abNova');break;}
@@ -638,7 +660,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'dash':{
         let dx=this.input.x,dy=this.input.y;const dl=Math.hypot(dx,dy);if(dl<.1){dx=p.face>0?1:-1;dy=0;}else{dx/=dl;dy/=dl;}
         this.startDash(dx,dy,v*(f2?2:1),f2?.8:.5,c);
-        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-18,a:Math.atan2(dy,dx),fol:p,R:f2?150:110,l:f2?.65:.5,m:f2?.65:.5,t2:f2});   /* v123: Goku Black's painted Ki Blade */
+        if(typeof WFX!=='undefined'&&WFX.AB[this.C.id])this.fx.push(FXS({abfx:WFX.AB[this.C.id],x:p.x,y:p.y-18,a:Math.atan2(dy,dx),fol:p,R:f2?150:110,l:f2?.65:.5,m:f2?.65:.5,t2:f2}));   /* v123: Goku Black's painted Ki Blade */
         if(f2){this.bv.t=.32;this.dashT=.4;this.dashWave=true;}   /* final form: longer dash, double damage, shockwave on arrival */
         this.audio.sfx('abDash');break;}
       case'clones':{
@@ -667,7 +689,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         this.audio.sfx('abBarrier');break;}
       case'absorb':{
         let n=0;const R=260*(f2?1.8:1),cap=f2?20:8,k=f2?2:1;
-        for(const e of this.en){if(e.dead||n>=cap)continue;if(Math.hypot(e.x-p.x,e.y-p.y)<R+e.r){n++;this.hit(e,(10+L)*v*k,0,0);this.heal(p.maxHp*.015*k);this.fx.push({bolt:true,pts:[[e.x,e.y-8],[(e.x+p.x)/2+rnd(-12,12),(e.y+p.y)/2-10+rnd(-8,8)],[p.x,p.y-14]],l:.4,m:.4,c});}}
+        for(const e of this.en){if(e.dead||n>=cap)continue;if(Math.hypot(e.x-p.x,e.y-p.y)<R+e.r){n++;this.hit(e,(10+L)*v*k,0,0);this.heal(p.maxHp*.015*k);this.fx.push(FXS({bolt:true,pts:[[e.x,e.y-8],[(e.x+p.x)/2+rnd(-12,12),(e.y+p.y)/2-10+rnd(-8,8)],[p.x,p.y-14]],l:.4,m:.4,c}));}}
         this.ring(p.x,p.y,R,c,.6);this.audio.sfx('abAbsorb');break;}
       case'timestop':{
         const ts=f2?3.6:1.8,rr=f2?this.viewR*1.4:this.viewR*1.1;
@@ -751,7 +773,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(Math.abs(-rx*sn+ry*cs)<w/2+e.r){this.hit(e,dm,cs*240,sn*240);e.stun=Math.max(e.stun,e.boss?.15:.5);this.burst(e.x,e.y-8,8,c);}
     }
     this.eb=this.eb.filter(b=>{const rx=b.x-ox,ry=b.y-oy,t=rx*cs+ry*sn;return !(t>-10&&t<len&&Math.abs(-rx*sn+ry*cs)<w/2+b.r);});   /* the beam also erases the bullets it crosses */
-    this.fx.push({beam:true,sbc:true,x:ox,y:oy,a:ang,len,w:f2?26:18,l:.75,m:.75,c,ab:'sbc',t2:f2});   /* (thinner to look at than it is to hit) */
+    this.fx.push(FXS({beam:true,sbc:true,x:ox,y:oy,a:ang,len,w:f2?26:18,l:.75,m:.75,c,ab:'sbc',t2:f2}));   /* (thinner to look at than it is to hit) */
     this.ring(ox,oy,50,c,.3);this.burst(ox,oy,14,'#ffffff');this.shake=Math.max(this.shake,.5);this.flash=.2;this.flashC=c;this.audio.sfx('abBeam');
   }
   /* ---------- Sphere of Justice (Toppo): thrown, grows while it pulls the enemies in, then explodes ---------- */
@@ -833,13 +855,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       }else if(kind==='beam'){
         const len=520,wd=36;
         for(const e of this.en){if(e.dead)continue;const rx=e.x-k.x,ry=e.y-8-k.y,t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<wd/2+e.r)this.hit(e,base*1.1,cs*160,sn*160);}
-        if(this.fx.length<420)this.fx.push({beam:true,x:k.x,y:k.y,a:ang,len,w:wd,l:.45,m:.45,c:col});
+        if(this.fx.length<420)this.fx.push(FXS({beam:true,x:k.x,y:k.y,a:ang,len,w:wd,l:.45,m:.45,c:col}));
       }else if(kind==='chain'){
         const seen=new Set([tg]);let cur=tg;this.hit(tg,base,0,0);
         for(let j=0;j<4;j++){
           let nx=null,bd=220*220;for(const e of this.en){if(e.dead||seen.has(e))continue;const d=(e.x-cur.x)**2+(e.y-cur.y)**2;if(d<bd){bd=d;nx=e;}}
           if(!nx)break;seen.add(nx);
-          if(this.fx.length<420)this.fx.push({bolt:true,pts:[[cur.x,cur.y-8],[(cur.x+nx.x)/2+rnd(-8,8),(cur.y+nx.y)/2-12],[nx.x,nx.y-8]],l:.3,m:.3,c:col});
+          if(this.fx.length<420)this.fx.push(FXS({bolt:true,pts:[[cur.x,cur.y-8],[(cur.x+nx.x)/2+rnd(-8,8),(cur.y+nx.y)/2-12],[nx.x,nx.y-8]],l:.3,m:.3,c:col}));
           this.hit(nx,base,0,0);cur=nx;
         }
       }else{
@@ -975,8 +997,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p,i=x.idx,col=x.col;x.released=true;
     const max=640+i*170;
     this.shocks.push({id:++this.shockId,x:p.x,y:p.y-14,max,t:0,dur:1.05+.05*i,dmg:18+7*(i+1)});
-    this.fx.push({shock:true,x:p.x,y:p.y-14,max,l:1.05+.05*i,m:1.05+.05*i,c:col});
-    this.fx.push({shock:true,x:p.x,y:p.y-14,max:max*.62,l:.75,m:.75,c:'#ffffff'});
+    this.fx.push(FXS({shock:true,x:p.x,y:p.y-14,max,l:1.05+.05*i,m:1.05+.05*i,c:col}));
+    this.fx.push(FXS({shock:true,x:p.x,y:p.y-14,max:max*.62,l:.75,m:.75,c:'#ffffff'}));
     this.flash=.85;this.flashC=i>=4?'#ffffff':col;this.shake=1;
     this.ring(p.x,p.y,320+i*45,col,.9);this.ring(p.x,p.y,200,'#ffffff',.6);
     this.pillar(p.x,p.y,col,1.6);this.pillar(p.x,p.y,'#ffffff',.9);
@@ -1019,9 +1041,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
   /* ---------- fx helpers ---------- */
   burst(x,y,n,c){if(FXL.on)n=Math.ceil(n*.4);for(let i=0;i<n&&this.fx.length<(FXL.on?200:500);i++){const a=rnd(0,TAU),s=rnd(40,200);this.fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:rnd(.25,.6),m:.6,c,s:rnd(2,5)});}}
-  bolt(x,y,r,c,n){if(FXL.on)n=Math.ceil(n*.5);for(let i=0;i<n&&this.fx.length<(FXL.on?200:460);i++){const a=rnd(0,TAU),L=r*rnd(.5,1),pts=[[x,y]];for(let k=1;k<=6;k++){const t=k/6;pts.push([x+Math.cos(a)*L*t+rnd(-10,10),y+Math.sin(a)*L*t+rnd(-10,10)]);}this.fx.push({bolt:true,pts,l:.35,m:.35,c});}}
-  pillar(x,y,c,l){if(FXL.on)return;this.fx.push({pillar:true,x,y,l:l||.9,m:l||.9,c});}
-  ring(x,y,r,c,l){this.fx.push({ring:true,x,y,r,l:l||.45,m:l||.45,c});}
+  bolt(x,y,r,c,n){if(FXL.on)n=Math.ceil(n*.5);for(let i=0;i<n&&this.fx.length<(FXL.on?200:460);i++){const a=rnd(0,TAU),L=r*rnd(.5,1),pts=[[x,y]];for(let k=1;k<=6;k++){const t=k/6;pts.push([x+Math.cos(a)*L*t+rnd(-10,10),y+Math.sin(a)*L*t+rnd(-10,10)]);}this.fx.push(FXS({bolt:true,pts,l:.35,m:.35,c}));}}
+  pillar(x,y,c,l){if(FXL.on)return;this.fx.push(FXS({pillar:true,x,y,l:l||.9,m:l||.9,c}));}
+  ring(x,y,r,c,l){this.fx.push(FXS({ring:true,x,y,r,l:l||.45,m:l||.45,c}));}
 
   /* ---------- combat ---------- */
   /* weapon target (TAB): 0 closest, 1 most HP, 2 least HP, 3 boss first. It only applies to what is aimed from the player; projectiles keep picking the closest */
@@ -1466,7 +1488,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
          4 shapes every function that touches enemies went megamorphic and each x / y / hp write allocated a number (~1 MB of garbage per frame).
          Numbers start at 0 (all their uses treat 0 like "absent": >0, ||0, truthiness), the rest at undefined (exactly as before for every read) */
       atk:0,telK:0,buff:0,shield:0,shA:0,oa:0,ocd:0,sq:0,zoff:0,trapT:0,hpK:1,tier:0,
-      sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined,prop:def.prop};
+      sk:undefined,tel:undefined,lg:undefined,under:undefined,jp:undefined,xs:undefined,enr:undefined,rc:undefined,esid:undefined,esn:undefined,elite:undefined,par:undefined,sum:undefined,prop:def.prop,dh:0};
   }
   rosterPick(){
     const t=this.nt,r=this.stage.roster,w=[];
@@ -1919,7 +1941,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       h.ticks++;
       if(p.inv<=0&&!this.sb.god){const d=p.maxHp*pct/N;p.hp-=d;this.logTaken(d,e);this.floatText(p.x,p.y-44,Math.round(d),4);e.hp=Math.min(e.max,e.hp+e.max*.004);this.emote('pain',.6);if(p.hp<=0){this.held=null;this.endBossMove(e);this.lethal();return;}}
       this.audio.sfx('abAbsorb');this.shake=Math.max(this.shake,.15);
-      this.fx.push({bolt:true,pts:[[p.x,p.y-14],[(p.x+e.x)/2+rnd(-10,10),(p.y+e.y)/2-18+rnd(-8,8)],[e.x,e.y-e.r]],l:.4,m:.4,c:'#9cff7a'});
+      this.fx.push(FXS({bolt:true,pts:[[p.x,p.y-14],[(p.x+e.x)/2+rnd(-10,10),(p.y+e.y)/2-18+rnd(-8,8)],[e.x,e.y-e.r]],l:.4,m:.4,c:'#9cff7a'}));
       for(let i=0;i<4&&this.fx.length<440;i++)this.fx.push({x:p.x+rnd(-8,8),y:p.y-rnd(0,24),vx:(e.x-p.x)*2.4,vy:(e.y-e.r-p.y)*2.4,l:.4,m:.4,c:'#9cff7a',s:3});
     }
     if(h.t>=3)free(T('Libero!','Released!'));
@@ -1983,7 +2005,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(x.t>=x.rel){
         x.released=true;e.tf++;
         const R=560+120*e.tf;
-        this.fx.push({shock:true,x:e.x,y:e.y-e.r*.5,max:R,l:1.1,m:1.1,c:col});this.fx.push({shock:true,x:e.x,y:e.y-e.r*.5,max:R*.6,l:.8,m:.8,c:'#ffffff'});
+        this.fx.push(FXS({shock:true,x:e.x,y:e.y-e.r*.5,max:R,l:1.1,m:1.1,c:col}));this.fx.push(FXS({shock:true,x:e.x,y:e.y-e.r*.5,max:R*.6,l:.8,m:.8,c:'#ffffff'}));
         this.bshock={x:e.x,y:e.y,max:R,t:0,dur:1.1,dmg:e.dmg*.6,hit:false,o:e};
         this.flash=.9;this.flashC=col;this.shake=1;this.pillar(e.x,e.y,col,1.7);this.pillar(e.x,e.y,'#ffffff',.9);
         this.bolt(e.x,e.y-e.r,320,col,14);this.burst(e.x,e.y-e.r,70,col);this.burst(e.x,e.y-e.r,34,'#ffffff');this.ring(e.x,e.y,360,col,.9);this.ring(e.x,e.y,200,'#ffffff',.6);
@@ -2138,13 +2160,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
     /* aura particles */
     if(this.formIdx>=0&&this.fx.length<380){this.auraAcc+=dt*(14+this.formIdx*4)*(FXL.on?.3:1);while(this.auraAcc>=1){this.auraAcc-=1;this.fx.push({x:p.x+rnd(-12,12),y:p.y-rnd(0,30),vx:rnd(-10,10),vy:-rnd(40,110),l:rnd(.4,.8),m:.8,c:this.formColor,s:rnd(2,4)});}}
-    for(const f of this.fx){f.l-=dt;if(f.vx!==undefined){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;}else if(f.fol){f.x=f.fol.x;f.y=f.fol.y-18;}}
-    keepIf(this.fx,f=>f.l>0);if(this.fx.length>FX_MOB&&fxMob())this.fx.splice(0,this.fx.length-FX_MOB);   /* v137: phones keep the newest FX_MOB particles (late runs reached ~470) */
+    this.tickFx(dt);if(this.fx.length>FX_MOB&&fxMob())this.fx.splice(0,this.fx.length-FX_MOB);   /* v137: phones keep the newest FX_MOB particles (late runs reached ~470) */
     this.updateCorpses(dt);
-    for(const t of this.tx)t.t+=dt;
-    keepIf(this.tx,t=>t.t<t.l);   /* v121: the lists are compacted in place (no new arrays every frame) */
-    keepIf(this.en,e=>!e.dead);keepIf(this.pr,b=>!b.dead);keepIf(this.eb,b=>!b.dead);
-    keepIf(this.gm,g=>!g.dead);keepIf(this.loot,l=>!l.dead);keepIf(this.chests,c=>!c.dead);
+    this.tickTx(dt);   /* v121: the lists are compacted in place (no new arrays every frame) */
+    keepAlive(this.en);keepAlive(this.pr);keepAlive(this.eb);
+    keepAlive(this.gm);keepAlive(this.loot);keepAlive(this.chests);
 
     if(inTrial&&this.trial){
       const tr=this.trial,cl=o=>{const dx=o.x-tr.cx,dy=o.y-tr.cy,d=Math.hypot(dx,dy);if(d>tr.R){o.x=tr.cx+dx/d*tr.R;o.y=tr.cy+dy/d*tr.R;}};
@@ -2407,7 +2427,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(b.hm>0){b.hm-=dt;const ca=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);let da=Math.atan2(p.y-14-b.y,p.x-b.x)-ca;da=Math.atan2(Math.sin(da),Math.cos(da));const na=ca+clamp(da,-2.3*dt,2.3*dt);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp;}
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
       if(b.life<=0){b.dead=true;   /* a Ki Blast at the end of its reach breaks up into pixels (Renderer.drawKiFizz) instead of just vanishing */
-        if(b.kb&&this.fx.length<380)this.fx.push({kfz:1,x:b.x,y:b.y,vx:b.vx*.3,vy:b.vy*.3,r:b.r,c:b.c,l:KI_FIZZ_T,m:KI_FIZZ_T,a:Math.atan2(b.vy,b.vx),sd:Math.random()*100});
+        if(b.kb&&this.fx.length<380)this.fx.push(FXS({kfz:1,x:b.x,y:b.y,vx:b.vx*.3,vy:b.vy*.3,r:b.r,c:b.c,l:KI_FIZZ_T,m:KI_FIZZ_T,a:Math.atan2(b.vy,b.vx),sd:Math.random()*100}));
         continue;}
       if(this.eb.length)this.cutC(b.x,b.y,b.r);   /* a ki shot cancels the enemy bullet it meets (and keeps flying) */
       const G=EGRID,EN=this.en,R=G.maxR,nc=G.box(b.x-R*1.2-b.r-4,b.y-R-b.r-4,b.x+R*1.2+b.r+4,b.y+G.maxZ+R*4.3+b.r+12);

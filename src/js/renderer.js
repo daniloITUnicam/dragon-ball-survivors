@@ -85,6 +85,10 @@ const RB={on:false,m:new Map(),
   add(col,x,y,w,h){let L=this.m.get(col);if(!L){L=[];this.m.set(col,L);}L.push(x,y,w,h);},
   flush(ctx){for(const [col,L] of this.m){if(!L.length)continue;ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<L.length;i+=4)ctx.rect(L[i],L[i+1],L[i+2],L[i+3]);ctx.fill();L.length=0;}this.on=false;}};
 const AURA_K=1.5;   /* size of every painted hero aura (forms, Kaioken) relative to the sprite height the callers ask for */
+/* v141 (frame pacing). HUD_HZ: 0 = the HUD is drawn straight on the frame, every frame (as always). A value like 30 paints it on its own layer that many times a
+   second and lays that picture over every frame: fewer texts to draw, but one more full-screen copy per frame - measured slower where the canvas is not
+   GPU-accelerated, so it stays off */
+const HUD_HZ=0,EN_SHADOW='rgba(0,0,0,0.28)',GEM_C=['#5ad0ff','#ffb13b','#ff5a3d'];
 const CROWD_LOD=110;   /* more enemies alive than this: the rank auras / rings and elite sparks are skipped (the rank dots stay) - fewer blend-mode switches per frame */
 const FX_CROWD0=120,FX_CROWD1=420;   /* load (projectiles + .3 per particle) where weapon effects start fading / are at half opacity */
 class Renderer{
@@ -94,6 +98,13 @@ class Renderer{
     {const d=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'globalAlpha'),c=this.ctx;
       if(d&&d.get&&d.set)Object.defineProperty(c,'globalAlpha',{configurable:true,enumerable:true,get(){const v=d.get.call(c);return FXL.m>0&&FXL.m<1?Math.min(1,v/FXL.m):v;},set(v){d.set.call(c,FXL.m<1?v*FXL.m:v);}});}
 this.W=1;this.H=1;this.Z=1;
+    /* v141: declared up front (see HUD_HZ): a field added to this object in the middle of a run makes the engine drop and rebuild its optimized code */
+    this.U=1;this._bpop=undefined;this._crowd=false;this._dm=undefined;this._dmc=undefined;this._fr=0;this._fxk=undefined;this._goldIc=undefined;this._lastD=0;this._lbT=undefined;
+    this._pf=undefined;this._pt1=0;this._sm=undefined;this._snIS=undefined;this._snapN=0;this._snap=false;this.abBtn=null;this.ballImg=undefined;this.camOff=null;this.dashBtn=null;
+    this.dd=null;this.dyn=1;this.dynPend=false;this.fdt=0;this.featSp=undefined;this.gameRef=undefined;this.lootC=undefined;this.menuBg=undefined;this.obst=undefined;this.petBtn=null;
+    this.shopImgC=undefined;this.statC=undefined;this.stoneC=undefined;this.szBtn=null;this.tImgC=undefined;this.tc=undefined;this.tcKey=undefined;this.tcTheme=undefined;
+    this.tgtAt=0;this.tgtG=undefined;this.tgtMode=undefined;this.wImgC=undefined;this.zenoCoins=undefined;this.zenoPl=undefined;this.zones=undefined;
+    this._hl=null;this._el=[];this._ew=[];this._eln=0;this._ewn=0;this._ky=new Float64Array(1024);this._ix=new Uint16Array(1024);this.menuRes=false;this.mobBtns=undefined;
     this.tiles={};this.decor={};this.vign=null;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
     try{if(document.fonts)document.fonts.load('12px "Anton"','0123456789');}catch(e){}   /* the damage-number lettering */
     this.hint=null;this.joy=null;this.keyHints={};this.tr=(x)=>typeof x==='string'?x:x.it;this.tt=(k)=>k;
@@ -421,12 +432,7 @@ this.W=1;this.H=1;this.Z=1;
     if(g.sbc)this.drawSbc(g,t);if(g.spheres.length)this.drawSpheres(g,t);   /* the Spirit Bomb and the ability spheres / comets (painted sprites) are weapons too */
     lap('wpn');
     /* ground items */
-    for(const gm of (g.trial?[]:g.gm)){
-      if(gm.held)continue;   /* carried gems are drawn with the companion */
-      const col=gm.v<2.2?'#5ad0ff':gm.v<11?'#ffb13b':'#ff5a3d',r=gm.v<2.2?4:gm.v<11?6:9;
-      ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(gm.x,gm.y-r);ctx.lineTo(gm.x+r*.8,gm.y);ctx.lineTo(gm.x,gm.y+r);ctx.lineTo(gm.x-r*.8,gm.y);ctx.closePath();ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(gm.x-1,gm.y-r*.5,2,r*.5);
-    }
+    if(!g.trial&&g.gm.length)this.drawGems(g.gm,vx0,vy0,vx1,vy1);   /* (carried gems are drawn with the companion) */
     if(g.rg&&!g.trial){const r=g.rg,pu=1+.12*Math.sin(t*6),R=9*pu;   /* the same size as the biggest normal gem */
       GLOW.at(ctx,r.x,r.y,R*2.6,'#ff3b2f',.6);
       ctx.fillStyle='#b3150c';ctx.beginPath();ctx.moveTo(r.x,r.y-R);ctx.lineTo(r.x+R*.85,r.y);ctx.lineTo(r.x,r.y+R);ctx.lineTo(r.x-R*.85,r.y);ctx.closePath();ctx.fill();
@@ -445,26 +451,32 @@ this.W=1;this.H=1;this.Z=1;
     if(!g.trial&&!g.tun)MOBJ.drawGround(this,g,t);   /* v135: debris, activities */
     lap('gnd');
     /* entities, depth sorted */
-    const list=g.en.slice();
-    if(!g.trial&&!g.tun){const os=this.getObst(theme);for(const b of World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60))if(!b.gd)list.push({ob:b,y:b.y,spr:os[b.t]});}
-    if(g.trial)for(const ob of g.trial.obs)list.push({pil:ob,y:ob.y});
-    if(theme==='void'&&!g.trial&&vx1>-70&&vx0<70&&vy1>-440&&vy0<70)list.push({tw:1,y:TOPARENA.TR*.4});   /* the tower in the middle of the ring */
-    if(g.pet)list.push({pet:g.pet,y:g.pet.y});
-    if(g.ally)list.push({ally:g.ally,y:g.ally.y});
-    if(g.corpses&&g.corpses.length&&!g.trial)for(const c of g.corpses)list.push({co:c,y:c.y});   /* dissolving bodies (corpse.js) */
+    /* v141: the list and the entries of what is not an enemy are kept from frame to frame (elAdd), the enemies out of view are left out before the sort */
+    const list=this._el;this._eln=0;this._ewn=0;
+    {const en=g.en;if(en.length+320>this._ky.length){this._ky=new Float64Array((en.length+512)*2);this._ix=new Uint16Array(this._ky.length);}
+     const ky=this._ky;for(let i=0;i<en.length;i++){const e=en[i],ey=e.y;if(e.x<vx0||e.x>vx1||ey<vy0||ey>vy1)continue;ky[this._eln]=ey;list[this._eln++]=e;}}
+    if(!g.trial&&!g.tun){const os=this.getObst(theme),vis=World.visible(theme,vx0-60,vy0-60,vx1+60,vy1+60);for(let i=0;i<vis.length;i++){const b=vis[i];if(!b.gd)this.elAdd(6,b,b.y,os[b.t]);}}
+    if(g.trial)for(const ob of g.trial.obs)this.elAdd(3,ob,ob.y,null);
+    if(theme==='void'&&!g.trial&&vx1>-70&&vx0<70&&vy1>-440&&vy0<70)this.elAdd(2,null,TOPARENA.TR*.4,null);   /* the tower in the middle of the ring */
+    if(g.pet)this.elAdd(4,g.pet,g.pet.y,null);
+    if(g.ally)this.elAdd(5,g.ally,g.ally.y,null);
+    if(g.corpses&&g.corpses.length&&!g.trial){const cs=g.corpses;for(let i=0;i<cs.length;i++)this.elAdd(1,cs[i],cs[i].y,null);}   /* dissolving bodies (corpse.js) */
+    list.length=this._eln;
     this._snapN=0;
-    list.sort((a,b)=>a.y-b.y);
+    this.elSort(this._eln);
     const tm=this.save.d.settings.fps,Tm=PF.sub||(PF.sub={co:0,en:0,ob:0});/* with Show FPS: time of the corpses / enemies / scenery of the phase */
     if(tm){Tm.c=Tm.e=Tm.o=0;}
-    for(const e of list){
-      if(e.co){if(tm){const t0=performance.now();this.drawCorpse(e.co,ta);Tm.c+=performance.now()-t0;}else this.drawCorpse(e.co,ta);continue;}
-      if(e.tw){TopArt.tower(ctx,t);continue;}
-      if(e.pil){this.drawPillar(e.pil);continue;}
-      if(e.pet){this.drawPet(e.pet,ta,g);continue;}
-      if(e.ally){this.drawAlly(e.ally,ta,g);continue;}
-      if(e.ob&&e.ob.v!==undefined){this.drawRock(e.ob,theme,t);continue;}
-      if(e.ob){const b=e.ob,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
-      if(e.x<vx0||e.x>vx1||e.y<vy0||e.y>vy1)continue;
+    for(let li=0,ln=this._eln,ix=this._ix;li<ln;li++){
+      const e=list[ix[li]],wk=e.wk;
+      if(wk!==undefined){
+      if(wk===1){if(tm){const t0=performance.now();this.drawCorpse(e.o,ta);Tm.c+=performance.now()-t0;}else this.drawCorpse(e.o,ta);continue;}
+      if(wk===2){TopArt.tower(ctx,t);continue;}
+      if(wk===3){this.drawPillar(e.o);continue;}
+      if(wk===4){this.drawPet(e.o,ta,g);continue;}
+      if(wk===5){this.drawAlly(e.o,ta,g);continue;}
+      if(e.o.v!==undefined){this.drawRock(e.o,theme,t);continue;}
+      {const b=e.o,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
+      }
       if(tm){const t0=performance.now();this.drawEnemy(e,ta);Tm.e+=performance.now()-t0;}else this.drawEnemy(e,ta);
     }
     if(tm){Tm.co=(Tm.co||0)*.92+Tm.c*.08;Tm.en=(Tm.en||0)*.92+Tm.e*.08;}
@@ -550,7 +562,55 @@ this.W=1;this.H=1;this.Z=1;
       ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);this.drawPlayer(g,ta);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
       if(g.summon&&g.summon.ph!=='leave')return;   /* no HUD while the dragon is out */
     }
-    {const h0=performance.now();this.hud(g,dt,cx,cy);const PF=this._pf||(this._pf={});PF.hud=(PF.hud||0)*.92+(performance.now()-h0)*.08;}
+    {const h0=performance.now();this.hudLayer(g,dt,cx,cy);const PF=this._pf||(this._pf={});PF.hud=(PF.hud||0)*.92+(performance.now()-h0)*.08;}
+  }
+  /* v141: the HUD on its own canvas, repainted HUD_HZ times a second (at once after a resize or on a new run) and copied over every frame. The frame counter and
+     the touch stick are per frame (the stick has to follow the thumb) */
+  hudLayer(g,dt,cx,cy){
+    this.fa+=dt;this.fn++;if(this.fa>.5){this.fps=Math.round(this.fn/this.fa);this.fa=0;this.fn=0;}
+    const main=this.ctx;
+    if(!HUD_HZ){this.hud(g,dt,cx,cy);this.hudStick(main);return;}
+    const cv=this.cv,L=this._hl||(this._hl={cv:document.createElement('canvas'),ctx:null,t:-1e9,acc:0,g:null});
+    if(!L.ctx)L.ctx=L.cv.getContext('2d');
+    let force=L.g!==g;
+    if(L.cv.width!==cv.width||L.cv.height!==cv.height){L.cv.width=cv.width;L.cv.height=cv.height;force=true;}
+    const now=performance.now();L.acc+=dt;
+    if(force||now-L.t>=1000/HUD_HZ-3){
+      const c=L.ctx;this.ctx=c;
+      try{c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.clearRect(0,0,cv.width,cv.height);this.hud(g,L.acc,cx,cy);}
+      catch(e){try{for(let i=0;i<40;i++)c.restore();}catch(_){}throw e;}
+      finally{this.ctx=main;}
+      L.t=now;L.acc=0;L.g=g;
+    }
+    main.setTransform(1,0,0,1,0,0);main.globalAlpha=1;main.globalCompositeOperation='source-over';main.drawImage(L.cv,0,0);
+    this.hudStick(main);
+  }
+  /* the touch stick (per frame: it follows the thumb) */
+  hudStick(main){
+    if(this.joy&&this.joy.on){
+      const j=this.joy,U=this.U;main.setTransform(1,0,0,1,0,0);main.globalAlpha=.3;main.fillStyle='#fff';main.beginPath();main.arc(j.ox,j.oy,48*U,0,TAU);main.fill();
+      main.globalAlpha=.6;main.beginPath();main.arc(j.ox+j.x*38*U,j.oy+j.y*38*U,22*U,0,TAU);main.fill();main.globalAlpha=1;
+    }
+  }
+  /* a reusable entry of the depth-sorted list for what is not an enemy: wk 1 body, 2 the tower, 3 pillar, 4 pet, 5 ally, 6 scenery */
+  elAdd(wk,o,y,spr){if(this._eln>=this._ky.length)return;const P=this._ew,i=this._ewn++;let w=P[i];if(!w)w=P[i]={wk:0,o:null,y:.5,spr:null};w.wk=wk;w.o=o;w.y=y;w.spr=spr;this._ky[this._eln]=y;this._el[this._eln++]=w;}
+  /* the depth order of the list: the positions are copied to a typed array and only the indices are sorted (insertion sort: stable, no memory, ~30 microseconds for
+     300 entries). The built-in sort read .y from enemies, bosses, props and scenery entries - too many kinds of object for the engine's fast path - and made a
+     new number object at every read (~40 KB of garbage per frame) */
+  elSort(n){const ky=this._ky,ix=this._ix;for(let i=0;i<n;i++)ix[i]=i;for(let i=1;i<n;i++){const k=ix[i],y=ky[k];let j=i-1;while(j>=0&&ky[ix[j]]>y){ix[j+1]=ix[j];j--;}ix[j+1]=k;}}
+  /* the experience gems: those of one colour are a single path and a single fill, at whole world pixels (no number objects), only the ones in view */
+  drawGems(gm,x0,y0,x1,y1){
+    const ctx=this.ctx,n=gm.length;
+    for(let k=0;k<3;k++){
+      const r=k===0?4:k===1?6:9,w=k===0?3:k===1?5:7;let any=false;
+      for(let i=0;i<n;i++){const q=gm[i];if(q.held)continue;const v=q.v;if((v<2.2?0:v<11?1:2)!==k)continue;const x=q.x|0,y=q.y|0;if(x<x0||x>x1||y<y0||y>y1)continue;
+        if(!any){any=true;ctx.beginPath();}
+        ctx.moveTo(x,y-r);ctx.lineTo(x+w,y);ctx.lineTo(x,y+r);ctx.lineTo(x-w,y);ctx.closePath();}
+      if(any){ctx.fillStyle=GEM_C[k];ctx.fill();}
+    }
+    let any=false;
+    for(let i=0;i<n;i++){const q=gm[i];if(q.held)continue;const x=q.x|0,y=q.y|0;if(x<x0||x>x1||y<y0||y>y1)continue;const h=q.v<2.2?2:q.v<11?3:4;if(!any){any=true;ctx.beginPath();}ctx.rect(x-1,y-h,2,h);}
+    if(any){ctx.fillStyle='rgba(255,255,255,.7)';ctx.fill();}
   }
   /* the lettering of the damage numbers: a clean, upright, medium-weight font (white for a hit, red for a critical hit) with a thin dark outline for contrast.
      It is drawn at twice the size and shown scaled down with smoothing, so the digits stay sharp and easy to read. One sprite per (text, critical?), cached */
@@ -864,7 +924,7 @@ this.W=1;this.H=1;this.Z=1;
     if(esid&&e.boss&&/^tama[123]f?$/.test(esid))frame=e.pwUntil>t?7:(e.stun>0?8:(e.atk>0?(TAMA_WEAPON[e.lp]?(e.atk>.18?5:6):7):frame));   /* Tamagami: power-up / hit / weapon strike / special */
     const sp=esid?Sprites.sheetEnemy(esid,frame,flash):Sprites.forSp(sd,frame,flash),k=u/(sp.s||Sprites.S)*(e.elite?ELITE_R:1)*(e.tier?1+TIER_R*e.tier:1);
     const zo=e.zoff||0,bsz=e.boss?1+.1*(e.tf||0):1,sqx=e.sq?1.1:1,sqy=e.sq?.8:1;
-    if(!this._snap){ctx.fillStyle='rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')';ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();}   /* _snap: the picture for the death animation, which casts its own shadow */
+    if(!this._snap){ctx.fillStyle=zo?'rgba(0,0,0,'+(.28-Math.min(.14,zo/500))+')':EN_SHADOW;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*.95*(1-Math.min(.3,zo/300)),e.r*.32,0,0,TAU);ctx.fill();}   /* _snap: the picture for the death animation, which casts its own shadow */
     if(e.elite){      /* elite: golden halo, a pulsing ring on the ground and flickering sparks */
       GLOW.at(ctx,e.x,e.y-e.r,e.r*3.1,'#ffd23f',.5+.12*Math.sin(t*5+e.ph));
       ctx.save();ctx.strokeStyle='rgba(255,210,63,'+(.55+.25*Math.sin(t*6))+')';ctx.lineWidth=2.6;ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*1.15,e.r*.4,0,0,TAU);ctx.stroke();
@@ -2080,11 +2140,7 @@ this.W=1;this.H=1;this.Z=1;
       }
       ctx.globalAlpha=1;
     }
-    if(this.joy&&this.joy.on){
-      const j=this.joy;ctx.globalAlpha=.3;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(j.ox,j.oy,48*U,0,TAU);ctx.fill();
-      ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(j.ox+j.x*38*U,j.oy+j.y*38*U,22*U,0,TAU);ctx.fill();ctx.globalAlpha=1;
-    }
-    if(this.save.d.settings.fps){this.fa+=dt;this.fn++;if(this.fa>.5){this.fps=Math.round(this.fn/this.fa);this.fa=0;this.fn=0;}txt(this.fps+' FPS',W-m,H-26*U,'#9fe8ff','right',F(11));
+    if(this.save.d.settings.fps){txt(this.fps+' FPS',W-m,H-26*U,'#9fe8ff','right',F(11));
       /* what each phase costs (ms per frame, smoothed) and how many things are alive: when the frame rate drops, this says where it goes */
       const PF=this._pf||{},f1=k=>(PF[k]||0).toFixed(1);
       txt('upd '+f1('upd')+'  ter '+f1('ter')+'  wpn '+f1('wpn')+'  gnd '+f1('gnd')+'  ent '+f1('ent')+'  fx '+f1('fx')+'  hud '+f1('hud')+'   [ent: bodies '+((PF.sub&&PF.sub.co)||0).toFixed(1)+' enemies '+((PF.sub&&PF.sub.en)||0).toFixed(1)+']',W-m,H-40*U,'#9fe8ff','right',F(10));

@@ -45,8 +45,9 @@ const DECA={
   plains:['sway','sway',0,'sway',0,0],namek:['sway',0,'sway','glow',0,'sway'],waste:['sway',0,0,0,0,'sway'],other:['bob',0,0,'glow',0,0],
   beach:[0,'sway',0,0,0,0],redrock:[0,0,0,'sway',0,'glow'],arena:[0,0,0,'torch',0,0],sky:['bob',0,0,'bob',0,0],hell:[0,0,'glow','torch',0,0],void:[0,'glow',0,'bob','glow',0]
 };
+const TILE_RB=(c,x,y,w,hh)=>RB.add(c,x,y,w,hh);
 const Ambient={
-  on:true,wxOn:true,dnOn:true,dnDay:.6,dnLen:300,nt:0,px:0,py:0,auto:true,lod:1,dt:.016,t:0,ps:[],cr:[],cnt:{},g:null,theme:null,cfg:null,lt:0,dbl:false,wg:null,wx0:0,wy0:0,ww:0,wh:0,
+  _Rc:null,_R:null,nv:undefined,on:true,wxOn:true,dnOn:true,dnDay:.6,dnLen:300,nt:0,px:0,py:0,auto:true,lod:1,dt:.016,t:0,ps:[],cr:[],cnt:{},g:null,theme:null,cfg:null,lt:0,dbl:false,wg:null,wx0:0,wy0:0,ww:0,wh:0,
   sm:.016,slow:0,fast:0,foot:0,wd:.5,evI:0,evK:'',cx:0,cy:0,vw:800,vh:500,pre:true,
   sw(t,ph){return (Math.sin(t*1.7+ph)*.55+Math.sin(t*.63+ph*1.9)*.45)*(.55+.6*this.wd);},
   /* ---------- lakes (walkable, decorative) ---------- */
@@ -139,7 +140,7 @@ const Ambient={
       }
       return;
     }
-    const R=RB.on?(c,x,y,w,hh)=>RB.add(c,x,y,w,hh):(c,x,y,w,hh)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,hh);};   /* batched when the renderer collects them (one fill per colour) */
+    const R=RB.on?TILE_RB:(this._Rc===ctx?this._R:(this._Rc=ctx,this._R=(c,x,y,w,hh)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,hh);}));   /* batched when the renderer collects them (one fill per colour); v141: the same two functions for every tile (one was made per tile per frame) */
     if(theme==='plains'){
       if(lv>=3&&h>.3){for(let i=0;i<3;i++){const fx=X+8+hash(tx*3+i,ty)*46,fy=Y+10+hash(tx,ty*3+i)*42,s=Math.sin(t*2+fx*.1)*1.3;
         R('#2f8a3a',fx+s*.5,fy+3,1.4,4);R(FLOWC[(hash(tx+i,ty*7)*4)|0],fx+s-1.5,fy-1,3.5,3.5);R('#fff6a8',fx+s-.5,fy,1.2,1.2);}}

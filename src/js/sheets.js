@@ -82,7 +82,7 @@ Sprites.sheetFrame=function(sid,frame){
   const c=document.createElement('canvas');c.width=S.fw;c.height=S.fh;
   const g=c.getContext('2d');g.imageSmoothingEnabled=false;
   g.drawImage(S.img,i*S.fw,0,S.fw,S.fh,0,0,S.fw,S.fh);
-  return{c,ox:S.ax,oy:S.ay,s:S.ppu,px:true,sheet:sid};
+  return SPR(c,S.ax,S.ay,S.ppu,true,sid);
 };
 /* decode the embedded sheets; onLoad(id) fires for each one so open menus can refresh.
    v114: the big sheets only one place needs (SPRITE_LAZY: the Snake Way islands, the summoned dragons, the Tamagami statues - about 100 MB of

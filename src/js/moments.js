@@ -50,14 +50,14 @@ const MOMENTS={
     const ox=a.x,oy=a.y-22,ang=Math.atan2(tg.y-8-oy,tg.x-ox),cs=Math.cos(ang),sn=Math.sin(ang);g.audio.sfx('shot');
     if(kind==='shot'){for(let i=-2;i<=2;i++){const q=ang+i*.13;g.pr.push({x:ox,y:oy,vx:Math.cos(q)*520,vy:Math.sin(q)*520,r:8,dmg:base,pi:2,life:1.3,hit:[],c:col,wid:'ally'});}}
     else if(kind==='beam'||kind==='chain'){const len=620,wd=44;for(const e of g.en){if(e.dead)continue;const rx=e.x-ox,ry=e.y-8-oy,t=rx*cs+ry*sn;if(t<-10||t>len)continue;if(Math.abs(-rx*sn+ry*cs)<wd/2+e.r){g.curW='ally';g.hit(e,base*1.3,cs*180,sn*180);}}g.curW=null;
-      if(g.fx.length<420)g.fx.push({beam:true,x:ox,y:oy,a:ang,len,w:wd,l:.5,m:.5,c:col});}
+      if(g.fx.length<420)g.fx.push(FXS({beam:true,x:ox,y:oy,a:ang,len,w:wd,l:.5,m:.5,c:col}));}
     else{g.curW='ally';g.explodeAt(tg.x,tg.y,120,base*1.4,col);g.curW=null;}
   },
   /* ---- boss transformation cinematic: the camera flies to the boss, letterbox, its new name; the ground shakes when it ends ---- */
   bossCine(g,e,n,c,intro){if(g.trial||g.tun||e.mini)return;g.bcine={e,n,c,t:0,intro:!!intro,T:intro?BOSS_INTRO_T:BCINE_T};if(!intro)g.audio.sfx('xcharge');},   /* intro: the short close-up when a boss appears (no bars, no burst) */
   tickCine(g,dt){const b=g.bcine;if(!b)return false;b.t+=dt;
     if(b.t>=b.T){const e=b.e;g.bcine=null;if(b.intro){g.shake=Math.max(g.shake,.3);return false;}g.shake=1;g.flash=.4;g.flashC=b.c;g.audio.sfx('xburst');
-      if(e&&!e.dead){g.fx.push({shock:true,x:e.x,y:e.y,max:520,l:1,m:1,c:b.c});for(const o of g.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y,l=Math.hypot(dx,dy)||1;if(l<420){o.kx+=dx/l*14;o.ky+=dy/l*14;}}}
+      if(e&&!e.dead){g.fx.push(FXS({shock:true,x:e.x,y:e.y,max:520,l:1,m:1,c:b.c}));for(const o of g.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y,l=Math.hypot(dx,dy)||1;if(l<420){o.kx+=dx/l*14;o.ky+=dy/l*14;}}}
       return false;}
     return true;},
   /* camera focus (0..1) on the boss while the cinematic runs */

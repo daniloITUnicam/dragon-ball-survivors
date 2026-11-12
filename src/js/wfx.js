@@ -73,7 +73,7 @@ const WFX={
     const one=(fr,A)=>{if(A<=0)return;ctx.globalAlpha=G*A;this.blit(ctx,S,M,fr,0,0,0,0,0,0,-hh/2,L,hh);};
     one(f0,A0);if(f1!==f0)one(f1,A1);ctx.restore();return true;},
   /* a one-shot painted effect left in the world (the blast of a Break Cannon shell): frames f0..f1 over its life, R = blast radius */
-  boom(g,id,x,y,R,f0,f1,life){if(!this.has(id)||g.fx.length>440)return;const bm=this.meta(id).boom;if(bm){f0=bm[0];f1=bm[1];}g.fx.push({wfx:id,x,y,R,f0,f1,l:life||.42,m:life||.42});},
+  boom(g,id,x,y,R,f0,f1,life){if(!this.has(id)||g.fx.length>440)return;const bm=this.meta(id).boom;if(bm){f0=bm[0];f1=bm[1];}g.fx.push(FXS({wfx:id,x,y,R,f0,f1,l:life||.42,m:life||.42}));},
   fxDraw(ctx,f){const k=clamp(1-f.l/f.m,0,1),fr=f.f0+k*(f.f1-f.f0),al=k>.7?(1-k)/.3:1;
     return this.meta(f.wfx).seq?this.ball(ctx,f.wfx,Math.min(f.f1,fr),f.x,f.y,0,0,al,f.R*1.7*(.85+.3*k)):this.ball(ctx,f.wfx,Math.floor(f.f0+Math.min(f.f1-f.f0,Math.floor(k*(f.f1-f.f0+1)))),f.x,f.y,f.R*2.6*(.85+.3*k),0,al);},
   /* character abilities with a painted sheet: id of the character -> sheet */

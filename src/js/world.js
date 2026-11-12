@@ -410,10 +410,13 @@ const World={
     for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){
       const b=this.cell(theme,gx,gy);if(!b||b.gd)continue;   /* (a floor prop never blocks) */
       const dx=o.x-b.x,dy=o.y-b.y,rr=b.r+rad,d2=dx*dx+dy*dy;
-      if(d2<rr*rr){const d=Math.sqrt(d2)||.01;o.x=b.x+dx/d*rr;o.y=b.y+dy/d*rr;}
+      if(d2<rr*rr)this.pushOut(o,b,dx,dy,d2,rr);
     }
     if(theme==='void')TOPARENA.clamp(o,rad);   /* (a prop pushed you out of the ring? back in) */
   },
+  /* v141: the rare case (something touches a prop) lives in its own function: inside resolve(), which runs for every enemy on every frame, it made the engine
+     drop and rebuild the optimized code of resolve() several times a second */
+  pushOut(o,b,dx,dy,d2,rr){const d=Math.sqrt(d2)||.01;o.x=b.x+dx/d*rr;o.y=b.y+dy/d*rr;},
   visible(theme,x0,y0,x1,y1){
     const out=[];
     for(let gx=Math.floor(x0/OB_CELL)-1;gx<=Math.floor(x1/OB_CELL)+1;gx++)for(let gy=Math.floor(y0/OB_CELL)-1;gy<=Math.floor(y1/OB_CELL)+1;gy++){const b=this.cell(theme,gx,gy);if(b)out.push(b);}

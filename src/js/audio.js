@@ -117,6 +117,7 @@ const P8=(A,f,d,v,o)=>A.chip(f,d,'pulse',v,o),Q8=(A,f,d,v,o)=>A.chip(f,d,'square
 const arp8=(A,notes,step,d,v,ty,dl)=>notes.forEach((m,i)=>A.chip(mn(m),d,ty||'pulse',v,{dl:(dl||0)+i*step}));
 /* a deep 8-bit explosion: a falling noise roar, a triangle drop and a square crunch; k = size */
 const boom8=(A,k,dl)=>{k=k||1;dl=dl||0;N8(A,.38*k,.09,3,12,{dl,hold:.12});T8(A,140,.34*k,.085,{to:38,st:9,dl});Q8(A,110,.12*k,.035,{to:45,st:5,dl});};
+const KAME_VOL=.5;   /* volume of the recorded Kamehameha effect (the file peaks near full scale; the synthesized sounds around it are much lower) */
 const SFX8={
   hit:A=>{N8(A,.03,.018,5,8);P8(A,330,.035,.011,{to:150,st:3});},
   kill:A=>{P8(A,mn(76+(Math.random()*5|0)),.06,.017,{to:mn(88),st:3});N8(A,.045,.013,4,7);},   /* an enemy pops (kept low: it plays all the time) */
@@ -178,10 +179,12 @@ const SFX8={
   slash:A=>{N8(A,.1,.05,1,5,{short:1});P8(A,2400,.08,.025,{to:600,st:6});},
   shot:A=>{P8(A,1760,.07,.03,{to:440,st:6});N8(A,.03,.02,3);},
   kame:A=>{P8(A,mn(100),.2,.03,{to:mn(88),st:6,vib:.03,vr:30});Q8(A,mn(88),.2,.014);},
-  kameCharge:A=>{P8(A,mn(45),.95,.035,{to:mn(69),st:16,vib:.03,vr:11,at:.05,hold:.8});T8(A,mn(33),1,.06,{to:mn(45),st:8,hold:.8});arp8(A,[81,84,88,93,96],.14,.05,.012,'square',.25);},
-  kameChargeEvo:A=>{P8(A,mn(40),1.1,.04,{to:mn(69),st:20,vib:.04,vr:12,at:.05,hold:.8});T8(A,mn(28),1.15,.07,{to:mn(45),st:10,hold:.8});N8(A,1.1,.025,9,4,{at:.4,hold:.8});arp8(A,[81,84,88,93,96,100],.13,.05,.014,'square',.2);},
-  kameFire:A=>{N8(A,1.0,.09,3,10,{hold:.4});Q8(A,mn(57),.9,.045,{to:mn(45),st:10,vib:.03,vr:14,hold:.5});T8(A,mn(33),.9,.09,{to:mn(26),st:6,hold:.5});P8(A,mn(81),.5,.02,{to:mn(69),st:6});},
-  kameFireEvo:A=>{N8(A,1.4,.11,2,11,{hold:.45});Q8(A,mn(52),1.3,.05,{to:mn(40),st:12,vib:.04,vr:15,hold:.55});T8(A,mn(28),1.3,.1,{to:mn(21),st:6,hold:.55});P8(A,mn(76),.9,.025,{to:mn(64),st:8,vib:.03,vr:22});boom8(A,.8,.02);},
+  /* v141: the Kamehameha plays the recorded effect (assets/kamehameha_charge.mp3 / kamehameha_fire.mp3: the charge and the blast cut short and crushed to 8 bit); evolved:
+     a little lower and louder. Until the files are decoded (or without them) the synthesized sounds below play */
+  kameCharge:A=>{if(A.playBuf('kameCharge',KAME_VOL*.8))return;P8(A,mn(45),.95,.035,{to:mn(69),st:16,vib:.03,vr:11,at:.05,hold:.8});T8(A,mn(33),1,.06,{to:mn(45),st:8,hold:.8});arp8(A,[81,84,88,93,96],.14,.05,.012,'square',.25);},
+  kameChargeEvo:A=>{if(A.playBuf('kameCharge',KAME_VOL*.9,.9))return;P8(A,mn(40),1.1,.04,{to:mn(69),st:20,vib:.04,vr:12,at:.05,hold:.8});T8(A,mn(28),1.15,.07,{to:mn(45),st:10,hold:.8});N8(A,1.1,.025,9,4,{at:.4,hold:.8});arp8(A,[81,84,88,93,96,100],.13,.05,.014,'square',.2);},
+  kameFire:A=>{if(A.playBuf('kameFire',KAME_VOL))return;N8(A,1.0,.09,3,10,{hold:.4});Q8(A,mn(57),.9,.045,{to:mn(45),st:10,vib:.03,vr:14,hold:.5});T8(A,mn(33),.9,.09,{to:mn(26),st:6,hold:.5});P8(A,mn(81),.5,.02,{to:mn(69),st:6});},
+  kameFireEvo:A=>{if(A.playBuf('kameFire',KAME_VOL*1.15,.88))return;N8(A,1.4,.11,2,11,{hold:.45});Q8(A,mn(52),1.3,.05,{to:mn(40),st:12,vib:.04,vr:15,hold:.55});T8(A,mn(28),1.3,.1,{to:mn(21),st:6,hold:.55});P8(A,mn(76),.9,.025,{to:mn(64),st:8,vib:.03,vr:22});boom8(A,.8,.02);},
   sphere:null,levelup:null   /* the files the game ships (Dragon Ball, level-up jingle) keep playing */
 };
 for(const k in SFX8)if(!SFX8[k])delete SFX8[k];
@@ -211,7 +214,10 @@ const SFX8W={
   dbeam:{kame:(A,e)=>{P8(A,mn(100),.2,.03,{to:mn(88),st:6,vib:.03,vr:30});Q8(A,mn(88),.2,.014);if(e)P8(A,mn(105),.12,.015,{dl:.04});}}
 };
 class AudioSys{
-  constructor(settings){this.s=settings;this.ctx=null;this.music=null;this.last={};this.wantTrack=null;}
+  constructor(settings){this.s=settings;this.ctx=null;this.music=null;this.last={};this.wantTrack=null;
+    /* v141: declared up front (a field added in the middle of a run makes the engine rebuild its optimized code) */
+    this._dc=undefined;this._lf=undefined;this._pw=undefined;this._sd=undefined;this._sdl=undefined;this.bufLoading=undefined;this.bufs=undefined;this.fileOn=undefined;this.files=undefined;
+    this.lastUi=0;this.loopT=undefined;this.slow=undefined;this.wctx=undefined;this.wevo=0;this.wn=1;this.pitchK=0;this.master=undefined;this.musicG=undefined;this.sfxG=undefined;}
   unlock(){
     if(!this.ctx){
       try{
@@ -471,7 +477,7 @@ class AudioSys{
   }
   sfx0(n){
     if(!this.ctx)return;
-    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45}[n]||80;
+    const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45,kameCharge:250,kameChargeEvo:250,kameFire:220,kameFireEvo:220}[n]||80;
     if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
     if(this.s.sfx>0){   /* v128: 8-bit sounds (v132: always, no setting any more): the weapon that is firing has its own, then the shared ones */
