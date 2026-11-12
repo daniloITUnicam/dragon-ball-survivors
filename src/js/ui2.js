@@ -344,7 +344,7 @@ Object.assign(UI.prototype,{
     if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
-    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,timg:r.id,c:RARITY[rr].c,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
+    if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,timg:r.id,c:RARITY[rr].c,r:rr,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
     return this.describe({type:'z',v:r.v});
   },
   card(info,i,onclick,extra){
@@ -355,7 +355,7 @@ Object.assign(UI.prototype,{
       info.r===4?h('span',{class:'rtop','aria-hidden':'true'}):null,   /* Mythic: the crystal crown on the top edge */
       info.timg&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[info.timg]?tGlyph(info.timg,info.c):info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
-        h('div',{class:'cl',style:'color:'+rc},info.r!=null?info.tag+' · '+this.tr(RARITY[info.r].n):info.tag),
+        h('div',{class:'cl',style:'color:'+rc},info.r!=null&&!info.trin?info.tag+' · '+this.tr(RARITY[info.r].n):info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+rc},h('b',null,this.tr(x.t))))):null,
         info.d?h('div',{class:'cd'},this.tr(info.d)):null,
         info.pf!=null?this.perfBar(info.pf):null,

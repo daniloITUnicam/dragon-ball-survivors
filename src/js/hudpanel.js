@@ -116,7 +116,7 @@ const HUDP=(()=>{
     {const wt=EXTRAS.wxTag(g);if(wt)o.push({k:'wx',i:'rain',s:tr(wt).replace(/^[^A-Za-z0-9\[]+/,''),c:'#ffffff',l:99});}
     if(g.bers>0)o.push({k:'bers',i:null,s:'BERSERK '+kv(g.bers)+'  ·  +80% DMG  +5 ARM',c:'#8aff3a',l:g.bers,glow:'#46ff00',big:1});
     else if(g.berAvail)o.push({k:'berA',i:null,s:g.bersCd>0?'Berserk '+kv(g.bersCd):'['+kt+'] Berserk',c:g.bersCd>0?'#9aaa9a':'#b8ff8a',l:99,dim:1});
-    if(g.kai>0)o.push({k:'kai',i:'kaioken',s:'KAIOKEN x'+(g.kai===1?10:20)+'  -'+Math.round(g.kaiDrain*KAI_TICK)+' HP / '+KAI_TICK+'s  ['+kt+']',c:'#ff4b3f',l:99,glow:'#ff2a1a',big:1});
+    if(g.kai>0)o.push({k:'kai',i:'kaioken',s:'KAIOKEN x'+(g.kai===1?10:20)+'  -'+(Math.round(g.kaiDrain*10)/10)+' HP/s  ['+kt+']',c:'#ff4b3f',l:99,glow:'#ff2a1a',big:1});
     else if(g.kaiAvail)o.push({k:'kaiA',i:null,s:'['+kt+'] Kaioken x10 / x20',c:'#e0a090',l:99,dim:1});
     if(g.slowT>0)o.push({k:'slow',i:'slow',s:tt('buffSlow'),c:'#a9b0ff',l:99});
     if(g.x2)o.push({k:'x2',i:null,s:'x2',c:'#ff7ad0',l:99,big:1});

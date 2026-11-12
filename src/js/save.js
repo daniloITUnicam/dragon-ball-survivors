@@ -22,7 +22,7 @@ class SaveData{
     };
   }
   load(){
-    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const ck=this.storage.getItem(SaveData.KEY+'-ck');const d=this.normalize(safeJSON(raw));if(ck&&ck!==GUARD.ck(raw))d.tf=1;this.tampered=!!d.tf;return d;}}catch(e){}   /* v118: a save edited by hand keeps working but stays off the leaderboards */
+    try{const raw=this.storage&&this.storage.getItem(SaveData.KEY);if(raw){const ck=this.storage.getItem(SaveData.KEY+'-ck');const json=GUARD.unpack(raw);if(json==null)throw 0;const d=this.normalize(safeJSON(json));if(ck&&ck!==GUARD.ck(raw))d.tf=1;this.tampered=!!d.tf;return d;}}catch(e){}   /* v118: a save edited by hand keeps working but stays off the leaderboards */
     const d=this.defaults();
     if(typeof PATCHES!=='undefined'&&PATCHES.length)d.patchSeen=PATCHES[0].id;   /* a brand-new player has no patch notes to catch up on */
     return d;
@@ -61,7 +61,7 @@ class SaveData{
   }
   write(){
     if(!this.silent)this.d.updated=Date.now();
-    try{if(this.storage){const raw=JSON.stringify(this.d);this.storage.setItem(SaveData.KEY,raw);this.storage.setItem(SaveData.KEY+'-ck',GUARD.ck(raw));}}catch(e){}
+    try{if(this.storage){const json=JSON.stringify(this.d),raw=GUARD.packOn?GUARD.pack(json):json;this.storage.setItem(SaveData.KEY,raw);this.storage.setItem(SaveData.KEY+'-ck',GUARD.ck(raw));}}catch(e){}
     if(!this.silent&&this.onWrite)try{this.onWrite();}catch(e){}
   }
   get shop(){return this.d.shop;}

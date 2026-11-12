@@ -12,7 +12,7 @@ const MAP_TIP_RAW={   /* key: [name it, name en, what it does it, en] */
   haste:['Fuoco rapido','Rapid fire','Le armi ricaricano più in fretta per 10 secondi.','Weapons recharge faster for 10 seconds.'],
   xp:['Esperienza','Experience','Una gemma grande di esperienza.','A big experience gem.'],
   capsule:['Capsula','Capsule','Un potenziamento (un cimelio se hai già tutto al massimo).','An upgrade (a trinket when everything is maxed).'],
-  luck:['Quadrifoglio','Clover','Fortuna +3% per il resto della partita.','+3% luck for the rest of the run.'],
+  luck:['Quadrifoglio','Clover','Fortuna +1,5% per il resto della partita.','+1.5% luck for the rest of the run.'],
   ball:['Sfera del Drago','Dragon Ball','Raccoglile tutte e 7 per evocare Shenron ed esprimere un desiderio.','Collect all 7 to summon Shenron and make a wish.'],
   sball:['Super Sfera del Drago','Super Dragon Ball','Custodita da un Tamagami: sconfiggilo per prenderla.','Guarded by a Tamagami: defeat it to take it.'],
   shrine:['Altare del Potere','Altar of Power','Un bonus casuale per 30 s: danno, velocità, ricarica, salute, rigenerazione o raccolta.','A random bonus for 30 s: damage, speed, cooldown, health, regeneration or pickup.'],

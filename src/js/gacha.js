@@ -15,7 +15,9 @@ const GACHA={
 const TICKET_KINDS=['t1','t10','l10'];
 /* v136: Gacha shop > Reroll: a new perfection roll (pf) or another trinket of the same rarity (id, perfection and fusion kept), for zenny by rarity;
    the player then keeps the new one or the old one. Gacha shop > Fusion: three trinkets become one (Progress.fusePlan). */
-const REROLL_COST={pf:[120,300,750,1800,4500],id:[200,500,1200,3000,7500]};
+const REROLL_COST={pf:[120,300,750,1800,4500]};   /* v141: only the perfection can be rerolled (the trinket itself no longer) */
+/* v141: price of keeping the OLD perfection after a roll ("Keep the old one"), by rarity of the trinket: Common .. Mythic */
+const REROLL_KEEP=[200,600,1800,4500,10000];
 /* tickets bought with zenny: a 1x ticket costs TICKET_PRICE.t1, a 10x ticket 10 times as much; on Saturday and Sunday the 10x ticket is 20% cheaper. The Lucky ticket is not for sale. */
 const TICKET_PRICE={t1:1000,t10:10000},TICKET_WEEKEND=.2;
 const isWeekend=(d)=>{const w=(d||new Date()).getDay();return w===0||w===6;};
@@ -73,12 +75,23 @@ Object.assign(Progress.prototype,{
   /* Test mode: only the trinkets pulled in Test can be rerolled or fused (they go away with it), for free */
   ,canWork(b){return !!b&&(!this.d.settings.sandbox||!!b.t);}
   ,rerollCost(kind,r){return this.d.settings.sandbox?0:(REROLL_COST[kind]||[])[r]||0;}
+  ,keepFee(r){return this.d.settings.sandbox?0:REROLL_KEEP[r]||0;}
+  /* v141: a locked stat (b.lk: stat keys, bought per stat at the keep price of the trinket's rarity, unlocked for free) can never come out worse from a perfection reroll:
+     lockBreaks(b,o) tells whether the roll o would lower one of them (shown as the cards show it), and such a roll is thrown away */
+  ,lockStat(k,key){const b=this.bagGet(k),f=b?this.keepFee(b.r):0;if(!b||(b.lk||[]).includes(key)||this.d.zenny<f)return false;this.d.zenny-=f;b.lk=(b.lk||[]).concat(key);this.save.write();return true;}
+  ,unlockStat(k,key){const b=this.bagGet(k);if(!b||!b.lk)return;b.lk=b.lk.filter(x=>x!==key);if(!b.lk.length)delete b.lk;this.save.write();}
+  ,lockBreaks(b,o){
+    if(!b||!b.lk||!b.lk.length||!o)return false;
+    const dv=(k,v)=>k==='armor'||k==='regen'?Math.round(v*10):k==='proj'?v:Math.round(v*100),pf=(t,x)=>hasPfE(t,x.f)?(x.p!=null?x.p:PF_NOM):PF_NOM,tA=trinDef(b.id),tB=trinDef(o.id);
+    const A=trinStats(tA,b.r,pf(tA,b),b.f),C=trinStats(tB,o.r,pf(tB,o),o.f);
+    return b.lk.some(k=>{const a=A.find(x=>x.k===k),c=C.find(x=>x.k===k);return a&&(!c||dv(k,c.v)<dv(k,a.v));});
+  }
+  ,payKeep(r){const f=this.keepFee(r);if(this.d.zenny<f)return false;this.d.zenny-=f;this.save.write();return true;}
   /* spends the zenny and returns the candidate {id,r,p,f} (nothing changes in the bag until rerollApply), or null */
   ,rerollRoll(kind,k){
     const d=this.d,b=this.bagGet(k);if(!this.canWork(b))return null;const c=this.rerollCost(kind,b.r);if(d.zenny<c)return null;
     let o=null;
-    if(kind==='pf'){if(hasPfE(trinDef(b.id),b.f))o={id:b.id,r:b.r,p:rollPf(0),f:b.f};}
-    else{const own=new Set(d.bag.map(x=>trinketKey(x.id,x.r))),t=pickTrinket(b.r,q=>q.id!==b.id&&!own.has(trinketKey(q.id,b.r))&&!(b.f||[]).some(e=>e.id===q.id));if(t)o={id:t.id,r:b.r,p:b.p,f:b.f};}
+    if(kind==='pf'&&hasPfE(trinDef(b.id),b.f))o={id:b.id,r:b.r,p:rollPf(0),f:b.f};
     if(!o)return null;
     d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;this.save.write();return o;
   }

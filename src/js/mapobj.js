@@ -417,11 +417,13 @@ const MOBJ={
             if(a.dp>0&&Ambient.on&&Math.random()<.5)g.fx.push({x:d.x+rnd(-14,14),y:d.y-2,vx:rnd(-90,90),vy:-rnd(60,160),l:.4,m:.4,c:'#a0784a',s:3});}}}
     }
   },
-  /* the golden Nimbus under the hero's feet, puffing (its frames) and swaying with the flight. Drawn by Renderer.drawPlayer right after the aura and before the body
-     (inside the lift translate), so the aura never covers the cloud */
-  drawRide(Rd,g,t){
+  /* the golden Nimbus under the hero's feet, puffing (its frames) and swaying with the flight. Renderer.drawPlayer calls it twice (inside the lift translate):
+     before the body for the glow, and after the body (front) for the cloud itself, so it covers the legs */
+  drawRide(Rd,g,t,front){
     const M=g.mo;if(!M||!M.ride)return;const ctx=Rd.ctx,p=g.p,R=M.ride,x=p.x,y=p.y+7,k=clamp((NIMBUS_T-(R.t||0))/.6,0,1);
-    ctx.save();ctx.globalAlpha=k;GLOW.at(ctx,x,y-6,52,'#ffd23f',.35+.1*Math.sin(t*5));ctx.translate(x,y);ctx.rotate(R.tilt+Math.sin(t*3.1)*.04);
+    ctx.save();ctx.globalAlpha=k;
+    if(!front){GLOW.at(ctx,x,y-6,52,'#ffd23f',.35+.1*Math.sin(t*5));ctx.restore();return;}
+    ctx.translate(x,y);ctx.rotate(R.tilt+Math.sin(t*3.1)*.04);
     const sw=1+.05*Math.sin(t*4.2);ctx.scale(sw,2-sw);
     if(!this.img(ctx,'actnimbus',((t*7)|0)%4,0,0,MO_H.actnimbus*1.25))this.blob(ctx,0,0,28,'#ffe066');ctx.restore();},
   /* what is in the air: the falling crate under its parachute, the Nimbus flying in and away, the Senzu beans going to the hero */

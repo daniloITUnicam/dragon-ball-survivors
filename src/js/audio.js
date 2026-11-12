@@ -475,10 +475,19 @@ class AudioSys{
     const real=this.sfxG,tmp=this.ctx.createGain();tmp.gain.value=k;tmp.connect(real);this.sfxG=tmp;
     try{this.sfx0(n);}finally{this.sfxG=real;}
   }
+  /* v141: voice budget. With many weapons, enemies and trinkets the sounds pile up (each one is a few oscillators and filters) and the audio breaks up:
+     in every 250 ms window only vCap sounds may start (vCap drops with the frame rate, see Game.perfTick); the frequent ones (shots, hits, pops, gems, coins, kills) are the first to be dropped, interface sounds are never */
+  voiceOk(n,now){
+    if(n==='click'||n==='buy'||(n[0]==='u'&&n[1]==='i'))return true;
+    const w=this.vwin||(this.vwin=[]);while(w.length&&now-w[0]>250)w.shift();
+    const cap=this.vCap||14,low=/^(shot|hit|pop|gem|coin|kill|land|leap|gTick|gPop\d)$/.test(n);
+    if(w.length>=(low?Math.ceil(cap*.55):cap))return false;
+    w.push(now);return true;
+  }
   sfx0(n){
     if(!this.ctx)return;
     const now=performance.now(),gap={shot:90,hit:50,pop:60,gem:38,kame:300,coin:60,fuse:200,abBeam:200,land:120,leap:120,warn:300,uiMove:35,gTick:22,gPop0:40,gPop1:40,gPop2:40,gPop3:40,gPop4:40,kill:45,kameCharge:250,kameChargeEvo:250,kameFire:220,kameFireEvo:220}[n]||80;
-    if(this.last[n]&&now-this.last[n]<gap)return;this.last[n]=now;
+    if(this.last[n]&&now-this.last[n]<gap)return;if(!this.voiceOk(n,now))return;this.last[n]=now;
     if(n==='click'||n==='buy'||n[0]==='u'&&n[1]==='i')this.lastUi=now;
     if(this.s.sfx>0){   /* v128: 8-bit sounds (v132: always, no setting any more): the weapon that is firing has its own, then the shared ones */
       const W=this.wctx&&SFX8W[this.wctx],f=W&&W[n];

@@ -49,6 +49,10 @@ const CO={
     sent:T6('Richiesta inviata.','Request sent.','Solicitud enviada.','Demande envoyée.','Anfrage gesendet.','Pedido enviado.'),accepted:T6('Ora siete amici!','You are friends now!','¡Ahora sois amigos!','Vous êtes amis !','Ihr seid jetzt Freunde!','Agora vocês são amigos!'),
     too_many:T6('Troppe richieste in sospeso.','Too many pending requests.','Demasiadas solicitudes pendientes.','Trop de demandes en attente.','Zu viele offene Anfragen.','Pedidos pendentes demais.'),not_friend:T6('Puoi invitare solo i tuoi amici.','You can only invite your friends.','Solo puedes invitar a tus amigos.','Tu ne peux inviter que tes amis.','Du kannst nur Freunde einladen.','Você só pode convidar amigos.'),
     net:T6('Connessione non riuscita.','Connection failed.','Conexión fallida.','Connexion échouée.','Verbindung fehlgeschlagen.','Falha na conexão.')},
+  howS:[T6('Crea una stanza o usa un codice.','Create a room or use a code.','Crea una sala o usa un código.','Crée un salon ou utilise un code.','Erstelle einen Raum oder nutze einen Code.','Crie uma sala ou use um código.'),
+    T6('L\'host sceglie mappa e difficoltà.','The host picks map and difficulty.','El anfitrión elige mapa y dificultad.','L\'hôte choisit carte et difficulté.','Der Host wählt Karte und Schwierigkeit.','O anfitrião escolhe mapa e dificuldade.'),
+    T6('Scegli il personaggio e «Sono pronto!».','Pick a character, then "I\'m ready!".','Elige personaje y «¡Estoy listo!».','Choisis ton perso, puis « Je suis prêt ! ».','Figur wählen, dann „Ich bin bereit!“.','Escolha o personagem e «Estou pronto!».'),
+    T6('XP condivisa, bottino a chi lo raccoglie.','Shared XP, loot to whoever grabs it.','XP compartida, botín para quien lo coja.','XP partagée, butin à qui le ramasse.','Geteilte XP, Beute für den Aufheber.','XP compartilhada, saque para quem pegar.')],
   how1:T6('Crea una stanza o entra con il codice di un amico.','Create a room or join with a friend\'s code.','Crea una sala o entra con el código de un amigo.','Crée un salon ou rejoins avec le code d\'un ami.','Erstelle einen Raum oder tritt mit dem Code eines Freundes bei.','Crie uma sala ou entre com o código de um amigo.'),
   how2:T6('L\'host sceglie mappa, modalità e difficoltà.','The host picks map, mode and difficulty.','El anfitrión elige mapa, modo y dificultad.','L\'hôte choisit la carte, le mode et la difficulté.','Der Host wählt Karte, Modus und Schwierigkeit.','O anfitrião escolhe mapa, modo e dificuldade.'),
   how3:T6('Ognuno sceglie il personaggio (clicca la tua scheda) e preme «Sono pronto!».','Everyone picks a character (click your card) and presses "I\'m ready!".','Cada uno elige personaje (pulsa tu ficha) y pulsa «¡Estoy listo!».','Chacun choisit son personnage (clique ta carte) et appuie sur « Je suis prêt ! ».','Jeder wählt eine Figur (klick deine Karte) und drückt „Ich bin bereit!“.','Cada um escolhe o personagem (clique no seu card) e aperta «Estou pronto!».'),
@@ -99,9 +103,7 @@ Object.assign(UI.prototype,{
         h('div',{class:'cblock'},h('h3',null,this.tr(CO.create)),h('p',null,this.tr(CO.createD)),
           h('button',{class:'btn cbig green','data-fid':'ccreate',onclick:async()=>{this.sfx('uiStart');try{await COOP.create(4,false);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'👥 '+this.tr(CO.create))),
         h('div',{class:'cor'},h('span',null,this.tr(CO.or))),
-        h('div',{class:'cblock'},h('h3',null,this.tr(CO.joinC)),h('p',null,this.tr(CO.joinD)),h('div',{class:'cboxes'},boxes),jb)),
-      (P=>{P.classList.add('chowp','shut');P.firstChild.onclick=()=>{this.sfx();P.classList.toggle('shut');};return P;})(   /* v121: a folded bar, opens on click */
-        this.coopPanel('purple','✨',CO.how,'▾',h('ol',{class:'chow'},[CO.how1,CO.how2,CO.how3,CO.how4].map(x=>h('li',null,this.tr(x)))))));
+        h('div',{class:'cblock'},h('h3',null,this.tr(CO.joinC)),h('p',null,this.tr(CO.joinD)),h('div',{class:'cboxes'},boxes),jb)));
     /* centre: find a match (the co-op leaderboard is in Leaderboards > Co-op) */
     const nS=h('div',{class:'csearch'},this.tr(CO.searching(COOP.searching))),hrs=h('div',{class:'chours'}),h0=h('p',{class:'chint'});
     /* v134: the busiest hours (local time) as 24 little bars, the current hour highlighted; a hint when nobody is searching */
@@ -117,7 +119,9 @@ Object.assign(UI.prototype,{
       );
     const find=h('div',{class:'cfind'},h('div',{class:'cfl'},h('span',{class:'cbeta'},'BETA'),h('h1',null,this.tr(CO.find)),h('p',null,this.tr(CO.findD)),
       h('button',{class:'btn cbig red','data-fid':'cfindgo',onclick:async()=>{this.sfx('uiStart');try{await COOP.find(hs);this.push('coopRoom');}catch(e){this.coopErr('net');}}},'🌐 '+this.tr(CO.find)),nS,h0,hrs),opts);
-    const centre=h('div',{class:'ccol wide'},this.coopPanel('greenfind','',null,null,find));
+    /* the how-to sits in the empty space under the search box: four short steps, always open */
+    const howc=h('div',{class:'chowc'},h('b',null,'✨ '+this.tr(CO.how)),h('ol',null,CO.howS.map(x=>h('li',null,this.tr(x)))));
+    const centre=h('div',{class:'ccol wide'},this.coopPanel('greenfind','',null,null,find,howc));
     /* right: invitations (and friend requests) */
     const inv=h('div',{class:'cinv'});
     const drawInv=()=>{inv.innerHTML='';const L=COOP.invites||[],R=(COOP.friends||[]).filter(f=>f.status==='incoming');

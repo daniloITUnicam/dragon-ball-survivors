@@ -175,7 +175,7 @@ class UI{
       h('div',{class:'logo'},LOGO_URL?h('img',{class:'logoimg',src:LOGO_URL,alt:'Dragon Ball: Survivors',draggable:'false'}):h('h1',null,'Dragon Ball:',h('br'),'Survivors'),
         WIP_URL?h('div',{class:'wip','aria-hidden':'true',title:'Work in progress'},h('div',{class:'wipin'},h('img',{src:WIP_URL,alt:'W.I.P.',draggable:'false'}))):null),
       /* v121: every button on one page, grouped: the big Play row, then Growth / Progress / Options */
-      h('div',{class:'menu mgrid'},
+      MENU_IMG.play?this.mainArt():h('div',{class:'menu mgrid'},
         h('div',{class:'mplay'},
           this.btn('play',()=>{this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'primary'),
           h('button',{class:'btn quickbtn','data-fid':'quick',title:this.t('quickStartD'),onclick:()=>{this.sfx('uiStart');this.quickStart();}},'⚡ '+this.t('quickStart')),
@@ -194,6 +194,32 @@ class UI{
             this.testAll()?this.btn('sandbox',()=>this.push('sandboxCfg'),'alt'):null))),
       h('div',{class:'foot'},
         h('span',{class:'hint'},this.app.input.mode==='pad'?('🎮 '+(this.app.input.padName||'').slice(0,40)):this.t('kbHint'))));
+  }
+  /* main menu drawn with the artwork (MENU_IMG, labels are baked into the pictures): transparent hotspot buttons laid over them, same actions and data-fid as the plain buttons.
+     Rects are in the pixel space of the source mockup; every picture's origin/size is given the same way, so the hotspots scale with the image (percent). */
+  mainArt(){
+    const test=this.testAll(),L=(k)=>this.t(k);
+    const pic=(key,o,spots,cls)=>h('div',{class:'mpanel '+(cls||''),style:`flex:${o[2]} 1 0;aspect-ratio:${o[2]}/${o[3]}`},
+      h('img',{src:MENU_IMG[key],alt:'',draggable:'false'}),
+      ...spots.map(([x,y,w,hh,fid,lab,fn])=>h('button',{class:'mhs','data-fid':fid,'aria-label':lab,title:lab,
+        style:`left:${(x-o[0])/o[2]*100}%;top:${(y-o[1])/o[3]*100}%;width:${w/o[2]*100}%;height:${hh/o[3]*100}%`,onclick:()=>{this.sfx();fn();}})));
+    const big=(key,o,fid,lab,fn,cls)=>h('button',{class:'mtb '+(cls||''),'data-fid':fid,'aria-label':lab,title:lab,style:`flex:${o[2]} 1 0;aspect-ratio:${o[2]}/${o[3]}`,onclick:fn},
+      h('img',{src:MENU_IMG[key],alt:'',draggable:'false',class:cls==='mplayb'?'pbase':null}),
+      /* Play: the glow and the bolts live in two extra copies of the picture (outside the plate only) that jitter and flash */
+      ...(cls==='mplayb'?[h('img',{src:MENU_IMG[key],alt:'',draggable:'false',class:'pfx'}),h('img',{src:MENU_IMG[key],alt:'',draggable:'false',class:'pfl'})]:[]));
+    const R1=284,R2=400,SH=106;
+    return h('div',{class:'menu mart'},
+      h('div',{class:'mrow1'},
+        big('quick',[44,73,266,102],'quick',L('quickStart'),()=>{this.sfx('uiStart');this.quickStart();}),
+        big('play',[308,23,408,178],'b_play',L('play'),()=>{this.sfx();this.sel.stage=Math.min(this.sel.stage,this.maxStage());this.push('stages');},'mplayb'),
+        big('coop',[716,68,264,92],'coop',this.tr(CO.title),()=>{this.sfx();this.push('coop');})),
+      h('div',{class:'mrow2'},
+        pic('growth',[32,216,259,325],[[66,R1,186,SH,'b_shop',L('shop'),()=>this.push('shop')],[66,R2,186,SH,'b_gachaBtn',L('gachaBtn'),()=>this.push('gacha')]]),
+        pic('prog',[302,216,421,326],[
+          [340,R1,166,SH,'b_unl',L('unl'),()=>this.push('unl')],[520,R1,166,SH,'b_ach',L('ach'),()=>this.push('ach')],
+          [340,R2,166,SH,'career',this.tr(CT.career),()=>this.push('career')],[520,R2,166,SH,'boards',this.tr(OT.boards),()=>this.push('boards',{tab:'weekly'})]]),
+        pic(test?'opts':'opts1',[735,216,261,325],[[773,R1,186,SH,'b_settings',L('settings'),()=>this.push('settings',{tab:'general'})],
+          ...(test?[[773,R2,186,SH,'b_sandbox',L('sandbox'),()=>this.push('sandboxCfg')]]:[])])));
   }
   testAll(){return !!this.save.settings.sandbox&&this.app.cloud.canTest;}   /* Test mode: switched on in Settings, and only for the owner's account and the whitelist */
   charOpen(id){return this.testAll()||this.save.unlocked.includes(id);}

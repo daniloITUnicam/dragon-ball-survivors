@@ -90,31 +90,33 @@ const PASS={
   might:{n:T('Zenkai','Zenkai'),d:T('+10% danno.','+10% damage.'),k:'力',c:'#ff7b4a'},
   vit:{n:T('Vigore','Vigor'),d:T('+20 salute massima.','+20 max HP.'),k:'命',c:'#ff6b8a'},
   speed:{n:T('Volo veloce','Swift Flight'),d:T('+6% velocità.','+6% speed.'),k:'速',c:'#7ae0ff'},
-  magnet:{n:T('Scouter','Scouter'),d:T('Nessun effetto diretto: serve per evolvere alcune armi.','No direct effect: needed to evolve some weapons.'),k:'引',c:'#7dff9a'},
+  magnet:{n:T('Scouter','Scouter'),d:T('+10% raggio di raccolta; serve anche per evolvere alcune armi.','+10% pickup range; also needed to evolve some weapons.'),k:'引',c:'#7dff9a'},
   haste:{n:T('Camera Gravitazionale','Gravity Chamber'),d:T('-5% ricarica.','-5% cooldown.'),k:'修',c:'#c9a0ff'},
   armor:{n:T('Armatura da Battaglia','Battle Armor'),d:T('Armatura +1: riduce ogni colpo subito.','Armor +1: reduces every hit taken.'),k:'鎧',c:'#f2c230'},
   regen:{n:T('Fagioli Senzu','Senzu Beans'),d:T('+0,5 salute/s.','+0.5 HP/s.'),k:'豆',c:'#8be07a'},
   growth:{n:T('Meditazione','Meditation'),d:T('+8% esperienza.','+8% experience.'),k:'学',c:'#ffe9a0'},
   proj:{n:T('Quantità','Amount'),d:T('+1 quantità: ogni arma lancia un proiettile in più (i raggi si caricano il 15% più a lungo).','+1 amount: every weapon fires one more projectile (beams charge 15% longer).'),k:'弾',c:'#ff7ac8',max:2},
-  luck:{n:T('Fortuna','Luck'),d:T('+4% fortuna: ricompense, loot e carte migliori.','+4% luck: better rewards, loot and cards.'),k:'運',c:'#c4ee4a'}   /* v141 */
+  luck:{n:T('Fortuna','Luck'),d:T('+2% fortuna: ricompense, loot e carte migliori.','+2% luck: better rewards, loot and cards.'),k:'運',c:'#c4ee4a'},   /* v141 */
+  area:{n:T('Area','Area'),d:T('+6% area: la portata di tutte le armi è più grande.','+6% area: every weapon reaches farther.'),k:'範',c:'#4fc3ff'}
 };
 const passMax=id=>(PASS[id]&&PASS[id].max)||5;   /* max level of a secondary upgrade (Quantità stops at 2) */
 
-/* v141: rarity of the level-up cards. The stats printed on the cards used to be the Epic ones, so CARD_M scales what a card gives (Epic = x1); CARD_W are the odds at Luck 0
-   (Legendary 1 card in 80, Mythic 1 in 200) and CARD_LK how fast Luck pushes each rarity up (weights are multiplied by 1 + Luck x k; Common goes down) */
-const CARD_M=[.85,.93,1,1.3,1.8],CARD_W=[50,35,13,1.25,.5],CARD_LK=[-.8,1,3,4,3];
-const rollCardRar=luck=>{const L=Math.max(0,luck||0),w=CARD_W.map((x,i)=>x*Math.max(.15,1+L*CARD_LK[i]));let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;};
+/* v141: rarity of the level-up cards. CARD_M scales what a card gives (Epic = x1); CARD_W are the odds at Luck 0 (Legendary 1 in 80, Mythic 1 in 200).
+   CARD_LK: weights are multiplied by 1 + Luck x k (Common goes down); Legendary/Mythic grow with Luck squared, so only high Luck makes them common:
+   at the 90% cap Legendary is 1 card in 5 and Mythic 1 in 15 */
+const CARD_M=[.85,.93,1,1.3,1.8],CARD_W=[50,35,13,1.25,.5],CARD_LK=[-.8,1,3,33.5,27.7];
+const rollCardRar=luck=>{const L=Math.max(0,luck||0),w=CARD_W.map((x,i)=>x*Math.max(.15,1+(i>2?L*L:L)*CARD_LK[i]));let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<5;i++){r-=w[i];if(r<=0)return i;}return 0;};
 /* secondary upgrades whose card shows "old -> new": value per level, unit, sign and label (Quantita and Scouter are whole numbers / have no stat: they never change with rarity) */
 const PASS_E={might:{v:10,u:'%',l:T('Danno','Damage')},vit:{v:20,u:'',l:T('Salute','Health')},speed:{v:6,u:'%',l:T('Velocità','Speed')},haste:{v:-5,u:'%',l:T('Ricarica','Cooldown')},armor:{v:1,u:'',l:T('Armatura','Armor')},
-  regen:{v:.5,u:'/s',l:T('Rigenerazione','Regen')},growth:{v:8,u:'%',l:T('Esperienza','Experience')},luck:{v:4,u:'%',l:T('Fortuna','Luck')},proj:{v:1,u:'',l:T('Quantità','Amount')}};
+  regen:{v:.5,u:'/s',l:T('Rigenerazione','Regen')},growth:{v:8,u:'%',l:T('Esperienza','Experience')},luck:{v:2,u:'%',l:T('Fortuna','Luck')},magnet:{v:10,u:'%',l:T('Raccolta','Pickup')},proj:{v:1,u:'',l:T('Quantità','Amount')},area:{v:6,u:'%',l:T('Area','Area')}};
 const PASS_NOR=['proj','magnet'];   /* plain levels: no rarity scaling */
 /* Evolution recipes: a weapon at max level + the listed passive (any level) -> next evolution (opened from a chest).
    [first evolution passive, second evolution passive] */
-const EVO_RECIPE={
-  ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','might'],flare:['magnet','growth'],
-  slash:['speed','might'],homing:['magnet','speed'],dbeam:['might','armor'],javelin:['speed','armor'],dsunday:['proj','might'],breaker:['armor','might'],
-  spiral:['speed','regen'],boomer:['magnet','haste'],hellzone:['regen','armor'],chrono:['haste','growth'],shock:['armor','vit'],hakai:['growth','might'],
-  chain:['haste','magnet'],meteor:['vit','growth'],sweep:['might','speed'],dyn:['armor','regen'],bigbang:['might','growth'],galick:['haste','might']
+const EVO_RECIPE={   /* v141: [1st, 2nd evolution]. 11 passives for 24 weapons: each passive evolves 2-3 weapons per stage (never 0), and a weapon never repeats one */
+  ki:['might','speed'],kame:['might','haste'],disc:['haste','magnet'],spirit:['growth','vit'],aura:['vit','luck'],flare:['magnet','growth'],
+  slash:['luck','speed'],homing:['proj','magnet'],dbeam:['proj','armor'],javelin:['speed','luck'],dsunday:['proj','might'],breaker:['armor','growth'],
+  spiral:['speed','regen'],boomer:['magnet','proj'],hellzone:['regen','area'],chrono:['haste','growth'],shock:['area','vit'],hakai:['growth','armor'],
+  chain:['haste','proj'],meteor:['vit','area'],sweep:['area','regen'],dyn:['armor','regen'],bigbang:['luck','might'],galick:['regen','haste']
 };
 const evoPass=(wid,evo)=>(EVO_RECIPE[wid]||[])[Math.min(1,evo||0)]||null;
 
@@ -688,7 +690,7 @@ const TRINKETS=[
 /* ---- trinket rarity instances: the same trinket can be found at any rarity (common .. mythic); stats scale with it and are capped per rarity ---- */
 const RS=[.35,.55,.75,1,1.33];                       /* stat scale per rarity, legendary = 1 */
 const TCAP={might:.15,spd:.30,xp:.30,gold:.60,crit:.14,dodge:.25,area:.30,magnet:1.4,hpPct:.45,lootRate:1,armor:4,regen:1.6,cd:.20,bdur:.30,elite:.3356};   /* elite: Mythic x Perfection 100 = +50% at most (.3356*1.33*1.12) */   /* legendary maximum per stat (mythic: x1.33, e.g. damage 15% -> 20%); the perfection roll then moves it by -12%..+12% */
-const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown'],bdur:['durata raggi','beam duration'],elite:['comparsa élite','elite spawn rate']};
+const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza','experience'],gold:['zenny','zenny'],crit:['probabilità di critico','crit chance'],dodge:['schivata','dodge'],area:['area','area'],magnet:['raccolta','pickup range'],hpPct:['salute','HP'],lootRate:['loot extra','extra loot'],armor:['armatura','armor'],regen:['salute al secondo','HP per second'],cd:['ricarica','cooldown'],bdur:['durata raggi','beam duration'],elite:['comparsa élite','elite spawn rate'],proj:['quantità','amount']};
 /* Perfection (v54): every trinket you find or pull comes with a roll of 0-100% that moves its stats by -12% .. +12% around the rarity's value (50% = the nominal one).
    The ranges of two neighbouring rarities never overlap (the best Common is still below the worst Rare, ... the worst Mythic is above the best Legendary), so a higher rarity is always stronger.
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
@@ -767,7 +769,7 @@ const PETS=[
  {id:'dende',k:'命',c:'#8be07a',race:T('Namecciano','Namekian'),n:T('Dende','Dende'),ab:T('Guarigione','Healing'),d:T('Recuperi il 30% della salute.','Restore 30% of your HP.'),cd:30,sp:{k:'human',u:1.2,cfg:{skin:'#79c24d',outfit:'#f4f1ea',legs:'#6a3d9a',belt:'#e8c040',hair:'#79c24d',hs:'antenna',pointy:true,boot:'#5a3a8a',cape:'#f4f1ea'}}},
  {id:'shenron',k:'龍',c:'#59d070',race:T('Drago','Dragon'),n:T('Mini Shenron','Mini Shenron'),ab:T('Raccolta Magica','Magic Gather'),d:T('Attira le gemme di esperienza entro 400 px e dà un bonus di XP pari al 5% del livello.','Pulls in XP gems within 400 px and grants an XP bonus equal to 5% of a level.'),cd:40,sp:{k:'pdragon',u:1.55}},
  {id:'droid',k:'盾',c:'#8ad8ff',race:T('Androide','Android'),n:T('Mini Droide','Mini Droid'),ab:T('Scudo Energetico','Energy Shield'),d:T('Sei invulnerabile per 1,5 secondi.','You are invulnerable for 1.5 seconds.'),cd:40,sp:{k:'drone',u:1.35}},
- {id:'bubbles',k:'猿',c:'#ffd23f',race:T('Animale della Terra','Earth Animal'),n:T('Bubbles','Bubbles'),ab:T('Banana Fortunata','Lucky Banana'),d:T('Tre monete di zenny a terra e +5% fortuna per 50 secondi.','Three zenny coins on the ground and +5% luck for 50 seconds.'),cd:36,sp:{k:'pmonkey',u:1.55}},
+ {id:'bubbles',k:'猿',c:'#ffd23f',race:T('Animale della Terra','Earth Animal'),n:T('Bubbles','Bubbles'),ab:T('Banana Fortunata','Lucky Banana'),d:T('Tre monete di zenny a terra e +2,5% fortuna per 50 secondi.','Three zenny coins on the ground and +2.5% luck for 50 seconds.'),cd:36,sp:{k:'pmonkey',u:1.55}},
  {id:'buu',k:'鬼',c:'#ff9ec7',race:T('Majin','Majin'),n:T('Mini Bu','Mini Buu'),ab:T('Raggio Caramella','Candy Beam'),d:T('Stordisce i nemici entro 210 px per 1 secondo (0,4 sui boss).','Stuns enemies within 210 px for 1 second (0.4 on bosses).'),cd:28,sp:{k:'human',u:1.2,cfg:{skin:'#ff9ec7',outfit:'#f2f0e8',legs:'#f2f0e8',belt:'#222',hair:'#ff9ec7',hs:'antenna',boot:'#222',wide:true}}},
  {id:'saibaman',k:'爆',c:'#ff7a3a',race:T('Saiyan (pianta)','Saiyan (plant)'),n:T('Saibaman','Saibaman'),ab:T('Autodistruzione','Self-Destruct'),d:T('Esplode infliggendo danni ad area (raggio 160 px).','Explodes for area damage (160 px radius).'),cd:22,sp:{k:'saiba',u:1.4,pal:['#6ac04a','#3f8a2e','#10260f','#ff4a2a']}}
 ];
@@ -775,7 +777,7 @@ const PETS=[
 /* ---------- Shop (permanent, all characters) ---------- */
 /* Totem: appears once per run. Three random powers are offered, pick one. Mild on purpose. */
 const TOTEMS=[
- {id:'luck',k:'運',c:'#8be07a',n:T('Totem della Fortuna','Totem of Luck'),d:T('+1% fortuna a ogni livello, per tutta la partita.','+1% luck on every level-up for the rest of the run.')},
+ {id:'luck',k:'運',c:'#8be07a',n:T('Totem della Fortuna','Totem of Luck'),d:T('+0,5% fortuna a ogni livello, per tutta la partita.','+0.5% luck on every level-up for the rest of the run.')},
  {id:'risk',k:'怒',c:'#ff7a3a',n:T('Totem del Rischio','Totem of Risk'),d:T('Esperienza x2, ma subisci il 50% di danni in più per 3 minuti.','XP x2, but you take 50% more damage for 3 minutes.')},
  {id:'vigor',k:'命',c:'#ff6b8a',n:T('Totem della Vitalità','Totem of Vitality'),d:T('+15% salute massima, +0,4 salute/s e cura immediata del 30%.','+15% max HP, +0.4 HP/s and an instant 30% heal.')},
  {id:'fury',k:'力',c:'#ff9d1c',n:T('Totem della Furia','Totem of Fury'),d:T('+12% danno, ma ricarica +8% più lenta.','+12% damage, but cooldowns are 8% slower.')},
@@ -786,7 +788,7 @@ const TOTEMS=[
 ];
 /* ---------- Character abilities: one per character, key R (or the on-screen button next to the pet) ---------- */
 const ABIL_DESC={
-  kaioken:()=>T('Kaioken x10 / x20: danno ×1,5 / ×2, ma perdi 16 / 32 salute ogni 2 secondi. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×1.5 / ×2, but you lose 16 / 32 HP every 2 seconds. Press again to switch or stop.'),
+  kaioken:()=>T('Kaioken x10 / x20: danno ×1,5 / ×2, ma perdi 8 / 16 salute al secondo, +1,5 per ogni trasformazione raggiunta. Premi di nuovo per cambiare o spegnere.','Kaioken x10 / x20: damage ×1.5 / ×2, but you lose 8 / 16 HP per second, +1.5 for every transformation reached. Press again to switch or stop.'),
   berserk:()=>T('Berserk: 6 secondi fuori controllo (comandi invertiti, attacchi casuali, mira delle armi imprecisa, non annullabile), ma +80% danno, +5 armatura e −30% danni subiti.','Berserk: 6 seconds out of control (inverted controls, random attacks, inaccurate weapon aim, cannot be cancelled), but +80% damage, +5 armor and −30% damage taken.'),
   beam:v=>T('Raggio potente nella direzione del nemico più vicino: colpisce tutto in linea.','A powerful beam toward the nearest enemy: hits everything in line.'),
   nova:v=>T('Esplosione di ki attorno a te: danni ad area e respinge i nemici.','A ki blast around you: area damage that pushes enemies back.'),
@@ -825,7 +827,7 @@ const ABIL_TIER={
   timestop:{p:T('Ricarica delle armi −8%.','Weapon cooldowns −8%.'),f:T('Tempo fermo di 3,6 s su tutto lo schermo (boss 1,2 s).','Time stops for 3.6 s across the screen (bosses 1.2 s).')},
   erase:{p:T('+10% danno.','+10% damage.'),f:T('Raggio 560: cancella il 35% della vita (boss 3%).','560 radius: erases 35% of HP (bosses 3%).')},
   rewind:{p:T('+8% schivata e +0,4 salute al secondo.','+8% dodge and +0.4 HP per second.'),f:T('Recuperi fino al 60% della salute, stordisci i nemici 1,5 s e cancelli i proiettili nemici.','Recover up to 60% HP, stun enemies for 1.5 s and wipe enemy projectiles.')},
-  jackpot:{p:T('+15% zenny e +4% fortuna.','+15% zenny and +4% luck.'),f:T('Monete ×3, fortuna per 60 secondi e cura del 15%.','×3 coins, luck for 60 seconds and a 15% heal.')},
+  jackpot:{p:T('+15% zenny e +2% fortuna.','+15% zenny and +2% luck.'),f:T('Monete ×3, fortuna per 60 secondi e cura del 15%.','×3 coins, luck for 60 seconds and a 15% heal.')},
   buff:{p:T('+8% danno sempre attivo.','+8% damage at all times.'),f:T('Dura 14 secondi, potenziamenti ×1,4 e nessun malus.','Lasts 14 seconds, ×1.4 boosts and no drawback.')}
 };
 const MECH_K={kaioken:'界',berserk:'狂',beam:'閃',nova:'爆',regen:'癒',blind:'光',dash:'疾',clones:'分',sbc:'貫',sphere:'正',ghosts:'霊',crit:'眼',barrier:'盾',absorb:'吸',timestop:'時',erase:'破',rewind:'戻',jackpot:'福',buff:'力'};
@@ -903,7 +905,8 @@ const SHOP=[
  {id:'magnet',k:'引',n:T('Magnetismo','Magnetism'),d:T('+5% raccolta per livello.','+5% pickup range per level.'),max:6,base:84,g:1.5},
  {id:'armor',k:'鎧',n:T('Armatura Saiyan','Saiyan Armor'),d:T('+2 armatura per livello.','+2 armor per level.'),max:6,base:192,g:1.5},
  {id:'cd',k:'修',n:T('Ritmo','Tempo'),d:T('-5% ricarica per livello.','-5% cooldown per level.'),max:6,base:180,g:1.5},
- {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+5% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+5% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
+ {id:'luck',k:'運',n:T('Fortuna','Luck'),d:T('+2,5% fortuna per livello: più ricompense dai forzieri, loot e cimeli migliori.','+2.5% luck per level: better chest rewards, loot and trinkets.'),max:6,base:168,g:1.5},
+ {id:'area',k:'範',n:T('Area','Area'),d:T('+4% area per livello: la portata di tutte le armi è più grande.','+4% area per level: every weapon reaches farther.'),max:6,base:150,g:1.5},
  {id:'crit',k:'眼',n:T('Occhio Critico','Keen Eye'),d:T('+4% probabilità di critico per livello.','+4% crit chance per level.'),max:6,base:180,g:1.5},
  {id:'bdur',k:'延',n:T('Durata Raggi','Beam Duration'),d:T('+5% durata dei raggi per livello: Kamehameha, Big Bang e Cannone Garlick restano più a lungo alla massima estensione.','+5% beam duration per level: Kamehameha, Big Bang and Galick Gun stay longer at full reach.'),max:6,base:180,g:1.5},
  {id:'revive',k:'復',n:T('Seconda Vita','Second Life'),d:T('+1 resurrezione (50% salute) per partita.','+1 revive (50% HP) per run.'),max:2,base:2880,g:3.2},
@@ -918,7 +921,7 @@ const SHOP=[
 ];
 /* every purchase raises the next price by ~50% (exclusive items: much more) */
 /* text colour of every shop upgrade (health red, agility blue, ...) */
-const SHOP_COL={gold:'#ffe14a',exp:'#ffb52e',hp:'#ff5a5a',regen:'#5fe08a',might:'#ff7a1a',speed:'#4ab0ff',magnet:'#b98cff',armor:'#7fe7ff',cd:'#3fe3c8',luck:'#c4ee4a',crit:'#ff4d7a',revive:'#f4f0ff',bdur:'#6ad8ff',broly:'#7bd02a',scan:'#ffa63d',proj:'#ff7ad9',tslot:'#d9a066',ban:'#9aa4b8',rr:'#8f9bff',sk:'#c8ced8',bn:'#ff8a8a'};
+const SHOP_COL={gold:'#ffe14a',exp:'#ffb52e',hp:'#ff5a5a',regen:'#5fe08a',might:'#ff7a1a',speed:'#4ab0ff',magnet:'#b98cff',armor:'#7fe7ff',cd:'#3fe3c8',luck:'#c4ee4a',area:'#4fc3ff',crit:'#ff4d7a',revive:'#f4f0ff',bdur:'#6ad8ff',broly:'#7bd02a',scan:'#ffa63d',proj:'#ff7ad9',tslot:'#d9a066',ban:'#9aa4b8',rr:'#8f9bff',sk:'#c8ced8',bn:'#ff8a8a'};
 for(const it of SHOP)it.c=SHOP_COL[it.id]||'#ffd23f';
 const shopCost=(it,lv)=>Math.round(it.base*Math.pow(it.g,lv));
 

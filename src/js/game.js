@@ -22,13 +22,13 @@ const ENEMY_N_K=1.35,EARLY_K=1.1,LATE_HP=.75,LATE_DMG=.9,LATE_ARM=.7;
    so a crowd of shooters can never drown the screen in bullets (Snake Way is the calmest: its shooters are the most numerous and the most dangerous) */
 const SHOT_N_K=.67,SHOT_CD_K=1.8,SHOT_CD_SNAKE=2.6,SHOT_RATE=6,SHOT_RATE_SNAKE=3.4,SHOT_BANK=12,SHOT_BANK_SNAKE=8,EB_CAP=90;
 const BERS_T=6,BERS_T2=8,BERS_AIM=.5;   /* Broly's Berserk: seconds (base / final form) and the random aim error of the weapons while it lasts (+-0.5 rad, about 29 degrees) */
-const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.6;
+const G_HP_K=2.4,G_DMG_K=1.0,BASE_POWER=1.0;   /* v141: weapon damage -37% (was 1.6) */
 /* XP gems: when the ground gets crowded the farthest gems are merged into one big red gem parked just outside the screen */
 const GEM_CAP=90,GEM_KEEP=55;
 /* companion (v54): XP gems it can fetch (px from the player), carried at once, run speed; shockwave when surrounded: enemies needed / radius they count in / radius hit / damage / cooldown (s) */
-const KAI_TICK=2;
+const KAI_TICK=1;   /* v141: the Kaioken drains health continuously; this is only how often the floating number shows what was lost */
 /* v133: a transformation stops you (no walking, no weapons) from its start until XF_LOCK s after the burst; the camera zooms in to XF_ZOOM and back out in XF_ZOUT s (Renderer.xfZoom) */
-const XF_LOCK=.6,XF_ZOOM=1.6,XF_ZOUT=.9;   /* v133: the Kaioken takes its health every KAI_TICK s, in one bite */
+const XF_LOCK=.6,XF_ZOOM=1.6,XF_ZOUT=.9;   /* (v141: the Kaioken drain is continuous, every frame) */
 const PET_SEEK=340,PET_CARRY=3,PET_SPD=250,PET_GIVE=130,PET_KAMI_SPD=560,PET_KAMI_T=2.6,PET_KAMI_R=620,PET_SW_N=5,PET_SW_NEAR=165,PET_SW_R=210,PET_SW_DMG=12,PET_SW_CD=5;
 /* wave rhythm: a surge of WAVE_SURGE seconds, then a breather of WAVE_REST seconds with a shower of gems; elites and the guaranteed Dragon Ball are planned per run */
 const WAVE_SURGE=15,WAVE_REST=12,WAVE_RATE=2.6,WAVE_CAP=1.5,WAVE_GAP=[110,160],WAVE_FIRST=[150,190],REST_RATE=.3,REST_CAP=.75,REST_GEM=1.5,ELITE_HP=9,ELITE_R=1.35,ELITE_EVERY=240,ELITE_BONUS_MAX=1,MINI_EVERY=300,MINI_HP=.4,MINI_DMG=.8;
@@ -78,13 +78,13 @@ const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin
 /* v137: boss health floor: the first boss has BOSS_HP0 at least, rising on a curve (run progress^BOSS_HP_E, up to the final boss's time) to BOSS_HPF for the final boss of every stage.
    Minibosses: MINI_HPF of that curve, never below BOSS_HP0 */
 const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.on;   /* (called at run time: mobile.js loads last) */
-/* last LATE_SPAN seconds before the final boss: regular spawns have miniboss health and leave no chest (only LATE_CHEST_P of them do) */
+/* last LATE_SPAN seconds before the final boss: regular spawns have 15% of the final boss's health and leave no chest (only LATE_CHEST_P of them do) */
 /* from minute 3 twice the spawn rate and twice the alive cap (eased in over 10 s, every stage and Endless); the alive cap never goes above DENSE_CAP */
 const DENSE_T=180,DENSE_K=2,DENSE_CAP=250;
 /* frame-rate governor: while the real frame rate stays under PERF_LOW (smoothed) for PERF_DOWN s the alive cap shrinks by PERF_STEP (down to PERF_MIN of itself);
    once it is above PERF_HIGH for PERF_UP s it grows back. Existing enemies are never removed, only fewer new ones come */
 const PERF_LOW=32,PERF_HIGH=50,PERF_DOWN=2,PERF_UP=6,PERF_STEP=.1,PERF_MIN=.5;
-const LATE_SPAN=120,LATE_CHEST_P=.001;
+const LATE_SPAN=120,LATE_CHEST_P=.001,LATE_HPK=.15;
 const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
 'use strict';
@@ -231,7 +231,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.might=BASE_POWER*C.might*(1+.10*(P.might||0))*(1+(C.lvMight||0)*(this.lvl-1))*(1+.06*sl('might'))*(1+(fm?fm.might:0))*(1+tm.might+sh.might)*(this.buffs.dmg>0?1.15:1)*this.sb.dmg;
     S.spd=C.spd*(1+.06*(P.speed||0))*(1+.04*sl('speed'))*(1+(fm?fm.spd:0)+tm.spd+sh.spd);
     S.cd=Math.max(this.cdMin(.35),(C.cd||1)-.05*(P.haste||0)-.05*sl('cd')-(fm?fm.cd:0)-tm.cd-sh.cd-(this.buffs.haste>0?.12:0));
-    S.magnet=100*(C.mag||1)*(1+.05*sl('magnet')+tm.magnet+sh.magnet);
+    S.magnet=100*(C.mag||1)*(1+.05*sl('magnet')+tm.magnet+sh.magnet)*(1+.10*(P.magnet||0));   /* Scouter: +10% pickup range per level */
     S.armor=(P.armor||0)+(C.armor||0)+2*sl('armor')+(fm?fm.armor:0)+tm.armor;
     S.regen=C.regen+.5*(P.regen||0)+.5*sl('regen')+(fm?fm.regen:0)+tm.regen+sh.regen;
     S.xp=C.xpm*(1+.08*(P.growth||0))*(1+.10*sl('exp')+tm.xp+sh.xp)*(this.x2?.30:1)/Math.pow(this.TS,XP_TS_E);   /* the run is stretched/shrunk to the difficulty's length: XP per kill follows, so level pace per % of the run stays as designed */
@@ -241,7 +241,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.area=1+tm.area+(fm?fm.idx*.03:0);
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
     S.bdur=.05*sl('bdur')+(tm.bdur||0);   /* beam duration: extra time the beams stay at full reach (shop + trinkets) */
-    S.luck=Math.min(.9,this.sb.luck+.05*sl('luck')+.04*(P.luck||0)+this.luckBonus+(this.luckT>0?.03:0)+(this.petLuckT>0?.05:0));S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
+    S.luck=Math.min(.9,this.sb.luck+.025*sl('luck')+.02*(P.luck||0)+this.luckBonus+(this.luckT>0?.015:0)+(this.petLuckT>0?.025:0));   /* v141: every Luck source halved */S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
     if(this.riskT>0){S.xp*=2;S.taken*=1.5;}
     if(this.bers>0){S.might*=1.8;S.armor+=this.abTier>=2?8:5;S.taken*=.7;}   /* Berserk: +80% damage, +5 armor (+8 in the final form), -30% damage taken */
     if(this.critT>0){const f2=this.abTier>=2&&this.abil.m==='crit';S.crit+=f2?.6:.35;if(f2)S.critDmg=2.5;}
@@ -288,10 +288,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     addS('crit',S.crit,[[T('Base','Base'),.05],[shopN('crit'),.04*sl('crit'),lvS('crit')],[TRIN,tm.crit]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     addS('dodge',S.dodge,[[FORM,fm?fm.dodge:0],[TRIN,tm.dodge]],(v,s)=>s?pc(v):Math.round(v*1000)/10+'%');
     addS('area',S.area,[[T('Base','Base'),1],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
-    addS('luck',S.luck,[[shopN('luck'),.05*sl('luck'),lvS('luck')],[PASS.luck.n,.04*(P.luck||0),lvP('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.03:0],[T('Compagno','Companion'),this.petLuckT>0?.05:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
+    addS('luck',S.luck,[[shopN('luck'),.025*sl('luck'),lvS('luck')],[PASS.luck.n,.02*(P.luck||0),lvP('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.015:0],[T('Compagno','Companion'),this.petLuckT>0?.025:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     mulS('xp',S.xp,C.xpm/Math.pow(this.TS,XP_TS_E),BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
     addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
-    mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[T('Totem','Totem'),1+(tf.magnet||0)]]);
+    mulS('magnet',S.magnet,100*(C.mag||1),BASE,[[T(shopN('magnet').it+' + cimeli',shopN('magnet').en+' + trinkets'),1+.05*sl('magnet')+tm.magnet+(sz.magnet||0)+tb.magnet],[PASS.magnet.n,1+.10*(P.magnet||0),lvP('magnet')],[T('Totem','Totem'),1+(tf.magnet||0)]]);
     addS('proj',S.proj,[[FORM,fm?(fm.idx>=6?2:fm.idx>=3?1:0):0],[shopN('proj'),sl('proj'),lvS('proj')],[PASS.proj.n,P.proj||0,lvP('proj')],[TRIN,tm.proj||0]],(v,s)=>s?ad(v,0):nm(v,0));
     addS('bdur',S.bdur,[[shopN('bdur'),.05*sl('bdur'),lvS('bdur')],[TRIN,tm.bdur||0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     return out;
@@ -929,7 +929,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   addXp(v){const a=v*this.sb.xp*this.S.xp*this.pk.xp*this.comboMul*(this.dmut.xp||1);this.xp+=a;this.xpAcc+=a;}
   levelUp(){
     this.xp-=this.need;this.lvl++;this.need=this.needFor(this.lvl);this.audio.sfx('levelup');
-    if(this.totemLuck>0)this.luckBonus=Math.min(.5,this.luckBonus+.01*this.totemLuck);
+    if(this.totemLuck>0)this.luckBonus=Math.min(.25,this.luckBonus+.005*this.totemLuck);
     this.emote('happy',1.1);
     this.ring(this.p.x,this.p.y,110,'#ffd23f',.5);this.pillar(this.p.x,this.p.y,'#ffe9a0',.55);this.burst(this.p.x,this.p.y-20,18,'#ffd23f');
     while(this.formsUnlocked<this.formMax&&this.lvl>=FORM_TIERS[this.formsUnlocked].lvl)this.unlockForm();
@@ -1093,7 +1093,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const hp0=e.hp;e.hp-=d;e.fl=.07;
     if(crit&&(e.boss||e.elite)&&d>=e.max*.08&&!(this.hsCd>this.t)){this.hsCd=this.t+HS_CRIT_CD;this.hitStop(HS_CRIT,ZP_CRIT);}   /* v116: a huge critical on a boss / elite */
     if(e.hp<=0&&!e.boss&&hp0>0&&d>=e.max*OVK_K&&e.max>=8&&!(this.ovkCd>this.t))this.overkill(e,d);
-    if(!e.boss&&kx!==undefined){const k=e.elite?.2:e.ai==='tank'?.3:1;e.kx+=kx*k;e.ky+=ky*k;}
+    if(!e.boss&&kx!==undefined){const k=(e.elite?.2:e.ai==='tank'?.3:1)*this.kbK;e.kx+=kx*k;e.ky+=ky*k;}   /* v141: weapon knockback is almost gone */
     if(this.showNums)this.floatText(e.x+rnd(-6,6),e.y-e.r*1.7,Math.round(d),crit?6:0);
     if(crit&&this.has('critboom')&&!this._boom){
       this._boom=true;
@@ -1247,7 +1247,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'dmg':this.buffs.dmg=12;this.recalc();this.audio.sfx('pkdmg');this.floatText(p.x,p.y-50,this.env.tr(T('Danni +15% (12s)','Damage +15% (12s)')),2);break;
       case'haste':this.buffs.haste=10;this.recalc();this.audio.sfx('pkhaste');this.floatText(p.x,p.y-50,this.env.tr(T('Fuoco rapido (10s)','Rapid fire (10s)')),2);break;
       case'xp':this.addXp(l.v*.7);this.audio.sfx('pkxp');break;
-      case'luck':this.luckBonus=Math.min(.4,this.luckBonus+.03);this.recalc();this.audio.sfx('pkluck');this.burst(p.x,p.y-20,14,'#8be07a');this.floatText(p.x,p.y-50,this.env.tr(T('Fortuna +3%','Luck +3%')),2);break;
+      case'luck':this.luckBonus=Math.min(.2,this.luckBonus+.015);this.recalc();this.audio.sfx('pkluck');this.burst(p.x,p.y-20,14,'#8be07a');this.floatText(p.x,p.y-50,this.env.tr(T('Fortuna +1,5%','Luck +1.5%')),2);break;
       case'capsule':{this.audio.sfx('pkcapsule');   /* v109: a character upgrade until everything is maxed, then a trinket */
         {const up=this.chestUps(1)[0];if(up){this.applyOption(up);this.say(this.env.tr(up.type==='w'?WEAPONS[up.id].n:PASS[up.id].n)+' Lv '+(up.lv+1),up.type==='w'?WEAPONS[up.id].c:PASS[up.id].c,2.4);break;}}
         const id=this.rollTrinket();if(id){const rr=this.rarOf(id),t=trinDef(id);this.addTrinket(id,rr);this.say(this.env.tr(t.n),RARITY[rr].c,2.4);}else this.addZenny(30);break;}
@@ -1472,6 +1472,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.pfm=(this.pfm||.016)+(d-(this.pfm||.016))*.05;
     if(this.pfm>1/PERF_LOW){this.pfs=(this.pfs||0)+d;this.pff=0;}else if(this.pfm<1/PERF_HIGH){this.pff=(this.pff||0)+d;this.pfs=0;}else{this.pfs=0;this.pff=0;}
     const k=this.perfK||1;
+    this.audio.vCap=Math.max(6,Math.round(14*(this.pfm>1/PERF_LOW?.6:1)*k));   /* fewer simultaneous sounds while the frame rate is low */
     if(this.pfs>PERF_DOWN&&k>PERF_MIN){this.perfK=Math.max(PERF_MIN,k-PERF_STEP);this.pfs=0;this.pfm=.02;}
     else if(this.pff>PERF_UP&&k<1){this.perfK=Math.min(1,k+PERF_STEP/2);this.pff=0;}
   }
@@ -1489,7 +1490,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   mkEnemy0(def,x,y){
     const fb=this.finalOn,esc=this.escSteps(),hs=this.endless?esc:0,F=this.escF,xe=this.xEase(),hp=def.hp*this.hpMul()*this.crowdK(LATE_HP)*xe.hp*(fb?1.35:1)*(1+F.hp*hs)*(def.prop?1:this.earlyHp());   /* hs: HP / damage steps only in Endless (v131) */   /* final boss fight: tougher crowd that hits a bit softer */
     const arm0=((def.ai==='tank'||def.ai==='slam')?.8+this.sd*1.1:0)+(fb?.9+this.sd*.5:0)+(this.diffId==='extreme'?.5:0);   /* Extreme: everyone has a little armor, which then grows 15% per step */
-    const late=!def.prop&&def.ai!=='boss'&&this.lateOn(),hpL=late?Math.max(hp,Math.round(this.bossFloor(false,true)*(this.x2?1.4:1))):hp;   /* final minutes: miniboss health */
+    const late=!def.prop&&def.ai!=='boss'&&this.lateOn(),hpL=late?Math.max(hp,Math.round(this.finalBossHp()*LATE_HPK)):hp;   /* final minutes: 15% of the final boss's health */
     return{def,ai:def.ai,x,y,hp:hpL,max:hpL,late,r:def.r,spd:def.spd*this.spdK,armor:arm0*(1+F.arm*esc)*this.crowdK(LATE_ARM),xpm:1+F.xp*esc,dmg:def.dmg*this.dmgMul()*this.crowdK(LATE_DMG)*xe.dmg*(fb?.85:1)*(1+F.dmg*hs),boss:false,kx:0,ky:0,fl:0,stun:0,slow:0,
       sh:rnd(1,def.shoot?def.shoot.cd:3),sp:0,ph:rnd(0,TAU),dead:false,face:1,st:0,stT:rnd(1,3),fuse:0,dx:0,dy:0,age:0,mvs:0,
       /* v131: every field an enemy may get later, declared here so all regular enemies share ONE hidden class (there were ~190): with more than
@@ -1697,6 +1698,10 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   }
   altChests(e,n){for(let i=0;i<n;i++){const a=i/Math.max(1,n)*TAU+.4,r=70+16*(i%2);this.chests.push({...this.landAt(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.6,30),final:false,t:0,boss:true,alt:true,rar:this.rollChestRar()});}}
   lateOn(){if(this.endless||this.finalSpawned||this.trial||this.tun)return false;const fin=this.bossQ.find(b=>b.final),end=fin?fin.t:this.dur;return this.t>=end-LATE_SPAN&&this.t<end;}
+  /* health the final boss gets (see spawnBoss, without the altar / mutation factors) */
+  /* share of the weapons' knockback that is left: 1%, +1% for every transformation reached */
+  get kbK(){return .01+.01*(this.formIdx+1);}
+  finalBossHp(){const bp=Math.min(1,this.prog()),k=this.x2?1.4*this.x2xK('bhp'):1,hp0=bossRef('hp',bp)*BOSS_HP_MUL*this.hardK*(1+CURVE_BOSS*this.prog())*this.D.hp*k*1.3;return Math.round(Math.max(hp0,BOSS_HPF*k));}
   bossFloor(final,mini){
     if(final)return BOSS_HPF;
     const fin=this.bossQ.find(b=>b.final),q=Math.max(0,this.t/Math.max(60,fin?fin.t:this.dur)),v=BOSS_HP0*Math.pow(BOSS_HPF/BOSS_HP0,Math.pow(Math.min(1,q),BOSS_HP_E));
@@ -2117,7 +2122,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       this.updateWave();this.updateElites();this.updateMinis();this.updateBallPlan();this.updateSuperPlan();
       const wv=this.waveMul();
       if(this.hordeBoost>0)this.hordeBoost-=dt;
-      if(!this.lateSaid&&this.lateOn()){this.lateSaid=true;this.say(this.env.tr(T('ULTIMI 2 MINUTI: nemici con la vita dei miniboss, niente forzieri!','LAST 2 MINUTES: enemies with miniboss health, no chests!')),'#ff5a3d',3.2,null,4);}
+      if(!this.lateSaid&&this.lateOn()){this.lateSaid=true;this.say(this.env.tr(T('ULTIMI 2 MINUTI: nemici con il 15% della vita del boss finale, niente forzieri!','LAST 2 MINUTES: enemies with 15% of the final boss\'s health, no chests!')),'#ff5a3d',3.2,null,4);}
       if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
       {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
       this.spAcc+=this.sb.spawn*this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
@@ -2226,7 +2231,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'timestop':S.cd=Math.max(this.cdMin(.3),S.cd*Math.max(.5,1-.08*k));break;
       case'erase':S.might*=1+.1*k;break;
       case'rewind':S.dodge=Math.min(.75,S.dodge+.08*k);S.regen+=.4*k;break;
-      case'jackpot':S.gold+=.15*k;S.luck=Math.min(.9,S.luck+.04*k);break;
+      case'jackpot':S.gold+=.15*k;S.luck=Math.min(.9,S.luck+.02*k);break;
       case'buff':S.might*=1+.08*k;break;
       case'berserk':S.might*=1+.12*k;break;
     }
@@ -2274,7 +2279,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   kaiToggle(){
     if(!this.kaiAvail||this.modal||this.ended||this.xform)return false;
     if(this.kai===0&&this.p.hp<this.p.maxHp*.2){this.floatText(this.p.x,this.p.y-56,this.env.tr(T('Troppo debole!','Too weak!')),3);return false;}
-    if(this.kai===0)this.kaiAcc=0;   /* the first bite comes KAI_TICK s after switching it on */
+    if(this.kai===0){this.kaiAcc=0;this.kaiLost=0;}
     this.kai=(this.kai+1)%3;if(this.kai===2)this.run.k20=(this.run.k20||0)+1;this.recalc();
     const p=this.p;
     if(this.kai>0){
@@ -2283,13 +2288,13 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     }else{this.say(this.env.tr(T('Kaioken disattivato','Kaioken off')),'#ffb0a0',1.4);this.audio.sfx('click');this.ring(p.x,p.y,90,'#ffb0a0',.4);}
     return true;
   }
-  /* HP lost per second: 8 (x10) / 16 (x20) (v133: doubled, taken every KAI_TICK s); middle form -30%, final form -55% */
-  get kaiDrain(){const kt=this.abil.m==='kaioken'?this.abTier:0;return(this.kai===1?8:16)*(kt>=2?.45:kt>=1?.7:1);}
+  /* HP lost per second: 8 (x10) / 16 (x20), middle form -30%, final form -55%; v141: +1.5 for every transformation reached, taken continuously */
+  get kaiDrain(){const kt=this.abil.m==='kaioken'?this.abTier:0;return(this.kai===1?8:16)*(kt>=2?.45:kt>=1?.7:1)+1.5*(this.formIdx+1);}
   updateKaioken(dt){
     const p=this.p;
-    this.kaiAcc=(this.kaiAcc||0)+dt;
-    if(this.kaiAcc>=KAI_TICK){this.kaiAcc-=KAI_TICK;const d=Math.min(this.kaiDrain*KAI_TICK,Math.max(0,p.hp-p.maxHp*.1));   /* never below 10%: there it stops */
-      p.hp-=d;if(d>0){this.floatText(p.x,p.y-52,'-'+Math.round(d),4);this.ring(p.x,p.y,46,'#ff3b2f',.35);}}
+    const d=Math.min(this.kaiDrain*dt,Math.max(0,p.hp-p.maxHp*.1));   /* never below 10%: there it stops */
+    p.hp-=d;this.kaiLost=(this.kaiLost||0)+d;this.kaiAcc=(this.kaiAcc||0)+dt;
+    if(this.kaiAcc>=KAI_TICK){this.kaiAcc-=KAI_TICK;if(this.kaiLost>=.5){this.floatText(p.x,p.y-52,'-'+Math.round(this.kaiLost),4);this.ring(p.x,p.y,46,'#ff3b2f',.35);}this.kaiLost=0;}
     if(this.fx.length<400&&Math.random()<dt*(this.kai===1?22:44)*(FXL.on?.3:1))this.fx.push({x:p.x+rnd(-14,14),y:p.y-rnd(0,34),vx:rnd(-20,20),vy:-rnd(60,160),l:rnd(.3,.6),m:.6,c:Math.random()<.4?'#ffb0a0':'#ff3b2f',s:rnd(2,4)});
     if(p.hp<=p.maxHp*.1){this.kai=0;this.recalc();this.say(this.env.tr(T('Kaioken interrotto: vita troppo bassa!','Kaioken stopped: HP too low!')),'#ffb0a0',2);}
   }

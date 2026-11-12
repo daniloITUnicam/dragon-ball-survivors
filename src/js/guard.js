@@ -9,6 +9,28 @@ const GUARD={
   taint(why){if(this.tainted)return;this.tainted=true;this.why=why;try{this.onTaint&&this.onTaint(why);}catch(e){}},
   /* a light checksum of the stored save (FNV-1a over the text + a salt): a hand-edited save is noticed */
   ck(raw){let h=2166136261;const s=raw+GUARD_SALT;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);},
+  /* v141: the stored save is not readable JSON any more (the Application tab of the developer tools used to show every value, editable). pack: UTF-8 bytes, XOR with a
+     keystream seeded by a random byte (the same save never looks the same twice) and chained with the previous byte (editing one character breaks everything after
+     it), then base64. A deterrent, not encryption: the key is in the page. unpack also accepts the old plain JSON (saves from before this version) and returns null when
+     the text is damaged. Dev builds keep plain JSON. */
+  packOn:!GUARD_DEV,
+  pack(json){
+    const b=new TextEncoder().encode(json),n=(Math.random()*255|0)+1,o=new Uint8Array(b.length+1);o[0]=n;
+    let p=n,s=(n^0x5bd1e995)>>>0;
+    for(let i=0;i<b.length;i++){s=(Math.imul(s,1664525)+1013904223)>>>0;const c=b[i]^(s>>>24)^p;o[i+1]=c;p=c;}
+    let t='';for(let i=0;i<o.length;i+=8192)t+=String.fromCharCode.apply(null,o.subarray(i,i+8192));
+    return 'DBS1:'+btoa(t);
+  },
+  unpack(raw){
+    if(typeof raw!=='string'||raw.slice(0,5)!=='DBS1:')return raw;
+    try{
+      const t=atob(raw.slice(5)),o=new Uint8Array(t.length);for(let i=0;i<t.length;i++)o[i]=t.charCodeAt(i);
+      if(o.length<2)return null;
+      const b=new Uint8Array(o.length-1);let p=o[0],s=(o[0]^0x5bd1e995)>>>0;
+      for(let i=0;i<b.length;i++){s=(Math.imul(s,1664525)+1013904223)>>>0;const c=o[i+1];b[i]=c^(s>>>24)^p;p=c;}
+      return new TextDecoder('utf-8',{fatal:true}).decode(b);
+    }catch(e){return null;}
+  },
   start(){
     if(GUARD_DEV||typeof window==='undefined')return;
     const edit=t=>t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);

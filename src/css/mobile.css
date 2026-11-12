@@ -122,3 +122,8 @@ html.mphone .pausescr .ptop .ptsp{min-width:4px}
 html.mphone .grimbody .wgrid:has(.wpic){grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
 html.mphone .wcard.wpic{padding:4px 4px 5px;gap:4px}html.mphone .wcard.wpic b{font-size:12px}html.mphone .wcard.wpic .wst{font-size:10px;top:6px;right:7px}
 html.mphone .grimhero img{width:52px;height:52px}
+/* main menu artwork on a phone: the title keeps ~29% of the height (always bigger than any button), the buttons take the rest; the screen is zoomed by --mz and 1.12 */
+html.mphone .menu.mart{--aw:min(980px,calc(94vw / var(--mz) / 1.12),calc((71vh / var(--mz) / 1.12 - 58px) / .5))}
+html.mphone .screen.main .logoimg{max-height:calc(29vh / var(--mz) / 1.12)}
+html.mphone .screen.main .logo{margin-bottom:0}
+html.mphone .coop .chowc{padding:5px 9px 6px}html.mphone .coop .chowc b{font-size:12px;margin-bottom:3px}html.mphone .coop .chowc ol{font-size:10.5px;gap:3px 10px}html.mphone .coop .chowc li::before{width:15px;height:15px;font-size:9px}

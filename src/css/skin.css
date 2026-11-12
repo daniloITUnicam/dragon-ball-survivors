@@ -316,6 +316,7 @@ button:not(:disabled):not(.btn):not(.mb):active,button.mb.dn{translate:0 2px;sca
 .card.opt.rar{--rc:#b8c4d0;--k:1.1;position:relative;padding:24px 22px 20px;border-color:transparent!important;background-clip:padding-box;border-radius:10px;overflow:visible}
 .card.opt.rar>*{position:relative;z-index:1}
 .card.opt.rar>.key{position:absolute;z-index:5}
+.card.opt.rar>.pcard{position:absolute;top:16px;left:18px;z-index:2}   /* the Potara earring of trinket cards, inside the frame */
 .card.opt.rar::before{content:'';position:absolute;inset:-3px;border:1px solid transparent;border-image-repeat:stretch;pointer-events:none;z-index:3}
 .card.opt.rar>.rtop{position:absolute;z-index:4;left:50%;top:calc(-41px*var(--k) - 4px);width:calc(88px*var(--k));height:calc(48px*var(--k));translate:-50% 0;background:var(--frt4) 0 0/100% 100% no-repeat;pointer-events:none}
 .card.opt.rar .col{text-shadow:0 1px 2px #000,0 0 7px rgba(0,0,0,.75)}

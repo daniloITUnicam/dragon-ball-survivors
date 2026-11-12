@@ -333,7 +333,10 @@ Object.assign(UI.prototype,{
     }else det.append(h('p',{class:'sub'},this.t('bagEmpty')),h('button',{class:'btn','data-fid':'bgo',onclick:()=>{this.sfx();this.pop();if(!this.stack.some(s=>s.name==='gacha'))this.push('gacha');}},this.t('bagToGacha')));
     const items=d.bag.map(b=>({k:trinketKey(b.id,b.r),id:b.id,r:b.r,p:b.p,f:b.f,at:b.at}));
     const L=this.tlist(st,items,{sorts:['new','old','rar','perf','name'],onclick:it=>{this.bagSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.bagSel,eq:eqks.includes(it.k)})});
-    return h('div',null,this.header('bagTitle'),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,
+    /* v141: Reroll and Fusion are also reachable from the bag (top right, next to the zenny) */
+    const tools=[h('button',{class:'btn small alt','data-fid':'bgreroll',onclick:()=>{this.sfx();this.push('reroll');}},'🎲 '+this.tr(T('Reroll','Reroll'))),
+      h('button',{class:'btn small alt','data-fid':'bgfuse',onclick:()=>{this.sfx();this.push('fuse');}},'⚗ '+this.tr(T('Fusione','Fusion')))];
+    return h('div',null,this.header('bagTitle',null,tools),pick?h('p',{class:'sub'},this.t('bagPickHint')):null,
       L.tools,h('div',{class:'bagsplit'},L.left,L.grid,h('div',{class:'bagside'},det)));
   },
   /* ---------- Super Shenron: the 7 Super Dragon Balls spent on a reward (opened from the stage menu) ---------- */

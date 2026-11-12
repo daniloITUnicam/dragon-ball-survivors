@@ -56,8 +56,8 @@ class Cloud{
   get isOwner(){return !!this.email&&testHash(this.email)===TEST_OWNER;}
   get inFile(){return !!this.email&&TEST_LIST.split(',').includes(testHash(this.email));}
   get canTest(){return TEST_DEV||(this.signedIn&&(this.isOwner||this.inFile||this.tester===true));}   /* tester: true / false, or null while it is not known yet */
-  loadTester(){try{const o=safeJSON(localStorage.getItem(TEST_KEY)||'null'),u=this.sess&&this.sess.user?this.sess.user.id:'';return o&&u&&o.uid===u?!!o.ok:null;}catch(e){return null;}}
-  saveTester(){try{if(this.tester===null||!this.uid)localStorage.removeItem(TEST_KEY);else localStorage.setItem(TEST_KEY,JSON.stringify({uid:this.uid,ok:this.tester}));}catch(e){}}
+  loadTester(){try{const o=safeJSON(GUARD.unpack(localStorage.getItem(TEST_KEY))||'null'),u=this.sess&&this.sess.user?this.sess.user.id:'';return o&&u&&o.uid===u?!!o.ok:null;}catch(e){return null;}}
+  saveTester(){try{if(this.tester===null||!this.uid)localStorage.removeItem(TEST_KEY);else{const j=JSON.stringify({uid:this.uid,ok:this.tester});localStorage.setItem(TEST_KEY,GUARD.packOn?GUARD.pack(j):j);}}catch(e){}}
   async checkTester(){
     if(!this.signedIn){this.tester=null;this.saveTester();this.notify({type:'tester'});return;}
     if(this.isOwner||this.inFile){this.tester=true;this.saveTester();this.notify({type:'tester'});return;}

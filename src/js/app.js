@@ -175,7 +175,7 @@ class App{
     g.finish(false,{keep:true});
     return this.lastRes;
   }
-  endRunManually(){const g=this.game;this.ui.clear();if(g&&g.coopView){COOPG.stop();this.toMenu();return;}if(g&&!g.ended)g.finish(false);else this.toMenu();}
+  endRunManually(){const g=this.game;this.ui.clear();if(g&&g.coopView){COOPG.stop();this.toMenu();return;}if(g&&!g.ended)g.finish(!!g.continued);else this.toMenu();}   /* v141: after the final boss (Endless) "End and collect" counts as the win */
   continueRun(){if(!this.game)return;this.game.continued=true;this.game.continueAfterWin();this.ui.clear();this.state='play';this.audio.play('stage'+this.game.stage.id);}
   retry(){if(this.lastOpts&&this.lastOpts.coop){this.toMenu();return;}if(this.lastOpts)this.startGame(this.lastOpts);}   /* a co-op run starts again from the room */
   toMenu(){if(this.renderer.dynReset)this.renderer.dynReset();Online.unseed();CLASH.unbind();if(this.audio.slowMusic)this.audio.slowMusic(1);this.game=null;this.state='menu';this.ui.closeModal();this.ui.show('main');this.audio.play('menu');if(COOP.code){this.ui.push('coop');this.ui.push('coopRoom');}}   /* v120: after a co-op run, back to the room */

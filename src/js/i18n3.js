@@ -102,7 +102,7 @@
     totemTitle:['Totem','Totem','Tótem','Totem','Totem','Totem'],
     totemSub:['Scegli un solo potere.','Choose a single power.','Elige un solo poder.','Choisis un seul pouvoir.','Wähle nur eine Kraft.','Escolha um único poder.'],
     totemLuckN:['Totem della Fortuna','Totem of Luck','Tótem de la Suerte','Totem de la Chance','Totem des Glücks','Totem da Sorte'],
-    totemLuckD:['+1% fortuna a ogni livello, per tutta la partita.','+1% luck on every level-up for the rest of the run.','+1% de suerte en cada nivel durante toda la partida.','+1 % de chance à chaque niveau pour toute la partie.','+1 % Glück bei jedem Levelaufstieg für den Rest des Durchgangs.','+1% de sorte a cada nível durante toda a partida.'],
+    totemLuckD:['+0,5% fortuna a ogni livello, per tutta la partita.','+0.5% luck on every level-up for the rest of the run.','+0,5% de suerte en cada nivel durante toda la partida.','+0,5 % de chance à chaque niveau pour toute la partie.','+0,5 % Glück bei jedem Levelaufstieg für den Rest des Durchgangs.','+0,5% de sorte a cada nível durante toda a partida.'],
     totemRiskN:['Totem del Rischio','Totem of Risk','Tótem del Riesgo','Totem du Risque','Totem des Risikos','Totem do Risco'],
     totemRiskD:['Esperienza x2, ma subisci il 50% di danni in più per 3 minuti.','XP x2, but you take 50% more damage for 3 minutes.','XP x2, pero recibes un 50% más de daño durante 3 minutos.','XP x2, mais tu subis 50 % de dégâts en plus pendant 3 minutes.','EP x2, aber du erleidest 3 Minuten lang 50 % mehr Schaden.','XP x2, mas você sofre 50% mais dano por 3 minutos.'],
     totemPrompt:['Usa il Totem','Use the Totem','Usa el Tótem','Utiliser le Totem','Totem benutzen','Usar o Totem'],

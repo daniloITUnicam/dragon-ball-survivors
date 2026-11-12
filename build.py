@@ -53,6 +53,10 @@ _si = {}
 for _f in sorted((ROOT/'assets'/'shopicons').glob('*.webp')) if (ROOT/'assets'/'shopicons').is_dir() else []:   # shop upgrade icons, file name = shop id
     _si[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__SHOPICONS__*/{}', json.dumps(_si, separators=(',', ':')))
+_mb = {}
+for _f in sorted((ROOT/'assets'/'menubtns').glob('*.webp')) if (ROOT/'assets'/'menubtns').is_dir() else []:   # main-menu button art (quick, play, coop, growth, prog, opts, opts1 = options panel without the test-environment slot)
+    _mb[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__MENUBTNS__*/{}', json.dumps(_mb, separators=(',', ':')))
 _wi = {}
 for _f in sorted((ROOT/'assets'/'weaponicons').glob('*.webp')) if (ROOT/'assets'/'weaponicons').is_dir() else []:   # v137: weapon icons, file name = weapon id
     _wi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
