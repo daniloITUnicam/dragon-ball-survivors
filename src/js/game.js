@@ -79,8 +79,8 @@ const SPAR_KIND={spirit:'sphere',aura:'ring',flare:'flare',slash:'slash',javelin
    Minibosses: MINI_HPF of that curve, never below BOSS_HP0 */
 const BALL_PULL_R=170,FX_MOB=220,fxMob=()=>typeof MOBILE!=='undefined'&&MOBILE.on;   /* (called at run time: mobile.js loads last) */
 /* last LATE_SPAN seconds before the final boss: regular spawns have miniboss health and leave no chest (only LATE_CHEST_P of them do) */
-/* from minute 3 twice the spawn rate and twice the alive cap (eased in over 10 s); from minute 25 the cap stays at 300 (curve stages only, not Endless) */
-const DENSE_T=180,DENSE_K=2,DENSE_CAP_T=1500,DENSE_CAP=300;
+/* from minute 3 twice the spawn rate and twice the alive cap (eased in over 10 s, every stage and Endless); the alive cap never goes above DENSE_CAP */
+const DENSE_T=180,DENSE_K=2,DENSE_CAP=250;
 const LATE_SPAN=120,LATE_CHEST_P=.001;
 const BOSS_HP0=8000,BOSS_HPF=1e6,BOSS_HP_E=1.4,MINI_HPF=.5;
 const TOTEM_CD=20,TOTEM_WEALTH_T=150,HORDE_BOOST_T=20,HORDE_BOOST=2.5,TOTEM_RISK_T=180,TRIAL_MALUS=.5,XP_MUL=.5,BOSS_HP_MUL=1.045,ENEMY_SPD_MUL=1.1,ENEMY_HP_MUL=1.21,ENEMY_DMG_MUL=1.2;
@@ -1431,8 +1431,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   dmgMul(){return ENEMY_DMG_MUL*(1+CURVE_DMG*this.prog())*this.norm.dmg*this.hardK*this.D.dmg*(this.x2?1.25:1);}
   /* few enemies early, hordes late */
   get finalOn(){return this.finalSpawned&&this.bossAlive>0;}
-  denseK(){return this.endless?1:1+(DENSE_K-1)*clamp((this.t-DENSE_T)/10,0,1);}
-  spawnCap(){const c=Math.round(this.spawnCap0()*ENEMY_N_K);if(this.endless||this.stage.capT)return c;return this.t>=DENSE_CAP_T?DENSE_CAP:Math.round(c*this.denseK());}
+  denseK(){return 1+(DENSE_K-1)*clamp((this.t-DENSE_T)/10,0,1);}
+  spawnCap(){return Math.min(DENSE_CAP,Math.round(this.spawnCap0()*ENEMY_N_K*this.denseK()));}
   spawnCap0(){const xk=1+X_CAP_K*this.xSteps();if(this.stage.capT)return Math.round(this.stage.capT[this.snakeTier()]*(1+.06*this.sd)*CAP_K*xk);const pr=Math.min(1,this.prog());return Math.round((CURVE_CAP0+CURVE_CAP1*Math.pow(pr,CURVE_CAP_E))*CAP_K*xk);}   /* v134: plenty from the first minute, hordes at the end */
   spawnRate(){return ENEMY_N_K*(CURVE_RATE0+CURVE_RATE1*Math.pow(Math.min(1,this.prog()),1.35))*SPAWN_K*this.denseK()*(this.x2?.85:1)*this.D.spawn*(1+X_SPAWN_K*this.xSteps())*(1+.05*this.shopLv('broly'));}   /* shop "Urlo di Broly!": +5% enemies per level */
   mkEnemy(def,x,y){
@@ -1505,9 +1505,9 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       else if(this.tier>0&&Math.random()<TIER_SHARE[this.tier])this.rankUp(e,this.tierPick());this.en.push(e);}
   }
   /* just outside the visible screen along angle a (above the player TOP_K farther, as in spawnSpot, plus room for the sprite) */
-  edgeD(a){const c=Math.abs(Math.cos(a)),s=Math.sin(a),as=Math.abs(s),up=s<0,m=rnd(26,90);
+  edgeD(a){const c=Math.abs(Math.cos(a)),s=Math.sin(a),as=Math.abs(s),up=s<0,m=rnd(16,52);
     return Math.min(c>.01?(this.vw/2+m)/c:1e9,as>.01?(this.vh/2+m+(up?44:0))/(as*(up?TOP_K:1)):1e9);}
-  spawnDist(a){const far=this.viewR+rnd(10,110),u=clamp((this.t-EDGE_T0)/(EDGE_T1-EDGE_T0),0,1);return u>=1?far:Math.min(far,this.edgeD(a))*(1-u)+far*u;}
+  spawnDist(a){return this.edgeD(a);}   /* always just outside the screen edge */
   earlyHp(){const u=clamp(this.prog()/EARLY_HP_P,0,1);return 1+EARLY_HP*(1-u*u*(3-2*u));}
   earlyRush(){return 1+EARLY_RUSH*clamp(1-this.t/EARLY_RUSH_T,0,1);}
   /* the opening group: all around, right at the screen edge, so the run is moving from the first second */
@@ -1523,9 +1523,8 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     for(let i=0;i<n;i++){const a=a0+i/n*TAU,def=this.limitShooter(this.rosterPick());if(!def||def.ai==='explode')continue;const[x,y]=this.spawnSpot(a,this.spawnDist(a),i);this.en.push(this.rankUp(this.mkEnemy(def,x,y),k));}
   }
   spawnRing(n,def,extra){
-    const d=this.viewR+40;
     if(this.stage.ringT)n=Math.min(n,Math.round(this.stage.ringT[this.snakeTier()]*ENEMY_N_K));
-    for(let i=0;i<n;i++){const a=i/n*TAU,df=this.limitShooter(def||this.rosterPick());if(!df)continue;const[x,y]=this.spawnSpot(a,d,i),e=this.mkEnemy(df,x,y);if(extra)extra(e);this.en.push(e);}
+    for(let i=0;i<n;i++){const a=i/n*TAU,df=this.limitShooter(def||this.rosterPick());if(!df)continue;const[x,y]=this.spawnSpot(a,this.edgeD(a),i),e=this.mkEnemy(df,x,y);if(extra)extra(e);this.en.push(e);}
   }
   /* ---- wave rhythm: calm -> SURGE (15 s, many more enemies) -> REST (12 s, few enemies + a shower of gems) -> calm ... ---- */
   waveMul(){const ph=this.wave.ph;return ph==='surge'?{rate:WAVE_RATE,cap:WAVE_CAP}:ph==='rest'?{rate:REST_RATE,cap:REST_CAP}:{rate:1,cap:1};}
@@ -1592,7 +1591,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       for(const [id,from,wt,until] of this.stage.roster){if(t<from||(until&&t>=until))continue;const d=ENEMIES[id];if(d.ai==='explode'||d.ai==='ranged'||d.ai==='hover')continue;ok.push(d);}
       if(!ok.length)return null;
       ok.sort((a,b)=>b.hp-a.hp);def=pick(ok.slice(0,Math.min(3,ok.length)));}
-    const[x,y]=this.spawnSpot(rnd(0,TAU),this.viewR+rnd(40,90),0),e=this.toElite(this.mkEnemy(def,x,y));
+    const ea=rnd(0,TAU),[x,y]=this.spawnSpot(ea,this.edgeD(ea)+rnd(10,40),0),e=this.toElite(this.mkEnemy(def,x,y));
     this.en.push(e);if(!quiet)this.eliteCry();
     return e;
   }
@@ -2079,7 +2078,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(!this.opened&&this.t>=OPEN_T&&!this.trial&&!this.tun){this.opened=true;this.openGroup();}
       {const k=Math.min(TIER_MAX,Math.floor(this.t/TIER_EVERY));if(k>this.tier){this.tier=k;this.tierUp(k);}}
       this.spAcc+=this.spawnRate()*this.earlyRush()*fin*wv.rate*(this.hordeBoost>0?HORDE_BOOST:1)*dt;
-      const cap=Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap);
+      const cap=Math.min(DENSE_CAP,Math.round(this.spawnCap()*(this.finalOn?1.3:this.bossAlive>0?.8:1)*wv.cap));
       while(this.spAcc>=1){this.spAcc-=1;if(this.en.length-(this.mo?this.mo.n:0)<cap)this.spawnOne();}
       if(this.t>=this.hordeT){this.hordeT+=HORDE_EVERY;this.spawnHorde();}
       if(this.t>=this.packT){this.packT+=65*this.evK;this.spawnPack();}
@@ -2429,7 +2428,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       if(e.fl>0)e.fl-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,dist=Math.sqrt(dx*dx+dy*dy)||1,dyk=dy>0?dy/TOP_K:dy;
       if(!e.boss&&dx*dx+dyk*dyk>vrE*vrE){   /* it fell off the screen: it does not vanish, it comes back in front of the player (the side they are heading to) */
-        const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.viewR+20,[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
+        const ix=this.input.x,iy=this.input.y,mv=Math.hypot(ix,iy)>.15,a=(mv?Math.atan2(iy,ix):rnd(0,TAU))+rnd(-.9,.9),d=this.edgeD(a),[nx,ny]=this.spawnSpot(a,d,0);e.x=nx;e.y=ny;continue;}
       let ux=dx/dist,uy=dy/dist;
       if(SR&&!(e.def&&e.def.fly)&&e.ai!=='hover'){const w=Snake.route(e.x,e.y,SR);if(w){const wx=w[0]-e.x,wy=w[1]-e.y,wl=Math.sqrt(wx*wx+wy*wy)||1;ux=wx/wl;uy=wy/wl;}}
       let mx=0,my=0,sp=e.spd*(e.slow>0?.6:1)*(tslow?(e.boss?.75:.55):1);
