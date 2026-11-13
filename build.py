@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bundle src/ into a single self-contained HTML (dist/dragon-ball-survivors.html).
-Usage: python3 build.py [--check]   (--check runs `node --check` on the bundled script)"""
+Usage: python3 build.py [--check] | --hash <e-mail>   (--check runs `node --check` on the bundled script; --hash prints a tester hash)"""
 import re, sys, subprocess, pathlib, urllib.parse
 ROOT = pathlib.Path(__file__).parent
 ORDER = ['util','guard','data','trinkets2','shop_icons','i18n','i18n2','i18n3','i18n4','i18n5','weapons','weapons2','weapon_elec','mapart','isle_obj','world','config','save','mastery','gacha','quests','cloud','online','coop','game','telemetry','skills','events','summon','clash','moments','mapx','bossx','progx','extras','mapobj','hints','sprites','sprites_hd','sheets','wfx','pose','menubg','audio','input','ambient','sea','objlife','snake_art','top_arena','zeno_sprite','xpbar_meta','xpbar','hpbar_meta','hpbar','tgtart','hudpanel','renderer','corpse','tunnel','events_draw','uiicons','ui','ui2','ui3','ui4','ui_gacha','ui_trin','ui_pacts','ui_online','ui_career','ui_coop','ui_account','pausemap','grimoire','patches','ui_patch','update','coopnet','coopgame','app','loader','mobile']   # mobile: phones / tablets only (it does nothing on a PC)
@@ -36,15 +36,21 @@ def _test_hash(t):
     while True:
         out = d[n % 36] + out; n //= 36
         if n == 0: return out
+if '--hash' in sys.argv:   # python3 build.py --hash <e-mail>: prints the hash to put in the TEST_OWNER_HASH variable
+    print(_test_hash(sys.argv[sys.argv.index('--hash') + 1])); sys.exit(0)
 _tc = {}
 _tf = ROOT/'tester.config.json'
 if _tf.exists():
     _tc = json.loads(_tf.read_text(encoding='utf8'))
 _to = (os.environ.get('TEST_OWNER') or _tc.get('owner') or '').strip()
 _tl = [x.strip() for x in (os.environ.get('TEST_LIST').split(',') if os.environ.get('TEST_LIST') else _tc.get('testers') or []) if x.strip()]
+# the CI can pass the hashes themselves (TEST_OWNER_HASH / TEST_LIST_HASH): no e-mail has to be stored on GitHub at all
+_hx = lambda v: re.fullmatch(r'[0-9a-z]{1,13}', v.strip().lower()) and v.strip().lower() or ''
+_toh = _hx(os.environ.get('TEST_OWNER_HASH') or '')
+_tlh = [h for h in (_hx(x) for x in (os.environ.get('TEST_LIST_HASH') or '').split(',')) if h]
 _td = (os.environ.get('DBS_TEST') or '').strip().lower() in ('1','true','yes')
-js = js.replace('__TEST_OWNER__', _test_hash(_to) if _to else '').replace('__TEST_LIST__', ','.join(_test_hash(x) for x in _tl)).replace('__TEST_DEV__', '1' if _td else '')
-print('test mode:', 'for everybody (DBS_TEST)' if _td else ('owner' + (' + %d tester(s)' % len(_tl) if _tl else '') if _to else 'nobody (no tester.config.json)'))
+js = js.replace('__TEST_OWNER__', _toh or (_test_hash(_to) if _to else '')).replace('__TEST_LIST__', ','.join(_tlh + [_test_hash(x) for x in _tl])).replace('__TEST_DEV__', '1' if _td else '')
+print('test mode:', 'for everybody (DBS_TEST)' if _td else ('owner' + (' + %d tester(s)' % (len(_tl) + len(_tlh)) if (_tl or _tlh) else '') if (_to or _toh) else 'nobody (no tester.config.json)'))
 _logo = ROOT/'assets'/'ui'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
 _mh = ROOT/'assets'/'ui'/'machine.webp'       # the swap machine sprite sheet (4x2 frames)
