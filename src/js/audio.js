@@ -96,7 +96,7 @@ class MusicEngine{
   }
 }
 
-/* user-supplied music: build.py scans assets/*.mp3 and maps each file to the menu or a stage by its NAME
+/* user-supplied music: build.py scans assets/audio/ (all subfolders) and maps each file to the menu or a stage by its NAME
    (e.g. "android ruins.mp3" -> stage 3, "menu.mp3" -> menu). Key = track name used by the game: 'menu', 'stage<id>'.
    Values are data: URIs (embedded) or relative URLs (link mode). Without any file the synth music plays. */
 const FILE_TRACKS=/*__TRACKS__*/{};
@@ -179,7 +179,7 @@ const SFX8={
   slash:A=>{N8(A,.1,.05,1,5,{short:1});P8(A,2400,.08,.025,{to:600,st:6});},
   shot:A=>{P8(A,1760,.07,.03,{to:440,st:6});N8(A,.03,.02,3);},
   kame:A=>{P8(A,mn(100),.2,.03,{to:mn(88),st:6,vib:.03,vr:30});Q8(A,mn(88),.2,.014);},
-  /* v141: the Kamehameha plays the recorded effect (assets/kamehameha_charge.mp3 / kamehameha_fire.mp3: the charge and the blast cut short and crushed to 8 bit); evolved:
+  /* v141: the Kamehameha plays the recorded effect (assets/audio/sfx/kamehameha_charge.mp3 / kamehameha_fire.mp3: the charge and the blast cut short and crushed to 8 bit); evolved:
      a little lower and louder. Until the files are decoded (or without them) the synthesized sounds below play */
   kameCharge:A=>{if(A.playBuf('kameCharge',KAME_VOL*.8))return;P8(A,mn(45),.95,.035,{to:mn(69),st:16,vib:.03,vr:11,at:.05,hold:.8});T8(A,mn(33),1,.06,{to:mn(45),st:8,hold:.8});arp8(A,[81,84,88,93,96],.14,.05,.012,'square',.25);},
   kameChargeEvo:A=>{if(A.playBuf('kameCharge',KAME_VOL*.9,.9))return;P8(A,mn(40),1.1,.04,{to:mn(69),st:20,vib:.04,vr:12,at:.05,hold:.8});T8(A,mn(28),1.15,.07,{to:mn(45),st:10,hold:.8});N8(A,1.1,.025,9,4,{at:.4,hold:.8});arp8(A,[81,84,88,93,96,100],.13,.05,.014,'square',.2);},
@@ -516,7 +516,7 @@ class AudioSys{
       case'flare':this.toneAt(2600,.5,'sine',.06,-2000,0);this.toneAt(1300,.5,'triangle',.03,-900,0);this.noise(.35,.08,12000,3000,0);this.elec(.3,.04,0,120,0);break;
       case'slash':this.noise(.14,.06,7500,1800,0);this.toneAt(1400,.12,'sawtooth',.03,-1000,0);this.toneAt(3400,.1,'triangle',.02,-600,.02);break;
       case'fuse':T(900,.5,'square',.02,600);break;
-      case'levelup':if(this.playBuf('levelup',.4,2))break;   /* assets/level_up_sound.mp3 at x2 speed; until it is decoded the synthesized chime below plays */
+      case'levelup':if(this.playBuf('levelup',.4,2))break;   /* assets/audio/sfx/level_up_sound.mp3 at x2 speed; until it is decoded the synthesized chime below plays */
       case'lvl':[392,523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.16,'square',.035,0,i*.06));this.toneAt(300,.5,'sawtooth',.03,900,0);this.noise(.4,.04,6000,800,.05);break;
       case'kameCharge':this.zap(110,900,1.0,.05);this.elec(1.0,.05,0,60,80);this.wind(1.0,.04,300,2600,0,1.6);for(let i=0;i<7;i++)this.toneAt(900+i*180,.07,'square',.014,500,.25+i*.1);break;
       case'kameChargeEvo':this.zap(90,1300,1.15,.06);this.elec(1.15,.07,0,50,70);this.wind(1.2,.05,250,3200,0,1.4);this.thump(.1,70,1.1,.05);for(let i=0;i<9;i++)this.toneAt(800+i*210,.07,'square',.016,600,.2+i*.1);break;
@@ -527,7 +527,7 @@ class AudioSys{
       case'buy':this.sfx('uiBuy');break;
       case'senzu':T(500,.2,'sine',.05,500);break;
       case'pickup':T(660,.12,'triangle',.05,330);break;
-      case'sphere':if(this.playBuf('sphere',.85))break;[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;   /* Dragon Ball picked up: assets/sphere_sound.mp3 */
+      case'sphere':if(this.playBuf('sphere',.85))break;[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;   /* Dragon Ball picked up: assets/audio/sfx/sphere_sound.mp3 */
       case'ball':[660,880,1320].forEach((f,i)=>setTimeout(()=>T(f,.2,'triangle',.05),i*90));break;
       case'chest':this.noise(.25,.05,3000,500,0);[523,659,784,1046,1318].forEach((f,i)=>this.toneAt(f,.2,'triangle',.05,0,.12+i*.08));break;
       case'evolve':[330,440,554,659,880,1108,1318].forEach((f,i)=>{this.toneAt(f,.28,'sawtooth',.035,0,i*.075);this.toneAt(f*2,.2,'sine',.03,0,i*.075+.02);});this.noise(.9,.07,5000,500,0);break;

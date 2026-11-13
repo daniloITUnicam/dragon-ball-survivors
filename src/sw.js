@@ -1,11 +1,11 @@
 'use strict';
 /* Dragon Ball: Survivors - offline cache of the published site (registered by src/js/update.js when the build has DBS_SHEETS=ext).
-   - the sprite sheets (s/<id>.<hash>.<ext>) and the music / sounds (assets/<file>?v=<hash>) change URL when they change: cache first, kept across releases;
+   - the sprite sheets (s/<id>.<hash>.<ext>) and the music / sounds (assets/<path>?v=<hash>) change URL when they change: cache first, kept across releases;
    - the page itself: network first, the last copy when offline (a new release always arrives as soon as there is a connection);
    - the page posts the URLs of its build ({keep:[...]}): sheets and tracks of older releases are deleted;
    - byte-range requests (an <audio> element streaming a track) are answered from the cache when the whole file is there, otherwise left to the network. */
 const CACHE='dbs-v1';
-const fixed=u=>u.origin===location.origin&&(/\/s\/[a-z0-9_]+\.[0-9a-f]{10}\.(webp|png)$/.test(u.pathname)||(/\/assets\/[^/]+$/.test(u.pathname)&&u.searchParams.has('v')));
+const fixed=u=>u.origin===location.origin&&(/\/s\/[a-z0-9_]+\.[0-9a-f]{10}\.(webp|png)$/.test(u.pathname)||(/\/assets\/.+$/.test(u.pathname)&&u.searchParams.has('v')));
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 async function ranged(hit,range){

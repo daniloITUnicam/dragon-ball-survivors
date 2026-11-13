@@ -688,7 +688,7 @@ python3 build.py --check    # crea dist/dragon-ball-survivors.html e controlla l
 
 Apri `dist/dragon-ball-survivors.html` in un browser moderno: è autosufficiente e funziona anche offline. Se `esbuild` è installato la pagina viene minificata.
 
-- **Musica ed effetti**: file `assets/*.mp3` (vedi [assets/README.md](assets/README.md)); se mancano si usa audio sintetizzato.
+- **Musica ed effetti**: file in `assets/audio/` (vedi [assets/README.md](assets/README.md)); se mancano si usa audio sintetizzato.
 - **Pubblicazione**: il workflow `.github/workflows/deploy.yml` costruisce il gioco e lo pubblica su GitHub Pages a ogni push su `main`.
 - Il gioco si accorge da solo delle nuove versioni (`dist/version.json`) e propone di ricaricare.
 
@@ -714,7 +714,7 @@ assets/
   ui/                 logo, atlanti delle barre, menu, cornici delle carte
   icons/              icone: negozio, armi, cimeli, abilità, HUD
   sprites/            fogli sprite e sorgenti (vedi assets/sprites/README.md)
-  *.mp3               musica ed effetti
+  audio/              musica (music/menu, stages, bosses) ed effetti sonori (sfx/)
 tools/                script che generano atlanti e fogli sprite dalle sorgenti
 tests/                simulazioni e test con Puppeteer (python3 tools/run_tests.py)
 docs/                 logo e screenshot

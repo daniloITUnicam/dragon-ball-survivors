@@ -40,7 +40,7 @@ jobs:
         # Impostazioni Supabase (login + salvataggi cloud): Settings → Secrets and variables → Actions → Variables.
         # Se non sono impostate il gioco funziona lo stesso, senza il pulsante Account.
         env:
-          DBS_AUDIO: link   # la musica (assets/*.mp3) non viene incorporata: resta in assets/ accanto a index.html, a piena qualità
+          DBS_AUDIO: link   # la musica (assets/audio/) non viene incorporata: resta in assets/ accanto a index.html, a piena qualità
           DBS_SHEETS: ext   # gli sprite sono file in s/ (nome = contenuto): pagina leggera, il telefono scarica solo ciò che serve e li tiene in cache (sw.js)
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
@@ -58,7 +58,8 @@ jobs:
           cp -r dist/s site/s
           cp dist/sw.js site/sw.js
           mkdir -p site/assets
-          find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' -o -name '*.mp4' \) -exec cp {} site/assets/ \;
+          [ -d assets/audio ] && cp -r assets/audio site/assets/audio || true   # musica ed effetti sonori (cartelle music/ e sfx/)
+          find assets -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.ogg' -o -name '*.m4a' -o -name '*.wav' -o -name '*.mp4' \) -exec cp {} site/assets/ \;   # file sciolti (gacha.mp4)
           [ -f CNAME ] && cp CNAME site/CNAME || true
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v4

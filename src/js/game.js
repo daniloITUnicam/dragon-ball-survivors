@@ -1317,7 +1317,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         if(!this.summon&&(this.sandbox||(got&&n>=SB_TOTAL)))SUMMON.start(this,'porunga');   /* v113: the Super Dragon Balls call Porunga here, in the run */
         break;}
       case'ball':this.balls++;this.run.balls++;if(l.star&&!this.ballSet.includes(l.star))this.ballSet.push(l.star);
-        this.audio.sfx('sphere');                                                 /* assets/sphere_sound.mp3 */
+        this.audio.sfx('sphere');                                                 /* assets/audio/sfx/sphere_sound.mp3 */
         this.ring(p.x,p.y,70,'#ffb13b',.55);this.ring(p.x,p.y,140,'#ffe9a8',.85);this.pillar(p.x,p.y,'#ffb13b',1.2);
         this.burst(l.x,l.y-12,24,'#ffd27a');this.burst(l.x,l.y-12,12,'#ffffff');this.flash=Math.max(this.flash||0,.2);this.flashC='#ffd27a';
         this.say(this.env.tr(T('Sfera del Drago ','Dragon Ball '))+(l.star?l.star+'★  ':'')+'('+this.balls+'/7)','#ffb13b',2);

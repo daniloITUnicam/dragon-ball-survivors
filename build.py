@@ -93,9 +93,9 @@ _tg = ROOT/'assets'/'ui'/'tgt.webp'            # the weapon-target (TAB) panels 
 js = js.replace('__TGTART__', base64.b64encode(_tg.read_bytes()).decode() if _tg.exists() else '')
 _db = ROOT/'assets'/'ui'/'dragonballs.webp'   # the 7 Dragon Balls (1..7 stars), one 64x64 frame each, side by side
 js = js.replace('__DBALLS__', base64.b64encode(_db.read_bytes()).decode() if _db.exists() else '')
-# ---- music: assets/*.mp3 (also .ogg .m4a .wav) mapped to the menu / a stage by the FILE NAME ----
+# ---- music: assets/audio/**.mp3 (also .ogg .m4a .wav; loose files in assets/ too) mapped to the menu / a stage by the FILE NAME ----
 # "menu.mp3" -> menu; "menu 2 - <title>.mp3" -> menu2 (alternative menu theme);  "android ruins.mp3", "Buu Dimension.mp3"... -> the stage whose name (or alias below) the file name contains.
-# DBS_AUDIO=embed (default): base64 inside the HTML (single file). DBS_AUDIO=link: relative URL "assets/<file>" (the site must serve
+# DBS_AUDIO=embed (default): base64 inside the HTML (single file). DBS_AUDIO=link: relative URL "assets/<path>" (the site must serve
 # the files next to index.html, see .github/workflows/deploy.yml). DBS_AUDIO_BUDGET_MB=<n>: when embedding, re-encode with ffmpeg
 # (mp3, lower bitrate) if the files total more than n MB - needed for hosts with a size cap on the single HTML file.
 import shutil, hashlib, unicodedata
@@ -115,10 +115,13 @@ BOSS_KEYS = {2: ['freezer theme', 'frieza theme', 'freezer boss', 'freezer', 'fr
 def _norm(t):
     t = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()
     return ' '.join(re.sub(r'[^a-z0-9]+', ' ', t).split())
-SFX_FILES = {'sphere sound': 'sphere', 'level up sound': 'levelup', 'kamehameha charge': 'kameCharge', 'kamehameha fire': 'kameFire'}     # assets/sphere_sound.mp3 = the Dragon Ball pick-up sound (key 'sphere'); assets/level_up_sound.mp3 = the level-up sound (key 'levelup', played at x2 speed)
+SFX_FILES = {'sphere sound': 'sphere', 'level up sound': 'levelup', 'kamehameha charge': 'kameCharge', 'kamehameha fire': 'kameFire'}     # assets/audio/sfx/sphere_sound.mp3 = the Dragon Ball pick-up sound (key 'sphere'); assets/level_up_sound.mp3 = the level-up sound (key 'levelup', played at x2 speed)
 _MIME = {'.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4', '.wav': 'audio/wav'}
 _tracks = {}; _src = {}
-for f in sorted((ROOT/'assets').glob('*')):
+def _audio_files():   # music and effects live in assets/audio/** (music/{menu,stages,bosses}/, sfx/); loose files in assets/ still work
+    return sorted(list((ROOT/'assets').glob('*')) + list((ROOT/'assets'/'audio').rglob('*')), key=lambda p: p.relative_to(ROOT).as_posix())
+def _aurl(f): return 'assets/' + urllib.parse.quote(f.relative_to(ROOT/'assets').as_posix()) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]   # a new file under the same name is a new URL (the offline cache keeps URLs)
+for f in _audio_files():
     if f.suffix.lower() not in _MIME: continue
     nm = _norm(f.stem)
     if nm in SFX_FILES: continue          # a sound effect, handled below
@@ -176,18 +179,18 @@ if _mode == 'embed' and _budget and _src and sum(f.stat().st_size for f in _src.
 for key, f in _src.items():
     g = _enc.get(key, f)
     if _mode == 'link':
-        _tracks[key] = 'assets/' + urllib.parse.quote(f.name) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]   # a new file under the same name is a new URL (the offline cache keeps URLs)
+        _tracks[key] = _aurl(f)
     else:
         _tracks[key] = 'data:%s;base64,%s' % (_MIME[g.suffix.lower()], base64.b64encode(g.read_bytes()).decode())
     print('music: %-8s <- %s (%s, %.1f MB)' % (key, f.name, _mode, g.stat().st_size / 1048576))
 js = js.replace('/*__TRACKS__*/{}', json.dumps(_tracks, separators=(',', ':')))
 # ---- sound effects from files (small): always embedded as data: URIs when DBS_AUDIO=embed, linked in link mode ----
 _sfx = {}
-for f in sorted((ROOT/'assets').glob('*')):
-    if f.suffix.lower() not in _MIME or _norm(f.stem) not in SFX_FILES: continue
+for f in _audio_files():
+    if not f.is_file() or f.suffix.lower() not in _MIME or _norm(f.stem) not in SFX_FILES: continue
     k = SFX_FILES[_norm(f.stem)]
     if k in _sfx: continue
-    _sfx[k] = ('assets/' + urllib.parse.quote(f.name) + '?v=' + hashlib.md5(f.read_bytes()).hexdigest()[:8]) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
+    _sfx[k] = _aurl(f) if _mode == 'link' else 'data:%s;base64,%s' % (_MIME[f.suffix.lower()], base64.b64encode(f.read_bytes()).decode())
     print('sfx:   %-8s <- %s (%s, %.0f KB)' % (k, f.name, _mode, f.stat().st_size / 1024))
 js = js.replace('/*__SFX__*/{}', json.dumps(_sfx, separators=(',', ':')))
 # ---- v136: the summon video of the Gacha shop (assets/gacha.mp4): linked in link mode only; without it the shop keeps the dragon-ball reels ----

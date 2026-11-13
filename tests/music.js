@@ -2,7 +2,7 @@
 const pp=require('/opt/npm-tools/node_modules/puppeteer');const wait=ms=>new Promise(r=>setTimeout(r,ms));
 let fails=0;const ok=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++;};
 const HTML=process.env.HTML||'/tmp/o/music_small.html';
-if(!require('fs').existsSync(HTML)||!require('fs').readdirSync(require('path').join(__dirname,'..','assets')).some(f=>/\.mp3$/i.test(f))){console.log('SKIP no music files in assets/ (or no '+HTML+')');process.exit(0);}   /* a checkout without the audio files */
+if(!require('fs').existsSync(HTML)||!(function w(d){return require('fs').readdirSync(d,{withFileTypes:true}).some(e=>e.isDirectory()?(e.name!=='sprites'&&w(require('path').join(d,e.name))):/\.mp3$/i.test(e.name));})(require('path').join(__dirname,'..','assets'))){console.log('SKIP no music files in assets/ (or no '+HTML+')');process.exit(0);}   /* a checkout without the audio files */
 (async()=>{
   const b=await pp.launch({executablePath:'/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});
   const pg=await b.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));

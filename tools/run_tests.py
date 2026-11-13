@@ -36,7 +36,7 @@ if any(p.name in PACK for p in tests):
     (sd/'sprites.json').write_text(json.dumps(ov), encoding='utf8'); (sd/'personaggi'/'sprites.json').unlink()
     env = dict(os.environ, DBS_SPRITES=str(sd), DBS_OUT='/tmp/o/pack.html')
     subprocess.run([sys.executable, 'build.py'], cwd=ROOT, env=env, capture_output=True)
-if any(p.name == 'music.js' for p in tests) and any((ROOT/'assets').glob('*.mp3')):   # the music test: a build with a small audio budget
+if any(p.name == 'music.js' for p in tests) and any((ROOT/'assets').rglob('*.mp3')):   # the music test: a build with a small audio budget
     env = dict(os.environ, DBS_OUT='/tmp/o/music_small.html', DBS_AUDIO_BUDGET_MB='8.6')
     subprocess.run([sys.executable, 'build.py'], cwd=ROOT, env=env, capture_output=True)
 def env_for(p):
