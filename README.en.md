@@ -78,7 +78,7 @@ All keys can be rebound in **Settings → Controls**.
 - **Wishes:** Shenron offers 4 wishes out of 7; new Immortality (20 s without damage), Transformation (your next form at once) and Legendary trinket (1 Legendary out of 3).
 - **Double evolutions:** 11 weapon pairs; with both fully evolved the Chest offers the fusion: +30% damage, −15% Cooldown, a single slot.
 - **Pacts:** ☠ on the stage screen, 7 curses adding 15-30% Zenny each and 1× Tickets on a cleared stage.
-- **Mastery:** every character levels up to Lv 10 as you play it: alternative colours (Lv 3 and 7), a passive of its own (Lv 5), a title (Lv 10).
+- **Mastery:** every character levels up to Lv 10 as you play it: a passive of its own (Lv 5), victory poses and fusions.
 - **Guided first run:** short hints the first time you meet something (Settings > Gameplay to switch them off or see them again).
 - **Online:** 🏆 Leaderboards by stage and difficulty (time, kills, damage) under a nickname, a Weekly challenge that is the same for everybody, a 📸 shareable end-of-run card. Server side: run `supabase/online.sql` once in the Supabase SQL Editor.
 

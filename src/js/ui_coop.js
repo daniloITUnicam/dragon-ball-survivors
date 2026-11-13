@@ -183,7 +183,7 @@ Object.assign(UI.prototype,{
           h('div',{class:'csart',style:'--c:'+((LINES[C.line||'saiyan']||[])[0]||{}).aura},this.coopChar(C.id,120,120),
             h('div',{class:'cstags'},m.host?h('span',{class:'ctag crown'},'👑'):null,m.me?h('span',{class:'ctag you'},this.tr(CO.you)):null),
             m.ready||m.host?h('span',{class:'ctag rdy'},'✓ '+this.tr(CO.readyB)):null),
-          h('div',{class:'csname'},h('b',null,this.tr(C.n))),h('div',{class:'csnick'},h('b',null,m.nick),m.title&&TITLES.text(m.title)?h('small',null,this.tr(TITLES.text(m.title))):null)));}
+          h('div',{class:'csname'},h('b',null,this.tr(C.n))),h('div',{class:'csnick'},h('b',null,m.nick))));}
       else el.team.appendChild(h('div',{class:'cslot empty'},h('span',{class:'csnum'},String(i+1)),h('div',{class:'csball'},'🐉'),h('b',null,this.tr(s.open?CO.slotS:CO.slotF)),h('small',null,this.tr(CO.slotI))));}},
   coopDrawChat(){const el=this.coopEl,L=COOP.msgs;const key=L.length?L[L.length-1].id+':'+L.length:'0';if(el.chatKey===key)return;el.chatKey=key;el.chat.innerHTML='';
     if(!L.length){el.chat.appendChild(h('p',{class:'cchate'},this.tr(CO.chatE)));return;}

@@ -1,7 +1,7 @@
 'use strict';
 /* ====== v117 UI: career stats (main menu), titles (career screen, shown on the leaderboards), build codes (end screen: copy; character screen: paste) ====== */
 const CT={
-  career:T6('Carriera','Career','Carrera','Carrière','Karriere','Carreira'),title:T6('Titolo','Title','Título','Titre','Titel','Título'),none:T6('Nessuno','None','Ninguno','Aucun','Keiner','Nenhum'),
+  career:T6('Carriera','Career','Carrera','Carrière','Karriere','Carreira'),
   code:T6('Codice build','Build code','Código de build','Code de build','Build-Code','Código da build'),copied:T6('Codice copiato!','Code copied!','¡Código copiado!','Code copié !','Code kopiert!','Código copiado!'),
   paste:T6('Incolla una build','Paste a build','Pegar una build','Coller une build','Build einfügen','Colar uma build'),bad:T6('Codice non valido.','Invalid code.','Código no válido.','Code invalide.','Ungültiger Code.','Código inválido.')
 };
@@ -17,16 +17,6 @@ const BUILD={
         w:(Array.isArray(o.w)?o.w:[]).filter(x=>Array.isArray(x)&&WEAPONS[x[0]]).slice(0,8).map(x=>[x[0],clamp(x[1]|0,1,WMAX),clamp(x[2]|0,0,2),x[3]?1:0]),
         t:(Array.isArray(o.t)?o.t:[]).filter(x=>Array.isArray(x)&&TRINKETS.some(q=>q.id===x[0])).slice(0,24).map(x=>[x[0],clamp(x[1]|0,0,4)]),l:clamp(o.l|0,1,3000),f:clamp(o.f|0,0,9)};}catch(e){return null;}}
 };
-const TITLES={
-  /* codes: m:<char> (Mastery 10), w:<weapon>:<tier 0-2> (weapon diary) */
-  list(save){const out=[];for(const C of CHARS)if(Mastery.lv(save,C.id)>=MAST_TITLE_LV)out.push('m:'+C.id);
-    for(const id in WEAPONS){const n=(save.wk||{})[id]||0;WD_TIERS.forEach((t,i)=>{if(n>=t.n)out.push('w:'+id+':'+i);});}return out;},
-  text(code){const a=String(code||'').split(':');if(a[0]==='m'&&CHARS.some(c=>c.id===a[1]))return Mastery.title(a[1]);
-    if(a[0]==='w'&&WEAPONS[a[1]]&&WD_TIERS[+a[2]]){const W=WEAPONS[a[1]].n,t=WD_TIERS[+a[2]].t;return T6(t.it+' di '+W.it,(W.en||W.it)+' '+t.en,t.es+' de '+(W.en||W.it),t.fr+' de '+(W.en||W.it),(W.en||W.it)+'-'+t.de,t.pt+' de '+(W.en||W.it));}return null;}
-};
-Object.assign(Cloud.prototype,{
-  async setTitle(code){if(!this.uid||!this.nick)return false;const t=await this.token();await this.req('/rest/v1/profiles?user_id=eq.'+encodeURIComponent(this.uid),{method:'PATCH',token:t,headers:{Prefer:'return=minimal'},body:{title:code||null}});this.title=code||null;return true;}
-});
 Object.assign(UI.prototype,{
   careerBtn(){return h('button',{class:'btn','data-fid':'career',onclick:()=>{this.sfx();this.push('career');}},'📊 '+this.tr(CT.career));},
   screen_career(){
@@ -43,13 +33,8 @@ Object.assign(UI.prototype,{
     /* kills per saga = per stage */
     const sk=d.sk||{},saga=STAGE_ORDER.map(i=>[i,sk[i]||0]).filter(x=>x[1]>0),mx=Math.max(1,...saga.map(x=>x[1]));
     const sagaRows=saga.map(([i,n])=>h('div',{class:'srow'},h('span',null,T_(STAGES[i].n)),h('div',{class:'mbar'},h('div',{style:'width:'+Math.round(100*n/mx)+'%'})),h('b',null,n.toLocaleString())));
-    /* titles */
-    const L=TITLES.list(d),cur=d.title||'',cl=this.app.cloud;
-    const sel=h('select',{'data-fid':'tsel',onchange:()=>{d.title=sel.value||'';this.app.save.write();if(cl.uid&&cl.nick)cl.setTitle(d.title).catch(()=>{});this.sfx();}},
-      [h('option',{value:'',selected:!cur},T_(CT.none))].concat(L.map(c=>h('option',{value:c,selected:c===cur},T_(TITLES.text(c))))));
     return h('div',{class:'center career'},this.header(CT.career),
-      h('div',{class:'cargrid'},h('div',{class:'carcol'},rows),h('div',{class:'carcol'},h('h3',null,T_(T6('Nemici per saga','Enemies by saga','Enemigos por saga','Ennemis par saga','Gegner nach Saga','Inimigos por saga'))),sagaRows.length?sagaRows:h('p',{class:'sub'},'—'),
-        h('h3',null,T_(CT.title)),L.length?sel:h('p',{class:'sub'},T_(T6('Si ottengono con la Maestria 10 e con il diario delle armi.','Earned with Mastery 10 and the weapon diary.','Se obtienen con la Maestría 10 y el diario de armas.','S\'obtiennent avec la Maîtrise 10 et le journal des armes.','Gibt es mit Meisterschaft 10 und dem Waffentagebuch.','Obtidos com a Maestria 10 e o diário das armas.'))))));
+      h('div',{class:'cargrid'},h('div',{class:'carcol'},rows),h('div',{class:'carcol'},h('h3',null,T_(T6('Nemici per saga','Enemies by saga','Enemigos por saga','Ennemis par saga','Gegner nach Saga','Inimigos por saga'))),sagaRows.length?sagaRows:h('p',{class:'sub'},'—'))));
   },
   /* end screen: the build code */
   codeBtn(){const g=this.app.game;if(!g)return null;return h('button',{class:'btn alt','data-fid':'bcode',onclick:async()=>{const c=BUILD.encode(g);let ok=false;try{await navigator.clipboard.writeText(c);ok=true;}catch(e){}this.sfx();this.toast({type:'info',msg:ok?this.tr(CT.copied):c});}},'🔗 '+this.tr(CT.code));},

@@ -41,7 +41,7 @@ Object.assign(Game.prototype,{
   /* the hero part of the constructor (keep in step with Game's constructor) */
   coopHeroInit(C,save){
     this.save=save;this.C=C;
-    {const ml=Mastery.lv(save,C.id);this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(C.id):null;this.skin=Mastery.skinOf(save,C.id);}
+    {const ml=Mastery.lv(save,C.id);this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(C.id):null;}
     this.p={x:0,y:0,hp:1,maxHp:1,face:1,inv:0,mv:false};this.input={x:0,y:0,interact:false};
     this.weapons=new Map();this.pass={};this.trinkets=[];this.tRar={};this.tPf={};this.tSrc={};this.tFu={};this.tq=[];
     this.formsUnlocked=0;this.formIdx=-1;this.formColor=null;
@@ -185,7 +185,7 @@ Object.assign(Game.prototype,{
   /* one hero: where, how, what it holds; the full HUD only for the client's own hero */
   coopHeroSnap(m,to){const read=()=>{const p=this.p,mine=p.nick===to,rd=v=>Math.round(v*10)/10;
       const o={n:p.nick,cz:this.coopChoosing(p.nick)?1:0,ch:this.C.id,x:rd(p.x),y:rd(p.y),f:p.face|0,mv:p.mv?1:0,hp:Math.round(p.hp),mh:Math.round(p.maxHp),inv:rd(p.inv||0),dn:p.down?1:0,rv:rd(p.rev||0),atk:rd(p.atk||0),
-        fi:this.formIdx,pt:this.pet?[this.pet.d.id,rd(this.pet.x),rd(this.pet.y),this.pet.face|0,rd(this.pet.cd||0)]:null,fu:this.formsUnlocked,dsh:rd(this.dashT||0),sk:this.skin|0,ca:this.cast?this.coopPlain(this.cast):null,fT:rd(this.fireT||0),
+        fi:this.formIdx,pt:this.pet?[this.pet.d.id,rd(this.pet.x),rd(this.pet.y),this.pet.face|0,rd(this.pet.cd||0)]:null,fu:this.formsUnlocked,dsh:rd(this.dashT||0),ca:this.cast?this.coopPlain(this.cast):null,fT:rd(this.fireT||0),
         w:[...this.weapons.values()].map(w=>[w.id,w.lv,w.evo|0,w.fz||0,w.xl|0,this.coopWState(w)])};
       if(mine)Object.assign(o,{pa:this.pass,tr:this.trinkets.map(id=>[id,this.tRar[id]|0]),co:Math.round(this.run.coins),tk:this.run.tk,sz:this.senzu,ab:rd(this.abCd||0),dc:rd(this.dashCd||0),kai:this.kai|0,bers:rd(this.bers||0),rvs:this.revives|0,sp:rd(this.S.spd)});
       return o;};
@@ -330,7 +330,7 @@ const COOPV={
     p.face=h.f||1;p.cz=!!h.cz;if(!mine)p.mv=!!h.mv;p.hp=h.hp;p.maxHp=h.mh;p.inv=h.inv;p.down=!!h.dn;p.rev=h.rv;p.atk=h.atk;p.nick=h.n;
     if(H.formIdx!==h.fi||H.C.id!==h.ch){H.C=CHARS.find(c=>c.id===h.ch)||H.C;H.formIdx=h.fi;const e=H.formIdx>=0?LINES[H.C.line||'saiyan'][H.formIdx]:null;H.formColor=e?e.aura:null;H.pc=(e&&e.cfg)||H.C.cfg;H.pcKey=H.C.id+':'+H.formIdx;}
     if(h.pt){let q=H.pet;if(!q||q.d.id!==h.pt[0]){const d=PETS.find(x=>x.id===h.pt[0]);q=H.pet=d?{d,x:h.pt[1],y:h.pt[2],cd:0,t:0,face:1,fl:0,act:0}:null;}if(q){q.tx=h.pt[1];q.ty=h.pt[2];q.face=h.pt[3]||1;q.cd=h.pt[4];}}else H.pet=null;
-    H.formsUnlocked=h.fu;H.dashT=h.dsh;H.skin=h.sk;H.cast=h.ca;H.fireT=h.fT;
+    H.formsUnlocked=h.fu;H.dashT=h.dsh;H.cast=h.ca;H.fireT=h.fT;
     const W=H.weapons;const keep=new Set();for(const [id,lv,evo,fz,xl,stt] of h.w){keep.add(id);let w=W.get(id);if(!w){w=Weapon.create(v,id);W.set(id,w);}w.lv=lv;w.evo=evo;w.fz=fz||undefined;w.xl=xl;if(stt)Object.assign(w,stt);}
     for(const id of[...W.keys()])if(!keep.has(id))W.delete(id);
     if(mine&&h.pa){H.pass=h.pa;H.trinkets=h.tr.map(x=>x[0]);H.tRar={};for(const [id,r] of h.tr)H.tRar[id]=r;H.run.coins=h.co;H.run.tk=h.tk;H.senzu=h.sz;H.abCd=h.ab;H.dashCd=h.dc;H.kai=h.kai;H.bers=h.bers;H.revives=h.rvs;H.coopSpd=h.sp;}},

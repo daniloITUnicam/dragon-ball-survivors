@@ -34,9 +34,9 @@ const Online={
     /* the character (its mastery colours too) */
     try{const sp=Sprites.player(g.pcKey,g.pc,0,false,null),k=Math.min(430/sp.c.height,300/sp.c.width)*(sp.px?1:1);x.imageSmoothingEnabled=!sp.px;
       const gl=x.createRadialGradient(300,360,20,300,360,260);gl.addColorStop(0,(g.formColor||'#ffd23f')+'66');gl.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gl;x.fillRect(40,100,520,520);
-      x.drawImage(Mastery.skinned(sp.c,g.skin),300-sp.c.width*k/2,585-sp.c.height*k,sp.c.width*k,sp.c.height*k);}catch(e){}
+      x.drawImage(sp.c,300-sp.c.width*k/2,585-sp.c.height*k,sp.c.width*k,sp.c.height*k);}catch(e){}
     tx('DRAGON BALL SURVIVORS',40,62,'#ffd23f',F(40,800));
-    tx(tr(C.n)+(g.mastLv>=MAST_TITLE_LV?'  « '+tr(Mastery.title(C.id))+' »':''),40,108,'#fff',F(30));
+    tx(tr(C.n),40,108,'#fff',F(30));
     const R=600;tx((res.win?'✓ ':'✗ ')+tr(st.n),R,62,res.win?'#8be07a':'#ff8a8a',F(36,800));
     tx((g.x2?'x2':'')+(g.week?' · '+tr(T6('Sfida','Challenge','Desafío','Défi','Herausforderung','Desafio'))+' '+g.week:'')+((g.pacts||[]).length?' · ☠'+g.pacts.length:''),R,100,'#cfd8ff',F(24,600));
     let dmg=0;for(const k in g.dmgBy)dmg+=g.dmgBy[k]||0;
@@ -65,7 +65,7 @@ Object.assign(Cloud.prototype,{
   async loadNick(){if(!this.enabled||!this.uid)return '';try{const t=await this.token(),j=await this.req('/rest/v1/profiles?select=nick&user_id=eq.'+encodeURIComponent(this.uid),{token:t});this.nick=j&&j[0]?j[0].nick:'';}catch(e){}this.notify({type:'nick'});return this.nick||'';},
   /* returns '' when saved, otherwise an error key: bad | taken | net */
   async setNick(n){n=String(n||'').trim();if(!NICK_RE.test(n))return 'bad';if(!this.uid)return 'net';
-    try{const t=await this.token();await this.req('/rest/v1/profiles?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{user_id:this.uid,nick:n,updated_at:new Date().toISOString()}]});this.nick=n;this.notify({type:'nick'});if(this.sd.d.title&&this.setTitle)this.setTitle(this.sd.d.title).catch(()=>{});return '';}
+    try{const t=await this.token();await this.req('/rest/v1/profiles?on_conflict=user_id',{method:'POST',token:t,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:[{user_id:this.uid,nick:n,updated_at:new Date().toISOString()}]});this.nick=n;this.notify({type:'nick'});return '';}
     catch(e){return e.status===409||e.code==='23505'?'taken':e.net?'net':'bad';}},
   /* v118: a run token from the server when the run starts: the score must come with it, and not sooner than the time it claims */
   async runStart(){if(!this.enabled||!this.uid||!this.nick)return null;const t=await this.token(),j=await this.req('/rest/v1/rpc/run_start',{method:'POST',token:t,body:{}});return typeof j==='string'?j:(j&&j.id)||null;},

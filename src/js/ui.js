@@ -392,7 +392,7 @@ class UI{
       const cfg=cfgForForm(a.c,form),ck='menu:'+a.c.id+':'+form;
       if(a.big&&form>=0){const col=LINES[a.c.line||'saiyan'][form].aura;GLOW.at(g,a.w/2,a.base-60,70+Math.sin(t*9)*6,col,.55);}
       const sp=Sprites.player(ck,cfg,po.f,false,po.ex);
-      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{let kp=a.k*Sprites.pk(sp);if(a.big&&sp.px)kp=Math.min(kp,(a.base-6)/sp.oy);g.scale(kp,kp);}   /* tall sheets must not be cut by the canvas top */g.imageSmoothingEnabled=!sp.px;g.drawImage(a.big&&a.open?Mastery.skinned(sp.c,Mastery.skinOf(this.save,a.c.id)):sp.c,-sp.ox,-sp.oy);
+      g.translate(a.w/2+(po.lean||0)*2,a.base+dy);{let kp=a.k*Sprites.pk(sp);if(a.big&&sp.px)kp=Math.min(kp,(a.base-6)/sp.oy);g.scale(kp,kp);}   /* tall sheets must not be cut by the canvas top */g.imageSmoothingEnabled=!sp.px;g.drawImage(sp.c,-sp.ox,-sp.oy);
       if(!a.open){g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='#0b1a2b';g.fillRect(0,0,a.w,a.h);g.globalCompositeOperation='source-over';}
       else if(a.big&&po.fx){g.setTransform(1,0,0,1,0,0);GLOW.at(g,a.w/2+44,a.base-62,30,'#ffe9a0',.9);}
     }

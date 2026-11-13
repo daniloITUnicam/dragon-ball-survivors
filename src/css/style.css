@@ -668,11 +668,10 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 /* v115: Mastery */
 .mastbox{margin:8px 0;padding:8px 10px;border:1px solid rgba(255,210,63,.35);border-radius:8px;background:rgba(10,14,30,.45);font-size:13px}
 .mastbox .mhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.mastbox .mhead b{color:var(--gold)}
-.mtitle{color:#ffe9a0;font-style:italic}
 .mbar{height:6px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;margin:4px 0}.mbar>div{height:100%;background:linear-gradient(90deg,#ffb13b,#ffd23f)}
 .msub{font-size:11px;opacity:.75}
 .mrws{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:4px 0}.mrw{opacity:.55;font-size:12px}.mrw.got{opacity:1}.mrw i{color:var(--gold);font-style:normal;margin-right:4px}
-.mskins{gap:6px;justify-content:flex-start}.mskin .msw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;background:#ff8a2a;filter:hue-rotate(var(--h))}
+.mskins{gap:6px;justify-content:flex-start}
 .mline{margin:6px 0;padding:6px 8px;border-radius:6px;background:rgba(255,210,63,.08);display:grid;grid-template-columns:1fr auto;gap:2px 8px}.mline .mbar{grid-column:1/3}.mline.up{box-shadow:0 0 12px rgba(255,210,63,.45)}
 /* v115: leaderboards */
 .boards{max-width:880px;margin:0 auto}
@@ -694,7 +693,7 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 /* (scoped to the career screen: unscoped it turned every settings row into a 150 px label + a stretched button + an empty column) */
 .career .srow{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;font-size:13px}.career .srow b{text-align:right}
 @media (max-width:700px){.cargrid{grid-template-columns:1fr}}
-.btitle{opacity:.75;font-weight:600;font-size:11px}.bview{max-width:760px;margin:10px auto;text-align:left}.row.album{gap:6px;justify-content:center}
+.bview{max-width:760px;margin:10px auto;text-align:left}.row.album{gap:6px;justify-content:center}
 /* ===== v119: co-op hub + room (three columns of coloured panels, bottom bar in the room) ===== */
 .coop{width:100%;max-width:1500px;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
 .chead{display:flex;align-items:center;gap:12px;width:100%}
@@ -851,7 +850,6 @@ select option:checked,select option:hover{background-color:#2d4c86;color:#fff}
 .acct2 .aav{grid-row:1/3;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 60%,#ffb13b,#b8400a 72%);border:3px solid #ffd23f;box-shadow:0 0 0 3px #4a1c00}
 .acct2 .aav canvas{image-rendering:pixelated}
 .acct2 .apinfo{min-width:0}.acct2 .anick{font-family:var(--display);font-size:28px;font-style:italic;color:#fff;line-height:1.05;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.acct2 .atitle{font:800 12px var(--body);font-style:normal;padding:2px 10px;border-radius:999px;background:rgba(255,210,63,.18);border:1px solid rgba(255,210,63,.5);color:#ffe08a}
 .acct2 .aemail{font-size:15px;opacity:.85}
 .acct2 .apsync{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}.acct2 .apsync small{color:var(--mute);font-weight:700}
 .acct2 .ast.pill{padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.35);border:2px solid currentColor;font-size:15px;white-space:nowrap}

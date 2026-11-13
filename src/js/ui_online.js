@@ -50,7 +50,7 @@ Object.assign(UI.prototype,{
     cl.board(stage,diff,metric,week).then(rows=>{box.innerHTML='';
       if(!rows.length){box.appendChild(h('p',{class:'sub'},this.tr(OT.empty)));return;}
       for(const r of rows){const C=CHARS.find(c=>c.id===r.ch);
-        box.appendChild(h('div',{class:'brow'+(r.me?' me':'')+(r.rank<=3?' top'+r.rank:'')},h('i',null,'#'+r.rank),h('b',null,r.nick,r.title&&TITLES.text(r.title)?h('small',{class:'btitle'},' « '+this.tr(TITLES.text(r.title))+' »'):null),h('span',{class:'bch'},C?this.tr(C.n):r.ch),
+        box.appendChild(h('div',{class:'brow'+(r.me?' me':'')+(r.rank<=3?' top'+r.rank:'')},h('i',null,'#'+r.rank),h('b',null,r.nick),h('span',{class:'bch'},C?this.tr(C.n):r.ch),
           h('span',{class:'bmeta'},'Lv '+r.lvl+(r.pacts?' ☠'+r.pacts:'')+(r.win?' ✓':'')),h('span',{class:'bval'},Online.fmt(metric,r))));}
     }).catch(()=>{box.innerHTML='';box.appendChild(h('p',{class:'sub'},this.tr(OT.netErr)));});
     return box;

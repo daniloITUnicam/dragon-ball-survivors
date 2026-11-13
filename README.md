@@ -104,7 +104,7 @@ Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
 - **Desideri:** Shenron offre 4 desideri su 7; nuovi Immortalità (20 s senza danni), Trasformazione (subito la forma successiva) e Cimelio leggendario (1 Leggendario su 3).
 - **Evoluzioni doppie:** 11 coppie di armi; con entrambe evolute al massimo il Forziere offre la fusione: +30% danno, −15% Ricarica, un solo slot.
 - **Patti:** ☠ nella scelta dello scenario, 7 maledizioni che aggiungono 15-30% di Zenny ciascuna e Ticket 1× a scenario completato.
-- **Maestria:** ogni personaggio sale fino al Lv 10 giocandolo: colori alternativi (Lv 3 e 7), una passiva propria (Lv 5), un titolo (Lv 10).
+- **Maestria:** ogni personaggio sale fino al Lv 10 giocandolo: una passiva propria (Lv 5), pose di vittoria e fusioni.
 - **Primo avvio guidato:** suggerimenti brevi la prima volta che incontri qualcosa (Impostazioni > Gameplay per spegnerli o rivederli).
 - **Online:** 🏆 Classifiche per scenario e difficoltà (tempo, uccisioni, danni) con un soprannome, Sfida settimanale uguale per tutti, 📸 scheda di fine partita da condividere. Lato server: esegui una volta `supabase/online.sql` nel SQL Editor di Supabase.
 

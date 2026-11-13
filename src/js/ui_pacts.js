@@ -26,21 +26,13 @@ Object.assign(UI.prototype,{
 ,
   /* character screen: level, bar, the four rewards, the colour picker */
   masteryBox(C){
-    const d=this.save,r=(d.mastery||{})[C.id]||{xp:0,skin:0},L=Mastery.lvOf(r.xp),T_=x=>this.tr(x);
+    const d=this.save,r=(d.mastery||{})[C.id]||{xp:0},L=Mastery.lvOf(r.xp),T_=x=>this.tr(x);
     const rw=(lv,txt)=>h('div',{class:'mrw'+(L.lv>=lv?' got':'')},h('i',null,(L.lv>=lv?'✓ ':'🔒 ')+this.t('lv')+' '+lv),h('span',null,txt));
-    const skinBtns=MAST_SKINS.map((deg,i)=>{const open=L.lv>=MAST_SKIN_LV[i],on=(r.skin||0)===i;
-      return h('button',{class:'btn small mskin'+(on?'':' alt'),'data-fid':'mskin'+i,disabled:!open,style:'--h:'+deg+'deg',title:open?'':this.t('lv')+' '+MAST_SKIN_LV[i],
-        onclick:()=>{this.sfx();const rec=Mastery.rec(d,C.id);rec.skin=i;this.app.save.write();this.rebuild(true);}},h('b',{class:'msw'}),i?(open?String.fromCharCode(64+i):'🔒'):T_(T6('Base','Base','Base','Base','Basis','Base')));});
     return h('div',{class:'mastbox'},
-      h('div',{class:'mhead'},h('span',{class:'lbl'},T_(T6('Maestria','Mastery','Maestría','Maîtrise','Meisterschaft','Maestria'))),h('b',null,this.t('lv')+' '+L.lv+(L.lv>=MAST_MAX?' ★':'')),
-        L.lv>=MAST_TITLE_LV?h('span',{class:'mtitle'},'« '+T_(Mastery.title(C.id))+' »'):null),
+      h('div',{class:'mhead'},h('span',{class:'lbl'},T_(T6('Maestria','Mastery','Maestría','Maîtrise','Meisterschaft','Maestria'))),h('b',null,this.t('lv')+' '+L.lv+(L.lv>=MAST_MAX?' ★':''))),
       h('div',{class:'mbar'},h('div',{style:'width:'+(L.need?Math.round(100*L.into/L.need):100)+'%'})),
       h('div',{class:'msub'},L.need?L.into+' / '+L.need+' XP':T_(T6('Livello massimo','Max level','Nivel máximo','Niveau max','Maximales Level','Nível máximo'))),
-      h('div',{class:'mrws'},rw(MAST_SKIN_LV[1],T_(T6('Colori alternativi A','Alternative colours A','Colores alternativos A','Couleurs alternatives A','Alternative Farben A','Cores alternativas A'))),
-        rw(MAST_PASS_LV,T_(T6('Passiva: ','Passive: ','Pasiva: ','Passif : ','Passiv: ','Passiva: '))+T_(Mastery.passiveText(C.id))),
-        rw(MAST_SKIN_LV[2],T_(T6('Colori alternativi B','Alternative colours B','Colores alternativos B','Couleurs alternatives B','Alternative Farben B','Cores alternativas B'))),
-        rw(MAST_TITLE_LV,T_(T6('Titolo: ','Title: ','Título: ','Titre : ','Titel: ','Título: '))+T_(Mastery.title(C.id)))),
-      h('div',{class:'row mskins'},skinBtns),
+      h('div',{class:'mrws'},rw(MAST_PASS_LV,T_(T6('Passiva: ','Passive: ','Pasiva: ','Passif : ','Passiv: ','Passiva: '))+T_(Mastery.passiveText(C.id)))),
       h('div',{class:'row mskins'},h('span',{class:'lbl'},T_(T6('Posa di vittoria','Victory pose','Pose de victoria','Pose de victoire','Siegespose','Pose de vitória'))),VPOSES.map((v,i)=>{const open=L.lv>=VPOSE_LV[i],on=open&&(EXTRAS.poseOf(d,C.id)||{}).id===v.id;   /* v117 */
         return h('button',{class:'btn small'+(on?'':' alt'),disabled:!open,'data-fid':'vp'+v.id,title:open?'':this.t('lv')+' '+VPOSE_LV[i],onclick:()=>{this.sfx();Mastery.rec(d,C.id).pose=v.id;this.app.save.write();this.rebuild(true);}},open?T_(v.n):'🔒 '+this.t('lv')+' '+VPOSE_LV[i]);})),
       this.fusionRows(C));

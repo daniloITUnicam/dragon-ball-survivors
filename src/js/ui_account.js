@@ -108,11 +108,11 @@ Object.assign(UI.prototype,{
       const tot=[0,1,2,3,4].reduce((n,r)=>n+gachaPool(r).length,0),ach=Object.keys(d.ach||{}).length;
       const tile=(ic,l,v,sub)=>h('div',{class:'astile'},h('i',null,ic),h('b',null,v),h('span',null,T_(l)),sub?h('small',null,sub):null);
       const av=h('div',{class:'aav'},this.coopChar?this.coopChar(d.lastChar||'goku',64,64):null);
-      const nick=c.nick||'—',title=d.title&&typeof TITLES!=='undefined'?T_(TITLES.text(d.title)):'';
+      const nick=c.nick||'—';
       const lo=st.lo&&Date.now()-st.lo<3500;   /* the first tap arms the button for 3.5 s */
       return h('div',{class:'acct acctscr acct2'},this.header('clAccount'),
         h('div',{class:'accard aprof'},av,
-          h('div',{class:'apinfo'},h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'anick'},nick,title?h('span',{class:'atitle'},title):null),
+          h('div',{class:'apinfo'},h('div',{class:'lbl'},this.t('clSignedAs')),h('div',{class:'anick'},nick),
             h('div',{class:'aemail'},'☁ '+this.maskEmail(c.email))),
           h('div',{class:'apsync'},h('div',{class:'ast pill '+c.status},this.cloudIcon()+' '+this.cloudStatusText()),
             c.lastSync?h('small',null,this.t('clLast',{t:new Date(c.lastSync).toLocaleTimeString()})):null),

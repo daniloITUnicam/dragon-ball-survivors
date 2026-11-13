@@ -46,9 +46,8 @@ const r2=await pg.evaluate(async()=>{const A=__app,cl=A.cloud,o={},w8=ms=>new Pr
   window.__ovt=null;return o;});
 mock.scores.push({user_id:'u-rival',stage:0,diff:'normal',ch:'vegeta',t:999,kills:999,dmg:1,lvl:9,win:true,pacts:0,week:null,created_at:Date.now()+5000});
 const r3=await pg.evaluate(async()=>{const A=__app,cl=A.cloud,w8=ms=>new Promise(r=>setTimeout(r,ms));const L=await cl.checkOvertaken();
-  A.save.d.wk={kame:1000};await cl.setTitle('w:kame:0');A.ui.show('main');A.ui.bsel={tab:'stage',stage:0,diff:'normal',metric:'kills'};A.ui.push('boards',{});await w8(400);
-  return{n:L.length,nick:L[0]&&L[0].nick,title:(document.querySelector('.brow.me .btitle')||{}).textContent||''};});
-ok(/Kamehameha/.test(r3.title),'the chosen title shows next to the nickname on the boards: '+r3.title);
+  A.ui.show('main');A.ui.bsel={tab:'stage',stage:0,diff:'normal',metric:'kills'};A.ui.push('boards',{});await w8(400);
+  return{n:L.length,nick:L[0]&&L[0].nick};});
 ok(r2.three,'3 community events this week, one of each kind');
 ok(r2.trail&&r2.comm,'a run adds to the community totals '+r2.tot);
 ok(r2.ghost,'the weekly leader comes back as a ghost on the next try');
