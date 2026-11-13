@@ -263,7 +263,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "0": {
      "src": "VEGETA fases/Vegeta Sayajin Saga",
@@ -289,7 +290,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "1": {
      "src": "VEGETA fases/Vegeta Ssj Grade",
@@ -333,7 +335,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "4": {
      "src": "VEGETA fases/Vegeta Ssj God",
@@ -377,7 +380,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "5": {
      "src": "VEGETA fases/Vegeta Blue",
@@ -421,7 +425,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "6": {
      "src": "VEGETA fases/Vegeta Blue Full Power",
@@ -465,7 +470,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     },
     "7": {
      "src": "VEGETA fases/Vegeta Blue Full Power",
@@ -535,7 +541,8 @@
       7,
       8
      ],
-     "idle_n": 0
+     "idle_n": 0,
+     "walk_hr": true
     }
    },
    "fx_recolor": [

@@ -185,6 +185,16 @@ def build_form(pack, e, base_idle_h, prev=None):
         if not guse or 'dash' in guse:
             frames[8] = dh[0]; base = 10 + len(extra); extra += dh[1:]; dh_idx = [8] + [base + i for i in range(3)]
     if full: pass
+    elif e.get('walk_dir') and e.get('walk_hr'):   # custom N-frame walk cycle at UP x resolution
+        wd = e['walk_dir']; wn = e['walk_n']
+        # "walk_hr": the walk frames are drawn at UP x the pack resolution (cut from a video at its own, finer pixel grid, see tools/walk_from_video.py --hr):
+        # they stay as they are and every other frame is enlarged UP x instead of the whole sheet (main() then skips its own enlargement)
+        def sc(n):
+            r = load(pack, wd, n, None, rc).copy(); r.putalpha(r.getchannel('A').point(lambda v: 255 if v > 110 else 0)); return r
+        wf = [sc(n) for n in wn]
+        frames = [im if (im is None or 1 <= i <= 4) else im.resize((im.width * UP, im.height * UP), Image.NEAREST) for i, im in enumerate(frames)]
+        idle = frames[0]; frames[1:5] = [wf[i % len(wf)] for i in range(4)]
+        extra = wf[4:]; walk_idx = [1, 2, 3, 4] + [10 + i for i in range(len(extra))] if extra else None
     elif e.get('walk_dir'):                    # custom N-frame walk cycle replacing idle + walk (see docstring)
         wd = e['walk_dir']; wn = e['walk_n']; ref = load(pack, wd, e.get('idle_n', wn[0]), None, rc)
         f = idle.height / ref.height
@@ -259,11 +269,12 @@ def main():
                 sheet, meta, ih = build_form(a.pack, e, base_idle, prev)
             except SystemExit as ex:
                 print(f'!! {cid}:{k}: {ex}'); continue
+            up = 1 if e.get('walk_hr') else UP   # walk_hr forms are already at UP x
             if ppu is None:                       # scale of the whole character = that of its first (base) idle
-                ppu = ih * UP * 6.0 / heights.get(cid, 262)
+                ppu = ih * up * 6.0 / heights.get(cid, 262)
                 ppu = round(ppu * 20) / 20.0
-            sheet = sheet.resize((sheet.width * UP, sheet.height * UP), Image.NEAREST)
-            m2 = dict(cols=meta['cols'], fw=meta['fw'] * UP, fh=meta['fh'] * UP, ax=meta['ax'] * UP, ay=meta['ay'] * UP, ppu=ppu, has=meta['has'])
+            if up != 1: sheet = sheet.resize((sheet.width * up, sheet.height * up), Image.NEAREST)
+            m2 = dict(cols=meta['cols'], fw=meta['fw'] * up, fh=meta['fh'] * up, ax=meta['ax'] * up, ay=meta['ay'] * up, ppu=ppu, has=meta['has'])
             for k_ in ('walk', 'pw', 'dh'):
                 if k_ in meta: m2[k_] = meta[k_]
             # portraits of the grid (emote/e0-3.png) -> emo<id>[_<form>].png
