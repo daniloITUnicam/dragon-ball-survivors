@@ -86,9 +86,9 @@ Object.assign(UI.prototype,{
       h('p',{class:'gnote'},this.t('gRatesNote')));
     /* v136: full screen, on Kami's Lookout with the summoning portal (the first frame of the summon video: a pull starts from this very picture) */
     guiCss();if(GACHA_VIDEO&&!this.gvFail)this.gvidEl();   /* the video starts loading now */
-    const hdr=this.header('gachaTitle',null,[h('button',{class:'btn small alt','data-fid':'gbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.t('bagBtn')+' ('+d.bag.length+')'),
+    const hdr=this.header('gachaTitle',null,[h('button',{class:'btn small alt','data-fid':'gbag',onclick:()=>{this.sfx();this.push('bag',{});}},'🎒 '+this.tr(T('Borsa','Bag'))+' ('+d.bag.length+')'),   /* shorter than the bag screen's name: this header is crowded */
       h('button',{class:'btn small alt','data-fid':'greroll',onclick:()=>{this.sfx();this.push('reroll');}},'🎲 '+this.tr(T('Reroll','Reroll'))),
-      h('button',{class:'btn small alt','data-fid':'gfuse',onclick:()=>{this.sfx();this.push('fuse');}},'⚗ '+this.tr(T('Fusione','Fusion')))]);
+      h('button',{class:'btn small alt','data-fid':'gfuse',onclick:()=>{this.sfx();this.push('fuse');}},'⚗ '+this.tr(T('Fusione','Fusion'))),this.maxStatsBtn()]);
     {const t2=hdr.querySelector('h2');if(t2){t2.prepend(potara('ph'));const b=h('div',{class:'stban'},banFx('st'));t2.replaceWith(b);b.append(t2);for(const n of [...t2.childNodes])if(n.nodeType===3&&n.textContent.trim())n.replaceWith(bTxt(n.textContent.trim()));}}   /* v137: the title on its stormy banner */
     return h('div',{class:'gsrc gfull'},h('div',{class:'gscene','aria-hidden':'true'},h('div',{class:'gsglow'})),hdr,
       h('div',{class:'gcap'},h('span',null,this.t('gachaSub')),h('b',null,this.t('gColl',{a:d.bag.length,b:total}))),
@@ -224,7 +224,7 @@ Object.assign(UI.prototype,{
         /* every pull is shown (100 at most), one small tile each, resized to fill the screen; hover / tap a tile for its stats */
         const tip=h('div',{class:'gtip'});ov.append(tip);
         const showTip=(el,x,i,ev)=>{
-          const eff=i.t.x&&i.t.m?this.tr(i.t.x):'';
+          const eff=i.t.x&&i.t.m?this.tr(trinX(i.t,i.perf)):'';
           tip.replaceChildren(...[h('div',{class:'gtip-h',style:'--c:'+i.c},tGlyph(i.t.id,i.c),h('div',null,h('b',{style:'color:'+i.c},potara(),i.name),h('small',null,i.rar+(i.perf!=null?' · '+i.perf+'%':'')+(x.up!=null?' ↑':'')))),
             this.perfBar(i.perf),
             i.stats.length?h('div',{class:'stl'},i.stats.map(q=>h('span',{style:'color:#9affb0'},this.tr(q.t)))):h('div',{class:'gtip-d'},i.desc),
@@ -325,7 +325,7 @@ Object.assign(UI.prototype,{
         isEq&&(slotSel==null||eqSlot===slotSel)?h('button',{class:'btn alt','data-fid':'bunq',onclick:()=>{this.sfx('uiBack');this.app.progress.equipTrinket(null,0,eqSlot);this.rebuild(true);}},this.t('bagUnequip')):
           h('button',{class:'btn primary','data-fid':'beq',onclick:()=>{this.sfx('uiStart');this.app.progress.equipTrinket(sel.id,sel.r,slotSel);this.toast({type:'info',msg:this.t('bagEquipped',{n:i.name})});if(pick)this.pop();else this.rebuild(true);}},this.t('bagEquip')),
         h('div',{class:'stl'},i.stats.length?i.stats.map(s=>h('span',{style:'color:#9affb0'},this.tr(s.t))):null),
-        i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(i.t.x||i.t.d))):null,
+        i.t.sp||i.t.x?h('p',null,this.tr(i.t.sp&&!i.t.m?i.t.d:(trinX(i.t,i.perf)||i.t.d))):null,
         i.fu?h('p',{class:'cd'},'⚗ '+this.fuText(i.fu)):null,
         h('p',{class:'cd'},this.t('bagGot',{d:this.fmtDate(sel.at)})),
         h('p',{class:'cd'},this.t('bagMarket')+': ',zAmt(ZENO_PRICE[sel.r],true)),

@@ -45,6 +45,8 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           SUPABASE_GOOGLE: ${{ vars.SUPABASE_GOOGLE }}
+          TEST_OWNER: ${{ vars.TEST_OWNER }}   # e-mail del proprietario (Variables, non committata): nella pagina entra solo il suo hash
+          TEST_LIST: ${{ vars.TEST_LIST }}     # opzionale: e-mail dei tester fissi, separate da virgola
         run: python3 build.py --check
       - name: Prepare site
         run: |

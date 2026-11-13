@@ -27,6 +27,8 @@ const banFx=kind=>{const L=[],r=i=>((i*73+17)%100)/100;
     for(let i=0;i<7;i++)L.push(h('i',{class:'bbolt b'+(i%4),style:'left:'+[3,16,30,47,63,79,91][i]+'%;--d:'+(r(i+5)*3.2).toFixed(2)+'s;--t:'+(2.2+r(i+2)*1.8).toFixed(2)+'s;--f:'+(i%2?-1:1)}));}
   return h('span',{class:'bfx '+kind,'aria-hidden':'true'},L);};
 /* v137: a trinket's icon (its picture, or its kanji while it has none) */
+/* ability / double evolution picture (ABIL_IMG, key = character or fusion id), the kanji when it has none */
+const aGlyph=(key,k,c)=>{const u=typeof ABIL_IMG!=='undefined'&&ABIL_IMG[key];return u?imgGlyph(u,c):glyph(k,c);};
 const tGlyph=(id,c)=>{const u=typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(u){const e=imgGlyph(u,c);e.classList.add('timg');return e;}const t=trinDef(id)||{};return glyph(t.k||'?',c);};
 /* v137: an upgrade's icon (the shop picture it shares, or its kanji) */
 const pGlyph=(pid,c)=>{const P=PASS[pid]||{},u=typeof PASS_IMG!=='undefined'&&PASS_IMG[pid]&&SHOP_IMG[PASS_IMG[pid]];return u?imgGlyph(u,c||P.c):glyph(P.k||'?',c||P.c);};
@@ -308,7 +310,7 @@ class UI{
       h('div',{class:'stats'},
         h('span',null,'HP '+C.hp),h('span',null,this.t('stSpeed')+' x'+C.spd),h('span',null,this.t('stPower')+' x'+C.might)),
       this.masteryBox(C),
-      (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},glyph(ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',{title:this.tr(T('La ricarica diminuisce a ogni livello (fino a −10 s).','Cooldown shrinks with every level (up to −10 s).'))},abBase(ab.cd)+'s ↓'):null),h('p',null,this.tr(ab.d)),
+      (()=>{const ab=ABIL[C.id];return ab?h('div',{class:'abbox',style:'--c:'+ab.c},h('span',{class:'lbl'},this.t('abilityLabel')),h('div',{class:'abrow'},aGlyph(C.id,ab.k,ab.c),h('b',null,this.tr(ab.n)),ab.cd?h('i',{title:this.tr(T('La ricarica diminuisce a ogni livello (fino a −10 s).','Cooldown shrinks with every level (up to −10 s).'))},abBase(ab.cd)+'s ↓'):null),h('p',null,this.tr(ab.d)),
         ABIL_TIER[ab.m]?h('p',{class:'abtier'},h('span',null,'◆ '+this.tr(T('Forma centrale: ','Middle form: '))),this.tr(ABIL_TIER[ab.m].p)):null,
         ABIL_TIER[ab.m]?h('p',{class:'abtier fin'},h('span',null,'★ '+this.tr(T('Forma finale: ','Final form: '))),this.tr(ABIL_TIER[ab.m].f)):null):null;})(),
       h('div',{class:'formsList'},h('span',{class:'lbl'},this.t('forms')),

@@ -595,6 +595,7 @@ class AudioSys{
       case'rrAutoGo':[392,523,659,784,1046,1319].forEach((f,i)=>this.toneAt(f,.06,'square',.08,0,i*.045));this.noise(.3,.05,9000,1500,.05);break;
       case'rrStop':this.toneAt(700,.07,'square',.1,-250,0);this.toneAt(260,.14,'square',.1,-60,.07);break;
       case'rrTickAuto':this.toneAt(520+Math.random()*520,.022,'square',.035,0,0);break;
+      case'mchTick':this.toneAt(196,.12,'sawtooth',.05,60,0);this.toneAt(1318,.05,'square',.04,0,.02);this.noise(.1,.02,4000,1200,0);break;
       case'rrZoom':this.zap(160,1900,.5,.08);this.toneAt(80,.5,'triangle',.09,420,0);break;
       case'rrFlash':this.noise(.4,.12,12000,2200,0);this.toneAt(2093,.22,'square',.08,1000,0);this.toneAt(1046,.3,'triangle',.07,0,0);break;
       case'rrSlam':this.thump(.3,105,.55);this.noise(.5,.17,3200,70,0);this.toneAt(62,.45,'square',.1,-28,0);break;

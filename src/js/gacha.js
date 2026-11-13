@@ -15,7 +15,7 @@ const GACHA={
 const TICKET_KINDS=['t1','t10','l10'];
 /* v136: Gacha shop > Reroll: a new perfection roll (pf) or another trinket of the same rarity (id, perfection and fusion kept), for zenny by rarity;
    the player then keeps the new one or the old one. Gacha shop > Fusion: three trinkets become one (Progress.fusePlan). */
-const REROLL_COST={pf:[120,300,750,1800,4500]};   /* v141: only the perfection can be rerolled (the trinket itself no longer) */
+const REROLL_COST={pf:[200,200,200,200,200]},RR_DISC_EVERY=10,RR_DISC_PCT=.02,RR_DISC_MAX=.5;   /* every 10 paid rolls the next ones cost 2% less (at most 50% off) */   /* v141: only the perfection can be rerolled (the trinket itself no longer) */
 /* v141: price of keeping the OLD perfection after a roll ("Keep the old one"), by rarity of the trinket: Common .. Mythic */
 const REROLL_KEEP=[200,600,1800,4500,10000];
 /* tickets bought with zenny: a 1x ticket costs TICKET_PRICE.t1, a 10x ticket 10 times as much; on Saturday and Sunday the 10x ticket is 20% cheaper. The Lucky ticket is not for sale. */
@@ -69,12 +69,13 @@ Object.assign(Progress.prototype,{
       if(!test){const gs=d.gacha;gs.pulls++;if(g.r===4)gs.mythics++;if(g.r===3)gs.legend++;}
       out.push(res);
     }
-    this.save.write();return out;
+    this.save.write();this.checkAch(null);return out;
   }
   ,bagGet(k){return this.d.bag.find(b=>trinketKey(b.id,b.r)===k)||null;}
   /* Test mode: only the trinkets pulled in Test can be rerolled or fused (they go away with it), for free */
   ,canWork(b){return !!b;}   /* Test mode: every trinket can be rerolled / fused / locked, not only the ones pulled in Test */
-  ,rerollCost(kind,r){return this.d.settings.sandbox?0:(REROLL_COST[kind]||[])[r]||0;}
+  ,rerollDisc(){return Math.min(RR_DISC_MAX,Math.floor(((this.d.gacha&&this.d.gacha.rrPaid)||0)/RR_DISC_EVERY)*RR_DISC_PCT);}   /* current discount (0..0.5) */
+  ,rerollCost(kind,r){if(this.d.settings.sandbox)return 0;const b=(REROLL_COST[kind]||[])[r]||0;return b?Math.max(1,Math.round(b*(1-this.rerollDisc()))):0;}
   ,keepFee(r){return this.d.settings.sandbox?0:REROLL_KEEP[r]||0;}
   /* v141: a stat can be locked (bought per stat at the keep price of the trinket's rarity, unlocked for free): a perfection reroll no longer touches it, the others still
      change. b.ls = {stat key: its frozen perfection}; the number b.p is the perfection of every other stat (see PFS) */
@@ -89,14 +90,14 @@ Object.assign(Progress.prototype,{
     let o=null;
     if(kind==='pf'&&hasPfE(trinDef(b.id),b.f)&&this.freeStats(b).length)o={id:b.id,r:b.r,p:rollPf(0),f:b.f};
     if(!o)return null;
-    d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;if(!quiet)this.save.write();return o;
+    d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;if(c>0)d.gacha.rrPaid=(d.gacha.rrPaid||0)+1;if(!quiet)this.save.write();return o;
   }
   ,rerollApply(k,o){
     const d=this.d,b=this.bagGet(k);if(!b||!o||(o.id!==b.id&&this.bagHas(o.id,b.r)))return null;
     const eqs=d.equips||[];
     for(let i=0;i<eqs.length;i++){const e=eqs[i];if(!e)continue;if(e.id===b.id&&e.r===b.r)eqs[i]={id:o.id,r:b.r};else if(e.id===o.id)eqs[i]=null;}   /* the slot follows; another rarity of the new trinket leaves its slot */
     b.id=o.id;b.p=PFS(+o.p,b.ls);if(isFused(o.f)){b.f=o.f.filter(e=>e.id!==o.id);if(!b.f.length)delete b.f;}
-    if(d.trin)d.trin[o.id]=1;d.equip=eqs[0]||null;this.save.write();return trinketKey(b.id,b.r);
+    if(d.trin)d.trin[o.id]=1;d.equip=eqs[0]||null;this.save.write();this.checkAch(null);return trinketKey(b.id,b.r);
   }
   /* three bag trinkets -> one: the rarity of the rarest (that one is the base: its trinket and its effect; ties: the better perfection), the stats of all three
      Rule (v136b): the base is the one with the highest perfection (ties: the rarer); the result is that trinket, at the highest rarity of the three, with its
@@ -104,20 +105,38 @@ Object.assign(Progress.prototype,{
      a fused trinket fused again keeps only the two new ones, nothing piles up. block: that trinket at that rarity is already in the bag (outside the three). */
   ,fusePlan(keys){
     if(!keys||keys.length!==3||new Set(keys).size!==3)return null;const bs=keys.map(k=>this.bagGet(k));if(bs.some(b=>!b))return null;
+    if(bs.every(b=>b.id===bs[0].id))return this.fusePlanSame(bs);   /* three copies of the same trinket (different rarities): the best of every stat */
     const pfOf=b=>hasPfE(trinDef(b.id),b.f)?(b.p!=null?b.p:PF_NOM):-1;
-    const base=bs.reduce((a,b)=>pfOf(b)>pfOf(a)||(pfOf(b)===pfOf(a)&&b.r>a.r)?b:a),r=Math.max(...bs.map(b=>b.r)),p=pfOf(base);
+    const base=bs.reduce((a,b)=>pfOf(b)>pfOf(a)||(pfOf(b)===pfOf(a)&&b.r>a.r)?b:a),r0=Math.max(...bs.map(b=>b.r)),up=bs.every(b=>b.r===r0)&&r0<4,r=up?r0+1:r0,p=pfOf(base);   /* three of the same rarity: one rarity up (Mythic at most) */
     const have=new Set(Object.keys(trinMods0(trinDef(base.id),r,PF_NOM))),f=[];
     for(const b of bs)if(b!==base){const s=trinBestStat(b.id,b.f,r,have);if(s){f.push(s);have.add(s.k);}}
     const k=trinketKey(base.id,r),block=this.d.bag.some(b=>trinketKey(b.id,b.r)===k&&!bs.includes(b));
-    return{base,id:base.id,r,p:p<0?PF_NOM:+p,f:f.slice(0,FUSE_MAX),block};
+    return{base,id:base.id,r,p:p<0?PF_NOM:+p,f:f.slice(0,FUSE_MAX),block,up};
+  }
+  /* three copies of the same trinket (they can only differ in rarity, a bag holds one per rarity): the result is that trinket at the best rarity of the three
+     and every stat takes the best perfection any of the three had for it (a stat that is not the highest stays "locked" at its own value, see PFS); the extra stats of fused
+     copies are kept (the best FUSE_MAX). plan.same marks this kind of fusion. */
+  ,fusePlanSame(bs){
+    const id=bs[0].id,t=trinDef(id),r=Math.max(...bs.map(b=>b.r)),keys=Object.keys(trinMods0(t,r,PF_NOM)).filter(k=>k!=='proj');
+    const eff=(b,k)=>b.ls&&b.ls[k]!=null?+b.ls[k]:(b.p!=null?+b.p:PF_NOM);
+    const best={};for(const k of keys)best[k]=Math.max(...bs.map(b=>eff(b,k)));
+    const p=keys.length?Math.max(...keys.map(k=>best[k])):Math.max(...bs.map(b=>b.p!=null?+b.p:PF_NOM)),ls={};
+    for(const k of keys)if(best[k]!==p)ls[k]=best[k];
+    const seen=new Set(),cand=[];
+    for(const b of bs)for(const e of (b.f||[])){const sk=e.id+'|'+e.k;if(seen.has(sk)||(t.m&&e.k in t.m))continue;seen.add(sk);const m=trinMods0(trinDef(e.id),r,PF_NOM)[e.k];if(m>0)cand.push({id:e.id,k:e.k,s:m/((TCAP[e.k]||1)*RS[r])});}
+    cand.sort((a,c)=>c.s-a.s);
+    const base=bs.reduce((a,b)=>(b.p!=null?+b.p:0)>(a.p!=null?+a.p:0)||((b.p!=null?+b.p:0)===(a.p!=null?+a.p:0)&&b.r>a.r)?b:a);
+    const k=trinketKey(id,r),block=this.d.bag.some(b=>trinketKey(b.id,b.r)===k&&!bs.includes(b));
+    return{base,id,r,p:+p,ls:Object.keys(ls).length?ls:null,f:cand.slice(0,FUSE_MAX).map(c=>({id:c.id,k:c.k})),block,same:true};
   }
   ,fuse(keys){
     const d=this.d,P=this.fusePlan(keys);if(!P||P.block)return null;const bs=keys.map(k=>this.bagGet(k));if(bs.some(b=>!this.canWork(b)))return null;
     const eqs=d.equips||(d.equips=[null,null,null]);let slot=-1;
     eqs.forEach((e,i)=>{if(e&&bs.some(b=>b.id===e.id&&b.r===e.r)){if(slot<0)slot=i;eqs[i]=null;}});
     d.bag=d.bag.filter(b=>!bs.includes(b));
-    const nb={id:P.id,r:P.r,at:Date.now(),p:+P.p};if(P.f.length)nb.f=P.f;if(bs.some(b=>b.t))nb.t=1;d.bag.push(nb);
-    if(slot>=0)eqs[slot]={id:nb.id,r:nb.r};d.equip=eqs[0]||null;d.gacha.fused=(d.gacha.fused||0)+1;this.save.write();
+    const nb={id:P.id,r:P.r,at:Date.now(),p:+P.p};if(P.f.length)nb.f=P.f;if(P.ls)nb.ls=P.ls;if(bs.some(b=>b.t))nb.t=1;d.bag.push(nb);
+    if(slot>=0)eqs[slot]={id:nb.id,r:nb.r};d.equip=eqs[0]||null;d.gacha.fused=(d.gacha.fused||0)+1;if(!d.settings.sandbox){const gs=d.gacha;gs.fusedR=(gs.fusedR||0)+1;if(P.same)gs.fusedS=(gs.fusedS||0)+1;if(P.r===4)gs.fusedM=(gs.fusedM||0)+1;}   /* counted for the goals only outside Test mode */
+    this.save.write();this.checkAch(null);
     return trinketKey(nb.id,nb.r);
   }
   /* trinket slots before a run: 1 + one per "Extra Trinket" purchase (max 3). equipTrinket(id,r,slot): equips into that slot (default: the first empty one, else slot 1);

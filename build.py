@@ -47,6 +47,8 @@ js = js.replace('__TEST_OWNER__', _test_hash(_to) if _to else '').replace('__TES
 print('test mode:', 'for everybody (DBS_TEST)' if _td else ('owner' + (' + %d tester(s)' % len(_tl) if _tl else '') if _to else 'nobody (no tester.config.json)'))
 _logo = ROOT/'assets'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
+_mh = ROOT/'assets'/'machine.webp'       # the swap machine sprite sheet (4x2 frames)
+js = js.replace('__MACHINE__', base64.b64encode(_mh.read_bytes()).decode() if _mh.exists() else '')
 _wip = ROOT/'assets'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu
 js = js.replace('__WIP__', base64.b64encode(_wip.read_bytes()).decode() if _wip.exists() else '')
 _si = {}
@@ -65,6 +67,10 @@ _ti = {}
 for _f in sorted((ROOT/'assets'/'trinketicons').glob('*.webp')) if (ROOT/'assets'/'trinketicons').is_dir() else []:   # v137: trinket icons, file name = trinket id
     _ti[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__TRINKETICONS__*/{}', json.dumps(_ti, separators=(',', ':')))
+_ab = {}
+for _f in sorted((ROOT/'assets'/'abilicons').glob('*.webp')) if (ROOT/'assets'/'abilicons').is_dir() else []:   # ability / double evolution / senzu / dash icons, file name = key
+    _ab[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
+js = js.replace('/*__ABILICONS__*/{}', json.dumps(_ab, separators=(',', ':')))
 _hi = {}
 for _f in sorted((ROOT/'assets'/'hudicons').glob('*.webp')) if (ROOT/'assets'/'hudicons').is_dir() else []:   # v140: icons of the HUD effects panel (tools/hud_icons_from_mockup.py), file name = icon key
     _hi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()

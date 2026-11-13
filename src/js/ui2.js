@@ -342,7 +342,7 @@ Object.assign(UI.prototype,{
   },
   describeReward(r){
     if(r.k==='evo'){const w=WEAPONS[r.id],wp=this.app.game&&this.app.game.weapons.get(r.id),sec=wp&&wp.evo>=1;return{k:w.k,wimg:r.id,c:'#ffd23f',n:sec?w.evo2:w.evo,tag:'★ '+this.t(sec?'evolution2':'evolution'),d:sec?w.evo2D:w.evoD,evo:true,cat:'star',hints:[{pid:evoPass(r.id,sec?1:0),wid:r.id,evo:sec?1:0}]};}
-    if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
+    if(r.k==='fuse'){const f=FUSIONS.find(x=>x.id===r.id);return{k:f.k,aimg:f.id,c:f.c,n:f.n,tag:'✦ '+this.tr(T6('Evoluzione doppia','Double evolution','Evolución doble','Évolution double','Doppelte Entwicklung','Evolução dupla')),d:fusionDesc(f),evo:true,cat:'star'};}
     if(r.k==='up')return this.describe(r.o);
     if(r.k==='pick')return{k:'袋',c:'#ffd23f',n:T(this.t('pickTitle'),this.t('pickTitle')),tag:this.t('pickTag'),d:T(this.t('pickOf',{n:r.opts.length}),this.t('pickOf',{n:r.opts.length}))};
     if(r.k==='trinket'){const t=trinDef(r.id),rr=r.rar!=null?r.rar:t.r;return{k:t.k,timg:r.id,c:RARITY[rr].c,r:rr,n:t.n,tag:this.tr(RARITY[rr].n)+(hasPf(t)&&r.pf!=null?' · '+r.pf+'%':''),d:trinDesc(t,rr,r.pf),pf:hasPf(t)&&r.pf!=null?r.pf:null,trin:true};}
@@ -354,7 +354,7 @@ Object.assign(UI.prototype,{
       fc?h('span',{class:'bgic','aria-hidden':'true'},siIcon(info.cat,fc)):null,
       info.trin?potara('pcard'):null,
       info.r===4?h('span',{class:'rtop','aria-hidden':'true'}):null,   /* Mythic: the crystal crown on the top edge */
-      info.timg&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[info.timg]?tGlyph(info.timg,info.c):info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
+      info.timg&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[info.timg]?tGlyph(info.timg,info.c):info.wimg&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[info.wimg]?imgGlyph(WEAPON_IMG[info.wimg],info.c):info.aimg&&ABIL_IMG[info.aimg]?imgGlyph(ABIL_IMG[info.aimg],info.c):info.img&&SHOP_IMG[info.img]?imgGlyph(SHOP_IMG[info.img],info.c):glyph(info.k,info.c),
       h('div',{class:'col'},h('div',{class:'cn'},this.tr(info.n),info.lvt?h('span',{class:'lvt'},info.lvt):null),
         h('div',{class:'cl',style:'color:'+rc},info.r!=null&&!info.trin?info.tag+' · '+this.tr(RARITY[info.r].n):info.tag),
         info.fx?h('div',{class:'fx'},info.fx.map(x=>h('span',{class:'fxi',style:'--c:'+rc},h('b',null,this.tr(x.t))))):null,
@@ -411,7 +411,7 @@ Object.assign(UI.prototype,{
         const keys=[...new Set([...mine.map(x=>x.k),...other.map(x=>x.k)])];
         const rows=(plain?mine.map(a=>h('div',{class:'tsrow eq'},this.tr(a.t))):keys.map(k=>{const a=mine.find(x=>x.k===k),b=other.find(x=>x.k===k),va=a?a.v:0,vb=b?b.v:0;
           return h('div',{class:'tsrow '+(va>vb?'up':va<vb?'down':'eq')},a?this.tr(a.t):'—',h('b',null,va>vb?' ▲':va<vb?' ▼':''));}));
-        const sp=t.x||(t.sp?t.d:null);
+        const sp=trinX(t,pf)||(t.sp?t.d:null);
         return h('div',{class:'tscol'+(pf!=null&&pf>=100?' perfect':''),style:'--c:'+RARITY[r].c},h('div',{class:'tstag'},tag),
           h('div',{class:'tshead'},tGlyph(t.id,RARITY[r].c),h('div',null,h('div',{class:'cn',style:'color:'+RARITY[r].c},potara(),this.tr(t.n)),h('div',{class:'cd'},this.tr(RARITY[r].n)))),
           this.perfBar(pf),h('div',{class:'tsrows'},rows),sp?h('div',{class:'tsx'},this.tr(sp)):null,extra||null);};
@@ -428,6 +428,8 @@ Object.assign(UI.prototype,{
         h('div',{class:'row'},multi?null:rep(0,this.t('swapReplace')),
           h('button',{class:'btn alt','data-back':true,onclick:()=>{this.sfx();this.app.resolveModal(curs.length);}},(multi?(curs.length+1)+' · ':'')+this.t(multi?'swapKeepN':'swapKeep'))),
         null);
+    }else if(m.type==='swapper'){
+      el=this.swapperModal(m,g);
     }else if(m.type==='totem'){
       const W=(m.opts||['luck','risk']).map(id=>TOTEMS.find(t=>t.id===id)).filter(Boolean);
       el=h('div',{class:'screen modal wish'},h('h2',null,this.t('totemTitle')),h('p',{class:'sub'},this.t('totemSub')),
@@ -494,7 +496,7 @@ Object.assign(UI.prototype,{
   },
   /* tooltip content for a HUD zone (see Renderer.zones) */
   tipFor(z,g){
-    const hd=(c,glyphK,name,sub,wid,tid)=>h('div',{class:'tiph'},tid?tGlyph(tid,c):wid?wGlyph(wid,c):glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
+    const hd=(c,glyphK,name,sub,wid,tid,aid)=>h('div',{class:'tiph'},tid?tGlyph(tid,c):wid?wGlyph(wid,c):aid?aGlyph(aid,glyphK,c):glyph(glyphK,c),h('div',null,h('b',{style:'color:'+c},this.tr(name)),sub?h('i',null,sub):null));
     const T2=(it,en)=>this.tr(T(it,en)),box=kids=>h('div',{class:'tipbox'},kids);
     if(z.k==='weapon'){const w=g.weapons.get(z.id);if(!w)return null;
       return box([hd(w.color,w.def.k,w.evo?w.evoName:w.def.n,(w.evo?'★'.repeat(w.evo)+' ':'')+'Lv '+w.lv+'/'+WMAX,w.id),h('p',null,this.tr(w.def.d)+(w.evo?' · '+this.tr(w.evo>=2?w.def.evo2D:w.def.evoD):'')),
@@ -502,12 +504,12 @@ Object.assign(UI.prototype,{
     if(z.k==='pass'){const P=PASS[z.id];if(!P)return null;const ws=[...g.weapons.values()].filter(w=>w.evo<g.maxEvo(w.id)&&evoPass(w.id,w.evo)===z.id);
       return box([hd(P.c,P.k,P.n,'Lv '+(g.pass[z.id]||0)+'/'+passMax(z.id)),h('p',null,this.tr(P.d)),ws.length?h('p',{class:'tipnote'},T2('Serve per evolvere: ','Needed to evolve: ')+ws.map(w=>this.tr(w.def.n)).join(', ')):null]);}
     if(z.k==='trinket'){const t=trinDef(z.id);if(!t)return null;const rr=g.trR(z.id),fu=g.tFu&&g.tFu[z.id],pf=hasPfE(t,fu)?g.trP(z.id):null;return box([hd(RARITY[rr].c,t.k,t.n,this.tr(RARITY[rr].n)+(pf!=null?' · '+pf+'%':'')+(fu?' · ⚗':''),null,z.id),h('p',null,this.tr(trinDesc(t,rr,pf,fu))),this.perfBar(pf),pf!=null&&pf>=100?h('p',{class:'tipnote'},this.t('perfUI')):null]);}
-    if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null),h('p',null,this.tr(a.d)),
+    if(z.k==='ability'){const a=g.abil;if(!a)return null;return box([hd(a.c,a.k,a.n,a.cd?T2('Ricarica ','Cooldown ')+g.abCdMax+'s':a.m==='berserk'?T2('Ricarica ','Cooldown ')+g.bersCdMax+'s':null,null,null,g.C.id),h('p',null,this.tr(a.d)),
       ...(ABIL_TIER[a.m]?[h('p',{class:'tipnote abt'+(g.abTier>=1?' on':'')},'◆ '+T2('Forma centrale: ','Middle form: ')+this.tr(ABIL_TIER[a.m].p)+(g.abTier>=1?' ×'+(Math.round(g.passK()*100)/100).toString().replace('.',','):'')),h('p',{class:'tipnote abt'+(g.abTier>=2?' on':'')},'★ '+T2('Forma finale: ','Final form: ')+this.tr(ABIL_TIER[a.m].f))]:[])]);}
     if(z.k==='pet'){const q=g.pet;if(!q)return null;const d=q.d;return box([hd(d.c,d.k,d.n,this.tr(d.ab)+' · '+T2('Ricarica ','Cooldown ')+d.cd+'s'),h('p',null,this.tr(d.d))]);}
     if(z.k==='target')return box([hd('#ff8a5a','的',T('Bersaglio delle armi','Weapon target'),'['+(this.app.renderer.keyHints.target||'Tab')+']'),h('p',null,T2('Premi il tasto per cambiare chi puntano le armi: il più vicino, il nemico con più Salute, quello con meno Salute o il boss.','Press the key to change what your weapons aim at: the closest enemy, the one with the most HP, the one with the least HP, or the boss.'))]);
-    if(z.k==='dash')return box([hd('#7fd4ff','走',T('Scatto','Dash'),T2('Ricarica ','Cooldown ')+Math.round(g.dashCdMax)+'s'),h('p',null,T2('Breve scatto invulnerabile nella direzione in cui ti muovi: danneggia i nemici che attraversi.','A short invulnerable dash in your movement direction: it damages the enemies you pass through.'))]);
-    if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX),h('p',null,T2('Mangia un fagiolo: recuperi il 50% della salute e un parametro casuale sale per il resto della partita. Se la borsa è piena, i nuovi si mangiano subito.','Eat a bean: restores 50% of your health and a random stat rises for the rest of the run. Pick-ups beyond a full bag are eaten at once.'))]);
+    if(z.k==='dash')return box([hd('#7fd4ff','走',T('Scatto','Dash'),T2('Ricarica ','Cooldown ')+Math.round(g.dashCdMax)+'s',null,null,'dash'),h('p',null,T2('Breve scatto invulnerabile nella direzione in cui ti muovi: danneggia i nemici che attraversi.','A short invulnerable dash in your movement direction: it damages the enemies you pass through.'))]);
+    if(z.k==='senzu')return box([hd('#8be07a','豆',T('Fagiolo Senzu','Senzu Bean'),g.senzu+'/'+SENZU_MAX,null,null,'senzu'),h('p',null,T2('Mangia un fagiolo: recuperi il 50% della salute e un parametro casuale sale per il resto della partita. Se la borsa è piena, i nuovi si mangiano subito.','Eat a bean: restores 50% of your health and a random stat rises for the rest of the run. Pick-ups beyond a full bag are eaten at once.'))]);
     return null;
   },
   /* the window fades out (0.22 s) instead of vanishing; instant=true when another one is about to replace it */

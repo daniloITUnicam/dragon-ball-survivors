@@ -3,7 +3,7 @@
    In Endless the steps come every ENDLESS_MILE player levels instead (ENDLESS_W steps at a time). Extreme also raises its spawn rate 2% (the on-screen cap 1%) every 30 s */
 /* kill streak: kills in a row, each within STREAK_WIN s of the previous one; the milestones pay a little XP and make a fuss */
 const CK_EVERY=50,CK_COINS=50,CK_DRAIN=.03;   /* coin streak: every 50 kills in a row +50 coins; the hidden bar loses 1.5% every 0.5 s (3% per second: it empties 33 s after the last kill; it was 2% per second = 50 s) */
-const END_RAR=3,END_PF=69,ZENO_EVERY=360,ZENO_TTL=180,ZENO_IN=1.8,FEAT_IN=1.3,CHEST_IN=.75,FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
+const END_RAR=3,END_PF=69,ZENO_EVERY=360,ZENO_TTL=180,ZENO_IN=1.8,FEAT_IN=1.3,CHEST_IN=.75,FEAT_FADE=1.2,ALT_EVERY=30,ALT_P=.04,TOTEM_P=.015,MACH_P=.12,MACH_TTL=150,MACH_MAX=3,MACH_SECS=10,STREAK_WIN=4,STREAK_MIN=.3,STREAK_CAP=1500,STREAK_MS=[25,50,100,200,350,500,750,1000,1500,2000],STREAK_COL=['#ffe24d','#ffb13b','#ff7b4a','#ff5a3d','#ff3b6b','#d86bff'];
 /* v116: game feel — hit-stop (s) and camera punch (fraction of zoom), combo tiers (streak -> Zenny/XP multiplier), overkill */
 const HS_EVO=.08,HS_BOSS=.1,HS_CRIT=.05,HS_CRIT_CD=1.5,ZP_EVO=.07,ZP_BOSS=.09,ZP_CRIT=.035,OVK_K=4,OVK_R=70,OVK_CD=.3,OVK_PUSH=9;
 const COMBO=[{n:50,m:1.1,t:T6('COMBO!','COMBO!','¡COMBO!','COMBO !','COMBO!','COMBO!'),c:'#ffb13b'},{n:100,m:1.25,t:T6('SUPER COMBO!','SUPER COMBO!','¡SÚPER COMBO!','SUPER COMBO !','SUPER-COMBO!','SUPER COMBO!'),c:'#ff7b4a'},
@@ -174,6 +174,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   get form(){return this.formIdx>=0?Object.assign({idx:this.formIdx},FORM_TIERS[this.formIdx]):null;}
   get formEntry(){return this.formIdx>=0?LINES[this.C.line||'saiyan'][this.formIdx]:null;}
   has(sp){return this.trinkets.some(id=>{const t=trinDef(id);return t&&t.sp===sp;});}
+  fxK(sp){let k=0;for(const id of this.trinkets){const t=trinDef(id);if(t&&t.sp===sp)k=Math.max(k,FXK(this.trP(id)));}return k||1;}   /* strength of an effect trinket by its perfection (see FXK) */
   /* v109: the banner never covers another one: a new message waits in a queue (bq) until the one on screen has been shown BANNER_MIN s, which then fades out in BANNER_FADE s;
      the same text already on screen or waiting is not repeated. Every message also goes into the run's event history (evLog, pause screen) */
   say(txt,col,dur,sub,pri){
@@ -238,7 +239,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     S.gold=1+.15*sl('gold')+tm.gold;
     S.crit=.05+.04*sl('crit')+tm.crit;S.critDmg=1.75;
     S.dodge=Math.min(.75,(fm?fm.dodge:0)+tm.dodge);
-    S.area=1+tm.area+(fm?fm.idx*.03:0);
+    S.area=1+tm.area+(fm?fm.idx*.03:0)+.04*sl('area')+.06*(P.area||0);   /* shop Area + level-up Area */
     S.proj=(fm?(fm.idx>=6?2:fm.idx>=3?1:0):0)+sl('proj')+(P.proj||0)+(tm.proj||0);   /* forms + shop "Quantità" + level-up "Quantità" + trinkets */
     S.bdur=.05*sl('bdur')+(tm.bdur||0);   /* beam duration: extra time the beams stay at full reach (shop + trinkets) */
     S.luck=Math.min(.9,this.sb.luck+.025*sl('luck')+.02*(P.luck||0)+this.luckBonus+(this.luckT>0?.015:0)+(this.petLuckT>0?.025:0));   /* v141: every Luck source halved */S.lootRate=tm.lootRate;S.eliteRate=Math.min(ELITE_BONUS_MAX,tm.elite||0);S.taken=1+(fm?fm.taken:0);
@@ -287,7 +288,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     addS('regen',S.regen,[[BASE,C.regen],[PASS.regen.n,.5*(P.regen||0),lvP('regen')],[shopN('regen'),.5*sl('regen'),lvS('regen')],[FORM,fm?fm.regen:0],[TRIN,tm.regen],[SZ,(sz.regen||0)+tb.regen],[T('Totem','Totem'),tf.regen||0]],(v,s)=>(s?ad(v,2):nm(v,2))+'/s');
     addS('crit',S.crit,[[T('Base','Base'),.05],[shopN('crit'),.04*sl('crit'),lvS('crit')],[TRIN,tm.crit]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     addS('dodge',S.dodge,[[FORM,fm?fm.dodge:0],[TRIN,tm.dodge]],(v,s)=>s?pc(v):Math.round(v*1000)/10+'%');
-    addS('area',S.area,[[T('Base','Base'),1],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
+    addS('area',S.area,[[T('Base','Base'),1],[shopN('area'),.04*sl('area'),lvS('area')],[PASS.area.n,.06*(P.area||0),lvP('area')],[TRIN,tm.area],[FORM,fm?fm.idx*.03:0]],(v,s)=>s?pc(v):'x'+nm(v,2));
     addS('luck',S.luck,[[shopN('luck'),.025*sl('luck'),lvS('luck')],[PASS.luck.n,.02*(P.luck||0),lvP('luck')],[T('Trifogli raccolti','Clovers picked up'),this.luckBonus],[T('Totem della Fortuna','Luck totem'),this.luckT>0?.015:0],[T('Compagno','Companion'),this.petLuckT>0?.025:0]],(v,s)=>s?pc(v):Math.round(v*100)+'%');
     mulS('xp',S.xp,C.xpm/Math.pow(this.TS,XP_TS_E),BASE,[[PASS.growth.n,1+.08*(P.growth||0),lvP('growth')],[T(shopN('exp').it+' + cimeli',shopN('exp').en+' + trinkets'),1+.10*sl('exp')+tm.xp],[T('Modalità x2','x2 mode'),this.x2?.30:1]]);
     addS('gold',S.gold,[[T('Base','Base'),1],[shopN('gold'),.15*sl('gold'),lvS('gold')],[TRIN,tm.gold],[T('Totem','Totem'),tf.gold||0]],(v,s)=>s?pc(v):'x'+nm(v,2));
@@ -394,7 +395,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.ended||this.modal||this.senzu<=0||this.senzuCd>0||this.p.hp>=this.p.maxHp-.5)return false;
     this.senzu--;this.senzuCd=.8;const sr=this.eatSenzu();
     const p=this.p;this.floatText(p.x,p.y-56,this.env.tr(T('Senzu! ','Senzu! '))+this.env.tr(sr[2]),2);this.pillar(p.x,p.y,'#8be07a',.9);this.ring(p.x,p.y,70,'#8be07a',.5);this.burst(p.x,p.y-20,16,'#bfffb0');
-    this.audio.sfx('abHeal');this.emote('happy',1);return true;
+    this.audio.sfx('abHeal');this.emblem('senzu','#8be07a');this.emote('happy',1);return true;
   }
   /* a Senzu bean: restores 50% of the health and raises one random stat for the rest of the run */
   eatSenzu(){
@@ -570,8 +571,52 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* a wish that would do nothing is shown crossed out (reason returned), e.g. «Power» when every weapon is already maxed */
   wishBlock(o){return o==='power'&&![...this.weapons.values()].some(w=>w.lv<WMAX)?T('Tutte le armi sono già al livello massimo.','Every weapon is already at max level.'):null;}
   wishOptions(){const pool=WISH_POOL.filter(w=>w!=='transform'||this.formsUnlocked<this.formMax);shuffle(pool);return pool.slice(0,4);}
+  /* ---- Swap Machine: up to MACH_MAX carried trinkets (not fused ones) become another trinket of the SAME rarity, with the same perfection or better ---- */
+  mchTargets(){return this.trinkets.filter(id=>!this.tFu[id]).map(id=>({id,r:this.trR(id),p:this.trP(id),pf:hasPf(trinDef(id))}));}
+  /* the swap runs on the map: the chosen trinkets go INTO the machine (out of your slots), MACH_SECS s later they are ready and come out as the new ones when you are back and press E.
+     The new ones are rolled now: same rarity, never one you carry, perfection never lower. mchFlush hands over anything still inside when the run ends. */
+  mchStart(f,ids){
+    const used=new Set(this.trinkets),res=[];
+    for(const id of [...new Set(ids)].slice(0,MACH_MAX)){
+      const i=this.trinkets.indexOf(id);if(i<0||this.tFu[id])continue;
+      const r=this.trR(id),p=this.trP(id),c=pickTrinket(r,t=>!used.has(t.id));
+      if(!c)continue;
+      used.add(c.id);
+      let np=Math.max(p,this.capPf(rollPf(this.S.luck)));
+      if(np===p)np=Math.min(100,Math.round(p+rnd(0,(100-p)*.2)));   /* never worse; a small gain when the roll did not beat it */
+      res.push({o:{id,r,p},n:{id:c.id,r,p:np},src:this.tSrc[id]==='bag'?'run':this.tSrc[id]});
+    }
+    if(!res.length)return false;
+    for(const x of res){   /* the old ones go into the machine */
+      const id=x.o.id,old=trinDef(id);x.slot=this.trinkets.indexOf(id);
+      this.trinkets.splice(x.slot,1);delete this.tRar[id];delete this.tPf[id];delete this.tSrc[id];
+      if(old&&old.sp==='barrier'&&!this.has('barrier')&&!this.totemFx.guard)this.barrierReady=false;
+    }
+    f.job={res,t:0,dur:MACH_SECS,done:false,out:false};f.ttl=1e9;this.recalc();
+    this.say(this.env.tr(T('Scambio avviato: torna alla macchina tra '+MACH_SECS+' secondi.','Swap started: come back to the machine in '+MACH_SECS+' seconds.')),'#7fe8ff',3);this.audio.sfx('shrine');
+    return true;
+  }
+  /* the new trinkets leave the machine (also called when the run ends with a swap still inside) */
+  mchDeliver(f){
+    const j=f&&f.job;if(!j||j.out)return;j.out=true;
+    for(const x of j.res){
+      let id=x.n.id;
+      if(this.trinkets.includes(id)){   /* you picked that one up meanwhile: another one of the same rarity */
+        const c=pickTrinket(x.n.r,t=>!this.trinkets.includes(t.id));id=c?c.id:null;
+        if(!id){id=this.trinkets.includes(x.o.id)?null:x.o.id;x.n={id:id||x.o.id,r:x.o.r,p:x.o.p};}
+        else x.n.id=id;
+      }
+      if(!id){this.sellTrinket(x.o.id,x.o.r);continue;}
+      this.trinkets.splice(Math.min(x.slot,this.trinkets.length),0,id);this.tRar[id]=x.n.r;this.tPf[id]=x.n.p;this.tSrc[id]=x.src;
+      this.save.trin[id]=1;
+      const t=trinDef(id);if(t&&t.sp==='barrier')this.barrierReady=true;
+    }
+    this.run.swaps=(this.run.swaps||0)+j.res.length;this.recalc();
+  }
+  mchFlush(){for(const f of this.feat)if(f.kind==='swapper'&&f.job&&!f.job.out)this.mchDeliver(f);}
   resolveModal(i){
     const m=this.modal;if(!m)return;
+    if(m.type==='swapper'){if(m.phase==='collect'){m.f.used=true;m.f.fade=0;}else{m.f.cool=m.f.t+.8;}this.modal=null;this.drainTQ();return;}
     if(m.type==='level'){if(i>=0)this.applyOption(m.options[i]||m.options[0]);}
     else if(m.type==='chest'){
       for(const r of m.rewards){
@@ -630,10 +675,19 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p;let dx=this.input.x,dy=this.input.y;const dl=Math.hypot(dx,dy);if(dl<.1){dx=p.face>0?1:-1;dy=0;}else{dx/=dl;dy/=dl;}
     const dmg=.9*(this.has('windboots')?1.3:1);  /* hit() applies the might multiplier */
     this.startDash(dx,dy,dmg,.65,this.formColor||'#9ad8ff');this.dashCd=this.dashCdMax;
-    this.audio.sfx('abDash');return true;
+    this.emblem('dash',this.formColor||'#9ad8ff');this.audio.sfx('abDash');return true;
   }
   /* ---------- character abilities ---------- */
   get abReady(){const a=this.abil;if(a.m==='kaioken')return this.kaiAvail;if(a.m==='berserk')return this.bersCd<=0&&this.bers<=0;return this.abCd<=0;}
+  /* cast emblem: the ability icon rises over the hero and fades */
+  emblem(id,c,big){this.fx.push(FXS({emb:id,x:this.p.x,y:this.p.y-70,fol:this.p,l:big?1.5:1.1,m:big?1.5:1.1,c,s:big?1.5:1}));}
+  /* the active timed ability, for the indicator above the hero: {l:left,m:max} or null */
+  abTimed(){
+    const T=this.abM||(this.abM={}),m=this.abil&&this.abil.m;
+    const cur=m==='berserk'?this.bers:m==='regen'?this.regenT:m==='crit'?this.critT:m==='ghosts'?this.ghostT:m==='clones'?this.cloneT:m==='timestop'?this.tsT:m==='barrier'?this.shieldT:m==='buff'?this.immT:0;
+    if(!(cur>0)){T.v=0;return null;}
+    T.v=Math.max(T.v||0,cur);return{l:cur,m:T.v};
+  }
   useAbility(){
     if(this.abBlocked())return false;
     if(this.modal||this.ended||this.xform)return false;
@@ -721,10 +775,11 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
         this.abBuf=Object.assign({t:f2?14:8},vv);this.recalc();this.pillar(p.x,p.y,c,1);this.ring(p.x,p.y,130,c,.6);this.burst(p.x,p.y-14,28,c);this.audio.sfx('abPower');break;}
     }
     if(f2){this.pillar(p.x,p.y,c,1.2);this.flash=Math.max(this.flash,.3);this.flashC=c;this.shake=Math.max(this.shake,.5);}
-    this.abCd=this.abCdMax;this.emote('smug',1.2);this.say(tr(a.n)+(f2?' ★':tier>=1?' +':'')+'!',c,1.8,null,3);
+    this.abCd=this.abCdMax;this.emblem(this.C.id,c,f2);this.emote('smug',1.2);this.say(tr(a.n)+(f2?' ★':tier>=1?' +':'')+'!',c,1.8,null,3);
     return true;
   }
   updateAbility(dt){
+    this.abTimed();   /* keeps the max of the running timer, for the indicator */
     const p=this.p,a=this.abil,c=a.c;
     if(this.abCd>0)this.abCd-=dt;
     if(this.senzuCd>0)this.senzuCd-=dt;
@@ -1075,7 +1130,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     let b=null,bd=md*md,o=null,od=Math.min(md,BRK_AIM)**2;for(const e of this.en){if(e.dead)continue;const dx=e.x-x,dy=e.y-y,d=dx*dx+dy*dy;if(e.prop){if(d<od){od=d;o=e;}continue;}if(d<bd){bd=d;b=e;}}return b||o;}   /* v135: breakables only when no enemy is in range */
   hit(e,base,kx,ky){
     const S=this.S;let d=base*S.might*DMG_NERF;
-    if(this.has('rage')&&this.p.hp<this.p.maxHp*.35)d*=1.2;
+    if(this.has('rage')&&this.p.hp<this.p.maxHp*.35)d*=1+.2*this.fxK('rage');
     let crit=false;if(Math.random()<S.crit){d*=S.critDmg;crit=true;}
     this.damageEnemy(e,d,kx,ky,crit);
   }
@@ -1097,7 +1152,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.showNums)this.floatText(e.x+rnd(-6,6),e.y-e.r*1.7,Math.round(d),crit?6:0);
     if(crit&&this.has('critboom')&&!this._boom){
       this._boom=true;
-      for(const o of this.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y;if(dx*dx+dy*dy<75*75)this.damageEnemy(o,d*.4,dx*.5,dy*.5,false);}
+      for(const o of this.en){if(o.dead||o===e)continue;const dx=o.x-e.x,dy=o.y-e.y;if(dx*dx+dy*dy<75*75)this.damageEnemy(o,d*.4*this.fxK('critboom'),dx*.5,dy*.5,false);}
       this.ring(e.x,e.y,75,'#c05aff',.3);this._boom=false;
     }
     if(e.hp<=0)this.killEnemy(e);else this.audio.sfx('hit');
@@ -1351,7 +1406,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   /* v136: only a win lets found trinkets go home: KEEP_N of them, chosen in a window when more were found (UI.screen_tpick); every other one is sold.
      A defeat, and what is found in Endless after the win, is all sold. Co-op keeps the old rule (everything carried goes into the bag). */
   finish(win,opts){
-    if(this.ended)return;this.ended=true;
+    if(this.ended)return;this.ended=true;this.mchFlush();
     if(this.coop||this.coopView){this.keepHeld();this.finish2(win,opts);return;}
     const f=win&&!this.tPicked?this.foundTrinkets():[];
     if(f.length>KEEP_N&&this.env.pickTrinkets){this.tPicked=true;this.env.pickTrinkets(this,f,ids=>this.finish2(win,opts,ids));return;}
@@ -2250,7 +2305,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
   startBerserk(){
     if(this.abBlocked())return false;
     if(this.bers>0||this.bersCd>0||this.modal||this.ended||this.xform)return false;
-    const p=this.p,f2=this.abTier>=2;this.bersMax=f2?BERS_T2:BERS_T;this.bers=this.bersMax;this.bersT=.15;if(f2)p.inv=Math.max(p.inv,1.5);this.recalc();
+    const p=this.p,f2=this.abTier>=2;this.bersMax=f2?BERS_T2:BERS_T;this.bers=this.bersMax;this.bersT=.15;if(f2)p.inv=Math.max(p.inv,1.5);this.recalc();this.emblem(this.C.id,'#8aff3a',f2);
     this.flash=.6;this.flashC='#9aff4a';this.shake=Math.max(this.shake,.9);
     this.ring(p.x,p.y,320,'#8aff3a',.9);this.ring(p.x,p.y,180,'#ffffff',.6);this.pillar(p.x,p.y,'#8aff3a',1.4);this.bolt(p.x,p.y-20,260,'#c8ff6a',12);this.burst(p.x,p.y-18,50,'#8aff3a');
     this.say(this.env.tr(T('BERSERK!','BERSERK!')),'#8aff3a',2.6,null,3);this.audio.sfx('broly');this.emote('pain',2);
@@ -2284,7 +2339,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     const p=this.p;
     if(this.kai>0){
       this.ring(p.x,p.y,this.kai===1?160:240,'#ff3b2f',.6);this.burst(p.x,p.y-18,this.kai===1?20:36,'#ff3b2f');this.pillar(p.x,p.y,'#ff3b2f',.6);this.shake=Math.max(this.shake,this.kai===1?.2:.4);
-      this.say('KAIOKEN x'+(this.kai===1?10:20)+'!','#ff3b2f',1.8,null,this.kai===1?3:4);this.audio.sfx(this.kai===1?'kaioken':'kaioken2');this.emote('smug',1.2);
+      this.emblem(this.C.id,'#ff3b2f',this.kai===2);this.say('KAIOKEN x'+(this.kai===1?10:20)+'!','#ff3b2f',1.8,null,this.kai===1?3:4);this.audio.sfx(this.kai===1?'kaioken':'kaioken2');this.emote('smug',1.2);
     }else{this.say(this.env.tr(T('Kaioken disattivato','Kaioken off')),'#ffb0a0',1.4);this.audio.sfx('click');this.ring(p.x,p.y,90,'#ffb0a0',.4);}
     return true;
   }
@@ -2799,7 +2854,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
 
 /* ====== Map events: loot points + helpful features, driven by time and player needs ====== */
 class MapDirector{
-  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.tunNext=TUN_EVERY;this.needT=12;this.lootT=rnd(45,70);this.altT=rnd(20,40);this.chestT=200;
+  constructor(g){this.g=g;this.secretAt=rnd(60,Math.max(75,g.dur-25));this.secretDone=false;this.helpT={heal:0,magnet:60};this.tunNext=TUN_EVERY;this.needT=12;this.lootT=rnd(45,70);this.altT=rnd(20,40);this.chestT=200;this.mchAt=Math.random()<MACH_P?rnd(80,Math.max(120,Math.min(g.dur||600,900)*.55)):1e9;this.mchDone=false;   /* swap machine: 12% of the runs have one, at a random moment */
     const bq=g.bossQ;this.trials=[];
     if(bq.length){this.trials.push({t:Math.max(60,bq[0].t-50),done:false});const fin=bq[bq.length-1];if(fin.t-70>bq[0].t+60)this.trials.push({t:fin.t-70,done:false});}
   }
@@ -2815,14 +2870,16 @@ class MapDirector{
     if(g.endless&&g.t>=this.zenoNext&&!g.trial){this.zenoNext=g.t+ENDLESS_ZENO;if(!g.feat.some(f=>!f.dead&&(f.kind==='secret'||f.kind==='zenoportal')))this.spawnSecret(240);}
     this.islands(dt);
     this.lootT-=dt;this.helpT.heal-=dt;this.helpT.magnet-=dt;this.needT-=dt;if(this.needT<=0){this.needT=12;this.needHelp();}
-    if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate+g.S.luck*1.5);this.spawnLootPoint();}
+    if(this.lootT<=0){this.lootT=rnd(65,105)/(1+g.S.lootRate);   /* the map loot points depend on Extra loot only, not on Luck */this.spawnLootPoint();}
     this.chestT-=dt;
     if(this.chestT<=0){this.chestT=300;const[x,y]=this.pos(220,380);g.chests.push({x,y,final:false,t:0,supply:true,rar:g.rollChestRar()});g.floatText(p.x,p.y-70,g.env.tr(T('Un forziere è apparso!','A chest appeared!')),5);}
     /* altars and totems are rolled independently every ALT_EVERY s: each altar ALT_P (4%), the Totem TOTEM_P (1.5%, so about 0.3 per 10 minutes and two in ten minutes is a rare find) */
     this.altT-=dt;
     if(this.altT<=0){this.altT=ALT_EVERY;this.rollAltars();}
+    if(!this.mchDone&&g.t>=this.mchAt&&!g.trial&&!g.cleared&&!g.endless&&g.mchTargets().length){this.mchDone=true;this.spawnMachine();}   /* waits until you carry a trinket it can swap */
     for(const f of g.feat){
       f.t+=dt;
+      if(f.job&&!f.job.done){f.job.t+=dt;if(f.job.t>=f.job.dur){f.job.done=true;g.say(g.env.tr(T('Lo scambio è pronto! Torna alla macchina.','The swap is ready! Go back to the machine.')),'#7fe8ff',3);g.audio.sfx('trinket');}}
       const d=Math.hypot(p.x-f.x,p.y-f.y);
       f.near=d<90;
       if(f.pressed){f.pt=(f.pt||0)+dt;if(f.pt>.9&&f.fade===undefined)f.fade=0;}   /* v134: the button's altar dissolves once pressed */
@@ -2899,6 +2956,11 @@ class MapDirector{
       g.say(g.env.tr(T('Un Totem è apparso sulla mappa!','A Totem appeared on the map!')),'#8be07a',2.6);g.audio.sfx('shrine');
     }
   }
+  spawnMachine(){
+    const g=this.g,[x,y]=this.pos(230,400);
+    g.feat.push({kind:'swapper',x,y,t:0,ttl:MACH_TTL,used:false,dead:false});
+    g.say(g.env.tr(T('Una Macchina dello Scambio è apparsa sulla mappa!','A Swap Machine appeared on the map!')),'#7fe8ff',3);g.audio.sfx('shrine');
+  }
   /* the level's secret: a portal to Zeno's Shop somewhere on the map, shown by an arrow with the distance */
   spawnSecret(ttl){
     const g=this.g,[x,y]=this.pos(650,950);
@@ -2925,6 +2987,12 @@ class MapDirector{
       g.say(g.env.tr(T('Si è aperto un portale misterioso...','A mysterious portal has opened...')),'#e0b8ff',3);return;}
     if(f.kind==='zenoportal'){g.startZeno();f.used=true;f.dead=true;return;}
     if(f.kind==='totem'){g.modal={type:'totem',opts:g.rollTotems()};f.used=true;f.fade=0;return;}
+    if(f.kind==='swapper'){   /* the window opens; the machine is spent only once a swap has been made */
+      if((f.cool||0)>f.t)return;
+      if(f.job){if(!f.job.done){f.cool=f.t+2;g.say(g.env.tr(T('Scambio in corso: '+Math.round(f.job.t/f.job.dur*100)+'%','Swap in progress: '+Math.round(f.job.t/f.job.dur*100)+'%')),'#7fe8ff',1.6);return;}
+        g.mchDeliver(f);f.cool=f.t+.8;g.modal={type:'swapper',f,phase:'collect'};return;}
+      if(!g.mchTargets().length){f.cool=f.t+2.5;g.say(g.env.tr(T('Non hai cimeli da scambiare.','You carry no trinket to swap.')),'#ff9a8a',2);return;}
+      f.cool=f.t+.8;g.modal={type:'swapper',f,sel:[],phase:'select'};return;}
     if(f.kind==='shrine'){
       const k=pick(['might','spd','cd','hp','regen','magnet']);
       const val={might:.05,spd:.04,cd:.04,hp:8,regen:.2,magnet:.08}[k];

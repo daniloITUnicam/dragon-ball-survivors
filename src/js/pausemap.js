@@ -20,6 +20,7 @@ const MAP_TIP_RAW={   /* key: [name it, name en, what it does it, en] */
   altar:['Altare del Sacrificio','Altar of Sacrifice','Perdi metà della salute e la tua arma più alta sale di un livello (serve più del 30% di salute).','Lose half your health and your highest weapon gains a level (needs more than 30% health).'],
   font:["Fonte dell'esperienza",'Experience font','Ti dà il 40% di un livello.','Gives you 40% of a level.'],
   totem:['Totem','Totem','Scegli una benedizione tra tre: fortuna, rischio, vigore, furia, ricchezza...','Choose one blessing out of three: luck, risk, vigor, fury, wealth...'],
+  swapper:['Macchina dello Scambio','Swap Machine','Scambia fino a 3 cimeli con altri della stessa rarità e perfezione uguale o maggiore.','Swap up to 3 trinkets for others of the same rarity and equal or better perfection.'],
   secret:['Bottone misterioso','Mysterious button','Premilo: si apre il portale di Zeno-sama.',"Press it: Zeno-sama's portal opens."],
   zenoportal:['Portale di Zeno-sama',"Zeno-sama's portal",'Entra nel suo negozio di cimeli.','Enter his trinket shop.'],
   chamber:['Stanza dello Spirito e del Tempo','Hyperbolic Time Chamber','Sfida il Maestro e allenati.','Challenge the Master and train.'],

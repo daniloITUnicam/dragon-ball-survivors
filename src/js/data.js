@@ -670,12 +670,12 @@ const TRINKETS=[
  {id:'halo',r:2,k:'輪',n:T('Aureola dell\'Angelo','Angel Halo'),d:T('Rinasci una volta con il 50% di salute.','Revive once with 50% HP.'),sp:'revive'},
  {id:'timeroom',r:2,k:'時',n:T('Orologio dello Spirito','Spirit Room Clock'),d:T('-10% ricarica, +4% danno.','-10% cooldown, +4% damage.'),m:{cd:.10,might:.04}},
  {id:'dball4',r:2,k:'星',n:T('Sfera a 4 Stelle','Four-Star Ball'),d:T('Ogni 4s un\'onda d\'urto colpisce i vicini.','Every 4s a shockwave hits nearby foes.'),sp:'shock'},
- {id:'crystal',r:2,k:'鏡',n:T('Cristallo Divino','Divine Crystal'),d:T('+6% critico. I critici esplodono.','+6% crit. Crits explode.'),m:{crit:.06},sp:'critboom',x:T('I critici esplodono.','Crits explode.')},
+ {id:'crystal',r:2,k:'鏡',n:T('Cristallo Divino','Divine Crystal'),d:T('+6% critico. I critici esplodono.','+6% crit. Crits explode.'),m:{crit:.06},sp:'critboom',x:T('I critici esplodono.','Crits explode.'),xf:k=>T('I critici esplodono per il '+Math.round(40*k)+'% del danno.','Crits explode for '+Math.round(40*k)+'% of the damage.')},
  {id:'armor',r:3,k:'盾',n:T('Armatura Saiyan Reale','Royal Saiyan Armor'),d:T('+3 armatura, +30% salute.','+3 armor, +30% HP.'),m:{armor:3,hpPct:.30}},
  {id:'timering',r:3,k:'時',n:T('Anello del Tempo','Ring of Time'),d:T('Ogni 10s i nemici rallentano per 4s.','Every 10s enemies slow for 4s.'),sp:'slowtime'},
  {id:'dragonheart',r:3,k:'龍',n:T('Cuore del Drago','Dragon Heart'),d:T('+12% danno, +8% esperienza, +25% zenny.','+12% damage, +8% XP, +25% zenny.'),m:{might:.12,xp:.08,gold:.25}},
  {id:'mirror',r:3,k:'鏡',n:T('Specchio dei Kaioh','Kaioh Mirror'),d:T('Una barriera blocca un colpo ogni 7,5s.','A barrier blocks one hit every 7.5s.'),sp:'barrier'},
- {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.')},
+ {id:'berserk',r:3,k:'怒',n:T('Furia Saiyan','Saiyan Fury'),d:T('+4% danno, +20% sotto il 35% di salute.','+4% damage, +20% below 35% HP.'),m:{might:.04},sp:'rage',x:T('+20% danno sotto il 35% di salute.','+20% damage below 35% HP.'),xf:k=>T('+'+Math.round(20*k)+'% danno sotto il 35% di salute.','+'+Math.round(20*k)+'% damage below 35% HP.')},
  /* more trinkets with plain stats, so the gacha pool is wider: they exist at every rarity (common .. mythic) like the other stat trinkets */
  {id:'shell',r:0,k:'亀',n:T('Guscio di Muten Roshi','Master Roshi\'s Shell'),d:T('',''),m:{armor:.7,regen:.3}},
  {id:'gi',r:0,k:'衣',n:T('Gi da Allenamento Pesante','Heavy Training Gi'),d:T('',''),m:{hpPct:.08}},
@@ -699,6 +699,8 @@ const PF_SPREAD=[.88,1.12],PF_NOM=50;
    (.ls), so every place that computes stats from "the perfection" (cards, run, bag, fusion) honours the locked ones without changing; JSON stores it as a plain number */
 function PFS(p,ls){if(!ls||!Object.keys(ls).length)return p;const n=new Number(p==null?PF_NOM:+p);n.ls=ls;return n;}   /* a function declaration: esbuild 0.24.2 dropped the former arrow-with-for-in version from the minified page */
 const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
+/* the special effect of a trinket with stats also follows its perfection: x0.6 at 0, x1 at 50 (the listed value), x1.4 at 100. t.xf(k) is the effect text at factor k; the game multiplies the effect by FXK too */
+const FXK=pf=>.6+.8*(pf==null?PF_NOM:+pf)/100,trinX=(t,pf)=>t.xf?t.xf(FXK(pf)):t.x;
 /* Perfection roll (0-100). PF_CURVE = [perfection X, chance of rolling X or more]: the typical roll is about 25, 50 or more is 1 in 30, 80 or more 1 in 330, 90 or more 1 in 600
    and a perfect 100 is 1 in 1000. Between two points the chance falls in a straight line on a log scale. Luck multiplies the roll by 1 + 0.25 Luck (at the maximum Luck a perfect 100 is about 1 in 340). */
 const PF_CURVE=[[0,1],[10,.85],[25,.5],[35,.2],[42,.1],[50,1/30],[65,.008],[80,1/330],[90,1/600],[99.5,.001]];
@@ -761,7 +763,7 @@ function trinStats(t,r,pf,fu){
 function trinDesc(t,r,pf,fu){
   const fz=isFused(fu);
   if(!fz&&(!t.m||(t.sp&&!t.x)))return t.d;
-  const st=trinStats(t,r,pf,fu),x=t.x||(t.sp&&!t.m?t.d:null);
+  const st=trinStats(t,r,pf,fu),x=trinX(t,pf)||(t.sp&&!t.m?t.d:null);
   return T(st.map(x=>x.t.it).join(', ')+'.'+(x?' '+x.it:''),st.map(x=>x.t.en).join(', ')+'.'+(x?' '+x.en:''));
 }
 for(const t of TRINKETS)if(t.m&&!(t.sp&&!t.x))t.d=trinDesc(t,t.r);   /* the shown text always matches the (capped) stats */
@@ -998,9 +1000,6 @@ const ACHIEVEMENTS=[
  A('zk10','Cliente fisso','Regular Customer','Entra 10 volte nello Shop di Zeno.','Enter Zeno\'s Shop 10 times.',600,s=>s.zeno>=10,PG(s=>s.zeno,10)),
  A('zb10','Cliente prediletto','Favourite Customer','Compra 10 cimeli da Zeno-sama.','Buy 10 trinkets from Zeno-sama.',900,s=>s.zbuys>=10,PG(s=>s.zbuys,10)),
  /* shop, money */
- A('shop1','Primo acquisto','First Purchase','Compra un potenziamento nel negozio.','Buy an upgrade in the shop.',50,s=>s.shopBuys>=1,PG(s=>s.shopBuys,1)),
- A('shop25','Cliente affezionato','Loyal Customer','Compra 25 potenziamenti nel negozio.','Buy 25 upgrades in the shop.',300,s=>s.shopBuys>=25,PG(s=>s.shopBuys,25)),
- A('shopM','Specializzato','Specialized','Porta un potenziamento al massimo.','Max out an upgrade.',300,s=>s.shopMax>=1,PG(s=>s.shopMax,1)),
  A('z10k','Ricco sfondato','Filthy Rich','Guadagna 10.000 zenny in totale.','Earn 10,000 zenny in total.',400,s=>s.zenny>=10000,PG(s=>s.zenny,10000)),
  A('z100k','Magnate','Tycoon','Guadagna 100.000 zenny in totale.','Earn 100,000 zenny in total.',2000,s=>s.zenny>=100000,PG(s=>s.zenny,100000)),
  A('coin2k','Portafoglio gonfio','Fat Wallet','Raccogli 2.000 monete in una sola partita.','Collect 2,000 coins in a single run.',300,s=>s.run.coins>=2000,PG(s=>s.rec.coins,2000)),

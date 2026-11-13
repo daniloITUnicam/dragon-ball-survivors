@@ -8,7 +8,7 @@
   P.createRadialGradient=function(x0,y0,r0,x1,y1,r1){return rg.call(this,x0,y0,r0>0?r0:0,x1,y1,r1>0?r1:0);};
   if(rr)P.roundRect=function(x,y,w,h,r){return rr.call(this,x,y,w,h,r);};
 })();
-const FEAT_COL={shrine:'#ffd23f',spring:'#5ad0ff',altar:'#ff4a4a',font:'#8ad8ff',totem:'#8be07a',secret:'#ff6a6a',zenoportal:'#c890ff',chamber:'#c890ff',tunnel:'#ffd23f'};   /* v137: altar colours (use FX, the [E] button) */
+const FEAT_COL={shrine:'#ffd23f',spring:'#5ad0ff',altar:'#ff4a4a',font:'#8ad8ff',totem:'#8be07a',secret:'#ff6a6a',zenoportal:'#c890ff',chamber:'#c890ff',tunnel:'#ffd23f',swapper:'#59e0ff'};   /* v137: altar colours (use FX, the [E] button) */
 const MOB_DPR=1.5,MOB_ON=()=>typeof MOBILE!=='undefined'&&MOBILE.on;
 const THEMES={
   plains:{ground:['#4f9b4a','#56a552','#489244','#5aa955'],hi:'#7acb6a',lo:'#2f6a30',water:['#3b86c4','#4394d0','#3079b4'],sky:'#1d3a2a'},
@@ -377,6 +377,9 @@ this.W=1;this.H=1;this.Z=1;
     for(const f of (FXL.a>0?g.fx:[])){
       if(!!(f.wfx||f.abfx||f.beam)!==wpn)continue;
       if(f.wfx){WFX.fxDraw(ctx,f);continue;}   /* v127: painted weapon blasts */
+      if(f.emb){const im=this.weaponImg(f.emb);if(im){const k=1-f.l/f.m,a=k<.15?k/.15:clamp(f.l/f.m/.45,0,1),sz=(46+22*Math.min(1,k*4))*(f.s||1),yy=f.y-52-k*34;
+        ctx.save();ctx.globalAlpha=a;ctx.globalCompositeOperation='lighter';const gr=ctx.createRadialGradient(f.x,yy,2,f.x,yy,sz*.85);gr.addColorStop(0,hexA(f.c,.55));gr.addColorStop(1,hexA(f.c,0));ctx.fillStyle=gr;ctx.beginPath();ctx.arc(f.x,yy,sz*.85,0,6.2832);ctx.fill();
+        ctx.globalCompositeOperation='source-over';ctx.save();ctx.beginPath();ctx.arc(f.x,yy,sz/2*.94,0,6.2832);ctx.clip();ctx.drawImage(im,f.x-sz/2,yy-sz/2,sz,sz);ctx.restore();ctx.lineWidth=3;ctx.strokeStyle=f.c;ctx.beginPath();ctx.arc(f.x,yy,sz/2*.94,0,6.2832);ctx.stroke();ctx.restore();}continue;}
       if(f.abfx||(f.beam&&f.ab&&WFX.AB[f.ab])){if(WFX.abFx(ctx,f,g))continue;}   /* v123: painted character abilities */
       if(f.beam){
         const k=1-f.l/f.m,a=clamp(f.l/f.m,0,1),w=f.w*(k<.15?k/.15:1)*(.4+.6*a);
@@ -1229,7 +1232,15 @@ this.W=1;this.H=1;this.Z=1;
   trinketImg(id){const c=this.tImgC||(this.tImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   /* a trinket's drawn icon centred at x,y (sz px), or its old symbol when the picture is not ready / does not exist */
   drawTrin(id,x,y,sz,col,fs,txt){const im=this.trinketImg(id);if(im){const c=this.ctx;c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(im,x-sz/2,y-sz/2,sz,sz);c.restore();return;}const t=trinDef(id);if(t&&txt)txt(t.k,x,y+fs*.33,col,'center',fs);}
-  weaponImg(id){const c=this.wImgC||(this.wImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
+  /* a round HUD button's picture (ability / dash / senzu art from ABIL_IMG): clipped to the circle, darkened when unavailable, a dark sweep over the part still recharging; false = no art (the kanji is drawn) */
+  btnIcon(ctx,key,bx,by,rr,prog,dim,U){
+    const im=this.weaponImg(key);if(!im)return false;
+    ctx.save();ctx.beginPath();ctx.arc(bx,by,rr-1.5*U,0,TAU);ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(im,bx-rr,by-rr,rr*2,rr*2);
+    if(dim){ctx.fillStyle='rgba(8,12,24,.6)';ctx.fillRect(bx-rr,by-rr,rr*2,rr*2);}
+    if(prog<1){ctx.fillStyle='rgba(8,12,24,.62)';ctx.beginPath();ctx.moveTo(bx,by);ctx.arc(bx,by,rr*1.5,-Math.PI/2+TAU*prog,-Math.PI/2+TAU);ctx.closePath();ctx.fill();}
+    ctx.restore();return true;
+  }
+  weaponImg(id){const c=this.wImgC||(this.wImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&((typeof WEAPON_IMG!=='undefined'&&WEAPON_IMG[id])||(typeof ABIL_IMG!=='undefined'&&ABIL_IMG[id]));if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}   /* v137 */
   shopImg(id){const c=this.shopImgC||(this.shopImgC={});if(c[id]!==undefined)return c[id]&&c[id].complete&&c[id].naturalWidth?c[id]:null;const u=id&&typeof SHOP_IMG!=='undefined'&&SHOP_IMG[id];if(!u){c[id]=null;return null;}const im=new Image();im.src=u;c[id]=im;return null;}
   statueArt(n){this.statC=this.statC||{};return this.statC[n]||(this.statC[n]=Sprites.sheetFrame('tamas'+n,0));}   /* the statue sheet of Tamagami n (pedestal included), cached */
   drawSuperBall(l){
@@ -1629,7 +1640,7 @@ this.W=1;this.H=1;this.Z=1;
     const k=ic&&ic.k;
     try{
       if(k==='loot'){const l=ic.l,fake={k:l.k,x:0,y:6,t:9,star:l.star,flat:1,isle:l.isle};const s=r/13;ctx.scale(s,s);this.drawLoot(fake,9);}
-      else if(k==='feat'){const FS=this.getFeat(),sp=FS&&FS[ic.f.kind==='secret'&&ic.f.pressed?'secretDown':ic.f.kind];if(sp)fit(sp.c,sp.c.width,sp.c.height,.05);}
+      else if(k==='feat'){const FS=this.getFeat(),sp=(FS&&FS[ic.f.kind==='secret'&&ic.f.pressed?'secretDown':ic.f.kind])||this.machSp(ic.f.kind);if(sp)fit(sp.c,sp.c.width,sp.c.height,.05);}
       else if(k==='chest'){const CS=Sprites.sheets.chests,rr=CS&&CS.rects&&CS.rects[(ic.c.rar||0)*5];if(rr){const k2=Math.min(1.45*r/rr[2],1.45*r/rr[3]);ctx.imageSmoothingEnabled=true;ctx.drawImage(CS.img,rr[0],rr[1],rr[2],rr[3],-rr[2]*k2/2,-rr[3]*k2/2,rr[2]*k2,rr[3]*k2);}}
       else if(k==='gold'){const c=this.goldIcon();if(c)fit(c,c.width,c.height,.08);}
       else if(k==='mo'){const c=MOBJ.icon(ic.id,ic.f);if(c)fit(c,c.width,c.height,0);}
@@ -1678,7 +1689,7 @@ this.W=1;this.H=1;this.Z=1;
   /* v134: a structure appearing on the map (FEAT_IN s): a column of light falls on the spot, then the structure grows out of the ground in it
      (the painted vanishing frames played backwards for the kinds that have them: shrine, font, totem, spring, altar), with a dust ring and sparkles */
   featSpawn(f,t,g){
-    const ctx=this.ctx,x=f.x,y=f.y,q=clamp(f.t/FEAT_IN,0,1),FS=this.getFeat(),sp=FS&&FS[f.kind],col=sp?sp.gl:'#ffffff';
+    const ctx=this.ctx,x=f.x,y=f.y,q=clamp(f.t/FEAT_IN,0,1),FS=this.getFeat(),sp=(FS&&FS[f.kind])||this.machSp(f.kind),col=sp?sp.gl:'#ffffff';
     const H=sp?sp.c.height*sp.k:60,W=sp?sp.c.width*sp.k:44,beam=q<.35?q/.35:Math.max(0,1-(q-.35)/.65),grow=clamp((q-.18)/.6,0,1),e=1-Math.pow(1-grow,3);
     /* the column of light from the sky */
     ctx.save();ctx.globalCompositeOperation='lighter';
@@ -1706,6 +1717,51 @@ this.W=1;this.H=1;this.Z=1;
       ctx.strokeStyle=hexA('#e8dcc0',.55*(1-d));ctx.lineWidth=3*(1-d)+1;ctx.beginPath();ctx.ellipse(x,y+2,(14+W*.9*d),(5+W*.28*d),0,0,TAU);ctx.stroke();
       if(Ambient.on)for(let i=0;i<12;i++){const a=i*2.39,rr=(8+W*.5)*(.4+.6*((i*.37)%1)),h=d*(30+H*.8)*(.5+((i*.61)%1)*.5);
         ctx.fillStyle=hexA(i%3?col:'#ffffff',(1-d)*.9);ctx.fillRect(x+Math.cos(a)*rr-1.5,y-h+Math.sin(a)*rr*.25,3,3);}}
+  }
+  /* the Swap Machine (MACH, shop_icons.js): the sprite of the idle frame at world scale, foot at the anchor */
+  machSp(kind){if(kind!=='swapper')return null;const c=MACH.frame(0);return c?{c,ox:MACH.foot.x,oy:MACH.foot.y,k:.42,gl:'#59e0ff'}:null;}
+  /* idle: the drawer open with now and then a spark; you stand next to it: the dome lights up and it crackles; used: the glowing capsule in the drawer, a flash, then it dissolves like the other structures */
+  drawSwapper(f,t,g){
+    const ctx=this.ctx,x=f.x,y=f.y,sp=this.machSp('swapper');
+    if(!sp){ctx.fillStyle='#5a7088';ctx.fillRect(x-24,y-56,48,56);GLOW.at(ctx,x,y-40,40,'#59e0ff',.5);return;}
+    const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis,pulse=.5+.5*Math.sin(t*3);
+    const jb=f.job,fi=fq>=0?3:jb?(jb.done?3:(((t*9)|0)%2?4:0)):f.near?(((t*5)|0)%2?4:2):[0,0,0,1,0,0,1,1][((t*2.5)|0)%8],c=MACH.frame(fi)||sp.c,k=sp.k*(fq<0?1:fq<.4?1+.1*Math.sin(fq/.4*Math.PI):1+.06*dis);
+    if(fq>=0){this.featUseFx(f,x,y,fq,false);}
+    ctx.save();ctx.globalAlpha*=1-dis;ctx.translate(fq>=0&&fq<.4?Math.sin(f.fade*70)*1.4:jb&&!jb.done?Math.sin(t*61)*.9:0,-dis*dis*26);
+    ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(x,y+1,30,9,0,0,TAU);ctx.fill();
+    if(fq<0)GLOW.at(ctx,x,y-34,(46+8*pulse)*(f.near?1.25:1),'#59e0ff',f.near?.32:.2);
+    ctx.imageSmoothingEnabled=true;ctx.translate(x,y+2);ctx.scale(k,k);ctx.drawImage(c,-sp.ox,-sp.oy);
+    if(flash>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(.7,flash*.7)*(1-dis);ctx.drawImage(c,-sp.ox,-sp.oy);}
+    ctx.restore();ctx.imageSmoothingEnabled=false;
+    if(f.job&&fq<0)this.mchJobFx(f,t,f.job,sp);
+    if(fq>=0)this.featUseFx(f,x,y,fq,true);
+    else if(Ambient.on&&f.near&&!f.job)for(let i=0;i<5;i++){const q=(t*.8+i/5)%1,an=i*2.4+t*2;ctx.fillStyle=hexA(i%2?'#59e0ff':'#ffffff',(1-q)*.8);ctx.fillRect(x+Math.cos(an)*(18+q*10)-1.5,y-20-q*50-1.5,3,3);}
+  }
+  /* a trinket's small picture for the canvas (cached): null while it loads or when it has no art */
+  trIc(id){const C=this._tri||(this._tri={});if(C[id]===undefined){const u=typeof TRINKET_IMG!=='undefined'&&TRINKET_IMG[id];if(u){const im=new Image();im.src=u;C[id]=im;}else C[id]=null;}const im=C[id];return im&&im.complete&&im.naturalWidth?im:null;}
+  /* a swap in progress: the trinkets circle in the dome, morph and flash into the new ones; the bar above the machine fills like the capsule's; ready: a bouncing mark */
+  mchJobFx(f,t,j,sp){
+    const ctx=this.ctx,k=sp.k,x=f.x,y=f.y+2,dx=x+(MACH.dome.x-MACH.foot.x)*k,dy=y+(MACH.dome.y-MACH.foot.y)*k,rx=MACH.dome.rx*k,ry=MACH.dome.ry*k,q=clamp(j.t/j.dur,0,1),n=j.res.length,top=y-MACH.foot.y*k;
+    if(!j.out){
+      for(let i=0;i<n;i++){
+        const r=j.res[i],fq=n===1?.62:.5+.13*i,fl=j.done||q>=fq,a=i*TAU/n+(j.done?t*1.2:j.t*(1.5+5*q*q)),dp=(Math.sin(a)+1)/2;
+        const id=fl?r.n.id:q>fq-.12?TRINKETS[Math.abs(((t*9)|0)*7+i*13)%TRINKETS.length].id:r.o.id,col=RARITY[(fl?r.n:r.o).r].c,ix=dx+Math.cos(a)*rx,iy=dy+Math.sin(a)*ry,sz=(7+3.5*dp)*(1.1),im=this.trIc(id);
+        ctx.save();ctx.globalAlpha=.65+.35*dp;
+        if(im){ctx.imageSmoothingEnabled=true;ctx.drawImage(im,ix-sz/2,iy-sz/2,sz,sz);}else{ctx.fillStyle=col;ctx.fillRect(ix-sz/2,iy-sz/2,sz,sz);}
+        ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(ix-sz/2,iy-sz/2,sz,sz);ctx.restore();
+        const dtf=Math.abs(q-fq)*j.dur;if(!j.done&&dtf<.3){ctx.save();ctx.globalCompositeOperation='lighter';GLOW.at(ctx,dx,dy,16*(1-dtf/.3)+6,'#ffffff',.9*(1-dtf/.3));ctx.restore();}
+      }
+    }
+    if(!j.done){
+      const w=50,h=7,bx=x-w/2,by=top-14;
+      ctx.save();ctx.fillStyle='rgba(6,12,28,.85)';ctx.fillRect(bx-2,by-2,w+4,h+4);
+      const gr=ctx.createLinearGradient(bx,0,bx+w,0);gr.addColorStop(0,'#1ea3d8');gr.addColorStop(1,'#bff6ff');ctx.fillStyle=gr;ctx.fillRect(bx,by,w*q,h);
+      ctx.strokeStyle='#59e0ff';ctx.lineWidth=1.5;ctx.strokeRect(bx-2,by-2,w+4,h+4);
+      ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.strokeStyle='rgba(0,20,40,.9)';ctx.lineWidth=2.5;ctx.strokeText(Math.round(q*100)+'%',x,by-6);ctx.fillText(Math.round(q*100)+'%',x,by-6);ctx.textAlign='left';ctx.restore();
+    }else if(!j.out){
+      const bob=Math.sin(t*5)*3;ctx.save();ctx.font='900 22px sans-serif';ctx.textAlign='center';ctx.fillStyle='#ffe27a';ctx.strokeStyle='rgba(60,30,0,.95)';ctx.lineWidth=4;ctx.strokeText('!',x,top-8+bob);ctx.fillText('!',x,top-8+bob);ctx.textAlign='left';
+      ctx.globalCompositeOperation='lighter';GLOW.at(ctx,x,y-MACH.foot.y*k*.45,46+6*Math.sin(t*4),'#ffd23f',.22);ctx.restore();
+    }
   }
   /* the painted structures (assets/sprites/props/featprops.png): crops of the atlas, foot at the anchor; ws = world px per sprite px, gl = colour of the soft glow behind it, [dy] = height of that glow */
   getFeat(){
@@ -1754,6 +1810,7 @@ this.W=1;this.H=1;this.Z=1;
     if(!inner&&f.t<FEAT_IN&&f.fade===undefined&&!f.used){this.featSpawn(f,t,g);return;}
     if(f.ttl-f.t<10&&((f.t*5)|0)%2===0)ctx.globalAlpha=.5;
     if(!inner&&f.fade===undefined&&!f.used)this.markI(x,y+2,34,'#ffe27a',t,.85);   /* v141 */
+    if(f.kind==='swapper'){this.drawSwapper(f,t,g);ctx.globalAlpha=1;return;}
     /* used (E pressed): a bright flash with a little shake and swell, then it rises a bit and dissolves in sparkles (FEAT_FADE s) */
     const fq=f.fade!==undefined?Math.min(1,f.fade/FEAT_FADE):-1,dis=fq>=.4?(fq-.4)/.6:0,flash=fq<0?0:fq<.4?Math.sin(fq/.4*Math.PI/2):1-dis;
     /* painted vanishing animation (assets/sprites/props/featfade.png) for the kinds that have one: frame = progress through FEAT_FADE; same world size as the resting sprite */
@@ -1883,7 +1940,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy,sz,sz);
       ctx.strokeStyle=w.evo?'#ffd23f':'rgba(255,255,255,.25)';ctx.lineWidth=(w.evo?2.5:1.5)*U;ctx.strokeRect(ix,wy,sz,sz);
       {const wt=PROGX.wkTier(PROGX.wkAll(g,w.id));if(wt){ctx.strokeStyle=wt.c;ctx.lineWidth=1.5*U;ctx.strokeRect(ix-2.5*U,wy-2.5*U,sz+5*U,sz+5*U);}}   /* v116: weapon diary border */
-      {const wim=this.weaponImg(w.id);   /* v137: the weapon's picture (its kanji until it is decoded / when it has none) */
+      {const wim=this.weaponImg(w.fz&&ABIL_IMG[w.fz]?w.fz:w.id);   /* v137: the weapon's picture (its kanji until it is decoded / when it has none) */
         if(wim){const s=sz-4*U;ctx.save();ctx.imageSmoothingEnabled=true;ctx.beginPath();ctx.rect(ix+2*U,wy+2*U,s,s-6*U);ctx.clip();ctx.drawImage(wim,ix+2*U,wy+2*U-3*U,s,s);ctx.restore();
           ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(ix,wy+sz-8*U,sz,8*U);}
         else txt(w.def.k,ix+sz/2,wy+sz*.72,w.color,'center',F(34,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));}
@@ -1955,7 +2012,7 @@ this.W=1;this.H=1;this.Z=1;
       if(prog<1){ctx.beginPath();ctx.moveTo(bx,by);ctx.arc(bx,by,rr-3*U,-Math.PI/2,-Math.PI/2+TAU*prog);ctx.closePath();ctx.fillStyle=hexA(col,.45);ctx.fill();}
       ctx.lineWidth=3*U;ctx.strokeStyle=rdy?col:'rgba(255,255,255,.3)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.stroke();
       if(rdy||act){ctx.globalAlpha=.3+.25*Math.sin(g.rt*(act?12:6));ctx.strokeStyle=col;ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(bx,by,rr+4*U,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
-      txt('走',bx,by+8*U,rdy||act?col:'#6a7688','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      if(!this.btnIcon(ctx,'dash',bx,by,rr,prog,!(rdy||act),U))txt('走',bx,by+8*U,rdy||act?col:'#6a7688','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       txt(rdy?'['+(this.keyHints.dash||'Shift')+']':(g.dashCd<10?g.dashCd.toFixed(1):Math.ceil(g.dashCd))+'s',bx,by+rr+13*U,rdy?'#fff':'#9aa6b8','center',F(11));
       txt(this.tr(T('Scatto','Dash')),bx,by-rr-7*U,rdy||act?col:'#9aa6b8','center',F(10));
     }
@@ -1967,7 +2024,7 @@ this.W=1;this.H=1;this.Z=1;
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.fill();
       ctx.lineWidth=3*U;ctx.strokeStyle=n>0?col:'rgba(255,255,255,.3)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.stroke();
       if(ok){ctx.globalAlpha=.3+.25*Math.sin(g.rt*6);ctx.strokeStyle=col;ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(bx,by,rr+4*U,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
-      txt('豆',bx,by+8*U,n>0?col:'#6a7688','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      if(!this.btnIcon(ctx,'senzu',bx,by,rr,1,!(n>0),U))txt('豆',bx,by+8*U,n>0?col:'#6a7688','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       for(let i=0;i<SENZU_MAX;i++){ctx.fillStyle=i<n?col:'rgba(255,255,255,.22)';ctx.beginPath();ctx.arc(bx+(i-1)*8*U,by-rr+5*U,2.6*U,0,TAU);ctx.fill();}
       txt('['+(this.keyHints.senzu||'H')+']',bx,by+rr+13*U,n>0?'#fff':'#9aa6b8','center',F(11));
     }
@@ -1985,7 +2042,7 @@ this.W=1;this.H=1;this.Z=1;
       if(prog<1){ctx.beginPath();ctx.moveTo(bx,by);ctx.arc(bx,by,rr-3*U,-Math.PI/2,-Math.PI/2+TAU*prog);ctx.closePath();ctx.fillStyle=hexA(col,.45);ctx.fill();}
       ctx.lineWidth=3*U;ctx.strokeStyle=usable?col:'rgba(255,255,255,.3)';ctx.beginPath();ctx.arc(bx,by,rr,0,TAU);ctx.stroke();
       if(usable||act){ctx.globalAlpha=.3+.25*Math.sin(g.rt*(act?12:6));ctx.strokeStyle=col;ctx.lineWidth=2*U;ctx.beginPath();ctx.arc(bx,by,rr+4*U,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
-      txt(a.k,bx,by+8*U,usable||act?col:'#9aa6b8','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
+      if(!this.btnIcon(ctx,g.C.id,bx,by,rr,prog,!(usable||act),U))txt(a.k,bx,by+8*U,usable||act?col:'#9aa6b8','center',F(22,900).replace('"Rajdhani",sans-serif','"Noto Sans JP","Hiragino Sans",sans-serif'));
       txt(label,bx,by+rr+13*U,usable?'#fff':'#9aa6b8','center',F(11));
       txt(this.tr(a.n),bx,by-rr-7*U,usable||act?col:'#9aa6b8','center',F(10));
     }
@@ -2038,7 +2095,7 @@ this.W=1;this.H=1;this.Z=1;
       yb+=bh+22*U;
     }
     /* beacons for off-screen map items */
-    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:'#ffd23f',{k:f.kind==='tunnel'?'tunnel':'feat',f}]);
+    const tgts=[];for(const f of g.feat)if(!f.used)tgts.push([f.x,f.y,(f.kind==='secret'||f.kind==='zenoportal')?(f.kind==='secret'?'#ff5a5a':'#d9a8ff'):f.kind==='chamber'?'#ffffff':f.kind==='totem'?'#8be07a':f.kind==='altar'?'#ff5a5a':f.kind==='spring'?'#8be07a':f.kind==='font'?'#8ad8ff':f.kind==='tunnel'?TUNNELS[g.stage.theme].gl:f.kind==='swapper'?'#59e0ff':'#ffd23f',{k:f.kind==='tunnel'?'tunnel':'feat',f}]);
     if(g.tun&&g.tun.exit)tgts.push([g.tun.exit.x,g.tun.exit.y,'#8be07a',{k:'exit'}]);
     if(g.mx){const M=g.mx;if(M.tr)tgts.push([M.tr.x,M.tr.y,'#8ad8ff',{k:'tr'}]);if(M.pod&&!(M.pod.fall>0))tgts.push([M.pod.x,M.pod.y,'#59c8ff',{k:'pod'}]);if(M.ks&&!M.ks.met&&M.ks.go===undefined)tgts.push([M.ks.x,M.ks.y,KS_COL,{k:'ks'}]);}   /* v132: training circle, pod, visitor */
     if(g.gold&&!g.gold.dead)tgts.push([g.gold.x,g.gold.y,'#ffd23f',{k:'gold'}]);
@@ -2200,3 +2257,20 @@ Renderer.prototype.drawKiFizz=function(f){
   }
   ctx.restore();
 };
+
+/* timed ability indicator: the ability icon with a ring that empties, above the hero while the ability lasts */
+{const dp1=Renderer.prototype.drawPlayer;
+  Renderer.prototype.drawPlayer=function(g,t){
+    const r=dp1.call(this,g,t);
+    const T=g.abTimed&&g.abTimed(),kai=g.kai>0&&g.abil&&g.abil.m==='kaioken';
+    if((T||kai)&&!g.dying){
+      const im=this.weaponImg(g.C.id);
+      if(im){const ctx=this.ctx,p=g.p,c=kai?'#ff3b2f':g.abil.c,x=p.x,y=p.y-(g.C.u||1.95)*40-26,R=15,fr=kai?1:clamp(T.l/T.m,0,1);
+        ctx.save();ctx.globalAlpha=.92;
+        ctx.fillStyle='rgba(8,10,18,.62)';ctx.beginPath();ctx.arc(x,y,R+3,0,6.2832);ctx.fill();
+        ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,6.2832);ctx.clip();ctx.drawImage(im,x-R,y-R,R*2,R*2);ctx.restore();
+        ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.arc(x,y,R+4.5,0,6.2832);ctx.stroke();
+        ctx.strokeStyle=fr<.25&&((t*8)|0)%2?'#ffffff':c;ctx.beginPath();ctx.arc(x,y,R+4.5,-Math.PI/2,-Math.PI/2+6.2832*fr);ctx.stroke();
+        ctx.restore();}
+    }
+    return r;};}

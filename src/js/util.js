@@ -9,7 +9,7 @@ const TAU=Math.PI*2;
    optimized code about five times a second for the whole run (s: sprite pixels per unit, 0 = the default; px: pixel art; sheet: the pack sheet, if any) */
 function SPR(c,ox,oy,s,px,sheet){const o={c:null,ox:.5,oy:.5,s:.5,px:false,sheet:null};o.c=c;o.ox=ox;o.oy=oy;o.s=s||0;o.px=!!px;o.sheet=sheet||null;return o;}
 function FXS(o){return{x:o.x,y:o.y,vx:o.vx,vy:o.vy,l:o.l,m:o.m,c:o.c,s:o.s,ring:o.ring,r:o.r,bolt:o.bolt,pts:o.pts,pillar:o.pillar,kfz:o.kfz,a:o.a,sd:o.sd,shock:o.shock,max:o.max,
-  beam:o.beam,len:o.len,w:o.w,ab:o.ab,fol:o.fol,t2:o.t2,sbc:o.sbc,abfx:o.abfx,R:o.R,wfx:o.wfx,f0:o.f0,f1:o.f1};}
+  beam:o.beam,len:o.len,w:o.w,ab:o.ab,fol:o.fol,t2:o.t2,sbc:o.sbc,abfx:o.abfx,R:o.R,wfx:o.wfx,f0:o.f0,f1:o.f1,emb:o.emb};}
 const FXL={on:false,a:1,m:1};   /* a = the player's "effect opacity" slider (0..1), m = the multiplier in force right now (a while one of the player's own effect layers is drawn, otherwise 1) */
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;

@@ -49,6 +49,7 @@ class SaveData{
     /* gacha: repair the ticket counters, keep only valid bag entries (one per trinket + rarity) and the Super Dragon Balls 1..3 (v53: it used to be 1..7) without repeats */
     for(const k of['t1','t10','l10'])d.tickets[k]=Math.max(0,Math.floor(+d.tickets[k]||0));
     {const seen=new Set();d.bag=(Array.isArray(d.bag)?d.bag:[]).filter(b=>{const ok=b&&TRINKETS.some(t=>t.id===b.id)&&b.r>=0&&b.r<=4&&!seen.has(b.id+'@'+b.r);if(ok){seen.add(b.id+'@'+b.r);b.p=Number.isFinite(+b.p)?Math.max(0,Math.min(100,Math.round(+b.p))):PF_NOM;
+      delete b.lk;if(b.ls&&typeof b.ls==='object'){const c={};for(const k in b.ls){const v=+b.ls[k];if(TLAB[k]&&Number.isFinite(v))c[k]=Math.max(0,Math.min(100,Math.round(v)));}if(Object.keys(c).length){b.ls=c;b.p=PFS(b.p,c);}else delete b.ls;}else delete b.ls;   /* v141: locked stats (their own perfection) */
       if(b.f!==undefined){b.f=Array.isArray(b.f)?b.f.map(x=>typeof x==='string'?trinBestStat(x,null,b.r,null):x&&typeof x==='object'&&trinDef(x.id)&&trinDef(x.id).m&&trinDef(x.id).m[x.k]!=null?{id:x.id,k:x.k}:null).filter(Boolean).slice(0,FUSE_MAX):null;if(!b.f||!b.f.length)delete b.f;}}return ok;});   /* v136: f = the trinkets fused into it */   /* v54: every bag trinket has a perfection (older ones: the nominal 50%) */
       /* v57: up to 3 trinkets can be equipped before a run (one slot + one per "Extra Trinket" purchase); d.equip mirrors slot 1 for older saves / devices */
       {const n=Math.min(3,1+(d.shop.tslot||0)),src=Array.isArray(d.equips)&&d.equips.some(Boolean)?d.equips:[d.equip||null],ids=new Set();
@@ -93,8 +94,14 @@ class Progress{
       hardClears:s.hardClears,x2Clears:s.x2Clears,extremeClears:s.extremeClears||0,runs:s.runs,
       zeno:(s.zeno||0)+rk('zeno')-bk('zeno'),zbuys:(s.zbuys||0)+rk('zbuy')-bk('zbuy'),
       playT:(s.playT||0)+(g?Math.max(0,g.t-bk('t')):0),wins:s.wins||0,evos:(s.evos||0)+rk('evos')-bk('evos'),elites:(s.elites||0)+rk('elites')-bk('elites'),
-      unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,wc:this.d.wc||{},rec,run
+      unlocked:this.d.unlocked.length,wu:this.d.wu,we:this.d.we,wc:this.d.wc||{},rec,run,tr:this.trView()
     };
+  }
+  /* what the trinket goals look at: the bag without the Test-mode trinkets, and the real (not Test) rerolls / fusions / pulls. cnt(r,min): trinkets of rarity r (-1 = any) with perfection >= min */
+  trView(){
+    const bag=this.d.bag.filter(b=>!b.t),gs=this.d.gacha||{},pf=b=>hasPfE(trinDef(b.id),b.f)?(b.p!=null?+b.p:PF_NOM):-1;
+    return{n:bag.length,own:r=>bag.filter(b=>b.r===r).length,cnt:(r,m)=>bag.filter(b=>(r<0||b.r===r)&&pf(b)>=m).length,
+      rr:gs.rrPaid||0,fu:gs.fusedR||0,fuS:gs.fusedS||0,fuM:gs.fusedM||0,pulls:gs.pulls||0,mythics:gs.mythics||0,legend:gs.legend||0};
   }
   /* Test mode (settings) and sandbox runs never give zenny, progress unlocks or achievements */
   blocked(g){return !!(g&&g.sandbox)||!!this.d.settings.sandbox;}
@@ -142,7 +149,7 @@ class Progress{
     if(this.blocked(g))return null;
     const d=this.d,t=trinDef(id);if(!t||!(r>=0&&r<=4))return null;
     const pf=hasPf(t)?Math.max(0,Math.min(100,Math.round(+p)||0)):PF_NOM,ob=d.bag.find(b=>b.id===id&&b.r===r);
-    if(ob){const old=ob.p!=null?ob.p:PF_NOM;if(hasPf(t)&&pf>old){ob.p=pf;return{up:1,from:old};}return null;}
+    if(ob){const old=ob.p!=null?ob.p:PF_NOM;if(hasPf(t)&&pf>old){ob.p=PFS(pf,ob.ls);return{up:1,from:+old};}return null;}
     d.bag.push({id,r,at:Date.now(),p:pf});return{up:0};
   }
   finishRun(g,win,opts){
