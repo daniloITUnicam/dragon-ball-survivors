@@ -54,7 +54,7 @@ ok(r.fb===0&&r.near===0,'without a boss the boss mode falls back to the closest 
 r=await ev(()=>{const g=G;g.tgt=0;const t0=g.tgt;g.cycleTarget();g.cycleTarget();g.cycleTarget();g.cycleTarget();return[t0,g.tgt];});
 ok(r[1]===0,'cycleTarget runs through the 4 modes and wraps');
 await ev(()=>{G.tgt=0;});
-/* the TAB panels (assets/tgt.webp) are drawn in the HUD */
+/* the TAB panels (assets/ui/tgt.webp) are drawn in the HUD */
 await wait(500);
 r=await ev(()=>{const g=G;const c=document.createElement('canvas');c.width=300;c.height=300;const x=c.getContext('2d');const out=[];for(let m=0;m<4;m++)out.push(TgtArt.draw(x,m,0,0,100,0));return{ok:TgtArt.ok,h:out,cell:TGT_CELL};});
 ok(r.ok&&r.h.every(h=>Math.abs(h-100*r.cell[1]/r.cell[0])<1e-6),'the four TAB panels (Closest / HP+ / HP- / Boss) load and draw ('+r.h.map(h=>Math.round(h)).join(',')+' px)');

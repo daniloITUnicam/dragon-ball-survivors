@@ -1,5 +1,5 @@
-/* v140: right HUD column - the stats panel (kills / zenny / tickets) and the "Capsule Corp" effects panel, laid out like the mockup in assets/_sorgenti/hud/mockup.png.
-   The effect icons are cut from that mockup (tools/hud_icons_from_mockup.py -> assets/hudicons); the frames, the STREAK burst and the lightning are drawn here, animated.
+/* v140: right HUD column - the stats panel (kills / zenny / tickets) and the "Capsule Corp" effects panel, laid out like the mockup in assets/sprites/_sorgenti/hud/mockup.png.
+   The effect icons are cut from that mockup (tools/hud_icons_from_mockup.py -> assets/icons/hud); the frames, the STREAK burst and the lightning are drawn here, animated.
    The effects panel grows and shrinks with the number of active effects. */
 const HUDICONS=/*__HUDICONS__*/{};
 const HUDP=(()=>{

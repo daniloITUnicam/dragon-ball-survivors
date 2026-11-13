@@ -1,5 +1,5 @@
 'use strict';
-/* ====== TgtArt: the weapon-target indicator of the HUD (TAB), from assets/tgt.webp (tools/gen_tgt.py) ======
+/* ====== TgtArt: the weapon-target indicator of the HUD (TAB), from assets/ui/tgt.webp (tools/gen_tgt.py) ======
    The atlas holds four panels side by side, each one TGT_CELL[0] x TGT_CELL[1] px: 0 closest ("VICINO"), 1 most HP ("HP+"),
    2 least HP ("HP-"), 3 boss ("BOSS"). Only the active mode is drawn; a short pop when it changes. */
 const TGT_URL=('__TGTART__'?'data:image/webp;base64,__TGTART__':'');

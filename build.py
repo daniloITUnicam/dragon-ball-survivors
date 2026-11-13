@@ -45,47 +45,47 @@ _tl = [x.strip() for x in (os.environ.get('TEST_LIST').split(',') if os.environ.
 _td = (os.environ.get('DBS_TEST') or '').strip().lower() in ('1','true','yes')
 js = js.replace('__TEST_OWNER__', _test_hash(_to) if _to else '').replace('__TEST_LIST__', ','.join(_test_hash(x) for x in _tl)).replace('__TEST_DEV__', '1' if _td else '')
 print('test mode:', 'for everybody (DBS_TEST)' if _td else ('owner' + (' + %d tester(s)' % len(_tl) if _tl else '') if _to else 'nobody (no tester.config.json)'))
-_logo = ROOT/'assets'/'logo.webp'
+_logo = ROOT/'assets'/'ui'/'logo.webp'
 js = js.replace('__LOGO__', base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else '')
-_mh = ROOT/'assets'/'machine.webp'       # the swap machine sprite sheet (4x2 frames)
+_mh = ROOT/'assets'/'ui'/'machine.webp'       # the swap machine sprite sheet (4x2 frames)
 js = js.replace('__MACHINE__', base64.b64encode(_mh.read_bytes()).decode() if _mh.exists() else '')
-_wip = ROOT/'assets'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu
+_wip = ROOT/'assets'/'ui'/'wip.webp'          # "W.I.P." badge bouncing on the right of the main menu
 js = js.replace('__WIP__', base64.b64encode(_wip.read_bytes()).decode() if _wip.exists() else '')
 _si = {}
-for _f in sorted((ROOT/'assets'/'shopicons').glob('*.webp')) if (ROOT/'assets'/'shopicons').is_dir() else []:   # shop upgrade icons, file name = shop id
+for _f in sorted((ROOT/'assets'/'icons'/'shop').glob('*.webp')) if (ROOT/'assets'/'icons'/'shop').is_dir() else []:   # shop upgrade icons, file name = shop id
     _si[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__SHOPICONS__*/{}', json.dumps(_si, separators=(',', ':')))
 _mb = {}
-for _f in sorted((ROOT/'assets'/'menubtns').glob('*.webp')) if (ROOT/'assets'/'menubtns').is_dir() else []:   # main-menu button art (quick, play, coop, growth, prog, opts, opts1 = options panel without the test-environment slot)
+for _f in sorted((ROOT/'assets'/'ui'/'menu').glob('*.webp')) if (ROOT/'assets'/'ui'/'menu').is_dir() else []:   # main-menu button art (quick, play, coop, growth, prog, opts, opts1 = options panel without the test-environment slot)
     _mb[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__MENUBTNS__*/{}', json.dumps(_mb, separators=(',', ':')))
 _wi = {}
-for _f in sorted((ROOT/'assets'/'weaponicons').glob('*.webp')) if (ROOT/'assets'/'weaponicons').is_dir() else []:   # v137: weapon icons, file name = weapon id
+for _f in sorted((ROOT/'assets'/'icons'/'weapons').glob('*.webp')) if (ROOT/'assets'/'icons'/'weapons').is_dir() else []:   # v137: weapon icons, file name = weapon id
     _wi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__WEAPONICONS__*/{}', json.dumps(_wi, separators=(',', ':')))
 _ti = {}
-for _f in sorted((ROOT/'assets'/'trinketicons').glob('*.webp')) if (ROOT/'assets'/'trinketicons').is_dir() else []:   # v137: trinket icons, file name = trinket id
+for _f in sorted((ROOT/'assets'/'icons'/'trinkets').glob('*.webp')) if (ROOT/'assets'/'icons'/'trinkets').is_dir() else []:   # v137: trinket icons, file name = trinket id
     _ti[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__TRINKETICONS__*/{}', json.dumps(_ti, separators=(',', ':')))
 _ab = {}
-for _f in sorted((ROOT/'assets'/'abilicons').glob('*.webp')) if (ROOT/'assets'/'abilicons').is_dir() else []:   # ability / double evolution / senzu / dash icons, file name = key
+for _f in sorted((ROOT/'assets'/'icons'/'abilities').glob('*.webp')) if (ROOT/'assets'/'icons'/'abilities').is_dir() else []:   # ability / double evolution / senzu / dash icons, file name = key
     _ab[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__ABILICONS__*/{}', json.dumps(_ab, separators=(',', ':')))
 _hi = {}
-for _f in sorted((ROOT/'assets'/'hudicons').glob('*.webp')) if (ROOT/'assets'/'hudicons').is_dir() else []:   # v140: icons of the HUD effects panel (tools/hud_icons_from_mockup.py), file name = icon key
+for _f in sorted((ROOT/'assets'/'icons'/'hud').glob('*.webp')) if (ROOT/'assets'/'icons'/'hud').is_dir() else []:   # v140: icons of the HUD effects panel (tools/hud_icons_from_mockup.py), file name = icon key
     _hi[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__HUDICONS__*/{}', json.dumps(_hi, separators=(',', ':')))
 _cfr = {}
-for _f in sorted((ROOT/'assets'/'cardframes').glob('*.webp')) if (ROOT/'assets'/'cardframes').is_dir() else []:   # v141: rarity frames of the level-up cards (9-slice borders + the Mythic crown), file name = CSS variable name
+for _f in sorted((ROOT/'assets'/'ui'/'cardframes').glob('*.webp')) if (ROOT/'assets'/'ui'/'cardframes').is_dir() else []:   # v141: rarity frames of the level-up cards (9-slice borders + the Mythic crown), file name = CSS variable name
     _cfr[_f.stem] = 'data:image/webp;base64,' + base64.b64encode(_f.read_bytes()).decode()
 js = js.replace('/*__CARDFRAMES__*/{}', json.dumps(_cfr, separators=(',', ':')))
-_xp = ROOT/'assets'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
+_xp = ROOT/'assets'/'ui'/'xpbar.webp'         # the EXP bar atlas (tools/gen_xpbar.py)
 js = js.replace('__XPBAR__', base64.b64encode(_xp.read_bytes()).decode() if _xp.exists() else '')
-_hp = ROOT/'assets'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)
+_hp = ROOT/'assets'/'ui'/'hpbar.webp'         # the HP bar atlas (tools/gen_hpbar.py)
 js = js.replace('__HPBAR__', base64.b64encode(_hp.read_bytes()).decode() if _hp.exists() else '')
-_tg = ROOT/'assets'/'tgt.webp'            # the weapon-target (TAB) panels (tools/gen_tgt.py)
+_tg = ROOT/'assets'/'ui'/'tgt.webp'            # the weapon-target (TAB) panels (tools/gen_tgt.py)
 js = js.replace('__TGTART__', base64.b64encode(_tg.read_bytes()).decode() if _tg.exists() else '')
-_db = ROOT/'assets'/'dragonballs.webp'   # the 7 Dragon Balls (1..7 stars), one 64x64 frame each, side by side
+_db = ROOT/'assets'/'ui'/'dragonballs.webp'   # the 7 Dragon Balls (1..7 stars), one 64x64 frame each, side by side
 js = js.replace('__DBALLS__', base64.b64encode(_db.read_bytes()).decode() if _db.exists() else '')
 # ---- music: assets/*.mp3 (also .ogg .m4a .wav) mapped to the menu / a stage by the FILE NAME ----
 # "menu.mp3" -> menu; "menu 2 - <title>.mp3" -> menu2 (alternative menu theme);  "android ruins.mp3", "Buu Dimension.mp3"... -> the stage whose name (or alias below) the file name contains.

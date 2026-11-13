@@ -229,7 +229,7 @@ The full before/after numbers are in the game's **patch notes** (📜 in the men
 The full before/after numbers are in the game's **patch notes** (📜 in the menu: entry `2026-10-20b`, `src/js/patches.js`).
 
 - **1–5 weapons per run** (`settings.weapons`, `Game.maxW`): 5 Dragon Balls under the character screen (`UI.weaponCount`); level-ups offer no new weapon while the slots are full.
-- **TAB = target** (`Game.cycleTarget`/`pickTarget`, `target` action): closest → most HP → least HP → boss; `nearest()` follows the mode. An illustrated panel in the left HUD (`TgtArt`, `assets/tgt.webp` from `tools/gen_tgt.py`).
+- **TAB = target** (`Game.cycleTarget`/`pickTarget`, `target` action): closest → most HP → least HP → boss; `nearest()` follows the mode. An illustrated panel in the left HUD (`TgtArt`, `assets/ui/tgt.webp` from `tools/gen_tgt.py`).
 - **Super Dragon Balls: 3** (`SB_TOTAL`), each with a **Tamagami** (`wakeTamagami`, bosses `tama1/2/3` + Fury form): the statue wakes up at 340 px and the ball stays locked until it falls; indicator at the bottom right (`drawSuperBall`, `Renderer`).
 - **Tamagami art** (`assets/sprites/boss/tama1/2/3.png`, Fury `tama1f/2f/3f.png`, statues `tamas1/2/3.png`): 9-frame sheets (0 idle, 1-4 walk, 5 wind-up, 6 strike, 7 special, 8 hit) imported from the sources in `assets/sprites/_sorgenti/boss/` with `tools/import_tama.py` (magenta background removal, frame-by-frame cutting, per-row scale, feet anchor). `Sprites.BOSS_SHEET` maps the boss id to its sheet, `Sprites.BOSS_SHEET_F` to the Fury sheet (`e.pf`); `drawEnemy` picks the frame (`e.lp` = last attack pattern, `TAMA_WEAPON` = weapon patterns, `e.pwUntil` = power-up pose). Without the PNGs the procedural sprites remain.
 - **World**: no walking on water (`blockWater`), lava −10% max HP/s (`updateLava`), enemies 50% farther above the screen (`TOP_K`), enemy speed by difficulty (`stageSpd`), enemy stats on the stage card (`UI.stageStats`).
@@ -352,7 +352,7 @@ The full list with before/after numbers is in the game's own **patch notes** (�
 - **Patch notes:** the **📜** button at the top right of the main menu (with a red dot while there is an unread release) opens the list with the **date** and the changes split into **What's new**, then **Bug fixes** and **Balance** (empty sections are hidden). To publish a release add an object **at the top** of `PATCHES` in `src/js/patches.js` (texts `T('italiano','english')`, one line per change).
 
 **🐉 Dragon Balls and kill streak**
-- **New sprites** (`assets/dragonballs.webp`, 7 frames of 64×64 taken from the reference image): every ball has **1 to 7 stars**, and a run never drops two equal ones until you have them all; the counter at the bottom right shows which ones you own.
+- **New sprites** (`assets/ui/dragonballs.webp`, 7 frames of 64×64 taken from the reference image): every ball has **1 to 7 stars**, and a run never drops two equal ones until you have them all; the counter at the bottom right shows which ones you own.
 - They **really bounce** on the ground (toss, hops that get lower, then a small hop every 1.6 s) with squash and stretch, a **shock wave and sparks at every landing**, a pulsing glow, turning rays, a pillar of light and twinkling stars.
 - **Dedicated pick-up sound:** `assets/sphere_sound.mp3` (embedded with `DBS_AUDIO=embed`, copied to `site/assets/` by the workflow in `link` mode; the old synthesized jingle plays if it is missing).
 - **Level-up sound:** `assets/level_up_sound.mp3` (key `levelup` in `SFX_FILES`), played at x2 speed (`playBuf('levelup',.9,2)`); until it is decoded the synthesized chime plays. The card-pick sound (`lvl`) is unchanged.
@@ -448,7 +448,7 @@ The Tournament of Power is now the **last stage**: 20 minutes, 12 bosses with mu
 The Tournament of Power (internal theme `void`) is fought on **one closed elliptical arena** (`TOPARENA` in `world.js`: 4800 x 4032 px, the perspective of a circle) painted in code in `top_arena.js` (`TopArt.draw`): concentric bands of triangles, blocks and stripes with colours swapped every turn, a rim with a side wall, a teal halo and nebulae. The **tower** (`TopArt.tower`, a depth-sorted entity; solid foot r=50) stands in the middle with its **shadow** (`TopArt.shadow`). Everything stays inside: `TOPARENA.clamp` for the player, enemies and bosses; `spawnSpot` turns the direction until it lands inside; `dryPos` holds drops, chests and gems; props (`World.cell`) and zones (`World.zone`) refuse points outside.
 
 ### 🖼️ New logo and dynamic menu
-- The text title is replaced by the project's **logo** (`assets/logo.webp`, embedded in the final file).
+- The text title is replaced by the project's **logo** (`assets/ui/logo.webp`, embedded in the final file).
 - The menu background is now a **fast panoramic fly-over of the stages** (diagonal wipe between them) with **random fighters** that appear, **transform**, use their **abilities** (beams, novas, clones, barriers…), fire ki blasts and **emote**. It is **blurred** so it never fights with the buttons.
 
 ![Dynamic menu](docs/screens/menu-dynamic.jpg)

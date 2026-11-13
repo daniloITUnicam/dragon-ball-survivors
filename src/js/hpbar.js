@@ -1,5 +1,5 @@
 'use strict';
-/* ====== HpBar: the life bar of the HUD, made from the artwork in assets/hpbar.webp (see tools/gen_hpbar.py) ======
+/* ====== HpBar: the life bar of the HUD, made from the artwork in assets/ui/hpbar.webp (see tools/gen_hpbar.py) ======
    The atlas holds: the left cap (medallion with a transparent hole for the character's portrait + the HP / level plate), the right cap
    (Dragon Ball with spikes and flames), the fill (red to yellow, stretched over the channel and clipped to the current HP) and two rails
    that run between the caps. The game draws: the live portrait of the character in the hole (it follows the transformations), the

@@ -57,7 +57,7 @@ function drawShenron(ctx,x,y,s,a){
   ctx.fillStyle='#ff2a2a';ctx.beginPath();ctx.arc(x+9.8*s,y-5.2*s,.9*s,0,TAU);ctx.fill();
   ctx.restore();
 }
-/* the 7 Dragon Balls (1..7 stars): assets/dragonballs.webp, one 64x64 frame each (build.py replaces __DBALLS__) */
+/* the 7 Dragon Balls (1..7 stars): assets/ui/dragonballs.webp, one 64x64 frame each (build.py replaces __DBALLS__) */
 const DBALLS_URL=('__DBALLS__'?'data:image/webp;base64,__DBALLS__':'');
 /* Tamagami patterns that are a weapon strike (frames 5 wind-up and 6 strike of their art); every other pattern uses the special pose (frame 7) */
 const TAMA_WEAPON={hammer:1,slam:1,swordwave:1,rush:1,lance:1,jsword:1};
@@ -1895,7 +1895,7 @@ this.W=1;this.H=1;this.Z=1;
   }
 
   /* ---------- HUD (screen space) ---------- */
-  /* fallback icons of the weapon target while assets/tgt.webp loads (TgtArt): crosshair, heart + up arrow, heart + down arrow, skull */
+  /* fallback icons of the weapon target while assets/ui/tgt.webp loads (TgtArt): crosshair, heart + up arrow, heart + down arrow, skull */
   tgtIcon(ctx,mode,x,y,r,c,t){
     ctx.save();ctx.translate(x,y);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=Math.max(1.5,r*.18);ctx.lineCap='round';ctx.lineJoin='round';
     if(mode===0){const k=1+.06*Math.sin(t*6);ctx.beginPath();ctx.arc(0,0,r*.72*k,0,TAU);ctx.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.5,Math.sin(a)*r*.5);ctx.lineTo(Math.cos(a)*r*1.15,Math.sin(a)*r*1.15);ctx.stroke();}ctx.beginPath();ctx.arc(0,0,r*.16,0,TAU);ctx.fill();}

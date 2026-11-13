@@ -1,5 +1,5 @@
 'use strict';
-/* ====== XpBar: the experience bar of the HUD, made from the artwork in assets/xpbar.webp (see tools/gen_xpbar.py) ======
+/* ====== XpBar: the experience bar of the HUD, made from the artwork in assets/ui/xpbar.webp (see tools/gen_xpbar.py) ======
    The atlas holds: the left cap (EXP medallion; the level is written big on the bar, there are no level plates), the right cap (number panel), the beam (a body that is
    stretched to the filled length + a head of fixed size) and two rails that run between the caps. The game draws the real values on the
    plates (level, XP / next level, percentage) and the beam grows with the experience. Layout numbers: XPB_META (generated). */

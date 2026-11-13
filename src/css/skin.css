@@ -311,7 +311,7 @@ button:not(:disabled):not(.btn):not(.mb):active,button.mb.dn{translate:0 2px;sca
   box-shadow:0 0 0 2px rgba(255,246,192,.9),0 0 22px 6px rgba(255,225,74,.6);mix-blend-mode:screen;animation:bfl .4s ease-out forwards}
 @keyframes bfl{0%{opacity:1}100%{opacity:0;transform:scale(1.1)}}
 
-/* ---- v141: card rarity (level-up / chest upgrade cards): 9-slice frame per rarity (assets/cardframes) with a pulsing glow and the Mythic crown.
+/* ---- v141: card rarity (level-up / chest upgrade cards): 9-slice frame per rarity (assets/ui/cardframes) with a pulsing glow and the Mythic crown.
    --k scales the frames, --frN are set by shop_icons.js ---- */
 .card.opt.rar{--rc:#b8c4d0;--k:1.1;position:relative;padding:24px 22px 20px;border-color:transparent!important;background-clip:padding-box;border-radius:10px;overflow:visible}
 .card.opt.rar>*{position:relative;z-index:1}

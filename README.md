@@ -255,7 +255,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20b`, `src/js/patches.js`).
 
 - **Armi per partita 1–5** (`settings.weapons`, `Game.maxW`): 5 sfere del Drago sotto la Selezione personaggio (`UI.weaponCount`); il livello-up non propone armi nuove a slot pieni.
-- **TAB = bersaglio** (`Game.cycleTarget`/`pickTarget`, azione `target`): più vicino → più Salute → meno Salute → boss; `nearest()` rispetta la modalità. Pannello illustrato nell'HUD a sinistra (`TgtArt`, `assets/tgt.webp` da `tools/gen_tgt.py`).
+- **TAB = bersaglio** (`Game.cycleTarget`/`pickTarget`, azione `target`): più vicino → più Salute → meno Salute → boss; `nearest()` rispetta la modalità. Pannello illustrato nell'HUD a sinistra (`TgtArt`, `assets/ui/tgt.webp` da `tools/gen_tgt.py`).
 - **Super Sfere del Drago: 3** (`SB_TOTAL`) con un **Tamagami** ciascuna (`wakeTamagami`, boss `tama1/2/3` + forma Furia): la statua si risveglia a 340 px, la sfera resta bloccata finché non cade; indicatore in basso a destra (`drawSuperBall`, `Renderer`).
 - **Grafica dei Tamagami** (`assets/sprites/boss/tama1/2/3.png`, Furia `tama1f/2f/3f.png`, statue `tamas1/2/3.png`): fogli da 9 frame (0 fermo, 1-4 camminata, 5 carica, 6 colpo, 7 speciale, 8 colpito) importati dai sorgenti in `assets/sprites/_sorgenti/boss/` con `tools/import_tama.py` (rimozione dello sfondo magenta, ritaglio frame per frame, scala per riga, ancora ai piedi). `Sprites.BOSS_SHEET` collega l'id del boss al foglio, `Sprites.BOSS_SHEET_F` il foglio della Furia (`e.pf`); il frame lo sceglie `drawEnemy` (`e.lp` = ultimo schema d'attacco, `TAMA_WEAPON` = schemi con arma, `e.pwUntil` = posa di potenziamento). Senza i PNG restano gli sprite procedurali.
 - **Mondo**: niente camminata sull'acqua (`blockWater`), lava −10% Salute massima/s (`updateLava`), nemici +50% più lontani sopra lo schermo (`TOP_K`), velocità nemici per difficoltà (`stageSpd`), statistiche nemici nella scheda stage (`UI.stageStats`).
@@ -378,7 +378,7 @@ Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** 
 - **Note di versione:** il tasto **📜** in alto a destra nel menu principale (con pallino rosso finché c'è una versione non letta) apre l'elenco, con la **data** e i cambiamenti divisi in **Novità**, poi **Correzioni** e **Bilanciamento** (le sezioni vuote spariscono). Per pubblicare una versione basta aggiungere un oggetto **in cima** a `PATCHES` in `src/js/patches.js` (testi `T('italiano','english')`, una riga per modifica).
 
 **🐉 Sfere del Drago e serie di uccisioni**
-- **Sprite nuovi** (`assets/dragonballs.webp`, 7 frame 64×64 ricavati dall'immagine di riferimento): ogni sfera ha da **1 a 7 stelle** e in una partita non ne compaiono due uguali finché non le hai tutte; il contatore in basso a destra mostra quali hai.
+- **Sprite nuovi** (`assets/ui/dragonballs.webp`, 7 frame 64×64 ricavati dall'immagine di riferimento): ogni sfera ha da **1 a 7 stelle** e in una partita non ne compaiono due uguali finché non le hai tutte; il contatore in basso a destra mostra quali hai.
 - **Rimbalzano davvero** sul terreno (lancio, rimbalzi sempre più bassi, poi un saltello ogni 1,6 s) con squash e stretch, **onda d'urto e scintille a ogni atterraggio**, bagliore pulsante, raggi rotanti, colonna di luce e stelline che brillano.
 - **Suono dedicato** alla raccolta: `assets/sphere_sound.mp3` (incorporato in `DBS_AUDIO=embed`, copiato in `site/assets/` dal workflow in modalità `link`; se manca si sente il vecchio jingle sintetico).
 - **Suono del level-up**: `assets/level_up_sound.mp3` (chiave `levelup` in `SFX_FILES`), riprodotto a velocità ×2 (`playBuf('levelup',.9,2)`); finché non è decodificato suona l'accordo sintetizzato. Il suono della scelta della carta (`lvl`) non cambia.
@@ -474,7 +474,7 @@ Il Torneo del Potere è ora l'**ultimo stage**: 20 minuti, 12 boss con statistic
 Il Torneo del Potere (tema interno `void`) si combatte su **un'arena ellittica chiusa** (`TOPARENA` in `world.js`: 4800 × 4032 px, prospettiva di un cerchio) disegnata a codice in `top_arena.js` (`TopArt.draw`): fasce concentriche di triangoli, blocchi e strisce con colori scambiati a ogni giro, bordo con parete laterale, alone verde acqua e nebulose. Al centro c'è la **torre** (`TopArt.tower`, entità ordinata in profondità; piede solido r=50) con la sua **ombra** (`TopArt.shadow`). Tutto resta dentro: `TOPARENA.clamp` per giocatore, nemici e boss; `spawnSpot` ruota la direzione finché cade dentro; `dryPos` trattiene drop, forzieri e gemme; ostacoli (`World.cell`) e zone (`World.zone`) rifiutano i punti fuori.
 
 ### 🖼️ Nuovo logo e menù dinamico
-- Il titolo testuale è sostituito dal **logo ufficiale del progetto** (`assets/logo.webp`, incorporato nel file finale).
+- Il titolo testuale è sostituito dal **logo ufficiale del progetto** (`assets/ui/logo.webp`, incorporato nel file finale).
 - Lo sfondo del menù è ora una **panoramica veloce degli stage** (cambio con taglio diagonale) con **personaggi casuali** che compaiono, **si trasformano**, usano le loro **abilità** (raggi, nova, cloni, barriere…), lanciano onde di ki ed **emote**. Il tutto è **sfocato** per non disturbare i pulsanti.
 
 ![Menu dinamico](docs/screens/menu-dynamic.jpg)

@@ -32,3 +32,4 @@ tester.config.json
 docs/*
 !docs/logo.png
 !docs/screens/
+__pycache__/
