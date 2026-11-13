@@ -4,7 +4,7 @@
 
 > 🇬🇧 English version: [README.en.md](README.en.md)
 
-Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, le armi sparano da sole, raccogli esperienza, sali di livello, ti trasformi e sopravvivi fino al boss finale. Tutto in **un solo file HTML** (Canvas 2D + JavaScript puro, zero dipendenze, nessun asset esterno: grafica generata dal codice, effetti sonori sintetizzati).
+Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, le armi sparano da sole, raccogli esperienza, sali di livello, ti trasformi e sopravvivi fino al boss finale. Si gioca nel browser, da PC e da telefono, in **un solo file HTML** (Canvas 2D e JavaScript puro, nessuna dipendenza).
 
 > ⚠️ Progetto amatoriale, non ufficiale e senza scopo di lucro. Non è affiliato a Toei Animation, Shueisha, Bandai Namco né agli eredi di Akira Toriyama. Vedi [DISCLAIMER.md](DISCLAIMER.md).
 
@@ -14,845 +14,279 @@ Un survivor-like in stile *Vampire Survivors* ispirato a Dragon Ball: ti muovi, 
 
 1. [Come si gioca](#come-si-gioca)
 2. [Controlli](#controlli)
-3. [Novità dell'ultimo aggiornamento](#novità-dellultimo-aggiornamento)
-4. [Meccaniche di gioco](#meccaniche-di-gioco)
-5. [Contenuti](#contenuti)
-6. [Build e sviluppo](#build-e-sviluppo)
-7. [Struttura del progetto](#struttura-del-progetto)
-8. [Test](#test)
-9. [Licenza](#licenza)
+3. [Modalità di gioco](#modalità-di-gioco)
+4. [Dentro la partita](#dentro-la-partita)
+5. [Personaggi, armi e trasformazioni](#personaggi-armi-e-trasformazioni)
+6. [Cimeli e Gacha](#cimeli-e-gacha)
+7. [Stage, nemici e boss](#stage-nemici-e-boss)
+8. [Progressione permanente](#progressione-permanente)
+9. [Online e co-op](#online-e-co-op)
+10. [Schermate e opzioni](#schermate-e-opzioni)
+11. [Build e sviluppo](#build-e-sviluppo)
+12. [Struttura del progetto](#struttura-del-progetto)
+13. [Licenza e crediti](#licenza-e-crediti)
 
 ---
 
 ## Come si gioca
 
-1. Dal menu scegli **Gioca**, poi stage, difficoltà e personaggio (e il tuo **compagno**).
-2. Ti muovi con la tastiera (o il gamepad): **le armi attaccano da sole** contro i nemici vicini.
-3. I nemici lasciano **gemme di esperienza**: raccoglile per salire di livello e scegliere un potenziamento tra le carte proposte.
-4. Raggiungi i livelli richiesti per **trasformarti** (Super Saiyan, Ultra Istinto, ecc.): ogni forma dà bonus permanenti per la run.
-5. Sopravvivi fino allo scadere del tempo dello stage e **sconfiggi il boss finale** per vincere. Se muori, tieni comunque gli zenny guadagnati.
-6. Gli **zenny** si spendono nel **Negozio** (potenziamenti permanenti) e per **sbloccare i personaggi**.
+1. Dal menu scegli **Gioca** (o **Avvio rapido**), poi lo stage, il personaggio, il **compagno** e quante armi portare (da 1 a 5).
+2. Ti muovi tu: **le armi attaccano da sole**. Con `Tab` scegli chi colpire (il più vicino, quello con più o meno Salute, il boss).
+3. I nemici lasciano **gemme di esperienza**: raccoglile per salire di livello e scegliere una carta (arma, potenziamento, ecc.).
+4. Ai livelli giusti ti **trasformi** (Super Saiyan, Ultra Istinto…): ogni forma dà bonus per tutta la partita.
+5. Sopravvivi **30 minuti**, poi sconfiggi il **boss finale** dello stage. Hai 30 secondi per raccogliere il bottino prima della schermata di vittoria.
+6. Se muori tieni comunque gli zenny guadagnati. Con gli **zenny** compri potenziamenti permanenti nel Negozio, personaggi e ticket del Gacha.
 
 ![Selezione personaggio](docs/screens/characters.jpg)
 
 ## Controlli
 
-| Azione | Tastiera | Gamepad |
-|---|---|---|
-| Movimento | `WASD` / frecce | D-pad |
-| Conferma / Annulla | `Invio`, `Spazio` / `Esc`, `Backspace` | A / B |
-| Pausa | `Esc` o `P` | Start |
-| Interagire (altari, totem, stanza del tempo) | `E` o `F` | A |
-| Abilità del compagno | `Q` (o tocca il pulsante in basso a sinistra) | X |
-| **Fagiolo Senzu** (dalla borsa) | `H` · pulsante a schermo | LB |
-| **Scatto** (danni sul percorso + invulnerabilità, ricarica 4 s) | `Shift` · pulsante a schermo | RB |
-| **Abilità del personaggio** (Kaioken, Berserk, raggi, cloni…) | `R` o `X` · pulsante a schermo | Y |
-| Debug (FPS ecc.) | `F2` o `` ` `` | Select |
+### Tastiera e mouse
 
-Tutti i tasti sono riassegnabili da **Impostazioni → Comandi**.
-
----
-
-## Novità dell'ultimo aggiornamento
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 8 (fps)
-
-- Risoluzione dinamica (Impostazioni → Video): sotto i 50 fps disegna meno pixel (fino al 60%), risale quando torna fluido.
-- Pagina da 13,3 a 11,3 MB (codice minificato con esbuild, sprite in WebP lossless); cimeli cercati con una tabella.
-- Per la build locale minificata: `npm i esbuild` nella cartella del progetto (facoltativo; senza, la build resta come prima).
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 7 (prestazioni, menu, co-op)
-
-- Prestazioni: folle di nemici circa a metà costo, colpi che controllano solo i nemici vicini, oggetti a terra dipinti una volta, sprite preparati nei momenti liberi.
-- Menu principale in una pagina, a gruppi (Gioca · Crescita · Progressi · Opzioni); tutti i menu con lo sfondo del menu principale.
-- Co-op: scegliere una carta non ferma più gli altri (chi sceglie è invulnerabile, 6 secondi poi carta a caso); nuovo aspetto per hub e stanza.
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 6 (co-op: la partita insieme, BETA)
-
-- Quando l'host avvia, tutta la stanza gioca la stessa partita nello stesso mondo (fino a 4 giocatori, collegamento diretto con l'host).
-- Esperienza e livello condivisi (il mondo aspetta che tutti abbiano scelto la carta), bottino di chi lo raccoglie, chi va a terra si rialza con un compagno vicino per 3 secondi.
-- Lato server: riesegui `supabase/coop.sql`.
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 5 (co-op: la lobby, BETA)
-
-- Menu principale > 👥 Co-op: crea una stanza, entra con un codice o un link, trova una partita (Duo/Trio/Squadra, mappa, difficoltà), inviti, classifica co-op.
-- Stanza: l'host sceglie la destinazione, ognuno il personaggio e «Sono pronto!», chat con frasi rapide, amici (aggiungi, accetta, invita), codice da copiare o condividere.
-- Lato server: esegui una volta `supabase/coop.sql` nel SQL Editor di Supabase (dopo `online.sql`). La partita insieme arriva con la fase 2.
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 4 (anti-cheat)
-
-- Il server controlla ogni punteggio: codice di partita, tempo reale, numeri credibili, settimana giusta per la Sfida settimanale (riesegui `supabase/online.sql`).
-- La build normale (`python3 build.py`) chiude il gioco alla console del browser e blocca tasto destro / F12 / Ctrl+Maiusc+I / Ctrl+U; con gli strumenti sviluppatore aperti o un salvataggio modificato a mano i punteggi non vanno in classifica. Per i test: `DBS_DEV=1 python3 build.py` (lo fa già `tools/run_tests.py`). Dettagli in `docs/SECURITY.md`.
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 3 (debolezze, meteo e carriera)
-
-- Debolezze dei boss (+15% da un tipo di arma), Kamehameha caricato tenendo premuto il tasto dell'abilità, Saibaman d'oro che scappa col bottino.
-- Meteo: pioggia e temporale +10% agli attacchi elettrici, tempesta di sabbia gemme +20%.
-- Album dei nemici con premi, pose di vittoria (Maestria 3/6/9), Carriera, titoli in classifica, codici delle build. Lato server: riesegui `supabase/online.sql` (titoli).
-
-### 🆕 Aggiornamento del 29 ottobre 2026, parte 2 (momenti da anime)
-
-- **Sensazioni:** hit-stop e zoom sui colpi grossi, combo con moltiplicatore (×1,1 → ×2 su Zenny ed Esperienza), overkill che esplode, personaggi che respirano, rimbalzano e si inclinano.
-- **Combattimenti:** Ki Clash contro i raggi dei boss, guardia dei boss da rompere, cinematica delle trasformazioni, nome del colpo finale, boss a sorpresa da altre saghe.
-- **Momenti:** Ultimo respiro sotto il 10% di vita, alleati che arrivano nei momenti difficili, fusioni Potara e Metamoran con la Maestria 5.
-- **Mappa:** cerchio di allenamento, navicella Capsule Corp (1 cimelio su 3), missioni del Kaiohshin.
-- **Progressi:** diario delle armi, record in diretta, mutatore del giorno.
-- **Online:** eventi della comunità con Ticket 10× Fortunato, fantasma del primo nella Sfida settimanale, avvisi quando qualcuno ti supera. Lato server: riesegui `supabase/online.sql`.
-
-### 🆕 Aggiornamento del 29 ottobre 2026 (Patti, Maestria e Classifiche)
-
-- **Desideri:** Shenron offre 4 desideri su 7; nuovi Immortalità (20 s senza danni), Trasformazione (subito la forma successiva) e Cimelio leggendario (1 Leggendario su 3).
-- **Evoluzioni doppie:** 11 coppie di armi; con entrambe evolute al massimo il Forziere offre la fusione: +30% danno, −15% Ricarica, un solo slot.
-- **Patti:** ☠ nella scelta dello scenario, 7 maledizioni che aggiungono 15-30% di Zenny ciascuna e Ticket 1× a scenario completato.
-- **Maestria:** ogni personaggio sale fino al Lv 10 giocandolo: una passiva propria (Lv 5) e le fusioni.
-- **Primo avvio guidato:** suggerimenti brevi la prima volta che incontri qualcosa (Impostazioni > Gameplay per spegnerli o rivederli).
-- **Online:** 🏆 Classifiche per scenario e difficoltà (tempo, uccisioni, danni) con un soprannome, Sfida settimanale uguale per tutti, 📸 scheda di fine partita da condividere. Lato server: esegui una volta `supabase/online.sql` nel SQL Editor di Supabase.
-
-### 🆕 Aggiornamento del 28 ottobre 2026, parte 3 (fondamenta)
-
-- **Fogli su richiesta** (`sheets.js`): `SPRITE_LAZY` (isole `isle*` / `isleo*`, draghi `shenron` / `porunga`, Tamagami `tama*` / `tamas*`) non si decodificano all'avvio. `Sprites.need(gruppo)` / `Sprites.drop(gruppo)` da `Game` (isole sulla Via del Serpente, Tamagami negli scenari con le Super Sfere; i draghi si liberano a ogni partita), `SUMMON.start` chiede i draghi, `Sprites.enemySheet` e la statua decodificano un foglio pigro la prima volta che serve (`Sprites.decode`). Il menu si ricostruisce una volta ogni 250 ms di caricamenti (`app.js`), non a ogni foglio.
-- **Cloud** (`cloud.js`, `token()`): un solo rinnovo del token alla volta (`_ref`): due rinnovi in parallelo con lo stesso refresh token (sync + controllo tester all'accesso) facevano fallire il secondo e scollegavano l'utente.
-- **Test** (`tools/run_tests.py`): 95 su 101 (prima 67). `tests/sim.js` carica anche `trinkets2`, `summon`, `tunnel`, `corpse` (con un `Renderer` finto); i test aggiornati alle regole attuali (limite dei cimeli provato col vecchio limite, forzieri con potenziamenti, prezzi del negozio, desiderio dopo l'evocazione, livello 10 = trasformazione, interazione con E, banner in coda, telemetria sempre attiva fuori dalla modalità test); `music.js` e il suono delle sfere si saltano se mancano gli mp3; i test dei fogli dei personaggi girano su una build con `_inutilizzati/personaggi` rimesso (`/tmp/o/pack.html`); quattro test di funzioni tolte in `tests/archivio/`. Gli ultimi che a volte falliscono a pieno carico (`hpbar`, `hud_tips`, `skills_smoke`, `snake_way`) passano da soli.
-
-### 🆕 Aggiornamento del 28 ottobre 2026, parte 2 (Shenron e Porunga)
-
-- **Evocazione** (`src/js/summon.js`, `SUMMON`): `SUMMON.start(g,'shenron'|'porunga')` mette in `g.summon` la sequenza; `Game.update` chiama `SUMMON.update(g,rdt)` col tempo reale e scala il mondo per `g.summon.ts` (fino a `TS = 0,04`), il giocatore resta invulnerabile. Tempi in `SUMMON.T`: buio 0,9 s, sfere in salita da 0,45 s (spirale verso il cerchio, scie), lampi 1..n tra 2,45 e 3,2 s, corsa al centro e lampo a 3,38 s, colonna di luce e drago che esce dal basso (clip) tra 3,45 e 5,25 s, battuta del drago, finestra del desiderio a 7,7 s (`g.modal` `wish` o `swish`). Dopo la scelta `SUMMON.leave` (1,7 s): il drago svanisce, le sfere schizzano via, il cielo si schiarisce e il mondo riparte. Tutto in coordinate schermo (`Renderer.draw` -> `SUMMON.draw`), poi il personaggio ridisegnato sopra; niente HUD mentre il drago è fuori. Clic / tocco / Invio / Spazio saltano al desiderio (`bindSkip`); il pulsante ×2 in basso o il tasto X (`S.x2`, oppure sempre con l'impostazione `summonX2`, Partita) fanno correre tutta la sequenza a velocità doppia. `FXL.on` attenua lampi e bagliori.
-- **Suoni** (`AudioSys.summon(step,deep,i,sp)` in `audio.js`, chiamato da `SUMMON.snd`): originali a 8 bit con onda a impulsi al 25% (`pulse`, `chip`), triangolo per il basso e canale di rumore rallentato (`chipNoise`). `dark` (bordone con tremolo sotto un arpeggio minore che scende, fermato da `stopSummonDrone`), `rise` (arpeggio che sale e accelera), `ball` (rintocco con eco, un gradino più su a ogni sfera), `burst`, `emerge` (lunga salita con vibrato), `roar` (ringhio con vibrato veloce), `blip` (la voce, ogni 2 lettere), `leave`. Porunga (`deep`) un quarto più grave; con ×2 i suoni durano la metà. Tempi: battuta `T.say = 0,7` s dopo l'uscita, desiderio a `T.wish = 7,7` s.
-- **Quando**: la 7ª Sfera del Drago (`collectLoot 'ball'`, prima apriva subito il desiderio) e l'ultima Super Sfera (`collectLoot 'sball'`, nella sandbox ogni Super Sfera). Il desiderio di Porunga (`swish`, `SUMMON.superOpts`): `lucky` oppure `char:<id>` di fino a 3 personaggi non sbloccati, applicato con `progress.useSuperBalls` (nella sandbox non salva niente). Il menu degli scenari resta per chi ha già le 3 Super Sfere.
-- **Sprite**: `assets/sprites/effetti/shenron.webp`, `porunga.webp` (3 frame, `sprites.json` `cols: 3`), fatti da `tools/gen_dragons.py` dalle immagini su magenta in `assets/sprites/_sorgenti/draghi/`: chiave del magenta, riflessi magenta sui bordi ridipinti col colore vicino, figure alte 640 px, frame 1 e 2 allineati al frame 0 cercando lo spostamento che sovrappone di più le sagome. Il drago fermo alterna i frame 0-1-0-2.
-- Test: `tests/summon.js`; `tests/dragonballs.js` aggiornato (la 7ª sfera chiama Shenron).
-
-### 🆕 Aggiornamento del 28 ottobre 2026 (isole solide, Altare di Shenron, Colpo di Ki)
-
-- **Ingombri delle costruzioni** (`src/js/isle_obj.js`, generato da `tools/gen_isles.py`): per ogni tipo d'isola `ISLE_OBJ` elenca le costruzioni (case, palazzi, mura, alberi, colonne, rocce, auto...) con il riquadro dell'immagine `b`, il ritaglio nell'atlante `r` e gli ingombri a terra `f` (poligoni convessi, in px dello sprite 1x come `ISLE_GEO`). `Snake.objs(I)` li porta in coordinate del mondo una volta per isola (normali dei lati, bordo anteriore campionato `fy`), `Snake.solid(I,o,rad)` spinge fuori dagli ingombri (fino a 6 passate per quelli che si toccano) ed è chiamato da `Snake.clamp` quando si è fuori dal corpo del serpente: vale per giocatore, nemici, boss, compagno e oggetti. I potenziamenti dell'isola (`MapDirector.islands`) passano da `Snake.solid`.
-- **Dietro le costruzioni** (`SnakeArt.occlude`, chiamato da `Renderer.draw` dopo il personaggio): chi ha i piedi sopra il bordo anteriore dell'ingombro (`Snake.front`) ha sopra di sé il ritaglio della costruzione (`isleo<tipo>.webp`), disegnato solo dentro il suo riquadro (clip), con lo stesso ondeggiare dell'isola; sull'Altare di Shenron le Sfere del Drago vengono ridisegnate sopra. Il portone del Grande Kaioh ha il passaggio libero.
-- **Ritagli** (`tools/gen_isles.py`): GrabCut dentro `b`, con l'ingombro come primo piano sicuro e tutto ciò che sta davanti all'ingombro come sfondo; `g` / `x` forzano dentro / fuori dei riquadri (il tronco delle palme senza la sabbia intorno, il passaggio del portone).
-- **Risoluzione**: gli sprite delle isole sono 2x (`isle<tipo>.webp`, `sprites.json` `k: 2`, `SnakeArt.spr` restituisce le misure 1x), a colori pieni (prima PNG a 255 colori). I colori vengono da Real-ESRGAN (`RealESRGAN_x4plus_anime_6B`, x4 riportato a x2 con filtro ad area): `tools/esrgan_np.py` è la rete RRDBNet in numpy (niente PyTorch; il `.pth` è letto da un unpickler ristretto che ricostruisce solo i tensori) e scrive `_sorgenti/isole/<tipo>_x2.webp`, che `tools/gen_isles.py` usa quando c'è (altrimenti: rumore JPEG tolto con non-local means, Lanczos premoltiplicato, maschera di contrasto). Sorgenti a 1x in `assets/sprites/_sorgenti/isole/`. `build.py` accetta anche fogli `.webp`.
-- **Altare di Shenron** (v112b): l'altare non è più un blocco unico. `RING()` in `tools/gen_isles.py` disegna la sua parete come 32 quadrilateri attorno al bordo del piano (manca quello davanti alle scale), `t` è il piano più le scale: lì nessuno viene nascosto dall'altare (`Snake.onTop`, `inPoly`) e i ritagli con `clip` coincidono con gli ingombri. I lati in comune tra due ingombri della stessa costruzione non spingono mai (`q.int` in `Snake.objs`), così nella parete non si resta incastrati. Le 7 Sfere del Drago sono bottino vero (`k:'ball'`, `alt`, stelle 1-7, `I.alt`, raggio di raccolta `ALT_PICK_R = 30`): `MapDirector.islands` le posa su `SnakeArt.ballPos`, `SnakeArt.balls` disegna quelle rimaste e `occlude` ridisegna davanti a chi sta dietro di loro solo le sfere più avanti (senza bagliore). Non fermano la Sfera del Drago garantita (`lootOnField`), una sola freccia a bordo schermo per altare.
-- **Colpo di Ki**: `WS.ki.cd` 1,6 / 1,44 / 1,28 / 0,57 / 0,5 / 0,45 (livelli 1-3 al doppio), `dmg` livelli 4-5 +20% (16,2 / 19,2). I colpi mirano dalla mano al centro del corpo (`KiWeapon.aim`) e colpiscono un'ellisse dai piedi alla testa (`KiWeapon.hits`, `KI_BODY_H = 2,1`, `KI_BODY_W = 1,15` raggi; `b.kb`), le altre armi a proiettile restano col cerchio di prima.
-- **Cimeli a tempo**: `TR_SHOCK_CD = 4`, `TR_SLOW_CD = 10`, `TR_BARRIER_CD = 7,5` (metà dei valori prima della v109). **Bottino a fine stage**: `POST_T = 15` s (era 30).
-
-### 🆕 Aggiornamento del 27 ottobre 2026, parte 3 (isole della Via del Serpente)
-
-- **Isole dipinte:** `assets/sprites/props/isle<tipo>.png` (9 fogli da 1 fotogramma, voci `isle<tipo>` in `sprites.json`, 255 colori). `ISLE_GEO` (`world.js`) dà per ogni tipo il centro e i due raggi della superficie calpestabile nello sprite; in gioco l'isola è quell'ellisse (`I.r` × `I.ry`), `ISLE_K = 6` volte più grande di prima (raggio 600-900). Disegno in `SnakeArt.isle` (il vecchio disegno resta in `isle0` finché lo sprite non è caricato); dove la pittura finiva con un taglio netto lo sprite sfuma (`SnakeArt.FADE`) e una fila di nuvole (`SnakeArt.puffs`) lo copre.
-- **Distanza e strade:** il centro dell'isola è scelto in modo che l'ellisse resti ad almeno 260-520 px dal bordo del corpo lungo tutta la sua larghezza; `I.road` è una curva a S (Bézier cubica, 25 punti) dal corpo al bordo vicino dell'isola, larga `ISLE_RW = 78` px per lato, disegnata come il serpente: il corpo e le strade sono dipinti uno strato alla volta (`SnakeArt.roadLayer`), così i bordi si fondono come un bivio e l'inizio della strada si allarga (raccordo di `RF = 110` px, tratti concentrici); niente spine dove la strada si stacca, la luce e i brillii del corpo proseguono sulle strade (`SnakeArt.roadLight`). `Snake.clamp` accetta corpo, ellissi e strade (`inIsle`, `roadNear`, `isleNear`).
-- **Altare di Shenron:** tolte le 5 sfere dipinte dallo sprite (piedistallo ridipinto); `SnakeArt.balls` mette le 7 Sfere del Drago del gioco (`dragonballs.webp`) in cerchio sull'altare.
-- **Mappa in pausa:** isole (con nome) e strade della Via del Serpente.
-
-### 🆕 Aggiornamento del 27 ottobre 2026, parte 2 (Quantità, scrigni e cronologia)
-
-- **Quantità al level-up:** nuova voce `proj` in `PASS` (`data.js`) con `max:2` (`passMax(id)`, gli altri potenziamenti restano a 5); `S.proj` somma anche `P.proj` (`recalc`). Doppio Sunday evolve con Quantità (`EVO_RECIPE.dsunday = ['proj','might']`, prima `haste`).
-- **Negozio** (`screen_shop`, `ui.js`): interruttore ATTIVO / SPENTO per ogni potenziamento comprato e "Disattiva tutti / Attiva tutti" in alto (`save.shopOff`); in partita si legge `Game.shopLv(id)` (uno spento vale 0, anche Lista Nera Armi). Maiusc + clic compra il massimo dei livelli che ti puoi permettere; il tooltip del pulsante dice quanti e quanto.
-- **Forzieri** (`CHEST_W`, `CHEST_RAR`, `Game.chestRewards`, `chestUps`, `allMaxed`): pesi 52 / 40 / 6 / 1,6 / 0,4 (prima 40 / 39 / 15 / 5 / 1), Fortuna invariata. Dentro: 1 / 3 / 4 / 5 / 6 potenziamenti del personaggio (livelli di armi e potenziamenti, anche nuovi; mai oltre il massimo). I cimeli solo quando non resta niente da potenziare: `tn` = 1 / 2 / 3 / 3 / 3, Perfezione schiacciata in `pf..100` (`pfFloor`: Epico 35, Leggendario 50, Mitico 75). Anche la Capsula dà un potenziamento finché c'è.
-- **Cimeli in partita:** nessun limite (`TRIN_RUN_CAP = Infinity`, `Game.runCap`; gli slot prima della partita restano `tcap` 1-3); la riga del HUD va a capo ogni 8. Effetti a tempo dimezzati: `TR_SHOCK_CD = 16`, `TR_SLOW_CD = 40`, `TR_BARRIER_CD = 30`.
-- **Acqua:** scrigni e oggetti che cadono in acqua (`Game.landAt`) restano dove cadono e galleggiano fino alla riva (`drift`, almeno `SHORE_V = 34` px/s), con le increspature; il raggio di raccolta li prende al volo.
-- **Compagni:** tornano camminando (prima saltavano da te oltre 420 px; ora solo oltre 1800 px, dopo un tuo teletrasporto).
-- **Fine partita:** `dmgSummary` con due pulsanti, "Danni inflitti" (per arma, anche `trap`) e "Danni subiti" (`Game.takenBy` / `logTaken`: per nemico e boss, trappole, lava, attacchi dei boss senza autore, altro). Proiettili, cerchi a terra e pioggia ricordano chi li ha lanciati (`.o`, assegnato in `updateEnemies`). Tolto il moltiplicatore ×0,75 della sconfitta (`finishRun`: `mult = 1`).
-- **Trappole** (`World.trapPh`, `trapReady`, `Game.updateZones`): scattano quando qualcuno ci cammina sopra (`TRAP_WARN = 0,22` s di avviso, `TRAP_ON = 0,38` s di spuntoni, `TRAP_CD = 1,1` s per riarmarsi) e colpiscono una volta per attivazione: `TRAP_P = 30%` della Salute massima del giocatore (ignora l'armatura), `TRAP_E = 40%` di un nemico, `TRAP_B = 10%` di un boss.
-- **Ombre degli ostacoli dipinti:** `footShadow` (`renderer.js`) misura la base dello sprite e mette l'ombra lì, larga quanto la base (prima un'ellisse del raggio di collisione centrata sull'ancora, che sporgeva sotto gli oggetti bassi). Cumulo di ossa di Pianeta Vegeta: ancora `[153.2, 149]` in `sprites.json` (prima 169,1), poggia sul terreno.
-- **Tunnel / prestazioni** (`weapon_elec.js`, `sprites.js`, `weapons.js`): la causa del calo era l'overlay elettrico delle trasformazioni (`ELEC.pt` / `seg` / `ring`), che resta anche dopo il tunnel perché nel tunnel si sale di forma in fretta. Gli archi sono raccolti in `Path2D` per colore e tracciati una volta per gruppo, l'anello tratteggiato è fatto di archi semplici (niente `setLineDash`), `GLOW.at`, `VFX.star` e `VFX.orb` non usano più `save/restore`. `ELEC.q` (0,25..1) segue il tempo reale dei frame (`Renderer.draw`): sotto ~42 FPS gli archi si diradano. Misurato in headless (1600×900, 5 armi al massimo, forma 4): disegno nel tunnel da ~51 a ~26 ms, dopo il tunnel da ~95 a ~50 ms.
-- **Trasformazioni:** `FORM_TIERS` ai livelli 5 / 10 / 20 / 30 / 50 / 70 / 90 / 120 per tutti (prima 14 / 24 / 36 / 50 / 66 / 84 / 104 / 128); prima forma +15% (danno 0,22 → 0,253, velocità 0,14 → 0,161).
-- **Messaggi:** `Game.say` mette in coda (`bq`): un annuncio resta almeno `BANNER_MIN = 2` s e sfuma in `BANNER_FADE = 0,45` s prima del successivo; niente doppioni. Le scritte sopra il personaggio si impilano senza sovrapporsi (`Renderer.draw`). Tutto finisce in `Game.evLog`, mostrato nella nuova scheda "📜 Cronologia Eventi" della pausa (accanto al Grimorio) con il tempo della partita.
-- **Pausa, statistiche:** passando sopra una statistica (scheda Mappa e Partita) un tooltip mostra da cosa è fatta (`Game.statBreak`: base, potenziamenti, negozio, trasformazione, cimeli, Senzu, totem; l'ultima riga "Altro" chiude il conto con abilità, Kaioken ecc.). Nuova riga Quantità.
-
-### 🆕 Aggiornamento del 27 ottobre 2026 (tempo per il bottino)
-
-- **Dopo il boss finale:** finita la scena di vittoria (`updateVictory`) parte `g.post = POST_T = 30` s: niente spawn (`sb.nospawn` resta attivo), eventi, ondate di tiratori e `MapDirector` fermi, giocatore ancora invulnerabile; si raccolgono scrigni, gemme e loot (`updatePickups`). Finisce allo scadere o quando non resta niente da raccogliere, poi `finish(true)`. Il conto alla rovescia è sotto il timer (`Renderer.hud`). `continueAfterWin` riattiva gli spawn e mette `p.inv = 2` (prima restava l'invulnerabilità di 999 s della vittoria).
-- **Granata Infernale:** `HellzoneWeapon.targets` = 1 + evoluzioni (max 2) + Quantità (`xn`); la Quantità non aggiunge più sfere.
-
-### 🆕 Aggiornamento del 22 ottobre 2026, parte 6 (ritmo della partita e late game)
-
-- **Torneo del Potere, Estremo:** nuovo campo `late:{from,dmg,hp,spawn}` nello stage (`data.js`) e `Game.lateK(k)`: dal 35% della partita i fattori scendono in modo lineare fino a fine partita (danni ×0,42, salute dei nemici ×0,6, frequenza di comparsa e tetto di nemici ×0,55). Applicato in `dmgMul()` (nemici e boss, anche Jiren), `hpMul()`, `spawnRate()` e `spawnCap()`; solo in Estremo. Misurato sulla telemetria di 30 minuti (Zeno, 550 PV, armatura 26,55): a 1800 s i colpi dei boss passano da 220 (tetto del 40% dei PV) a 95, i nemici normali da 112–143 a 31–56, la comparsa da 43,8 a 24,1 al secondo, il tetto da 580 a 319; a 1500 s i colpi dei boss da 220 a 125.
-- **Miniboss** (`planMinis`, `updateMinis`, `spawnBoss(..., mini)`): uno ogni `MINI_EVERY = 300` s dove i boss lasciano un buco (≥70 s da ogni boss, ≥40 s da un élite, ≥150 s dal miniboss precedente; spostamento fino a ±80 s dall'orario ideale 3:00, 8:00...; non nelle partite sotto i 600 s, non dopo il boss finale, non in Infinito). Boss del tema scelto tra i 3 più vicini nel tempo (non quello in arrivo, non lo stesso due volte), `MINI_HP = 0,4`, `MINI_DMG = 0,8`, senza trasformazioni (`p2/morph = 0`, `e.mini`). Alla morte: scrigno da élite, biglietto 1x, zenny ridotti, 5 gemme; non conta tra i `bossKills`. Sulla barra del tempo è un teschio arancione (`miniPlan`).
-- **Élite:** nelle partite da 1200 s o più uno ogni `ELITE_EVERY = 240` s dal secondo 150 (prima 6 tra il 14% e l'80%). Le partite più corte restano come prima.
-- **Tempo extra:** da `g.t >= g.dur` il timer si ferma e accanto compare in rosso `+M:SS` (`Renderer.hud`); continua anche in Infinito.
-- **Bilanciamento:** vendita dei cimeli ancora −20% (`TSELL_MUL = 0,24`); prezzi del negozio (`SHOP` in `data.js`, campo `base`): Urlo di Broly! 666 → 500, Scanner Sfere del Drago 3000 → 10000, Quantità 2000 → 3000 (crescita invariata); Fortuna +9% → +5% per livello; Avidità +18% → +15%, Vitalità +15 → +20, Rigenerazione +0,6 → +0,5, Ritmo −4% → −5%, Magnetismo +20% → +5% (`recalc` in `game.js`).
-- **Saibaman (compagno):** nuovo foglio dipinto `assets/sprites/props/petsaibaman.png` (6 × 5, stesse righe degli altri compagni; riga 4 = Autodistruzione: carica, arroventato, esplosione, anello), voce `petsaibaman` in `sprites.json`.
-- **Negozio:** tolte le righe in cima (descrizione e costo totale / ancora da comprare, `ui.js`).
-- **Correzioni:** la sfera Genkidama è spenta nel Negozio di Zeno (`SpiritWeapon.update`); ostacoli e ciò che compare nello stage non si sovrappongono (`World.foot`, `World.clearAt`, `Game.dryPos`, `spawnSpot`, zone di trappole/pozze).
-
-### 🆕 Aggiornamento del 22 ottobre 2026, parte 5 (tunnel sotterranei)
-
-- **Tunnel** (`src/js/tunnel.js`): il bunker di Pianeta Vegeta, il portale di Inferno e il cancello del Regno degli Dei non sono più ostacoli casuali (peso 0 in `OBSTACLES`, `world.js`): `MapDirector` ne apre uno ogni `TUN_EVERY = 900` s di partita (`TUN_EVERY_END = 600` in Infinito) come feature `tunnel`, con lo sprite dell'ostacolo (`TUNNELS[tema].def`). Con [E] si entra (non con un boss vivo): `startTunnel` mette da parte nemici, gemme, oggetti, forzieri e feature della mappa e ferma il tempo di gioco, il direttore e il mondo (`frozen` in `Game.update`).
-- Il tunnel è un corridoio largo 260 px (`TUN_HW`), lungo `TUN_LEN = 4400` px, a senso unico verso l'alto: il pavimento (`tun.fl`) sale con te e non puoi tornare indietro di più di `TUN_BACK = 240` px. I nemici nascono solo qui, davanti a te (`TUN_CAP = 48`), e danno l'esperienza subito. In fondo la stanza del boss (600 px): un boss non finale della mappa (`bossQ`, più avanti nella lista più sei avanti nella partita) con `e.tun`: non lascia niente (`killEnemy`); alla sua caduta compaiono 3 forzieri sui vertici di un triangolo di raggio `TUN_TRI = 150` al centro della stanza e il portello d'uscita (`endTunnel`).
-- Stanza dello Spirito e del Tempo e Negozio di Zeno invariati. Per dare un ingresso a un'altra mappa basta aggiungere una voce a `TUNNELS` (tema, indice dello sprite, colore) e i colori in `TUNART`.
-- **Torneo del Potere:** la torre ora copre il personaggio quando è dietro di essa (`Renderer.draw`: dopo `drawPlayer` la torre viene ridisegnata, ritagliata sul riquadro del personaggio).
-
-### 🆕 Aggiornamento del 22 ottobre 2026, parte 4 (compagni illustrati)
-
-- **Bilanciamento:** vendita dei cimeli −70% (`TSELL_MUL = 0,3` in `gacha.js`); danni dei nemici in Difficile 1,5 → 1,05 e in Estremo 1,8 → 1,26 (`DIFF` in `data.js`, −30%).
-
-- **Dende, Mini Shenron, Mini Droid, Bubbles e Mini Bu** hanno nuovi sprite dipinti (`assets/sprites/props/pet<id>.png`, 6 colonne × 5 righe): riposo con battito di ciglia, camminata a 6 frame, presa del cristallo XP, consegna a te, abilità e onda d'urto. Il Saibaman resta con lo sprite generato dal codice finché non ha il suo foglio. Le card di scelta del compagno usano gli stessi sprite.
-- Righe del foglio: 0 riposo, 1 camminata, 2 presa XP (frame 3-5 con il cristallo in mano), 3 consegna (frame 3 = spinge i cristalli verso di te), 4 abilità (0-4) con l'onda d'urto nei frame 3-4. Il gioco legge i riquadri e gli ancoraggi da `sprites.json` (`pet<id>`, campo `k` = scala).
-
-### 🆕 Aggiornamento del 22 ottobre 2026, parte 3 (mappa in pausa)
-
-- Le **trappole** e le **pozze di cura** sono incassate nel terreno (si vede solo il piano superiore, senza ombra): non sembrano più appoggiate sopra.
-
-Nuovo file `src/js/pausemap.js` (in `build.py` dopo `ui_account`): `Renderer.drawPauseMap(cv,g,zi)` disegna la mappa su un canvas (zoom `MAP_ZOOMS`, 7 livelli, default indice 3) riusando `drawLoot`, `drawChest`, `drawFeature` e lo sprite della pozza con `this.ctx` puntato al canvas della mappa. `UI.pauseMap(g)` (in `ui2.js`) costruisce il pannello con i bottoni +/− (`data-fid` `mapin`/`mapout`, `.pmzoom`). `screen_pause`: scheda `map` = `.pausescr.pmapmode` con una riga `.ptop` (schede + pulsanti), pannello `.pleft.mini` con le sole statistiche e la mappa a tutta larghezza/altezza (canvas dimensionato su `innerWidth/innerHeight`); scheda `run` = `.prunmode`: le sezioni (Statistiche, Abilità, Potenziamenti, Armi, Cimeli, Desideri) in un blocco `.pfit` a colonne CSS (`column-width:270px`), rimpicciolito da `UI.fitPause` con `transform:scale` (larghezza interna = 100/z %, altezza del contenitore adeguata, minimo 0,4, ricalcolato al ridimensionamento) finché sta sopra i 118 px riservati all'HUD; la scheda `grim` resta com'era. I segni +/− dello zoom sono due elementi `<i>` centrati. Impostazione `settings.pauseTab` (`map` | `run` | `last`, default `map`) nella scheda Gioco.
-
-### 🆕 Aggiornamento del 22 ottobre 2026, parte 2 (serie, orde, totem e altari con [E])
-
-- **Serie** (`Game.streakWin(n)`): finestra = 4 s · (0,3/4)^(min(n,1500)/1500) (`STREAK_MIN`, `STREAK_CAP`); `streakW` tiene la durata dell'ultima uccisione per la barra HUD.
-- **Orde**: `spawnHorde` imposta `hordeBoost = HORDE_BOOST_T` (20 s), durante cui `spAcc` cresce ×`HORDE_BOOST` (2,5). Nessun messaggio.
-- **Totem della Ricchezza**: `wealthT = TOTEM_WEALTH_T` (150 s) in `updateTotemFx`; alla fine `totemFx.gold/magnet = 0` e `recalc()`.
-- **Elementi della mappa** (`MapDirector.update/use`): tutti si usano con [E] dentro `f.near` (90 px); dopo l'uso `f.fade` va da 0 a `FEAT_FADE` (1,2 s) e poi `dead` (la Stanza e il portale di Zeno non ne hanno: entrano subito). `Renderer.drawFeature`: lampo, scossa, salita e dissolvenza con scintille; le scritte di richiamo sono per tipo. La Stanza dello Spirito e del Tempo: sprite ×1,5 (`WS.chamber` .24 → .36). Nella Stanza i tasti 1-9 cliccano la card `data-fid="o<i>"` (`App` keydown, tipo `trial`).
-- **Sparizione disegnata** (`assets/sprites/props/featfade.png`, foglio `featfade`: Altare del Potere 5 fotogrammi, Fonte 6, Totem 5, Sorgente 5; mappa in `Renderer.drawFeature`): il fotogramma segue l'avanzamento di `FEAT_FADE`, stessa dimensione dello sprite a riposo. Gli altri tipi usano ancora l'effetto a codice.
-- **Altari e Totem** (`MapDirector.rollAltars`, `ALT_EVERY`=30 s, `ALT_P`=.04, `TOTEM_P`=.015): tiro indipendente per ogni altare (condizioni di `altarCands`, max 2 sulla mappa) e per il Totem. **Sprite**: altare del sacrificio (fotogrammi 21-26 di `featfade`) e bottone rosso (27-30, `f.pt` = secondi dalla pressione); suono 8-bit `crystal` (`audio.js`) al consumo dell'altare del sacrificio.
-- **Terreno** (`world.js`): `ZONE_P` .2 → .045, `ZONE_HEAL` .06 → .008. **Sprite di trappole e pozze** (`assets/sprites/props/zonesprites.png`, foglio `zonesprites`: 12 fotogrammi di trappola = 4 quiete, 4 avviso, 4 punte; poi 12 della pozza = 6 quiete, 6 cura/dissolvenza): `Renderer.drawZones` sceglie il fotogramma da `World.trapState` e dalla fase `(rt+ph)%TRAP_PERIOD`; la pozza usa i fotogrammi di cura mentre ci sei dentro e ti curi. Senza il foglio resta il disegno a codice.
-
-### 🆕 Aggiornamento del 22 ottobre 2026 (forzieri illustrati)
-
-I forzieri sono sprite (`assets/sprites/props/chests.png`, foglio `chests` in `sprites.json`: 5 rarità × 5 fotogrammi = chiuso, chiuso con respiro, coperchio che si alza, aperto, aperto fermo; ancora = base del forziere). `Renderer.drawChest` li disegna a 34 px × (1+0,1·rarità) × (élite 1,2 / boss finale 1,5), con alone e colonna di luce; senza il foglio resta il disegno a codice. All'avvicinarsi (`updatePickups`) parte `c.op` (0,85 s): trema (0–0,3), coperchio (0,3–0,5, anello d'urto e scossa), aperto con raggi di luce nel colore della rarità; poi si apre la finestra dei premi e il forziere sparisce. Voce `2026-10-22` delle note di patch.
-
-### 🆕 Aggiornamento del 21 ottobre 2026 (barra del roll dei cimeli)
-
-Nuovi potenziamenti del negozio (**Quantità**: +1 proiettile per arma, max 2; **Scanner Sfere del Drago**: +5% comparsa per livello, max 2; **Urlo di Broly!**: +5% frequenza dei nemici per livello, max 5, da 666), Armatura Saiyan +2 per livello, **128 nuovi cimeli** (combinazioni di 2-3 statistiche, a tutte le rarità; 10 con Quantità solo a Leggendario/Mitico, fino a +5 con roll 100) e la barra del roll da 0 a 100 su ogni cimelio. Voce `2026-10-21` delle note di patch; i cimeli si rigenerano con `tools/gen_trinkets.py`.
-
-### 🆕 Aggiornamento del 20 ottobre 2026, parte 6 (Cooler, cimeli extra, Maestro, password e Google)
-
-Dettaglio nelle **note di patch del gioco** (voce `2026-10-20f`): Cooler boss del tardo Pianeta Namek con tre forme, slot extra dei cimeli visibili (fino a 3), il Maestro della Stanza dello Spirito e del Tempo imita le tue armi, password dimenticata con codice a 6 cifre, pulsante «Continua con Google» e correzione dello sprite dei Tamagami. Configurazione di Supabase: [`docs/SUPABASE.md`](docs/SUPABASE.md). Prompt per Gemini degli sprite mancanti: [`docs/PROMPT_GEMINI_SPRITES.md`](docs/PROMPT_GEMINI_SPRITES.md).
-
-### 🆕 Aggiornamento del 20 ottobre 2026, parte 5 (ragni, ombre, numeri di danno, Dyspo)
-
-Dettaglio con numeri nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20e`, `src/js/patches.js`).
-
-- **Ragni dei barili naturali** (`ObjLife.crawl`, `ObjLife.dangle`, `ObjLife.spider`): comportamento come funzione pura del tempo (nessuno stato). Ciclo di 6,5 s: gira, cammina verso un punto a caso (le zampe seguono la distanza percorsa, partenza e frenata morbide), poi si ferma e fa 2 cose a caso tra alzare testa e zampe anteriori, pulirsi, guardarsi intorno, scuotere una zampa. Il ragno appeso (14 s) si cala, dondola, risale a scatti e riposa. Nuovo disegno: addome, testa, otto zampe snodate con andatura alternata.
-- **Ombre al posto dei gabbiani** (`Ambient.birdShadow`, `Ambient.flockShadows`, `Ambient.ground`): niente più stormi nel cielo né uccelli singoli disegnati; resta l'ombra sul terreno (alpha 0,10, ~20-30 px), in formazione a V, ancorata al mondo, che scorre a 36-50 px/s. Anche i gabbiani posati su casse, barili e lapidi (Isola di Muten, Pianura Saiyan, Arena dei Cell Game) sono stati tolti.
-- **Numeri di danno arcade** (`Renderer.dmgSpr`, `DMG_T = 1,1`, `Game.floatText` classi 0 = danno, 6 = critico): carattere Anton (Google Fonts, in coda a Impact/Arial Black), inclinato, sfumatura bianco-giallo, contorno scuro, bordo 3D e bordi a pixel; **critici rossi**, più grandi e con tremolio; restano 1,1 s (prima 0,8 s). Al massimo 46 numeri di danno insieme.
-- **Dyspo rifatto** (viola come Beerus, orecchie da coniglio `ears:'rabbit'`, tuta rossa/grigia, guanti e stivali bianchi) per personaggio e boss; **Beerus** più viola.
-- **Guida sprite per armi e abilità:** `docs/SPRITES_ABILITA.md` (solo in locale) (cosa fare per prima, formati e dimensioni).
-- **🧪 Test aggiunto:** `v56` (continuità e varietà del comportamento dei ragni, niente gabbiani posati, ombre in vista ~40% del tempo e leggere, durata e classe dei numeri di danno, critici rossi, sprite dei numeri in cache e a bordi netti); `shot_v56.js` e `shot_dyspo.js` per gli screenshot.
-
-### 🆕 Aggiornamento del 20 ottobre 2026, parte 4 (boss, nemici e personaggi)
-
-Il dettaglio con tutti i numeri è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20d`, `src/js/patches.js`).
-
-- **Trasformazioni dei boss** (`Game.bossTransform`, `TRANS_K = 1,2`, `TRANS_HEAL = 0,5`): +50% della Salute massima (nuova) e +20% di Salute massima, danno, velocità (`spdK`) e armatura a ogni forma. **Freezer** (Namek) e **Cell** (Arena dei Cell Game) attraversano tutte le forme (`p2`, `p2at = 0,6`, `morph`), con +2,5% di velocità a forma.
-- **Morte del boss finale** (`Game.startVictory/updateVictory`, `VIC_T = 4,2`): 4,2 s al rallentatore con esplosioni crescenti, onda bianca e «VITTORIA!» prima del menu di fine stage.
-- **Mosse speciali dei boss** (`BOSSES[id].sig`, `startBossMove/updateBossMove/updateHeld/updateRain`): Dodoria **lancio di corpo** (3 s di avviso, traiettoria larga quanto il corpo), Dr. Gero e C-19 **presa** che risucchia 5/15/25/35% di Salute in 3 s, Super Buu **pioggia di ki** (50/55/60/70 palline, 2% di Salute ciascuna).
-- **Rovine degli Androidi** (`STAGES[2].abs`, `bossPlan`, `ANDROID_SEQ`, `ANDROID_K`): un androide canonico ogni 5 minuti in tempo reale (13, 14, 15, 16, 17, 18; Infinito: 19 e 21 e poi il giro riparte +35% di Salute); il primo androide a fine partita è il boss finale. Nuovi boss `c13/c13s/c14/c15/c18/c19/c21/c21m` (sprite provvisori procedurali) e mosse canoniche in `bossAttack` (`bd.lb` rinomina una mossa, `bd.ext` elenca le mosse speciali, `e.bar` = barriera −88% danni). Nota rossa dell'Infinito: `STAGES[2].endNote`. **Cell** non è più nelle Rovine.
-- **Regno degli Dei**: boss `shin`, `daikai`, `champa` al posto di Zarbon, Cooler e Janemba; Beerus resta il boss finale.
-- **Stanza dello Spirito e del Tempo** (`Game.sparCopy`, `SPAR_COPY_P`, `SPAR_COPY_MUL`): il Maestro copia un attacco su due l'abilità unica o un'arma del giocatore con −40% di danno.
-- **Piccolo / Toppo / Gotenks**: Cannone Speciale (`sbc`), Sfera della Giustizia oscura (`sphere`), Fantasmi Kamikaze che copiano le armi (`ghosts`, `GHOST_KIND`); arma **Granata Infernale** (`HellzoneWeapon`, 2 evoluzioni); Kaioken → **Aura** (a Jiren); Gotenks SSJ → SSJ Blue.
-- **Zeno-sama giocabile** (`CHARS.zeno`, `LINES.zeno`, `ABIL.zeno`): numeri da Regina Sigma di Vampire Survivors un po' più alti, non in vendita, si sblocca con tutti gli stage completati in Estremo e tutte le armi sbloccate (`runCtx.allX/allW`); sprite = immagine del suo negozio registrata come foglio (`Sprites.zenoSheet`).
-- **Difficoltà**: il rinforzo a scatti dei nemici (Normale/Difficile/Estremo) ora ogni 10 minuti invece di 1:30 (`ESC_EVERY`; Facile resta 60 s). **Barre della vita dei nemici sopra la testa.**
-- **🧪 Test aggiunto:** `v55` (trasformazioni, Freezer/Cell, morte del boss finale, Piccolo/Toppo/Gotenks, Dodoria/Gero/Buu, calendario degli androidi, mosse dei nuovi boss, Regno degli Dei, Zeno-sama, Stanza dello Spirito); `shot_v55b/c/d.js` e `shot_zeno.js` fanno gli screenshot.
-
-### 🆕 Aggiornamento del 20 ottobre 2026, parte 3 (Perfezione dei cimeli, compagni, forzieri a 4 cimeli)
-
-Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20c`, `src/js/patches.js`).
-
-- **Compagno** (`Game.updatePet`, `petFindGem`, `petRelease`, costanti `PET_*`): va a prendere le gemme XP entro 340 px da te ma fuori dal tuo raggio di raccolta, ne porta fino a 3 sopra la testa (`gem.held`, disegnate in `Renderer.drawPet`) e le consegna al ritorno; **onda d'urto** (≥ 5 nemici entro 165 px su almeno 3 quadranti, 210 px, 12 + 1,1/livello, ricarica 5 s).
-- **Perfezione dei cimeli 0–100%** (`PF_SPREAD`, `pfK`, `rollPf`, `hasPf`, `trinMods(t,r,pf)` in `data.js`): statistiche −12% … +12% attorno al valore della rarità (50% = nominale); fasce di rarità non sovrapposte (Mitico minimo > Leggendario massimo); i cimeli solo-effetto non ne hanno. In partita `Game.tPf`/`trP(id)`; le offerte (forziere, scelta del boss, negozio di Zeno) portano il loro `pf`; il gacha salva `bag[].p` (doppione migliore ⇒ aggiorna `p`, `res.up`), i salvataggi vecchi ripartono da 50 (`Save.normalize`).
-- **Aura Ultra Istinto** a 100% (`Game.perfAura`, `Renderer.drawPlayer`; cornice pulsante in `style`/`gacha.css`); **Mitici coerenti**: solo cimeli con statistiche (`rarOf`).
-- **Interfaccia**: `UI.perfBar` (borsa, scheda personaggio, forziere, negozio di Zeno, pausa, suggerimenti); ordinamento borsa «Perfezione»; **scambio cimelio** con differenza %, verdetto Migliore/Peggiore/Pari e zenny incassati; **slot HUD** 30 px con barra di Perfezione e slot vuoti tratteggiati; impostazione **«Salta i cimeli inferiori»** (`trinScore`/`autoRefuse`: rarità, poi Perfezione).
-- **Forziere del boss: 4 cimeli** (`TRIN_PICK`, `pickCount`; prima 4 + fino a 6 con la Fortuna).
-- **🧪 Test aggiunto:** `v54` (Perfezione e fasce, forziere a 4, Mitici, salta-inferiori, compagno che porta XP, onda d'urto, gacha/migrazione, scambio, aura, ordinamento della borsa).
-
-### 🆕 Aggiornamento del 20 ottobre 2026, parte 2 (armi a scelta, TAB, Tamagami, mondo più severo)
-
-Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20b`, `src/js/patches.js`).
-
-- **Armi per partita 1–5** (`settings.weapons`, `Game.maxW`): 5 sfere del Drago sotto la Selezione personaggio (`UI.weaponCount`); il livello-up non propone armi nuove a slot pieni.
-- **TAB = bersaglio** (`Game.cycleTarget`/`pickTarget`, azione `target`): più vicino → più Salute → meno Salute → boss; `nearest()` rispetta la modalità. Pannello illustrato nell'HUD a sinistra (`TgtArt`, `assets/ui/tgt.webp` da `tools/gen_tgt.py`).
-- **Super Sfere del Drago: 3** (`SB_TOTAL`) con un **Tamagami** ciascuna (`wakeTamagami`, boss `tama1/2/3` + forma Furia): la statua si risveglia a 340 px, la sfera resta bloccata finché non cade; indicatore in basso a destra (`drawSuperBall`, `Renderer`).
-- **Grafica dei Tamagami** (`assets/sprites/boss/tama1/2/3.png`, Furia `tama1f/2f/3f.png`, statue `tamas1/2/3.png`): fogli da 9 frame (0 fermo, 1-4 camminata, 5 carica, 6 colpo, 7 speciale, 8 colpito) importati dai sorgenti in `assets/sprites/_sorgenti/boss/` con `tools/import_tama.py` (rimozione dello sfondo magenta, ritaglio frame per frame, scala per riga, ancora ai piedi). `Sprites.BOSS_SHEET` collega l'id del boss al foglio, `Sprites.BOSS_SHEET_F` il foglio della Furia (`e.pf`); il frame lo sceglie `drawEnemy` (`e.lp` = ultimo schema d'attacco, `TAMA_WEAPON` = schemi con arma, `e.pwUntil` = posa di potenziamento). Senza i PNG restano gli sprite procedurali.
-- **Mondo**: niente camminata sull'acqua (`blockWater`), lava −10% Salute massima/s (`updateLava`), nemici +50% più lontani sopra lo schermo (`TOP_K`), velocità nemici per difficoltà (`stageSpd`), statistiche nemici nella scheda stage (`UI.stageStats`).
-- **Level-up al massimo**: 3 sacchi di zenny + «⚡ Scelta automatica» (`Game.autoZ`, `settings.zAuto`); **Senzu** cura il 50% e alza una statistica a caso (`eatSenzu`); freccia rossa attirata; capsule Hoi-Poi a terra rimosse.
-- **Abilità**: usabili nella Stanza dello Spirito e del Tempo; passivi dei personaggi ×1,5 → ×6,45 (Lv 100, `passK`); ricariche −35% (`ABIL_CD_K`).
-- **Bilanciamento**: Facile Salute ×0,72; Zenkai +10%, Volo veloce +6%, Camera Gravitazionale −5%, Meditazione +8%; Totem Tempesta / Spirito 20 s (−20% a trasformazione; cura fino al 12%), Rischio 3 minuti; **Ki Barrage rimossa** (Ki Blast −15% e parte al suo posto).
-- **🧪 Test aggiunto:** `v53` (numeri di bilanciamento, bersagli TAB, armi per partita, sacchi di zenny e scelta automatica, Senzu, totem, Tamagami e Super Sfere, acqua e lava).
-
-### 🆕 Aggiornamento del 20 ottobre 2026 (menu rinnovati, negozio potenziato, Achievement, missioni giornaliere)
-
-Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-20`, `src/js/patches.js`).
-
-**🧭 Menu e interfaccia** (`ui3.js`, `ui4.js`)
-- ⚙ Impostazioni in Selezione stage e Selezione personaggio; nuova scheda **Partita** (Tremolio schermo, Numeri dei danni, Rifiuta cimeli di rarità inferiore, Apertura automatica ticket).
-- Selezione personaggio: **ricerca** (nome, razza, universo, serie, arma di partenza) e **ordinamento** (`CH_SORTS`, `CHAR_META`), salvati in `settings.charSort/charDesc`.
-- **⚡ Avvio rapido** (`UI.qsTargets`, `screen_quick`): personaggio con slot cimelio, stage consigliato, cosa manca da sbloccare; «Un altro suggerimento».
-- Pausa: **«i» sulle armi** con le statistiche numeriche (`weaponStatRows`): valore finale, base e «+» verde con la quantità aggiunta.
-- Animazioni di ingresso/uscita delle finestre, notifiche che si ritirano verso l'alto in 3 s, descrizione dell'Infinita al passaggio del mouse; le note di patch aperte dal menu restano «lette» anche dopo la sincronizzazione cloud (`Cloud.newerPatch`, `pushSeen`).
-- «Potenza» → **«Danno»**.
-
-**💰 Negozio ed economia** (`data.js` `SHOP`, `game.js`, `gacha.js`)
-- Potenziamenti più forti e prezzi base +20%; nuovi **Reroll / Salta / Ban** (fino a 5 ciascuno) sulla finestra di level-up (`Game.rerollLevel/skipLevel/banLevel`, `banRun`). Costo totale del Negozio: **115.166** zenny (prima 73.115).
-- Boss: ticket 10× al **100%**; Élite: ticket 1× al 100%; **acquisto ticket** (1× 1.000, 10× 10.000, −20% sabato e domenica; `ticketPrice`, `Progress.buyTicket`); **apertura automatica** dei ticket (impostazione).
-- **Serie di uccisioni**: +50 monete ogni 50 uccisioni di fila, barra nascosta −1,5% ogni 0,5 s, cioè −3% al secondo: la serie finisce ~33 s dopo l'ultima uccisione (`CK_*`, `Game.cstk`).
-- Zeno-sama: Epico e oltre −30%, un oggetto gratis a caso per visita, musica non più rallentata, rimbalzo più marcato.
-- La modalità x2 non dà più il moltiplicatore di zenny finale.
-
-**🏆 Achievement, Obiettivi e missioni** (`quests.js`, `ui4.js`)
-- Nuova schermata **Achievement** (`screen_unl`): cosa fare per sbloccare personaggi, armi, seconde evoluzioni + 14 sfide per difficoltà con ticket; «???» sull'arma finché non è sbloccata.
-- **Obiettivi** (`screen_ach`): solo traguardi in zenny (36 nuovi) + **missioni giornaliere** (5 ogni 6 ore, bonus se completate tutte; `dqList`, `Progress.checkDaily`). Ricerca, «Nascondi completati», «Più vicini al completamento» salvati in `settings.objF/achF`.
-
-### 🆕 Aggiornamento del 17 ottobre 2026, parte 2 (modalità Infinita, eventi di mappa, animazioni delle armi)
-
-Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17b`, `src/js/patches.js`).
-
-**♾️ Modalità Infinita** (`Game.continueAfterWin`, costanti `ENDLESS_*` in `data.js`)
-- **Armi fino al Lv 100**: un'arma al Lv 5 dell'ultima evoluzione disponibile sale per altri 95 livelli (`Weapon.xl`): +4% danno, +1,2% dimensione, −0,5% ricarica per livello; la ricarica totale (statistica × arma) non scende sotto 0,2 s (`cdXl`, `cdMin`). Le carte «livello extra» compaiono in `upgradePool` solo in Infinita.
-- **Monete −10% ogni 15 s** (`coinK`: ×0,9 a catena, nessun avviso in partita, scritto solo nella descrizione del pulsante in 6 lingue). Il bonus dei 50 livelli non decade.
-- **Ogni 50 livelli** (`checkMilestone`): +100 monete e 4 scatti di crescita dei nemici in un colpo (Normale/Difficile +40% Salute, +8% Danni; Facile +4%/+4%; Estrema +60%/+20%/+60% Armatura) con messaggio elegante. Il tempo non rafforza più i nemici (`escSteps` fisso). Curva XP dolce (`endlessNeed`: ~12 s a livello, +0,1 s a livello).
-- **Negozio di Zeno-sama** (il pulsante rosso) ogni 300 s, aperto 240 s; qualità dei cimeli legata alla Fortuna.
-- **Level-up automatico** (ogni modalità, `settings.lvAuto`): `levelUp` → `autoLevel` sceglie la carta con `autoPick` e non apre il menu; interruttore e lista nel menu proprio *Impostazioni > Partita > Priorità* (`UI.screen_priority`, interruttore con tooltip `data-tip`; la lista si ordina solo durante la partita): `enPrio`, fino a 10 voci (5 armi + 5 potenziamenti), salvate in `settings.lvPrio`, ordinate con ▲ ▼ (`UI.prioRows`).
-- **Dati di gioco / telemetria** (`src/js/telemetry.js`, impostazione `tele`, di base accesa): agganci attorno ai metodi di `Game` (nessuna modifica al codice di gioco) registrano per partita righe al minuto (`min`), ogni 10 s (`s10`), per level-up (`lv`), boss (`boss`), tipo di nemico (`et`), arma, fonte di danno (`hb`), morti, oggetti raccolti (`lt`) e usi (`use`); a fine partita il record va in `localStorage` (`TELE_KEY`, ultime 40 partite, solo sul dispositivo). Impostazioni > Partita > *Dati di gioco*: interruttore, ultimo riepilogo, export JSON/CSV, copia, cancella. Le partite sandbox non si registrano. Analisi: `python3 tools/analyze_telemetry.py dbs-all.json`. Test: `tests/telemetry.js`.
-- **Perfezione dei cimeli** (`rollPf`, `data.js`): curva `PF_CURVE` (probabilità di ottenere X o più, interpolata in scala logaritmica): mediana 25%, ≥50% 1 su 30, ≥80% 1 su 330, ≥90% 1 su 600, 100% = 1 su 1000; la Fortuna moltiplica il tiro per `1+0,25·Fortuna`.
-- **Animazione di morte** (`src/js/corpse.js`): ogni nemico ucciso resta 0,55 s e si dissolve (istantanea disegnata una volta con `drawEnemy`, maschere a pixel, bordo bianco, scintille); i boss 1,15 s più un'onda d'urto di 3 anelli (`Game.bossShock`). Max 40 corpi (10 boss), niente con «Riduci effetti».
-- **Niente sull'acqua** (`Game.dryPos`): oggetti, power-up, gemme, Sfere e forzieri vengono spostati sul punto asciutto più vicino. **Raccolta**: tutti gli oggetti a terra (tranne le Sfere) sono attirati dal raggio `S.magnet` come l'EXP. **Forziere**: Spazio preme «Raccogli».
-- **Musica dei boss generici**: `assets/generic boss battle.mp3` → chiave `bossgen` (`GENERIC_BOSS` in `build.py`) per ogni boss che non è il finale della mappa; i temi dei boss finali hanno chiave `fboss<id>`.
-- **Musica del boss finale di Cell**: `assets/perfect cell theme.mp3` → chiave `fboss8` (`BOSS_KEYS` in `build.py`); `app.js` la usa quando il boss finale è vivo (vedi `docs/MUSIC.md`).
-- **Pagamento**: dopo «Continua» si pagano solo le monete guadagnate dopo la vittoria (`rewardLines`: `run.coins − min(bank.coins, run.minC)`); quello che si spende da Zeno consuma prima le vecchie.
-
-**🎬 Eventi di mappa** (`src/js/events.js` dati + logica, `src/js/events_draw.js` animazioni)
-- Una scena per ognuno degli 11 stage (`MAP_EVENTS[theme]`): annuncio con titolo e sottotitolo in 6 lingue, punti d'arrivo segnati a terra, animazioni dedicate (semi, navicelle, capsule, portali, marcia, paracadute, uova, colonne di luce e sfere della distruzione, fessure, meteore) e **trasformazioni dei nemici** (`skMorph`) con etichetta. Durata 34-38 s, prima volta a 170-250 s (Pianura Saiyan 260-330 s), poi dopo 260-400 s. Rimossi i testi «respiro / tiratori in arrivo / ondata di kamikaze»; i kamikaze compaiono solo negli eventi.
-- Gabbiani e Nuvola Speciale come effetto visivo anche sulle altre mappe (`Ambient.flocks / Ambient.nimbus`).
-
-**🥋 Animazioni del personaggio per arma** (`src/js/pose.js`)
-- I personaggi procedurali sono dipinti **senza braccia** (frame `20+n`; `30+n` = faccia feroce) e le braccia sono disegnate dal gioco con la **cinematica inversa a due ossa** (`Pose.ik`): le gambe continuano a camminare. **Kamehameha**: carica con le due mani a coppa attorno alla sfera che cresce, anche in movimento; allo sparo le braccia si tendono. **Colpo di Ki**: la sfera cresce sul palmo mentre la ricarica finisce (stessa cadenza) e parte dalla mano (`Pose.tip`). Pose anche per le altre armi (`ARM_FIRE`). Il personaggio si gira verso il bersaglio durante il gesto.
-- Per chi usa **sprite propri**: frame facoltativi 10-15 nei fogli e punti `hand` in `sprites.json`; guida con i prompt per Gemini e simili in `docs/SPRITES_AI.md` (solo in locale) e strumento `tools/sheet_from_frames.py`.
-
-**🖥️ Interfaccia e bilanciamento**
-- **Barra Esperienza** e **barra della Salute** con la nuova grafica (`xpbar.js`, `hpbar.js`; atlanti generati da `tools/gen_xpbar.py` e `tools/gen_hpbar.py` a partire da `assets/sprites/_sorgenti/barre/`). La barra della Salute mostra il **ritratto del personaggio in gioco**, aggiornato a ogni trasformazione. Sugli schermi stretti restano le barre sottili.
-- Il Gacha si chiama ora **Gacha dei Cimeli**.
-- **Difficoltà**: i nemici nuovi crescono ogni **60 s** (prima 90): Facile +1% / +1%; Normale e Difficile +10% Salute / +2% Danni; Estrema +15% / +5% / +15% Armatura. Estrema: ogni 30 s +2% frequenza di comparsa e +1% tetto di nemici (60 scatti al massimo).
-- **Broly, Berserk** 6 s (8 s nella forma finale; prima 10 e 13) e mira imprecisa (±0,5 rad). La **Calamita** attira anche Borse di zenny e monete. Via del Serpente: isole più rare (una ogni 3.800 px, prima 1.900).
-- **🧪 Test aggiunti:** `endless`, `events`, `pose`, `hpbar`; screenshot: `shot_pose`, `shot_hp`.
-
-### 🆕 Aggiornamento del 17 ottobre 2026 (mappe vive, ritmo più calmo, nuove scelte)
-
-Il dettaglio con tutti i numeri prima/dopo è nelle **note di patch del gioco** (📜 nel menu: voce `2026-10-17`, `src/js/patches.js`).
-
-**🗺️ Mappe diverse a ogni partita e animate**
-- **Mappe casuali** (`MAP.roll()` in `world.js`, chiamato da `Game`): ogni partita estrae un seme che sposta ostacoli, laghi, tonalità del terreno, decorazioni, trappole, pozze di cura e, sulla Via del Serpente, l'andamento del corpo e le isole. L'area di partenza (250 px) è sempre libera e all'asciutto. `window.__MAPSEED = 0` ripristina la mappa classica, un numero fisso rigioca quel layout (utile nei test). Test: `map_random`.
-- **Mare, laghi e lava** (`src/js/sea.js`): il livello d'acqua è un campo di rumore disegnato in chunk 64×64 «pixel» da 4 px, 8 fasi (schiuma che avanza e si ritira, creste d'onda, riflessi), con una palette per Isola di Muten, Pianura Saiyan, Pianeta Namek e **lava** (Inferno). Pesci che saltano e bolle di lava che scoppiano in scintille. Solo scenografia: `Sea.wet(theme,x,y)` tiene fuori da acqua e battigia ostacoli, decorazioni, trappole e pozze di cura.
-- **Isola di Muten** ridisegnata a partire da un'immagine di riferimento: sabbia con increspature, battigia bagnata, schiuma, rocce, casse, barili, lapidi, agavi, palme, tane, conchiglie, stelle marine. Pittura dei nuovi oggetti in `src/js/mapart.js` (`MA`), ostacoli a tema per ogni mappa in `OBSTACLES` (`world.js`), nuove particelle d'ambiente in `ambient.js`.
-- **Ostacoli da foglio sprite** (`assets/sprites/props/<mappa>props.png` (nove mappe su dieci: tutte tranne il Vuoto), rects e ancore in `sprites.json`): gli ostacoli di Isola di Muten, Pianura Saiyan, Namek, Regno degli Dei, Inferno, Pianeta Vegeta, Rovine degli Androidi, Dimensione di Bu e Arena dei Cell Game usano l'arte rifatta (i barili sono alti 78 px, poco meno del personaggio) (`IM(...)` in `OBSTACLES`, foglio scelto da `PROP_SHEET`); ogni ostacolo ha un peso di comparsa (primo numero di `OB`/`OBS`) e la densità della mappa è `OB_DENS`. L'arte procedurale resta come ripiego finché il foglio non è decodificato. Un ostacolo con `gd` (il ring dei Cell Game, 900 px) è un pavimento disegnato da `Renderer.groundProps` sotto a tutto e non blocca mai. Test: `beachprops [mappa]`.
-- **Oggetti con vita** (`src/js/objlife.js`, `ObjLife.draw`): ragni che camminano sul bordo di botti e casse o penzolano dal filo, gabbiani e corvi, granchi, candele con falene, gatti, mosche, cristalli, lanterne, rocce di lava che sputano braci. Solo grafica, disattivata con gli effetti ambientali spenti.
-- **Via del Serpente** (`snake_art.js`, `Snake` in `world.js`, `MapDirector.islands`): corpo lungo 22.000 px per lato (prima 12.000), 9 tipi di **isole fluttuanti** percorribili con 3 potenziamenti ciascuna (una volta sola, nome annunciato), uccelli, nebbia e Nuvola Speciale. Test: `snake_isles`, `snake_way`.
-
-**🧯 Meno caos, più leggibilità**
-- **Densità** (`SPAWN_K = 0,85`, `CAP_K = 0,78`): ritmo di comparsa a fine stage 8,5× (prima 12×), tetto nemici ×0,78; Facile 0,7 (prima 0,8). Eventi più radi (orde, branchi, Ondata di Kamikaze e di Tiratori, oggetti a terra, eventi «Qualcosa è apparso»), ×1,5 in modalità x2 (`evK`); ondata da 15 s con più nemici (ritmo ×2,6, tetto ×1,5, ogni 110-160 s di calma, la prima a 150-190 s). Il cumulo di monete a terra non c'è più. I nemici fuori schermo riappaiono davanti a te (dal lato in cui stai andando).
-- **Fuoco nemico con budget** (`SHOT_*`, `EB_CAP`, `Game.shotOK/shotRefill/shotN/shotCdK`): salve ×0,67, attesa ×1,8 (×2,6 sulla Via del Serpente), una **riserva di colpi condivisa** (12, ricarica 6/s; Via del Serpente 8 e 3,4/s), al massimo 90 proiettili nemici (prima 230). I proiettili delle abilità costano mezzo colpo. I proiettili dei boss non sono nel budget.
-- **Le armi distruggono i proiettili nemici** (`cutOne/cutC/cutBeam/cutArc`): raggi, esplosioni, aree, fendenti e proiettili. 
-- **Difficoltà** (poi ripristinata, vedi sopra): ogni 90 s i nemici nuovi crescevano di Salute +1% / Danno +1% (Normale) e +2% / +1% / Armatura +5% (Estrema). Il colpo ad area del Cavernicolo Gigante (Isola di Muten) carica 0,5 s in più.
-
-**⚖️ Armi, economia, sblocchi**
-- Colpo di Ki evoluto −50% di danno (`KI_EVO_DMG`). Kamehameha: durata del raggio 0,95 → 0,64 s sui livelli 1-5 (prima 0,6 s), evoluzioni 0,80 → 0,68 s e 0,78 → 0,62 s; larghezza ×1,2 / ×2,6 / ×3,1 (prima ×1 / ×1,8 / ×2,1); la base è celeste con un denso alone blu (`KAME_*`).
-- **Zenny −20% ovunque** (`ZMUL = 0,8`): monete 4-32, Borsa 20-1040, Élite 20, boss 48, bonus primo completamento 160 per stage, Desiderio 240, doppioni del Gacha 64 / 144 / 320 / 640 / 1280, vendita dei cimeli. Il Gacha estrae fino a **100 alla volta** (×1/×10/×100).
-- Negozio: **Cimelio Extra** (fino a 3 cimeli, 3.600 e 10.800 zenny) e **Lista Nera Armi** (fino a 10 ban, da 420 zenny ×1,4). Armi sbloccate vincendo uno stage con chi le possiede. Impostazione **«Rifiuta cimeli di rarità inferiore»**.
-- Trasformazioni: **Kaioken e Ultra Istinto solo per Goku**; gli altri Saiyan hanno «Furia Saiyan»; **Vegeta** parte da «Orgoglio Saiyan» e finisce con **Ultra Ego**; Re Kaioh usa Gravità x10/x100 e Maestro Celeste (`SSJ_FORMS`, linee `vegeta` e `saiyan2` in `data.js`).
-
-**🖥️ Interfaccia**
-- **Fine stage** riprogettata (titolo compatto con due Sfere del Drago, riepilogo e ricompense a sinistra, danno delle armi con icona e livello a destra); personaggi sbloccati come notifica di 5 s; **Infinita** come pulsante accanto a Riprova/Menu, bloccato finché lo stage non è completato in Estrema. Tasti **1-9/0** e **Spazio** in tutte le finestre di scelta. Sfera di Esperienza con animazione e suono che sale di tono. Nuovi sprite animati per i potenziamenti a terra (+22%). Note di patch con titolo, riassunto e gruppi.
-- **🧪 Test aggiunti:** `map_random`, `snake_isles` (isole, budget di fuoco, proiettili tagliati); screenshot: `shot_map`, `shot_props`, `shot_life`, `shot_loot`, `shot_patch`.
-
-### 🆕 Aggiornamento di ottobre 2026 (v35 → v40)
-
-**🎰 Gacha, Borsa dei trinket e Super Sfere del Drago (ultime novità)**
-- **Gacha** (pulsante nel menu principale, `src/js/gacha.js` + `src/js/ui_gacha.js`): i **ticket** trovati in partita si spendono per estrarre **trinket**. Tre tipi: **Ticket 1×** (1 estrazione), **Ticket 10×** (10) e **Ticket 10× Fortunato** (10 con probabilità più alte). Si estrae prima la **rarità**, poi uno dei trinket di quella rarità (aggiungere trinket non rende i Mitici più rari).
-
-| Rarità | Ticket normali | Ticket 10× Fortunato | Doppione (80% del valore di Zeno-sama) | Vendita in partita (stage 1) |
-|---|---|---|---|---|
-| Comune | 72% | 45% | 64 | (80 + 20) × 0,8 = 80 |
-| Raro | 20% | 32% | 144 | (180 + 50) × 0,8 = 184 |
-| Epico | 6% | 15% | 320 | (400 + 150) × 0,8 = 440 |
-| Leggendario | 1,5% | 6% | 640 | (800 + 400) × 0,8 = 960 |
-| Mitico | 0,5% | 2% | 1280 | (1600 + 1000) × 0,8 = 2080 |
-
-- **Estrazione animata**: una colonna di Sfere del Drago gira e si ferma sulla sfera della rarità (1, 2, 3, 5 o 7 stelle: più stelle, più scintille e suoni più alti). **Leggendario**: scritta dorata. **Mitico**: lampo, raggi, schermo che trema, scritta «MITICO!» e **suono da jackpot** (`gMythic` in `audio.js`). Con 10 estrazioni i trinket compaiono uno dopo l'altro con pop-in e suono; «Salta» mostra tutto subito. Ogni carta è marcata **NUOVO** o **DUPLICATO** (il doppione paga il valore di mercato di Zeno-sama in zenny).
-- **Borsa dei trinket** (dal Gacha e dalla selezione del personaggio): tutti i trinket ottenuti, con filtro per rarità, **ricerca per nome o effetto**, ordinamento per data di ottenimento (più/meno recenti), rarità o nome. Una voce per ogni coppia trinket + rarità.
-- **Slot Trinket** nella selezione del personaggio (a destra dello sprite): il **+** apre la Borsa e il trinket scelto parte con te in ogni partita (**uno solo**, alla rarità ottenuta, non conta come «trinket trovato» per gli obiettivi). Se lo sostituisci in partita, quello della Borsa resta tuo.
-- **Trinket trovati in partita**: quando li sostituisci o li rifiuti li vendi; **quelli ancora portati a fine partita entrano nella Borsa** (`Game.keepHeld` → `Progress.keepTrinket`, uno per cimelio + rarità; un doppione si vende, o ne migliora la perfezione se più alta; chip nella schermata finale). Vendita: ricevi il valore di mercato di Zeno-sama (+30% per livello di difficoltà dello stage, `trinketSale`) più un bonus per rarità (+20 / +50 / +150 / +400 / **+1000** per il Mitico). Non succede nel negozio di Zeno-sama né con il trinket della Borsa.
-- **8 nuovi trinket a sole statistiche** (Guscio di Muten Roshi, Gi da Allenamento Pesante, Pesi da Allenamento, Tessera Capsule Corp., Medaglia del Torneo, Maschera di Jackie Chun, Pergamena della Tartaruga, Cintura del Campione): esistono a tutte le rarità (statistiche minime nei Comuni, al massimo nei Mitici, con i tetti `TCAP`). Il pool conta 29 trinket, 22-25 per rarità.
-- **Fonti di ticket**: ogni **Élite** → Ticket 1×; ogni **boss** → 20% di un Ticket 10×; la quarta scelta del desiderio delle Sfere del Drago, **«10 Ticket»** → un Ticket 10×. I ticket si salvano a fine partita (anche in caso di sconfitta, una sola volta anche con «Continua») e sono elencati nella schermata finale; un contatore è nell'interfaccia in partita.
-- **Super Sfere del Drago** (`supPlan`/`updateSuperPlan`, `drawSuperBall`): negli **ultimi 3 stage** (Dimensione di Bu, Regno degli Dei, Torneo del Potere) le Sfere normali non compaiono più. Nel **55%** delle partite, tra il 28% e il 55% della durata, ne cade una **gigante dal bagliore dorato** a 520-700 px (freccia dorata ai bordi), **sorvegliata** da un anello di 16 nemici (+3 per livello di difficoltà, +30% vita) quando ti avvicini a meno di 340 px. Dalla v53 sono **3** (1-3 stelle, una per **Tamagami**), si salvano in `save.sball` e **restano tra una partita e l'altra**.
-- **Super Shenron**: con tutte e 3 le Super Sfere compare, come prima carta del menu degli stage, lo scenario speciale dove le 3 si consumano per un **Ticket 10× Fortunato** (porta al Gacha) oppure per **sbloccare gratis un personaggio a scelta** (porta alla selezione del personaggio, dove «Ottieni gratis» sostituisce l'acquisto).
-- **Modalità Test**: estrazioni gratis e illimitate; i trinket ottenuti spariscono quando la disattivi. **Salvataggio**: corretto `deepMerge` (un valore predefinito `null`, come lo slot Trinket, non può più far fallire il caricamento).
-- **🧪 Test aggiunti:** `gacha` (probabilità su 300.000 estrazioni, ticket, doppioni, borsa, slot, vendita in partita, fonti di ticket, Super Sfere, Super Shenron e tutte le schermate).
-
-**🔄 Aggiornamenti automatici e note di versione (ultime novità)**
-- **Nessuna run persa quando esce una versione nuova.** `build.py` marca ogni build con un *id* (hash di tutto il contenuto) e scrive `dist/version.json`; il workflow di GitHub Pages pubblica il file accanto a `index.html`. Il gioco lo legge (senza cache) dopo pochi secondi, poi ogni minuto e quando la scheda torna in primo piano. Se l'id è diverso compare un **avviso gigante con un conto alla rovescia di 10 secondi** (la partita continua e l'avviso non blocca i click); a zero la **partita in corso termina tenendo TUTTE le monete** (niente penalità del 25% per la sconfitta), il salvataggio cloud viene inviato e la **pagina si ricarica da sola**. Nei menu l'avviso è identico ma non c'è nessuna run da chiudere.
-- Sicurezze: non fa nulla su `file://`, se `version.json` manca o se il gioco gira in un'anteprima; dopo due ricariche inutili (copia vecchia in cache sul CDN) smette di insistere finché non si ricarica a mano; l'URL viene ripulito dal parametro `?u=`.
-- **Note di versione:** il tasto **📜** in alto a destra nel menu principale (con pallino rosso finché c'è una versione non letta) apre l'elenco, con la **data** e i cambiamenti divisi in **Novità**, poi **Correzioni** e **Bilanciamento** (le sezioni vuote spariscono). Per pubblicare una versione basta aggiungere un oggetto **in cima** a `PATCHES` in `src/js/patches.js` (testi `T('italiano','english')`, una riga per modifica).
-
-**🐉 Sfere del Drago e serie di uccisioni**
-- **Sprite nuovi** (`assets/ui/dragonballs.webp`, 7 frame 64×64 ricavati dall'immagine di riferimento): ogni sfera ha da **1 a 7 stelle** e in una partita non ne compaiono due uguali finché non le hai tutte; il contatore in basso a destra mostra quali hai.
-- **Rimbalzano davvero** sul terreno (lancio, rimbalzi sempre più bassi, poi un saltello ogni 1,6 s) con squash e stretch, **onda d'urto e scintille a ogni atterraggio**, bagliore pulsante, raggi rotanti, colonna di luce e stelline che brillano.
-- **Suono dedicato** alla raccolta: `assets/sphere_sound.mp3` (incorporato in `DBS_AUDIO=embed`, copiato in `site/assets/` dal workflow in modalità `link`; se manca si sente il vecchio jingle sintetico).
-- **Suono del level-up**: `assets/level_up_sound.mp3` (chiave `levelup` in `SFX_FILES`), riprodotto a velocità ×2 (`playBuf('levelup',.9,2)`); finché non è decodificato suona l'accordo sintetizzato. Il suono della scelta della carta (`lvl`) non cambia.
-- **Raccolta:** niente più attrazione e raggio ridotto (11 px invece di 20 + magnete): bisogna **passarci sopra**. Le frecce ai bordi dello schermo restano.
-- **Serie di uccisioni:** contatore in alto a destra (si azzera dopo 4 s senza uccisioni); ai traguardi **25, 50, 100, 200, 350, 500, 750, 1000…** un banner, onde di luce e un po' di esperienza (qualche % di livello). Quattro nuovi obiettivi (50 / 200 / 500 / 1000 di fila).
-
-**🌊 Ondate, élite, sfera garantita ed effetti ridotti**
-- **Ritmo a ondate** (`updateWave` in `src/js/game.js`): calma → **picco di 15 s** (spawn ×1,75, tetto ×1,2, banner rosso) → **respiro di 12 s** (spawn ×0,3, banner azzurro, **pioggia di 10-16 gemme** attorno al giocatore pari a circa il 9% di un livello, e le gemme dei nemici valgono **+50%**) → di nuovo calma per 38-52 s (× radice della durata). Il picco **non parte** durante un boss, a meno di 22 s da un'orda, durante le ondate di kamikaze o tiratori, a meno di 25 s da un boss o negli ultimi istanti; se arriva un boss a metà picco, finisce subito. Costanti in cima a `game.js` (`WAVE_SURGE`, `WAVE_REST`, `WAVE_RATE`, `REST_RATE`, `REST_GEM`...).
-- **Nemici élite** (`planElites`/`spawnElite`/`eliteDown`): da 2 a 6 per partita (uno ogni ~210 s), distribuiti tra i boss e mai a meno di 28 s da uno; nascono più forti a ogni uscita. Sono una versione grande (×1,35), dorata e con barra della vita del nemico più forte della lista (×9 vita, +45% danni, armatura, quasi immuni al respingimento, esperienza ×6). Compaiono come **stella dorata sulla barra di avanzamento**; non arrivano durante un picco o un boss. Alla sconfitta lasciano **sempre un forziere** (un potenziamento o un'evoluzione **più un oggetto garantito**, non la scelta da boss), monete e gemme.
-- **Borsa di zenny** (`bagValue`, `MapDirector.spawnLootPoint`): il mucchio di monete che ogni tanto compare sulla mappa è una **borsa** (~36% dei bottini a terra, circa una ogni 3 minuti) con il valore scritto sopra. Valore = `0,8 × 1000 × t / 1800`, arrotondato a 5 (min 20, max 1040): 20 all'inizio, ~265 al minuto 10, 400 al 15, **800 al 30** (prima del −20% agli zenny: 25-1300, 1000 al 30). Dura 90 s, ha la freccia sul bordo schermo ed è attratta dal magnete. Aggiunge al totale della partita il valore *base*: i bonus agli zenny (Avidità, Totem della Ricchezza, Jackpot…) si applicano a fine partita su tutto.
-- **Valore delle monete** (`coinValue`): ogni moneta a terra (nemici, bottini sulla mappa, Bubbles) vale `5 + 35 × t / 1800` zenny, **da 5 a 40 al minuto 30, mai oltre 40** (il tetto evita il farming con molti nemici). Il Jackpot e il Deposito di monete mantengono la propria scala.
-- **Negozio:** «Rimborsa tutto» restituisce il **100%** degli zenny spesi (senza percentuale sul pulsante).
-- **Sfera del Drago garantita** (`updateBallPlan`): ogni `clamp(durata×0,28; 100; 270)` secondi (la prima dopo il 75% dell'intervallo) ne cade una a 280-420 px dal giocatore, **mai due insieme, mai durante un boss, mai nell'ultimo minuto**; resta 150 s e la freccia ai bordi la indica. Il drop casuale dai nemici (0,07%) resta.
-- **Effetti ridotti** (Impostazioni > Video, `settings.reduceFx`, flag globale `FXL.on`): −60% particelle, meno fulmini, **niente scariche elettriche, colonne di luce, fiamme del Kaioken e raggi rotanti** delle sfere, bagliori al 60%, lampi del -70%, tremolio schermo ridotto, particelle d'ambiente dimezzate. Gli anelli d'urto restano perché portano informazioni di gioco. Testo tradotto in 6 lingue.
-- **Opacità degli effetti** (slider 0-100% sotto «Effetti ridotti», `settings.fxAlpha`, `FXL.a`): scala l'opacità di tutto ciò che è *del giocatore*: armi e proiettili, raggi, particelle, anelli, aure (trasformazioni, Kaioken, Berserk), cariche; 0% = invisibili. Il rendering avvolge `globalAlpha` del contesto (`fxBegin`/`fxEnd` in `renderer.js`) con una curva `a^1,7` (gli strati additivi si sommano oltre il 100%, quindi una scala lineare sembrerebbe invariata fino a valori bassi). **Non toccati**: sprite del personaggio, proiettili e zone di pericolo dei nemici, interfaccia.
-- **Menu principale:** titolo più grande (fino a 980 px, 45% dell'altezza) e più in alto; il badge **W.I.P.** ora è ancorato in basso a destra del titolo (non più sul bordo destro dello schermo).
-
-**⚡ Abilità, ricariche e prezzi (ultimi ritocchi)**
-- **Le abilità crescono con le trasformazioni:** a metà della linea ottengono un **bonus passivo** nuovo, nella **forma finale** un **effetto potenziato** (onda piccola → enorme, raggio doppio, scudo più lungo, Berserk di 13 s…); i testi sono nella scheda del personaggio e nel tooltip.
-- **Ricariche** ridotte del 30% e in calo a ogni livello (−0,2 s, al massimo −10 s). Il **Berserk di Broly** ora dà **+80% danni e +5 armatura** (+8 in forma finale).
-- **Prezzi di sblocco** ricalcolati su abilità, statistiche e forza nell'anime. Sotto la scelta della difficoltà non c'è più il testo sul x2 (si legge passando il mouse sul pulsante). Sprite: niente più linee sopra gli occhi.
-- La **barra di avanzamento** mostra di nuovo i traguardi: teschio rosso = boss, teschietti bianchi = orde, drago Shenron = boss finale.
-
-**🏆 Obiettivi, menu e Shop di Zeno (ultime novità)**
-- **Obiettivi:** ricompense molto più alte (es. Cacciatore 200, Sterminatore 500, completare uno stage 1.000, livello 10 → 50, 25 → 100, Leggenda 500, Esprimi un desiderio 500…) e **oltre 20 nuovi obiettivi** (Zeno-sama, cimelio Mitico, Kaioken ×20, Estremo, 30 minuti, serie di boss, partite giocate, personaggi sbloccati…), un obiettivo per ogni stage (anche Via del Serpente).
-- Ogni obiettivo ha una **barra di avanzamento** (es. 100/500 uccisioni, 1/4 stage) e la schermata ha **barra di ricerca** (nome o descrizione), filtro **Nascondi ottenuti** e ordinamento **Più vicini al completamento**.
-- **Glossario** e **Grimorio** non sono più nel menu principale: si trovano **in alto a destra nella selezione personaggio**.
-- Nel menu principale, a destra, il badge animato **W.I.P.** (work in progress) che rimbalza avanti e indietro.
-- **Shop di Zeno:** Zeno-sama rimbalza su e giù; gli oggetti mostrano una **nuvoletta** con gli effetti quando ci si avvicina (distanza media), mentre per **comprarli** bisogna stare proprio sopra l'oggetto: niente acquisti involontari.
-
-**⚡ Effetti e abilità (ultimi ritocchi)**
-- Il **modello del personaggio** è sempre disegnato sopra a raggi, proiettili ed effetti: nessuna abilità lo oscura.
-- **Elettricità crescente:** a ogni trasformazione le abilità (raggi, dischi, sfere, aure, meteore, onde…) si circondano di archi elettrici animati e scintille che orbitano, sempre più fitti (nella forma base non ce ne sono).
-- **Aura del Kaioken** costante e dinamica come nell'anime: bagliore rosso, fiamme a più strati che ondeggiano, anelli a terra, scintille che salgono; più grande e feroce a ×20. Resta sopra a tutti gli effetti.
-- **Kamehameha:** raggio che parte dalle mani e si estende, impulsi di energia che scorrono lungo il raggio, testa pulsante con anelli e scintille, sfera di carica con raggi rotanti. La portata cresce di +1% a ogni livello del personaggio (max +30%) e a ogni livello dell'arma. Stesso trattamento per il **Big Bang Kamehameha** (anche evoluto: testa gigante).
-- **Modalità Test:** non si guadagnano più zenny, obiettivi, sblocchi né progressi (come l'Ambiente di test).
-- Nella schermata degli stage basta **cliccare un livello** per passare alla scelta del personaggio.
-- **Freezer** ora ha 7 forme (con **Dorato**) e **Cell** 6 (Imperfetto → Semi-Perfetto con C-17 → Perfetto con C-18 → Super Perfetto → **Dorato** → **Nero**); a ogni forma salgono statistiche, armatura e vita massima (+12%).
-
-**🗺️ Livelli**
-- **Via del Serpente** (Stage 2): si cammina *solo* sul corpo del serpente, nemici e oggetti compaiono solo lì. Ogni 2:30 min (in tempo di gioco scalato sulla durata) i nemici diventano più ardui, fino a un'orda di mini-boss; boss finale **Janemba** in due fasi (forma grassa → animazione di trasformazione → Janemba vero con spada e raggio come nel film). Completarlo in Difficile sblocca **Gogeta**.
-- **Inferno** ora viene dopo le saghe di Freezer e Cell (Stage 8). Contiene **Freezer** e **Cell** come mini-boss che *si evolvono a ogni 1/N della loro vita*: Freezer in 7 forme (prima forma → seconda → terza → finale → 100% → **Freezer Dorato** → **Freezer Nero**), Cell in 6 (imperfetto → semi-perfetto, assorbe C-17 → perfetto, assorbe C-18 → super perfetto, dopo l'autodistruzione di Goku → **Cell Dorato** → **Cell Nero**). Ogni forma ha animazione di trasformazione, nuove mosse (Disco Distruttore, Raggio Mortale, Sfera della Morte, Supernova, Kamehameha di Cell, Cell Jr., Taiyoken…) e più armatura e più vita massima a ogni forma. Boss finale: Omega Shenron.
-- **Anteprima animata** della mappa (vista dall'alto) su ogni card di stage; ordine canonico aggiornato (vedi tabella sotto).
-
-**⏱️ Difficoltà e bilanciamento**
-- Durata uguale su tutte le mappe: **Facile 5 min · Normale 10 · Difficile 15 · Estremo 30** (nuova difficoltà *Estremo*: nemici con molta vita, mai one-shot ma pesanti, boss enormi).
-- Ogni **90 secondi** i nemici guadagnano **+10% vita e +2% danni** (cumulativo) e rilasciano **+5% esperienza**. In **Estremo**: **+15% vita, +5% danni, +15% armatura** e **+8% esperienza**.
-- **+10% vita** a tutti i nemici (boss compresi) in ogni modalità.
-- Negozio: potenziamenti leggermente più forti (es. armatura +1/livello, **rigenerazione +0,5 HP/s a livello**), **Scatto rimosso dal negozio** (resta quello base; in gioco si trova il raro trinket *Stivali del Vento*).
-- Fix: schermo bianco intermittente (stato del canvas ripulito ogni frame, raggi ellittici blindati).
-
-**💀 Morte e interfaccia**
-- Animazione di morte (rallentatore, musica che rallenta), menù entro 2 s con *Riprova*, **riassunto danni per arma e monete raccolte**.
-- Schermata di level-up più leggera: il gioco resta visibile sullo sfondo.
-- **Modalità Test** (Impostazioni): tutti gli stage e personaggi aperti e negozio gratis; disattivandola tutto torna com'era (con avviso di conferma).
-
-**👹 Nemici molto più vivi**
-- Nuovo sistema di **abilità dei nemici** (`src/js/skills.js`): ventagli di ki, anelli, balzi, terremoti, colpi dal cielo, mine, scudo, evocazioni, cura, grido di battaglia, sfere orbitanti, raggi, trottola, tana sotterranea, fendenti. Ogni abilità ha una **preparazione visibile** (nemico che si carica, "!" e alone) e ogni livello ha le sue combinazioni (Saibaman che lasciano pozze acide, Cell Jr. corazzati che evocano Cell Jr., Reaper che si interrano…).
-- **Rabbia e trasformazioni** dei nemici: sotto il 50% di vita entrano in furia (aura, più veloci e forti), alcuni **cambiano aspetto** (Super Saiyan, Oozaru, Majin potenziato, demone infuriato, soldato celeste ascendente, cyborg sovraccarico…) o si **evolvono** col tempo.
-- Animazioni procedurali: passo, respiro, preparazione e colpo, comparsa con "pop", gelatina per i blob, ondeggiamento dei fantasmi, battito d'ali, impatto al colpo.
-
-**🕳️ Segreti e Shop di Zeno**
-- Un segreto per livello, in un momento casuale tra 1:00 e la durata del livello: compare una **freccia con i metri** verso un **altare con un misterioso bottone rosso**. Premendo **E** (come per la Stanza dello Spirito e del Tempo) si apre un portale per lo **Shop di Zeno**.
-- Dentro: dimensione "chill" di **60 secondi**, tempo del livello fermo, **abilità e pet disattivati**, **nessuna rigenerazione passiva**. I trinket sono a terra davanti a Zeno-sama: ci si ferma sopra per comprarli (monete della partita), con una **tendina** che mostra oggetto e statistiche.
-- La **Fortuna** decide la rarità degli oggetti (fino a leggendario); **1% di oggetti Mitici**.
-
-**🍀 Trinket: uno alla volta, con rarità e Mitico**
-- Si porta **un trinket** (fino a **3** con il potenziamento del Negozio «Cimelio Extra», 2 acquisti); con tutti gli slot occupati, trovarne un altro (forziere, capsula, desiderio, Zeno) apre una **finestra di confronto** che mostra tutti quelli che porti e chiede quale sostituire (o se tenerli). L'impostazione **«Salta i cimeli inferiori»** (prima «Rifiuta cimeli di rarità inferiore») vende subito quelli peggiori di tutti i tuoi (rarità più bassa, o stessa rarità con meno **Perfezione**). Ogni cimelio ha una **Perfezione** 0–100% (statistiche −12%…+12%, 100% = aura Ultra Istinto): vedi l'aggiornamento parte 3.
-- Ogni trinket può avere rarità **Comune → Mitica**: le statistiche crescono con la rarità e hanno un tetto per rarità (es. danno: leggendario max 15%, mitico max 20%); i testi si aggiornano da soli. Gli altri tier sono stati ridimensionati di conseguenza. Trovare un trinket ha l'1% di chance di essere Mitico.
-- Achievement *Collezionista*: ora "Trova 6 cimeli in una partita".
-
-**🕰️ Stanza dello Spirito e del Tempo**
-- Gli scambi di statistiche hanno un malus dimezzato; la trasformazione è offerta solo se arriverebbe entro 10 livelli ed è **alternativa** all'arma (o l'una o l'altra); abilità e pet disattivati anche lì (la rigenerazione resta).
-
-**🧪 Test aggiunti:** `roster_unique`, `roster_smoke`, `testmode`, `snake_way`, `snake_boss`, `canvas_state`, `death_seq`, `hell_minis`, `skills_smoke`, `zeno`, `trinkets`, `trial_offers`, `waves` (ondate, élite, sfera garantita), `reducefx`, `dende`, `pets_bag` (compagni, borsa e valore delle monete), `refund`.
-
-### 🎵 Musica per mappa e 💨 Scatto universale
-**Musica:** metti un brano in `assets/` col nome della mappa (`android ruins.mp3`, `buu dimension.mp3`, `muten island.mp3`, `tournament of power.mp3`, `namek.mp3`…) e suona in quella mappa, in loop con dissolvenza incrociata. Tabella dei nomi e opzioni di peso in [`docs/MUSIC.md`](docs/MUSIC.md). **Scatto (Shift):** ora ce l'hanno tutti i personaggi. Pulsante in basso a sinistra accanto al Kaioken, ricarica 4 s (si migliora nel negozio con *Scatto Fulmineo*: −0,4 s e +15% danno per livello), infligge danni ai nemici che attraversa e dà invulnerabilità temporanea. **Sprite:** i personaggi con sprite del pack camminano normalmente mentre caricano un raggio e allungano il braccio solo allo sparo; boss e Saibaman con arte nel pack la usano (Cabba e Janemba inclusi).
-
-### 🎨 Nuovi sprite dal pack (32 personaggi) e scatto
-I personaggi usano ora gli sprite pixel art del pack in `assets/sprites/` al posto di quelli disegnati dal codice: Goku (tutte le forme, dal Kaioken all'Ultra Istinto), Vegeta, Trunks, Gohan, Piccolo, Crilin, Broly, Freezer, Cell, Bu, Bardock, Raditz, Vegito, Gogeta, Gotenks, Androidi 16/17/18, Cooler, Toppo, Hit, Kefla, Caulifla, Kale, Beerus, Whis, Jiren, Black, Zamasu, Frost e Turles. Durante la **trasformazione** compare la posa di carica con l'aura/esplosione disegnata nello sprite, e lo **scatto** (Slancio) usa la posa orizzontale con la scia di velocità. Il **Kamehameha** usa il raggio del pack (bocca, corpo, testa), tinto col colore dell'arma. I personaggi senza sprite nel pack mantengono la grafica generata dal codice. Autori e avvertenze: [`CREDITS.md`](CREDITS.md), strumenti di importazione in [`docs/SPRITES.md`](docs/SPRITES.md).
-
-### 🌦️ Stage vivi, meteo e giorno/notte
-- **Stage animati**: ogni pianeta ha laghi e zone di bioma (secco/rigoglioso), terreno animato (onde di luce, schiuma sulle rive, fessure di lava che pulsano, griglia del Torneo), alberi e bandiere che ondeggiano col vento, bagliori sugli ostacoli, fumo dai rottami, torce, e un sacco di scenografia in più. In giro ci sono **creature** (conigli, rane, granchi, lucertole, scorpioni, piccioni…) che scappano quando ti avvicini, farfalle, lucciole, uccelli con la loro ombra, ombre di nuvole, polvere, braci, ceneri, stelle cadenti e così via.
-- **Meteo** (pianure, Namecc, Isola di Muten, Pianeta Vegeta, Arena del Cell Game e altri): **pioggia, temporali con fulmini, nebbia, tempeste di sabbia e vento**, che arrivano e se ne vanno nel corso della partita.
-- **Giorno/notte** negli stage all'aperto, con alba e tramonto. Da **Impostazioni → Ambiente** puoi attivare/disattivare **ambiente animato**, **meteo** e **ciclo giorno/notte**, scegliere con una barra **quanto giorno e quanto notte** (100% = sempre giorno, 0% = sempre notte) e la **durata del ciclo**. Tutto è solo estetico: il gameplay non cambia, e un controllo automatico riduce gli effetti se il gioco rallenta.
-
-### 🏆 Torneo del Potere finale
-Il Torneo del Potere è ora l'**ultimo stage**: 20 minuti, 12 boss con statistiche molto più alte e **evoluzioni durante lo scontro** (Dyspo, Bergamo, Basil, Lavender, Ribrianne, Cabba, Caulifla, Kale, Frost, Hit, Toppo e **Jiren**, che si evolve fino a *Ira Ultima*).
-
-
-### 🏟️ Arena del Torneo del Potere
-Il Torneo del Potere (tema interno `void`) si combatte su **un'arena ellittica chiusa** (`TOPARENA` in `world.js`: 4800 × 4032 px, prospettiva di un cerchio) disegnata a codice in `top_arena.js` (`TopArt.draw`): fasce concentriche di triangoli, blocchi e strisce con colori scambiati a ogni giro, bordo con parete laterale, alone verde acqua e nebulose. Al centro c'è la **torre** (`TopArt.tower`, entità ordinata in profondità; piede solido r=50) con la sua **ombra** (`TopArt.shadow`). Tutto resta dentro: `TOPARENA.clamp` per giocatore, nemici e boss; `spawnSpot` ruota la direzione finché cade dentro; `dryPos` trattiene drop, forzieri e gemme; ostacoli (`World.cell`) e zone (`World.zone`) rifiutano i punti fuori.
-
-### 🖼️ Nuovo logo e menù dinamico
-- Il titolo testuale è sostituito dal **logo ufficiale del progetto** (`assets/ui/logo.webp`, incorporato nel file finale).
-- Lo sfondo del menù è ora una **panoramica veloce degli stage** (cambio con taglio diagonale) con **personaggi casuali** che compaiono, **si trasformano**, usano le loro **abilità** (raggi, nova, cloni, barriere…), lanciano onde di ki ed **emote**. Il tutto è **sfocato** per non disturbare i pulsanti.
-
-![Menu dinamico](docs/screens/menu-dynamic.jpg)
-
-- **Strutture di gioco** (`Renderer.getFeat`/`drawFeature`): le 8 strutture (`shrine`, `font`, `totem`, `spring`, `altar`, `chamber`, `secret`, `zenoportal`) sono ritagli di `assets/sprites/props/featprops.png` (sorgente: `_sorgenti/props/strutture_ostacoli.jpg`), `ws` in `getFeat` = px di mondo per px di sprite; `secretDown` è il pulsante premuto (senza «?»). Finché il foglio non è decodificato resta il disegno vettoriale di prima.
-- **Estremo più morbido** (`Game.xEase`, `mkEnemy0`): solo in Estremo (anche x2) i nemici normali hanno Salute ×0,30 / danno ×0,55 a inizio stage, ×1 al 65% / 50% (`.3+.7·(p/.65)^1,5`, `.55+.45·p/.5`), poi calano fino a Salute −12% / danno −10% a fine stage; i boss non cambiano. x2: XP ×0,30 (era ×0,18) in `recalc`.
-- **Modalità test riservata** (`TEST_OWNER`/`TEST_LIST`/`TEST_DEV`/`testHash` in `config.js`, `Cloud.isOwner`/`inFile`/`canTest`/`checkTester`/`testers`/`addTester`/`delTester`, `App.enforceTest`, `UI.testerBox`): la modalità test (Impostazioni > Generale) e la voce «Dati di gioco» (Gameplay, solo a modalità test accesa) esistono per il proprietario e per gli autorizzati. L'indirizzo del proprietario e la lista fissa sono in `tester.config.json` (nella `.gitignore`; esempio: `tester.config.example.json`) o nelle variabili `TEST_OWNER`/`TEST_LIST`: `build.py` mette nella pagina solo `testHash(email)`. Gli altri si aggiungono dal gioco (menu a tendina «Giocatori autorizzati») nella tabella `public.testers` di `supabase/schema.sql`. `DBS_TEST=1` = modalità test per tutti (solo sviluppo). `Telemetry.on`: si registra sempre in background, l'interruttore agisce solo con la modalità test accesa.
-- **Forzieri di loot** (`CHEST_W`/`CHEST_RAR` in `data.js`, `Game.rollChestRar`/`chestRarWeights`/`chestRewards`, `Renderer.drawChest`): 5 rarità (Comune 40 · Raro 39 · Epico 15 · Leggendario 5 · Mitico 1 %), tirata alla comparsa (boss, élite, forziere a tempo) e salvata in `c.rar`; la Fortuna moltiplica i pesi (`1+L·k`). Contenuto: sempre +1 livello arma `w` (o l'evoluzione pronta) e `t` cimeli, sempre lo stesso numero (Comune 0, Raro 2, Epico 3, Leggendario 4, Mitico 5), tutti diversi; `g` = 1 è garantito della rarità del forziere (`pickTrinket(r0,…)`, rarità fissata) e `pb` (Mitico, ×1,2) moltiplica le probabilità di «X o più» di `rollPf(luck,boost)` per i cimeli Mitici. Con armi tutte al massimo e nessuna evoluzione pronta, lo slot arma diventa un cimelio in più. Premio finale: `finishRun` non ha più moltiplicatore (`mult` = 1, 0,75 se sconfitta).
-
-### 📖 Grimorio ed evoluzioni con ricetta
-- Un'arma evolve quando è **al livello massimo** *e* hai il **potenziamento giusto** (es. **Zenkai + Kamehameha**); l'evoluzione si ottiene da un **forziere**. Ogni arma ha due ricette (una per evoluzione).
-- Nelle carte del level up compare un **tooltip con icone**: "Il potenziamento «Zenkai» evolve l'arma «Kamehameha»". Sull'HUD, un'arma al massimo mostra l'icona del potenziamento che le manca (o un **!** quando è pronta). Se un'arma è al massimo, il potenziamento che le serve compare più spesso.
-- La **seconda evoluzione** si sblocca **completando tutti gli stage (Normale o Difficile) con quell'arma nell'equipaggiamento**.
-- **Grimorio**: elenca tutte le armi, le evoluzioni e le ricette; ciò che non hai sbloccato è **censurato**. Si apre con **Esc** in partita (scheda *Grimorio*), dalla **scelta personaggio** e dal **menù principale**. Mostra anche i progressi sugli stage completati.
-
-![Grimorio](docs/screens/grimoire.jpg)
-![Grimorio in partita](docs/screens/grimoire-pause.jpg)
-![Tooltip di evoluzione](docs/screens/evo-hint.jpg)
-
-### 🔴 Gemma rossa (accumulo esperienza)
-Quando troppe gemme di esperienza affollano la mappa (oltre 90), quelle **più lontane si fondono in un'unica gemma rossa** che accumula l'XP e riduce il lag. La gemma resta **sempre appena fuori dallo schermo** (se ti allontani, ti segue lungo lo stesso lato) (nessun indicatore: sta a te scoprire da che parte). Raccoglila camminandoci contro (o con il Magnete) per ricevere tutto l'XP in una volta.
-
-### 🫘 Borsa Senzu
-- Nel menù del level up può comparire una carta **Fagiolo Senzu** (solo lì, **raramente**, circa 1 level up su 10): il fagiolo va nella **borsa** (fino a **3**). Con la borsa piena la carta cura subito il 50% e alza una statistica a caso.
-- Si mangia in partita con **H** (o dal **pulsante a schermo** accanto a quelli del pet e dell'abilità) e cura il **40%** della vita; non si spreca a vita piena.
-
-![Carta Senzu](docs/screens/senzu-card.jpg)
-
-### 🎵 Musica di Namek
-Il pianeta **Namek** ha una traccia dedicata, in **loop** per tutta la durata dello stage (durante i boss torna la musica sintetizzata e poi riprende da dove era). Le tracce (menu e Namek) sono state generate con **Suno** e sono incluse in `assets/` (vedi `assets/README.md`).
-
-### ⚡ Trasformazioni e Kaioken
-- **Trasformazioni spettacolari**: durante la carica il tempo rallenta, il personaggio è invulnerabile e l'aura si espande; al rilascio parte un'**onda d'urto che attraversa tutto lo stage** (respinge, stordisce e danneggia i nemici, cancella i proiettili nemici) con effetti di luce, fulmini e suono dedicato.
-- **Requisiti più alti**: ogni forma richiede almeno **+10 livelli** rispetto alla precedente (livelli 14, 24, 36, 50, 66, 84, 104, 128).
-- **Niente ritorno alle forme precedenti**: una volta trasformato non ha senso depotenziarsi.
-- **Kaioken x10 / x20**: dopo la forma Kaioken, la linea Saiyan può attivare con `R` (premi di nuovo per cambiare livello, fino a spegnere):
-
-  | Modalità | Statistiche | Prezzo in vita |
-  |---|---|---|
-  | x10 | danno ×2, velocità ×1,4, ricarica ÷2 | −4 HP/s |
-  | x20 | danno ×4, velocità ×2,2, ricarica ÷4 | −8 HP/s |
-
-  Si disattiva quando vuoi e si spegne da solo sotto il 10% di vita; non si può attivare sotto il 20%.
-
-![Trasformazione](docs/screens/transformation.jpg)
-![Kaioken x20](docs/screens/kaioken.jpg)
-
-### 😡 Berserk di Broly
-Broly ha un'abilità esclusiva sullo stesso tasto del Kaioken (`R`): **perde il controllo per 10 secondi**.
-- Attacca a caso i nemici vicini con scatti ed esplosioni a ripetizione.
-- I **comandi sono invertiti** e **non si può disattivare**.
-- Bonus: danno ×1,8, armatura +3, danni subiti −30%.
-- Aura verde perpetua con fiamme, anelli che si espandono, fulmini e **l'urlo di Broly**.
-- Cooldown di 45 secondi.
-
-![Berserk](docs/screens/berserk.jpg)
-
-### 🆕 Terza ondata di novità: suoni arcade, sprite HD e 16 nuovi personaggi
-
-**🕹️ Suoni arcade nei menù.** Ogni pulsante ha ora un suono **in stile arcade, forte e ben udibile** (onde quadre "chip"): un *tick* quando ci passi sopra o ti sposti con tastiera/pad, un *coin-blip* al clic, una discesa di note per **Indietro**, una **fanfara** per **Avvia partita**, un *ding* per gli acquisti e un *buzz* quando provi a usare un pulsante disattivato. Il suono vale per tutti i pulsanti HTML (menù, pausa, level up, modali) e usa il volume degli effetti.
-
-**🎨 Sprite dei nemici e dei boss in alta definizione.** Tutti i nemici, i boss e i compagni sono ora disegnati su una griglia di pixel **più fine** (da 6 a 10 pixel per unità, scelta in base alla dimensione a schermo) con un nuovo passaggio di rifinitura: **contorno colorato** (non più nero piatto), **luce di bordo** in alto a sinistra, **ombra di nucleo** in basso a destra e sfumature morbide. Le creature sono state **ridisegnate da zero** con molto più dettaglio: Saibaman (denti, orecchie, sfera-bomba), Cell Jr., drone con propulsori, gelatine lucide, sfera del vuoto con occhio, spettro incappucciato, **Corazzato/Colosso** a piastre con nucleo luminoso, **lupi** (anche il lupo meccanico), **Raptor** e **Dinosauro** (tirannosauro) distinti, **pterodattili** con ali membranose e il **Scimmione Gigante** muscoloso. I nemici umanoidi hanno **teste arrotondate**, occhi con palpebre e riflessi, rivetti sulle armature, fibbie e ciocche di capelli.
-
-![Nemici in HD](docs/screens/enemies-hd.jpg)
-![Glossario](docs/screens/glossary-hd.jpg)
-
-**👥 16 nuovi personaggi giocabili (57 in totale)**, ognuno con arma/e iniziali, abilità, linea di trasformazioni, prezzo e condizione di sblocco propri:
-
-| Personaggio | Parte con | Abilità | Sblocco |
-|---|---|---|---|
-| **Videl** | Calcio Dinamite + Ki | Calcio Volante (scatto) | Livello 18 in una partita |
-| **Bulma** | Colpo di Ki | Invenzione Geniale (più monete del Colpo di Fortuna) | Evolvi un'arma in una partita |
-| **Yajirobe** | Spada | Scorta di Senzu (cura) · **parte con 1 Senzu in borsa** | 5.000 nemici in totale |
-| **Great Saiyaman** | Colpo di Ki | Posa Eroica (critici) | Completa lo Stage 3 |
-| **Chiaotzu** | Raggio Perforante | Paralisi Psichica (stordisce) | Stage 6 in Difficile |
-| **Recoome** | Cannone d'Impatto | Calcio Recoome (scatto) · gigante | Completa lo Stage 2 |
-| **Guldo** | Salto Temporale | Fermatempo | 15 boss in totale |
-| **Turles** | Meteora + Ki | Frutto dell'Albero (assorbe) | Completa lo Stage 7 |
-| **Nail** | Lancia Ribelle | Spirito Guerriero (potenziamento) | 2.500 nemici in una partita |
-| **Re Kaioh** | Kaioken | Allenamento (potenziamento) | 4 trasformazioni in una partita |
-| **Pan** | Sfere Eccentriche + Danza | Sangue Saiyan (potenziamento) | 5 trasformazioni in una partita |
-| **Dabura** | Spada + Granata Infernale | Onda Demoniaca (nova) | 60 boss in totale |
-| **Mr. Popo** | Fulmine Angelico | Scudo del Genio (barriera) | 80.000 nemici in totale |
-| **Uub** | Kamehameha + Sfere | Raggio Puro | Stage 4 in Difficile |
-| **Frost** | Raggio Perforante + Fulmine | Raggio Mortale (nova) | Completa uno stage in modalità ×2 |
-| **Re Piccolo** | Sfera della Distruzione | Rigenerazione Demoniaca · gigante | 250 boss in totale |
-
-Nuove linee di forme: Chiaotzu, Turles, Demoni (Dabura, Re Piccolo), Squadra Speciale (Recoome, Guldo), Re Kaioh, Frost e Uub; Videl, Pan, Bulma, Yajirobe e Mr. Popo usano la linea Umana, Nail quella Namecciana, il Great Saiyaman quella Saiyan. Nuovi stili di capelli: codini, caschetto e cresta.
-
-![Nuovi personaggi](docs/screens/new-characters.jpg)
-
-**🎨 Carte di level-up più leggibili.** Ogni carta di potenziamento ha ora un **colore che indica cosa fa** (🔴 danno, 🔵 velocità, 🟢 salute/cura, 🟡 ricarica, 🟣 raccolta, 🩵 esperienza, 🟠 area, ⚪ armatura) con una **grande icona sfumata sullo sfondo** (spada = danno, cuore = salute, fulmine = velocità, orologio = ricarica, scudo = armatura, magnete = raccolta, stella = esperienza) e un riquadro con l'effetto in chiaro (es. «+15% danno»). Le tecniche mostrano una riga per ogni statistica che cambia (Danno 10,5→13…).
-
-**🌐 Hosting.** Nuova guida [`docs/HOSTING.md`](docs/HOSTING.md) e workflow GitHub Actions per pubblicare il gioco sul proprio dominio a ogni push.
-
-**☁️ Account e salvataggi cloud (opzionale).** Con un progetto [Supabase](https://supabase.com) gratuito il gioco ha **login/registrazione** (email + password, Google opzionale, reset password) e **salva i progressi per account**, sincronizzati su ogni dispositivo. Si può sempre giocare **come ospite**; se al primo accesso esistono progressi sia sul dispositivo sia nel cloud, il gioco chiede quale usare. Guida completa: [`docs/SUPABASE.md`](docs/SUPABASE.md) (schema SQL in [`supabase/schema.sql`](supabase/schema.sql)). Misure di sicurezza e impostazioni consigliate: [`docs/SECURITY.md`](docs/SECURITY.md).
-
-**🖼️ Sprite dei personaggi in HD + spritesheet personalizzati.** I personaggi giocabili usano ora lo stesso motore HD di nemici e boss (pixel più fini, contorno colorato, luce di bordo e ombra). In più puoi **sostituire la grafica con i tuoi spritesheet PNG** (forma base e trasformazioni, con camminata e attacco): metti i file in `assets/sprites/` e ricompila. Guida e modello vuoto in [`docs/SPRITES.md`](docs/SPRITES.md).
-
-### 👥 Nuovi personaggi (prima ondata)
-Dallo stile di *Sparking! ZERO*: **Broly** (con tutte le forme), **Zamasu**, **Zamasu Fuso**, **Goku Black**, **Caulifla**, **Kale**, **Dyspo**, **Dr. Gero**, **Androide 21**.
-Forme più **canoniche**:
-- **Freezer**: Seconda forma → Terza → Forma finale → 100% → **Golden Frieza** → **Black Frieza**.
-- **Cell**: Semi-Perfetto → **Perfetto** → Super Perfetto → **Cell Dorato** → **Cell Black**.
-- **Broly**: Super Saiyan → Leggendario → Full Power → Forma furiosa → SSJ Broly → SSJ Full Power.
-- Zamasu, Goku Black, Zamasu Fuso, Caulifla e Kale hanno ciascuno la propria linea di forme.
-
-I **prezzi di sblocco sono molto più alti** (da 8.000 a 300.000 zenny): oltre al requisito di gioco si possono comprare, ma serve davvero farmare.
-
-### 🐾 Compagni (pet)
-Prima di ogni partita scegli un aiutante in base alla **razza**. Segue il giocatore, **raccoglie le gemme di esperienza vicine** e ha un'**abilità attiva** (`Q`) con ricarica:
-
-| Compagno | Razza | Abilità (potenziata verso il basso) | Ricarica |
-|---|---|---|---|
-| Dende | Namecciano | **Cura**: ripristina il 30% della vita | 30 s |
-| Mini Shenron | Drago | **Raccolta magica**: attira le gemme entro 400 px e dà un bonus XP del 5% del livello | 40 s |
-| Mini Droid | Androide | **Scudo di energia**: invulnerabile per 1,5 s | 40 s |
-| Bubbles | Animale della Terra | **Banana fortunata**: 3 monete a terra e +5% fortuna per 50 s | 36 s |
-| Mini Buu | Majin | **Raggio caramella**: stordisce i nemici entro 210 px per 1 s (0,4 s sui boss) | 28 s |
-| Saibaman | Saiyan (pianta) | **Autodistruzione**: esplosione ad area (raggio 160 px, 12 danni + 0,8 per livello) | 22 s |
-
-Le abilità dei pet sono state **ridimensionate di almeno tre quarti**: aiutano, ma non risolvono più la partita.
-
-### 🌀 Genkidama potenziata
-- La sfera **diventa più grande a ogni livello** dell'arma e ancora di più nelle **due evoluzioni** (più grande anche l'area d'impatto).
-- Nelle evoluzioni, quando la sfera cade: **il terreno trema** (scosse ripetute dello schermo e onde d'urto), si aprono **crepe incandescenti** e la zona **brucia per 5-7 secondi** infliggendo danno nel tempo **contenuto** (circa il 11-13% del danno della sfera ogni mezzo secondo).
-
-### 🍀 Fortuna, totem e trinket
-- Il **Totem** compare **una sola volta per partita** (premi `E`) e ti offre **3 poteri a caso su 8**:
-
-| Totem | Effetto |
+| Azione | Tasti |
 |---|---|
-| Fortuna | +1% fortuna a ogni level up, per tutta la partita |
-| Rischio | XP ×2 ma +50% danni subiti per 180 s |
-| Vitalità | +15% salute massima, +0,4 HP/s e cura immediata del 30% |
-| Furia | +12% danno ma ricarica +8% più lenta |
-| Ricchezza | +35% zenny e +25% raccolta |
-| Guardiano | una barriera blocca un colpo, si ricarica ogni 25 s |
-| Tempesta | ogni 20 s (−20% a ogni trasformazione) un fulmine colpisce fino a 4 nemici vicini |
-| Spirito | ogni 20 s (−20% a ogni trasformazione) un impulso cura dal 6% fino al 12% e stordisce i vicini |
+| Muoversi | `W` `A` `S` `D` / frecce |
+| Abilità del personaggio (Kaioken, Berserk, raggi, cloni, ferma tempo…) | `R` o `X` |
+| Scatto (danni sul percorso e invulnerabilità breve) | `Shift` |
+| Fagiolo Senzu (cura 50% e un bonus alle statistiche, dalla borsa) | `H` |
+| Abilità del compagno | `Q` |
+| Interagire (altari, totem, forzieri, Macchina dello Scambio, Stanza dello Spirito e del Tempo…) | `E` o `F` |
+| Cambiare bersaglio delle armi | `Tab` |
+| Pausa (mappa, statistiche, cronologia eventi, impostazioni) | `Esc` o `P` |
+| Scegliere una carta nelle finestre di scelta | `1`–`9` (`0` = la decima) |
+| Premere il pulsante evidenziato / uscire dalla Stanza dello Spirito e del Tempo | `Spazio` |
+| Conferma / indietro nei menu | `Invio` o `Spazio` / `Esc` o `⌫` |
+| Zoom della telecamera | rotella del mouse (50–150%, a passi del 10%) |
+| Contatore FPS e diagnostica | `F2` o `` ` `` |
 
-- **Trinket con rarità** (Comune, Raro, Epico, Leggendario): la fortuna sposta le probabilità verso le rarità alte.
-- **Ogni boss lascia un forziere con 4 trinket tra cui scegliere 1**; con la fortuna le opzioni salgono **fino a 10**.
+Il **Kamehameha** si carica tenendo premuto il tasto dell'abilità. Tutti i tasti si riassegnano da **Impostazioni → Comandi**.
 
-![Scelta del trinket](docs/screens/trinket-pick.jpg)
-![Totem](docs/screens/totem.jpg)
+### Gamepad
 
-### 🎯 Abilità uniche per ogni personaggio
-Ogni personaggio ha una **abilità attiva** (tasto `R` o **pulsante a schermo** accanto a quello del pet, con nome, ricarica e stato). I pulsanti per Kaioken (Goku) e Berserk (Broly) sono lì. Sono **16 meccaniche** diverse, tarate per non essere troppo forti:
+| Azione | Pulsante |
+|---|---|
+| Muoversi / menu | D-pad |
+| Conferma / interagire | A |
+| Indietro | B |
+| Abilità del compagno | X |
+| Abilità del personaggio | Y |
+| Fagiolo Senzu | LB |
+| Scatto | RB |
+| Cambiare bersaglio | pressione dello stick sinistro |
+| Pausa | Start |
+| Diagnostica | Select |
 
-![Pulsante abilità](docs/screens/ability-button.jpg)
+### Telefono e tablet
 
-Kaioken ×10/×20 · Berserk · Raggio potente · Nova di ki · Rigenerazione · Accecamento · Scatto invulnerabile · Cloni (3, sparano) · Occhio critico (+35% crit) · Barriera · Assorbimento · Fermo tempo (1,8 s) · Cancellazione · Riavvolgimento (recupera 6 s di vita persa) · Jackpot · Potenziamento temporaneo.
-
-Le abilità sono descritte nel pannello del personaggio.
-
-### 🌍 Ambiente: trappole e zone di cura
-Nei livelli compaiono (non troppo spesso) **zone di cura passiva** (3% della vita massima al secondo) e **trappole a punte** che si attivano a intervalli e danneggiano **sia te sia i nemici**. Imparare a posizionarsi diventa parte della strategia.
-
-![Zona di cura](docs/screens/heal-zone.jpg)
-![Trappola](docs/screens/trap.jpg)
-
-### 🕰️ Stanza dello Spirito e del Tempo ampliata
-Ora dura **1 minuto**, con **arena più grande**, **ostacoli** (pilastri) e **3 pulsanti** da calpestare che attivano **trappole che danneggiano il boss** (ma anche te, se resti nel raggio).
-- Il boss ha la **barra di vita** e **attacchi ad area sostanziali** (zone rosse di avvertimento: schianto, nova, meteore, raffiche, onde).
-- Alla fine puoi spendere le monete in un negozio: gli **upgrade già acquistati o gratuiti spariscono** dalla lista e, **se li hai presi tutti, il negozio si chiude** e esci dal rift.
-
-![Stanza dello Spirito e del Tempo](docs/screens/spirit-room.jpg)
-
-### ⚔️ Armi: 5 livelli → evoluzione → 5 livelli → seconda evoluzione
-- Ogni arma ha **5 livelli**; al massimo, il forziere la **evolve** e riparte da 1 per **altri 5 livelli** (e poi la seconda evoluzione, dopo aver completato tutti gli stage con quell'arma).
-- Ogni livello delle evoluzioni dà poco: **+5% danno, −1,5% ricarica, +2% area** (niente numeri esagerati).
-- **Colpo di Ki**: molti meno proiettili (da 1 a 3 prima dell'evoluzione, 4 al massimo) e **perforazione +1 solo nella seconda evoluzione**.
-- La **Genkidama**, il **Kamehameha** e gli altri raggi hanno nuovi effetti sonori (vedi sotto).
-
-### 👹 Nemici più duri, ondate di tiratori e mosse nuove
-- Più **vita** per tutti i nemici e i boss, e **danni molto più alti** (a inizio partita senza negozio non fanno più 8-9 punti).
-- I nemici da distanza **non sono più sparsi per tutta la partita**: arrivano in **ondate di 1 minuto** ogni 2-3 minuti, con avvertimento; poi spariscono.
-- Nuove **mosse**:
-  - **Salto** (lupi, raptor): si accovacciano, saltano in arco e atterrano con un'onda d'urto.
-  - **Schianto** (bruti, dinosauri, colossi…): fermi, un **cerchio rosso** avvisa e poi esplodono ad area.
-  - **Zig-zag** (cellule, fantasmi, pterodattili…): avanzano in modo ondeggiante.
-- Dopo il passaggio di trasformazione c'è ora **il tempo di vedere l'animazione** (circa 4 s) prima del level up.
-
-### 🔥 I boss si potenziano
-Se impieghi **troppo tempo** (circa 85 s, poi 70 s) a sconfiggere un boss, questo **si trasforma**: si carica con aura e fiamme, rilascia un'**onda d'urto**, **recupera il 30%** (22% la seconda volta) della vita, diventa più forte e veloce e **impara nuovi attacchi** (schianto, nova, lancia, tempesta, meteore, raffiche). Fino a 2 volte per boss; è invulnerabile durante la carica.
-
-![Boss che si potenzia](docs/screens/boss-powerup.jpg)
-![Zona di schianto](docs/screens/slam-zone.jpg)
-
-**Attacchi firmati dei boss.** Ogni boss ha ora 3 attacchi speciali in più (il boss finale li ha tutti e 6), scelti tra: **Muro di ki** (una parete di colpi con un varco), **Raggi incrociati** (quattro linee di esplosioni con avvertimento), **Lampo** (si teletrasporta vicino a te e spara a ventaglio), **Sfere a ricerca** (orbe che ti inseguono), **Vortice** (ti risucchia verso di lui prima di esplodere) e **Cerchio mortale** (otto esplosioni che si chiudono attorno a te). Gli attacchi sono sempre segnalati da cerchi rossi o proiettili visibili.
-
-**Durante i boss:** i nemici normali spawnano un po' meno (−30% di ritmo, −20% di massimo). Nel **boss finale** invece la folla **aumenta** (+50% ritmo, +30% massimo) e i nemici hanno **più vita e armatura** ma infliggono un po' meno danni (−15%); il boss finale ha **+30% vita**, **più armatura** e infligge **−10% di danni**.
-
-### 🔊 Audio rinnovato
-Nuovo **Kamehameha elettrico** (carica crepitante e sparo distorto), suoni più "da anime" per Ki e per tutte le armi, effetti dedicati alle **evoluzioni**, **vento d'aura** nelle trasformazioni e suoni per ogni abilità e mossa nemica.
-
-### ⚖️ Bilanciamento
-- **Tutti i potenziamenti che aumentano il danno sono a tempo** (es. oggetti raccolti +15% per 12 s, altari 30 s).
-- **Esperienza ridotta ulteriormente** e curva dei livelli più lenta: forme alte si raggiungono solo negli stage lunghi e difficili.
-- I nemici non uccidono più in un colpo: il danno subito per colpo è limitato a una frazione della vita massima (anche meno per trappole e proiettili dei boss).
-- Livelli facili meno banali, livelli difficili senza forme esagerate.
-
-### 🎨 Animazioni, interfaccia e audio
-- **Personaggi animati** nel menu di selezione (respirano, sbattono le palpebre, fanno espressioni e pose) e **in partita** (emote al level up, espressioni di dolore o sorpresa, sorriso dopo un boss).
-- Gli **zenny** non compaiono più nel menu principale; altrove sono mostrati con un'**icona-moneta d'oro** al posto della "Z".
-- **Musica del menu** a file (propagata anche alla selezione personaggio); le altre musiche sono sintetizzate.
-- Interfaccia in **6 lingue**: Italiano, English, Español, Français, Deutsch, Português (i nomi dei contenuti di gioco sono tradotti solo in italiano e inglese, le altre lingue usano l'inglese).
+Joystick virtuale a schermo e pulsanti grandi con le icone di **abilità**, **Scatto**, **Fagiolo Senzu**, **compagno** e **Interagisci** (`E`). L'interfaccia si rimpicciolisce per lasciare più campo visibile, la mappa in pausa si trascina con il dito.
 
 ---
 
-## Meccaniche di gioco
+## Modalità di gioco
 
-### Combattimento e armi
-- **Attacco automatico**: ogni arma ha il suo comportamento (proiettili, raggi, orbite, zone di fuoco, fulmini a catena, meteore…).
-- Puoi portare **fino a 5 armi** e **5 potenziamenti passivi diversi**, ciascuno **fino al livello 5** (le armi poi si evolvono e hanno altri 5 livelli per evoluzione).
-- **22 armi**: Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Kaioken (aura), Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Calcio Dinamite.
-- **Evoluzioni**: un'arma al livello massimo può evolversi (tramite forziere). Ogni evoluzione richiede **arma al massimo + potenziamento specifico** (vedi Grimorio). Una **seconda evoluzione** per arma si sblocca **completando tutti gli stage (Normale+) con quell'arma nell'equipaggiamento**.
-- Le armi si **sbloccano** nella pool dei level up semplicemente **vincendo uno stage** con un personaggio che parte con quell'arma (un secondo personaggio con la stessa arma non sblocca nulla di nuovo). Con il potenziamento del Negozio «Lista Nera Armi» (fino a 10) si possono **bandire** armi: non compaiono più come nuove armi tra i potenziamenti.
-- **Passivi**: Zenkai (+10% danno), Vigore (+20 HP), Volo veloce (+6% velocità), Scouter (nessun effetto diretto: serve per evolvere alcune armi), Camera Gravitazionale (−5% ricarica), Armatura, Fagioli Senzu (rigenerazione), Meditazione (+8% XP).
+| Modalità | Come funziona |
+|---|---|
+| **Classica** | Una partita da 30 minuti per stage che finisce con il boss finale. Una sola difficoltà: la sfida cresce col tempo (nemici più numerosi dal minuto 3, più forti ogni 5 minuti, miniboss e élite). |
+| **x2** | Si sblocca raggiungendo il boss finale di uno stage: la partita dura la metà, l'esperienza è ridotta, i nemici sono più duri. Nessun moltiplicatore di zenny. |
+| **Infinita** | Si sblocca vincendo lo stage («Continua»): le armi salgono fino al Lv 100, la ricarica può scendere a 0,2 s, il negozio di Zeno-sama compare ogni 5 minuti e ogni 50 livelli ricevi 100 monete mentre i nemici diventano più forti. Dal menu di pausa imposti priorità e scelta automatica dei potenziamenti. |
+| **Avvio rapido** | Parte subito con l'ultimo personaggio e stage usati. |
+| **Sfida settimanale** | Stesso stage, personaggio e seme per tutti per una settimana: il primo in classifica ti torna contro come fantasma. |
+| **Co-op** | Fino a 4 giocatori nello stesso mondo (BETA). Vedi [Online e co-op](#online-e-co-op). |
 
-### Esperienza, livelli e trasformazioni
-- Ogni livello propone carte (arma, potenziamento, ecc.).
-- Ogni personaggio ha una **linea di trasformazioni** (Saiyan, Namecciano, Umano, Androide, Freezer, Cell, Broly, Zamasu, Goku Black, Zamasu Fuso, Caulifla, Kale, Pride Troopers, Dei, Majin, più le linee dei personaggi della terza ondata): fino a **8 forme** (Ultra Istinto alla fine di alcune linee).
-- Le forme scattano ai livelli **14, 24, 36, 50, 66, 84, 104, 128** e dànno bonus a danno, velocità, ricarica, armatura, rigenerazione e riduzione dei danni, oltre a un nuovo aspetto e colore dell'aura.
-- Nella Stanza dello Spirito e del Tempo si può **comprare in anticipo** la forma successiva, ma solo se hai raggiunto almeno il 70% del livello richiesto.
+---
 
-### Oggetti, struttura della run e mappa
-- **Forzieri** (uno per boss e uno di rifornimento ogni 5 minuti) con ricompense e trinket.
-- **Oggetti a terra**: monete (4-32 zenny secondo il momento), borsa di zenny, cuore, magnete, potenziamenti temporanei di danno/velocità, XP, fortuna.
-- **Sfere del Drago**: raccogline 7 per esprimere un desiderio (seconda vita, potere, fortuna).
-- **Eventi sulla mappa**: Altare del Potere (bonus temporaneo), Sorgente curativa, Altare del Sacrificio (arma +1 in cambio di metà vita), Fonte dell'esperienza, Deposito di monete, Totem, Stanza dello Spirito e del Tempo.
-- **Trinket (20)** in 4 rarità: Scouter rotto, Marsupio Senzu, Fascia da allenamento, Stivali gravitazionali, Radar del Drago, Orecchino Potara, Mantello Namecciano, Nyoibo, Nuvola Speedy, Capsula Hoi-Poi, Cuore di Kaioh, Aureola angelica, Orologio della Stanza del Tempo, Sfera del Drago a 4 stelle, Cristallo divino, Armatura reale Saiyan, Anello del Tempo, Specchio di Kaioh, Cuore del Drago, Furia Saiyan.
+## Dentro la partita
 
-### Stage, difficoltà e modalità
+### Combattimento
+- **Attacco automatico**: ogni arma ha il suo comportamento (proiettili, raggi, orbite, zone di fuoco, fulmini a catena, meteore…). I colpi pesano: numeri di danno arcade (rossi per i critici), combo, **Serie** di uccisioni con barra e fasce (50, 100, 200, 500).
+- **Debolezze**: ogni boss ne ha una. Alcuni attacchi nemici si possono distruggere.
+- **Ki Clash**, **Ultimo respiro**, alleati che arrivano in aiuto, cinematiche dei boss e delle trasformazioni (la telecamera si stringe e tutto si ferma finché l'aura esplode).
+- **Level-up**: oltre alle carte puoi usare **Reroll**, **Skip** e **Ban** (strumenti del Negozio) e il level-up automatico con le tue priorità (Impostazioni).
+
+### Che cosa trovi sulla mappa
+Ogni partita ha una mappa diversa e viva (meteo, giorno/notte, mare e lava animati, creature, oggetti da rompere).
+
+| Elemento | Cosa fa |
+|---|---|
+| **Forzieri** | Uno per boss e uno di rifornimento ogni 5 minuti, in cinque rarità, con potenziamenti e cimeli. |
+| **Zenny e oggetti** | Monete, borse di zenny, cuori, magnete, potenziamenti temporanei, esperienza, Fortuna. I punti di bottino compaiono più spesso con il loot extra. |
+| **Sfere del Drago** | Raccogline 7 per evocare **Shenron** (4 desideri proposti tra seconda vita, potere, fortuna, ticket, immortalità, trasformazione, leggenda). Le 3 **Super Sfere** custodite dai Tamagami chiamano **Porunga**. |
+| **Altari e sorgenti** | Altare del Potere, Sorgente curativa, Altare del Sacrificio, Fonte dell'esperienza, Deposito di monete, Altari Sfida (boss più forti in cambio di più scrigni). Si usano con `E`. |
+| **Totem** | 8 poteri: Fortuna, Rischio, Vitalità, Furia, Ricchezza, Guardiano, Tempesta, Spirito. |
+| **Stanza dello Spirito e del Tempo** | Compri in anticipo la forma successiva (con almeno il 70% del livello richiesto) e affronti un Maestro che imita le tue armi. |
+| **Macchina dello Scambio** | Compare in circa il 12% delle partite: ci metti fino a 3 cimeli, lavora ~10 secondi **mentre giochi** (barra di avanzamento sopra di lei) e ti restituisce cimeli diversi della stessa rarità, con perfezione uguale o migliore. |
+| **Tunnel** | Ne compare uno ogni 15 minuti: tunnel a senso unico con un boss in fondo e 3 casse. |
+| **Portale di Zeno** | Il negozio di Zeno-sama. |
+| **Visite a sorpresa** | Un personaggio arriva con una missione da 60 secondi; Cerchio di allenamento, Capsule Corp, Saibaman d'oro che scappa col bottino. |
+| **Trappole e zone di cura** | Rare ma pericolose o preziose. |
+| **Eventi a tema** | Ogni stage ha un evento in cui i nemici si trasformano (annunci in 6 lingue). |
+| **Orde, élite, miniboss** | Orde a tema (la prima a 2 minuti, poi una ogni 5) guidate da un élite, un miniboss ogni 5 minuti, nemici che salgono di grado. |
+
+La mappa in pausa (grande, con zoom) mostra dove sono i pickup; frecce ai bordi dello schermo indicano gli oggetti importanti.
+
+### Compagni
+Dende, Mini Shenron, Mini Droide, Bubbles, Mini Bu e Saibaman: raccolgono l'esperienza lontana, hanno un'abilità (`Q`) e liberano un'onda d'urto quando sei circondato.
+
+---
+
+## Personaggi, armi e trasformazioni
+
+### 58 personaggi giocabili
+Ognuno ha armi di partenza, statistiche, una **linea di trasformazioni** (fino a 8 forme, con aura dipinta) e un'**abilità unica** con una versione potenziata nella forma finale.
+
+| Linea | Personaggi |
+|---|---|
+| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock, Turles, Great Saiyaman, Caulifla, Kale, Broly |
+| Namecciano | Piccolo, Nail, Re Piccolo |
+| Umani | Crilin, Yamcha, Tenshinhan, Chiaotzu, Genio Tartaruga, Mr. Satan, Videl, Bulma, Yajirobe, Pan, Mr. Popo, Uub |
+| Androidi | C-16, C-17, C-18, C-21, Dr. Gero |
+| Freezer e truppe | Freezer, Cooler, Frost, Capitan Ginyu, Zarbon, Recoome, Guldo, Dabura |
+| Cell · Majin | Cell · Majin Bu |
+| Pride Troopers | Toppo, Hit, Jiren, Dyspo |
+| Dei e Zamasu | Beerus, Whis, Re Kaioh, Zamasu, Goku Black, Zamasu Fuso, Zeno-sama |
+
+Ne hai **4 subito** (Goku, Vegeta, Piccolo, Crilin); gli altri si sbloccano con una condizione (vincere stage, raggiungere un livello, sconfiggere tot nemici o boss) **oppure comprandoli** con zenny. La schermata **Achievement** dice cosa fare per ogni sblocco.
+
+**Fusioni di personaggi**: Vegito e Gogeta (Potara / Metamoran), Gotenks, Kefla e Zamasu Fuso si giocano per una partita con entrambi i genitori a **Maestria 5**.
+
+### Abilità
+Kaioken (x10/x20), Berserk, Final Flash, Cannone Speciale, Taiyoken, Fendente Furioso, Raggio Dodon, Pugno Zanna di Lupo, cloni, Sfera della Giustizia, Super Ghost Kamikaze, barriere, assorbimento, ferma tempo, cancellazione, riavvolgimento, jackpot e altre. Quando usi un'abilità l'icona sale sopra l'eroe; se dura nel tempo vedi un anello che si svuota. Ogni abilità ha **icone dedicate** su pulsanti, schede e tooltip.
+
+### 24 armi
+Colpo di Ki, Kamehameha, Disco Distruttore, Genkidama, Aura, Taiyoken, Spada, Colpi Eccentrici, Raggio Perforante, Lancia Ribelle, Doppio Sunday, Cannone Distruttore, Danza Elegante, Boomerang Ginyu, Granata Infernale, Salto Temporale, Impatto Potente, Sfera della Distruzione, Fulmine Angelico, Meteora di Fusione, Big Bang Kamehameha, Cannone Garlick, Attacco Big Bang, Calcio Dinamite.
+
+- Ogni arma sale fino al **Lv 5**, si **evolve** (forziere o condizione del Grimorio) e ha altri 5 livelli.
+- **12 evoluzioni doppie** (fusioni di due armi, anche dal Grimorio): Tempesta di Ki, Kamehameha Finale, Lama Kienzan, Genkidama Universale, Aura Esplosiva, Giudizio Divino, Lance Infernali, Calcio Big Bang, Lampo del Tempo, Domenica Ginyu, Danza dell'Imperatore, Esplosione Finale.
+- Le armi si sbloccano nella pool vincendo uno stage con un personaggio che parte con quell'arma. Con la **Lista Nera Armi** del Negozio puoi bandirne.
+- Gli effetti sono **animazioni dipinte** (anche per le evoluzioni) con suoni 8-bit.
+
+### 11 potenziamenti passivi
+Zenkai (danno), Vigore (Salute), Volo veloce (velocità), Scouter (raccolta), Camera Gravitazionale (ricarica), Armatura da Battaglia, Fagioli Senzu (rigenerazione), Meditazione (esperienza), Quantità, Fortuna, Area. Alcuni servono anche per le evoluzioni.
+
+### Fagioli Senzu e Scatto
+La **borsa Senzu** (fino a 3) cura il 50% della Salute e alza una statistica per la partita. Lo **Scatto** fa danno sul percorso e dà invulnerabilità; ha una ricarica di pochi secondi.
+
+---
+
+## Cimeli e Gacha
+
+**173 cimeli** in 5 rarità (Comune, Raro, Epico, Leggendario, Mitico), ognuno con statistiche e un effetto speciale. Ogni esemplare ha una **Perfezione da 0 a 100** (a 100 l'aura è quella dell'Ultra Istinto) e può avere statistiche extra.
+
+- **Gacha**: ticket da 1 o da 10 estrazioni con animazione (apertura automatica, velocità regolabile), Super Sfere.
+- **Borsa**: raccoglie i tuoi cimeli, con ordinamento, filtri per rarità e statistica (anche per quelle che contano), vendita e slot extra del Negozio.
+- **Reroll**: rilancia la Perfezione (200 zenny a tiro, −2% ogni 10 tiri fino a −50%), con blocco delle statistiche e **auto reroll** fino a un obiettivo.
+- **Fusione**: tre cimeli dello stesso tipo danno quello di rarità più alta con la migliore perfezione di ogni statistica; tre della stessa rarità la fanno salire di un grado.
+- **In partita**: i cimeli si trovano nei forzieri; dopo il boss finale ne scegli 2 da portare nella Borsa. La **Macchina dello Scambio** li rigenera.
+
+---
+
+## Stage, nemici e boss
+
 | # | Stage | Sblocco |
 |---|---|---|
 | 1 | Isola di Muten | — |
-| 2 | Via del Serpente | clear Stage 1 |
-| 3 | Pianura Saiyan | clear Stage 2 |
-| 4 | Pianeta Vegeta | clear Stage 3 |
-| 5 | Pianeta Namek | clear Stage 4 |
-| 6 | Rovine degli Androidi | clear Stage 5 |
-| 7 | Arena dei Cell Game | clear Stage 6 |
-| 8 | Inferno | clear Stage 7 |
-| 9 | Dimensione di Bu | clear Stage 8 |
-| 10 | Regno degli Dei | clear Stage 9 |
-| 11 | **Torneo del Potere** (finale) | clear Stage 10 |
+| 2 | Via del Serpente | vincere lo stage 1 |
+| 3 | Pianura Saiyan | vincere lo stage 2 |
+| 4 | Pianeta Vegeta | vincere lo stage 3 |
+| 5 | Pianeta Namek | vincere lo stage 4 |
+| 6 | Rovine degli Androidi | vincere lo stage 5 |
+| 7 | Arena dei Cell Game | vincere lo stage 6 |
+| 8 | Inferno | vincere lo stage 7 |
+| 9 | Dimensione di Bu | vincere lo stage 8 |
+| 10 | Regno degli Dei | vincere lo stage 9 |
+| 11 | **Torneo del Potere** | vincere lo stage 10 |
 
-Gli stage seguono l'**ordine canonico di Dragon Ball** (Dragon Ball → Z → Super) e la difficoltà cresce di stage in stage. Chi aveva già dei progressi non perde nulla: uno stage già completato resta aperto.
+Gli stage seguono l'ordine canonico di Dragon Ball (Dragon Ball → Z → Super). Ogni mappa ha la sua musica, i suoi ostacoli dipinti, il suo meteo e un evento a tema; la **Via del Serpente** è fatta di isole raggiungibili, il **Torneo del Potere** si combatte in un'arena circolare chiusa.
 
-Ogni stage ha **nemici dedicati** (oltre 130 varianti totali, ciascuno con IA diversa: inseguimento, tiratori, kamikaze, schermati, schivatori…) e **boss** a tempi prefissati (es. Raditz, Nappa e Vegeta nelle Pianure Saiyan; Freezer su Namek; Cell ai Cell Game; Janemba su Via del Serpente; Freezer e Cell evoluti + Omega Shenron all'Inferno; Jiren al Torneo del Potere). Una **Guida/Glossario** nel menu descrive ogni nemico e boss.
+- **Nemici**: oltre 140 varianti con IA diverse (inseguimento, tiratori, kamikaze, schermati, schivatori…), con **gradi** che li rendono più forti e colorati col passare dei minuti.
+- **Boss**: un centinaio tra boss e miniboss (Raditz, Nappa e Vegeta, Freezer e Cooler, Cell, Janemba, Omega Shenron, Jiren…). Si trasformano, hanno mosse firmate, una debolezza e un potenziamento in corso di partita. La **Guida/Glossario** descrive ogni nemico e boss.
+- **Album dei nemici**: scoprirne 10, 25 e 50 dà premi.
 
-**Difficoltà**
+---
 
-| | Salute nemici | Danni nemici | Quantità | Zenny | Durata |
-|---|---|---|---|---|---|
-| Facile | ×0,9 | ×0,7 | ×0,8 | ×0,7 | 5 min |
-| Normale | ×1 | ×1 | ×1 | ×1 | 10 min |
-| Difficile | ×2 | ×1,5 | ×1,4 | ×1,35 | 15 min |
-| Estremo | ×4 | ×1,8 | ×1,5 | ×2,4 | 30 min |
+## Progressione permanente
 
-**Modalità x2** (si sblocca raggiungendo il boss finale di uno stage): tempo e zenny doppi, esperienza ridotta, nemici più duri.
-**Modalità Sandbox** (Impostazioni): provi liberamente armi, forme ed evoluzioni.
+- **Negozio**: potenziamenti permanenti con costo crescente (Avidità, Studio, Vitalità, Rigenerazione, Danno, Agilità, Magnetismo, Armatura Saiyan, Ritmo, Fortuna, Area, Occhio Critico, Durata Raggi, Seconda Vita, Urlo di Broly!, Scanner Sfere del Drago, Quantità, Cimelio Extra, Lista Nera Armi, Reroll, Skip, Ban).
+- **Achievement e Obiettivi**: centinaia di traguardi con premi in zenny e ticket (uccisioni, boss, collezione di cimeli, perfezione, fusioni, estrazioni…), più le **missioni giornaliere**.
+- **Maestria**: ogni personaggio sale fino al Lv 10 giocandolo; al **Lv 5** ottieni una passiva e le fusioni di personaggi si sbloccano con i genitori a Maestria 5.
+- **Patti**: 7 maledizioni volontarie (ferro, furia, orda, vento, cristallo, digiuno, oblio) per partite più dure e paga più alta.
+- **Grimorio**: ricette di tutte le evoluzioni, requisiti e progressi per arma, con diario delle uccisioni.
+- **Carriera**: tempo di gioco, partite, vittorie, nemici e boss sconfitti, arma e personaggio preferiti, nemici per saga.
+- **Codici delle build**: copia il codice della tua build a fine partita e incolla quello di un amico per vederla.
+- **Scheda di fine partita** da condividere, note di versione nel gioco (📜).
 
-### Progressione permanente
-- **Negozio** (12 potenziamenti, costo crescente, fino al livello 6 ciascuno; Seconda Vita fino a 2): Avidità, Studio, Vitalità, Rigenerazione, Potenza, Agilità, Magnetismo, Armatura, Tempo, Fortuna, Occhio acuto, **Seconda Vita** (revive).
-- **Obiettivi**: traguardi con ricompensa in zenny (uccisioni, boss, élite, vittorie, ore di gioco…) + **5 missioni giornaliere** che cambiano ogni 6 ore. Le condizioni di sblocco di personaggi e armi sono nella schermata **Achievement**.
-- **Personaggi**: 4 disponibili subito (Goku, Vegeta, Piccolo, Crilin); gli altri si sbloccano con una **condizione** (completare stage, anche in Difficile, raggiungere un livello, sconfiggere tot nemici/boss) **oppure comprandoli** con zenny.
-- Salvataggio automatico nel browser (localStorage); reset dalle Impostazioni.
+---
 
-![Stage](docs/screens/stages.jpg)
-![Boss](docs/screens/boss.jpg)
+## Online e co-op
 
-### Personaggi giocabili
+- **Account e cloud** (facoltativi): registrazione con email e password (con recupero tramite codice) o con Google; il salvataggio si sincronizza tra dispositivi, con gestione dei conflitti.
+- **Classifiche** per stage e metrica, **Sfida settimanale** con il fantasma del primo, **eventi della comunità** settimanali.
+- **Co-op (BETA)**: stanze con codice, amici, inviti, ricerca di compagni, chat e classifica. Fino a **4 giocatori** nella stessa partita; la scelta delle carte di uno non ferma gli altri.
+- Controlli sul server e protezioni anti-cheat per le classifiche.
 
-| Linea di forme | Personaggi |
-|---|---|
-| Saiyan | Goku, Vegeta, Trunks, Gohan, Goten, Gotenks, Vegito, Gogeta, Kefla, Raditz, Nappa, Bardock, Great Saiyaman |
-| Namecciano | Piccolo, Nail |
-| Umano | Crilin, Yamcha, Tensing, Muten, Mr. Satan, Videl, Bulma, Yajirobe, Pan, Mr. Popo |
-| Androide | C-18, C-17, C-16, Dr. Gero, Androide 21 |
-| Freezer | Freezer, Cooler, Capitan Ginyu, Zarbon |
-| Cell · Majin | Cell · Majin Bu |
-| Pride Troopers | Toppo, Hit, Jiren, Dyspo |
-| Dei | Beerus, Whis |
-| Linee dedicate | Broly, Zamasu, Zamasu Fuso, Goku Black, Caulifla, Kale, Chiaotzu, Turles, Dabura e Re Piccolo (Demoni), Recoome e Guldo (Squadra Speciale), Re Kaioh, Frost, Uub |
+Senza account il gioco funziona benissimo anche **offline**: il salvataggio è nel browser (codificato).
+
+---
+
+## Schermate e opzioni
+
+**Menu principale**: Gioca · Avvio rapido · Co-op · Crescita (Negozio, Gacha, Borsa) · Progressi (Sblocchi, Achievement, Carriera, Classifiche) · Opzioni · Grimorio · Guida/Glossario · Note di versione · Account.
+
+**Opzioni**: lingua (**italiano, inglese, spagnolo, francese, tedesco, portoghese**), grafica (risoluzione dinamica, opacità e riduzione degli effetti, animazioni di morte, schermo intero, zoom), audio (musica, effetti, armi evolute più silenziose), gameplay (level-up automatico, priorità, Kamehameha, ticket), comandi riassegnabili per tastiera e gamepad.
+
+**Tecnologia**: tutta la grafica è in pixel art, in parte generata dal codice e in parte dipinta (personaggi, aure, armi, mappe, icone); gli effetti sonori sono sintetizzati in stile 8-bit, la musica è in MP3 (una per mappa, più i temi dei boss). Il gioco regola da solo la risoluzione per restare fluido nelle fasi più affollate.
 
 ---
 
 ## Build e sviluppo
 
-Servono solo **Python 3** (per il bundler) e, opzionalmente, **Node.js** (per i controlli di sintassi e i test).
+Servono **Python 3** (per il bundler) e, opzionalmente, **Node.js** (controlli di sintassi e test).
 
 ```bash
-python3 build.py --check      # crea dist/dragon-ball-survivors.html e controlla la sintassi con node
+python3 build.py --check    # crea dist/dragon-ball-survivors.html e controlla la sintassi con node
 ```
 
-Apri `dist/dragon-ball-survivors.html` in un browser moderno (consigliato Chrome/Edge/Firefox): è **autosufficiente**, funziona anche offline (i font Google sono opzionali, c'è un fallback).
+Apri `dist/dragon-ball-survivors.html` in un browser moderno: è autosufficiente e funziona anche offline. Se `esbuild` è installato la pagina viene minificata.
 
-Per la **musica del menu** è già inclusa in `assets/menu.mp3` (vedi [assets/README.md](assets/README.md)); per cambiarla sostituisci il file; se manca viene usata una musica sintetizzata.
-
-**Pubblicarlo con GitHub Pages**: dopo `python3 build.py`, copia `dist/dragon-ball-survivors.html` in `docs/index.html` (o usa una GitHub Action) e abilita Pages su `main` / cartella `docs`.
+- **Musica ed effetti**: file `assets/*.mp3` (vedi [assets/README.md](assets/README.md)); se mancano si usa audio sintetizzato.
+- **Pubblicazione**: il workflow `.github/workflows/deploy.yml` costruisce il gioco e lo pubblica su GitHub Pages a ogni push su `main`.
+- Il gioco si accorge da solo delle nuove versioni (`dist/version.json`) e propone di ricaricare.
 
 ## Struttura del progetto
 
 ```
-build.py              bundler: unisce src/ in un unico HTML
+build.py              bundler: unisce src/ e gli asset in un unico HTML
 src/index.html        pagina
-src/css/style.css     stile (gacha.css: Gacha, Borsa, slot Trinket)
+src/css/              stili (style, skin, gacha, mobile, loader)
 src/js/
-  util.js data.js     utilità e dati (armi, personaggi, stage, nemici, boss, trinket, pet, negozio…)
+  util.js data.js     utilità e dati (armi, personaggi, stage, nemici, boss, cimeli, compagni, negozio…)
   i18n*.js            traduzioni (it, en, es, fr, de, pt)
-  weapons*.js         comportamento delle armi
-  world.js            seme della mappa (MAP), terreno, ostacoli, zone di cura e trappole, Via del Serpente
-  mapart.js           pittura degli oggetti a tema (casse, barili, lapidi, agavi, cristalli…) e decorazioni a terra
-  sea.js objlife.js   mare, laghi e lava animati / piccola vita sugli oggetti (ragni, uccelli, candele…)
-  snake_art.js        isole fluttuanti, nuvole e dettagli della Via del Serpente
-  save.js             salvataggio, progressione, obiettivi, impostazioni
-  gacha.js            Gacha: ticket, probabilità, Borsa dei trinket, vendita, Super Sfere
-  game.js             logica di gioco (senza DOM) + MapDirector (eventi, totem, stanza)
-  sprites.js          sprite procedurali dei personaggi (con espressioni)
-  pose.js             braccia del personaggio per arma (cinematica inversa), pose di Kamehameha, Colpo di Ki e altre armi
-  events.js events_draw.js   eventi di mappa a tema (dati, logica, animazioni)
-  xpbar.js hpbar.js (+ *_meta.js)   barre Esperienza e Salute con la grafica in assets/ (atlanti da tools/gen_xpbar.py e gen_hpbar.py)
-  sprites_hd.js       pipeline HD per nemici, boss e pet (contorno colorato, luci) e creature ridisegnate
-  audio.js            effetti sonori sintetizzati e musica
-  cloud.js            account e sincronizzazione salvataggi (Supabase)
-  update.js           avviso di nuova versione (version.json), conto alla rovescia e ricarica
-  patches.js ui_patch.js   note di versione (dati + schermata)
-  ui_account.js       schermate login / registrazione / conflitto
-  input.js renderer.js ui.js ui2.js app.js   input, rendering, interfaccia e ciclo principale
-  ui_gacha.js         schermata Gacha e animazione, Borsa, slot Trinket, Super Shenron
-tests/                simulazioni e test con puppeteer
-docs/screens/         screenshot usati in questo README
+  game.js             logica di gioco (senza DOM) e MapDirector (eventi, totem, stanze, Macchina dello Scambio)
+  weapons*.js wfx.js  comportamento e animazioni dipinte delle armi
+  world.js mapx.js …  mappe, terreno, ostacoli, isole, mare, lava, eventi a tema
+  sprites*.js pose.js sprite procedurali e dipinti, pose delle armi
+  renderer.js         disegno (canvas, HUD, effetti)
+  ui*.js app.js       schermate, input, ciclo principale
+  gacha.js ui_gacha.js ui_trin.js   Gacha, Borsa, Reroll, Fusione, Macchina dello Scambio
+  save.js cloud.js    salvataggio, sincronizzazione e classifiche
+  audio.js            effetti 8-bit sintetizzati e musica
+assets/
+  ui/                 logo, atlanti delle barre, menu, cornici delle carte
+  icons/              icone: negozio, armi, cimeli, abilità, HUD
+  sprites/            fogli sprite e sorgenti (vedi assets/sprites/README.md)
+  *.mp3               musica ed effetti
+tools/                script che generano atlanti e fogli sprite dalle sorgenti
+tests/                simulazioni e test con Puppeteer (python3 tools/run_tests.py)
+docs/                 logo e screenshot
 ```
-
-## Test
-
-Test headless in Node (simulano partite complete con un bot) e test end-to-end con Puppeteer:
 
 ```bash
-node tests/check_i18n.js      # verifica le traduzioni in tutte le lingue
-node tests/map_random.js      # mappe casuali: seed, area di partenza libera, Via del Serpente su 25 seed (puppeteer)
-node tests/snake_isles.js     # isole della Via del Serpente, budget del fuoco nemico, proiettili tagliati (puppeteer)
-node tests/endless.js         # modalità Infinita: monete, 50 livelli, armi Lv 100, Zeno, pagamento, scalatura, Berserk, Calamita (puppeteer)
-node tests/events.js          # eventi di mappa: i 11 stage, annunci, trasformazioni, fine evento (puppeteer)
-node tests/pose.js            # animazioni delle armi: frame senza braccia, IK, Kamehameha / Colpo di Ki, pose, frame 10-15 degli sprite (puppeteer)
-node tests/hpbar.js           # barra della Salute con ritratto dinamico (puppeteer); screenshot: shot_pose.js, shot_hp.js
-node tests/shot_map.js beach out.png 1024 576 water 0   # screenshot di una mappa (anche shot_props, shot_life, shot_loot, shot_patch)
-node tests/v53.js             # v53 gameplay: bilanciamento, TAB, armi per partita, sacchi di zenny, Senzu, totem, Tamagami, acqua e lava (puppeteer)
-node tests/v109.js            # v109 Quantità al level-up, negozio (interruttori, Maiusc), forzieri e cimeli, trappole, coda dei messaggi, statistiche (puppeteer)
-node tests/v56.js             # v56 ragni, ombre degli uccelli, numeri di danno arcade e critici rossi (puppeteer)
-node tests/v54.js             # v54 cimeli e compagni: Perfezione, forziere a 4, salta-inferiori, compagno (XP + onda d'urto), gacha, scambio, aura (puppeteer)
-node tests/eco52.js           # v52 economia: Reroll/Salta/Ban, Zeno, ticket, serie monete, Achievement, Obiettivi, missioni (puppeteer)
-node tests/ui52.js            # v52 interfaccia: ingranaggio, ricerca/ordine personaggi, Avvio rapido, notifiche (puppeteer)
-node tests/gacha.js           # Gacha: probabilità, ticket, Borsa, slot, vendita, Super Sfere (puppeteer)
-node tests/kai.js             # Kaioken x10/x20 (statistiche, consumo, spegnimento)
-node tests/bers.js            # Berserk di Broly (durata, cooldown, non annullabile)
-node tests/totem.js           # totem unico + 8 poteri
-node tests/abil.js            # tutte le abilità dei 58 personaggi
-node tests/newchars.js        # i 16 nuovi personaggi: dati, sblocchi, Senzu di Yajirobe, run complete
-node tests/ui_sfx.js          # suoni arcade dei pulsanti (hover, clic, indietro) - richiede puppeteer
-node tests/sheet_hd.js en out.png   # anteprima di tutti gli sprite nemici (anche: boss, o chiavi separate da virgola)
-node tests/shot_enemies.js out.png  # screenshot in partita con tutti i nemici
-node tests/boss.js            # potenziamento dei boss, schianti
-node tests/boss2.js           # attacchi firmati dei boss, regole di spawn
-node tests/spirit.js          # stanza dello Spirito e del Tempo
-node tests/senzu.js           # borsa Senzu
-node tests/gems.js            # gemma rossa (accumulo XP)
-node tests/sim.js             # simulazione con tutti i personaggi
-node tests/death.js 0 normal 6 goku     # bilanciamento: stage, difficoltà, partite, personaggio
-node tests/lvfull.js "1,2,5,10" normal  # ritmo di livelli e forme
-# e2e/smoke (richiedono puppeteer e un browser): e2e.js e2e2.js e2e3.js e2e4.js smoke5.js smoke6.js smoke7.js
+python3 tools/run_tests.py   # esegue la batteria di test
+node tests/check_i18n.js     # verifica le traduzioni in tutte le lingue
 ```
 
-> Nota: il bilanciamento è stato verificato con un bot volutamente debole; l'esperienza reale di una persona può essere più facile. Segnalazioni e proposte sono benvenute nelle issue.
+> Il bilanciamento è stato verificato anche con un bot volutamente debole: l'esperienza di una persona può essere più facile. Segnalazioni e proposte sono benvenute nelle issue.
 
-## Licenza
+## Licenza e crediti
 
-Il **codice** è sotto licenza [MIT](LICENSE). Nomi, personaggi e marchi di Dragon Ball **non sono coperti** da questa licenza e appartengono ai rispettivi proprietari ([DISCLAIMER.md](DISCLAIMER.md)).
+Il **codice** è sotto licenza [MIT](LICENSE). Nomi, personaggi e marchi di Dragon Ball **non sono coperti** da questa licenza e appartengono ai rispettivi proprietari ([DISCLAIMER.md](DISCLAIMER.md)). Crediti di grafica e musica in [CREDITS.md](CREDITS.md).
