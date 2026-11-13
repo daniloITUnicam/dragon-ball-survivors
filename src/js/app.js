@@ -128,7 +128,7 @@ class App{
   coopHostGame(st){const ch=COOPG.myChar();this.startGame({stage:st.stage,char:ch,diff:st.diff,x2:false,sandbox:false,pet:this.save.d.pet,seed:st.seed,coop:{me:COOPG.me,code:st.code}});return this.game;}
   coopViewGame(m,me){this.lastOpts=null;this.ui.clear();this.ui.closeModal();Online.unseed();Online.seed(m.seed);
     const g=new Game({stage:m.stage,char:m.ch,diff:m.diff,x2:false,sandbox:false,pet:this.save.d.pet},this.makeEnv());
-    g.coopView=true;g.sb.nospawn=true;g.en=[];g.p.nick=me;g.coopNames=m.names;this.game=g;this.state='play';this.joy.on=false;this.audio.unlock();this.audio.play('stage'+STAGES[m.stage].id);
+    g.coopView=true;g.sb.nospawn=true;g.en=[];g.p.nick=me;g.coopNames=m.names;this.game=g;this.state='play';this.joy.on=false;this.audio.unlock();this.audio.preloadStage(STAGES[m.stage].id);this.audio.play('stage'+STAGES[m.stage].id);
     g.say(this.i18n.t(STAGES[m.stage].n)+' · CO-OP','#ffd23f',3);return g;}
   makeEnv(){return{save:this.save,audio:this.audio,progress:this.progress,tr:(o,v)=>this.i18n.t(o,v),onEnd:(res,g)=>this.onEnd(res,g),pickTrinkets:(g,l,cb)=>this.pickTrinkets(g,l,cb)};}
   /* v136: after a win, the window that chooses which found trinkets go home (the run is over, the world is drawn frozen behind it) */
@@ -141,7 +141,7 @@ class App{
     if(!o.sandbox&&!o.coop&&this.cloud.uid&&this.cloud.nick){const g=this.game;this.cloud.runStart().then(id=>{if(id&&this.game===g)g.runId=id;}).catch(()=>{});}   /* v118: run token */
     if(GUARD.tainted)this.game.unranked=true;
     if(o.week&&this.cloud.enabled)this.cloud.weeklyGhost(o.week).then(gh=>{if(gh&&this.game&&this.game.week===o.week)this.game.ghost=gh;}).catch(()=>{});   /* v116: the weekly leader's ghost */this.state='play';
-    this.audio.unlock();if(this.audio.slowMusic)this.audio.slowMusic(1);this.audio.play('stage'+STAGES[o.stage].id);
+    this.audio.unlock();if(this.audio.slowMusic)this.audio.slowMusic(1);this.audio.preloadStage(STAGES[o.stage].id);this.audio.play('stage'+STAGES[o.stage].id);
     this.game.say(this.i18n.t(STAGES[o.stage].n)+(o.x2?'  x2':''),'#ffd23f',3);
     {const g=this.game;if(g.fz){const p=g.p,c=g.formColor||'#ffd23f';g.say(this.i18n.t(T6('FUSIONE!','FUSION!','¡FUSIÓN!','FUSION !','FUSION!','FUSÃO!')),c,2.6,this.i18n.t(fuseKind(g.fz.k))+' · '+g.fz.parents.map(id=>this.i18n.t(CHARS.find(x=>x.id===id).n)).join(' + '));
       g.ring(p.x,p.y,220,c,.9);g.pillar(p.x,p.y,c,1.4);g.flash=.6;g.flashC='#ffffff';this.audio.sfx('transform');}}   /* v116 */

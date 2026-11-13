@@ -304,6 +304,15 @@ class AudioSys{
       if(!this.loopT)this.loopT=setInterval(()=>this.loopTick(),200);
     }
   }
+  /* link build: a track is downloaded whole (and kept by the service worker) when its stage is chosen / loaded, not streamed in pieces while it plays;
+     nothing is fetched at boot, and the boss themes of the stage come along with it. Embedded tracks (data: URIs) need nothing. */
+  preloadStage(id){
+    const P=this.pre||(this.pre={});
+    for(const t of['stage'+id,'fboss'+id,'bossgen']){
+      const u=trackUri(t);if(!u||u.startsWith('data:')||P[u])continue;P[u]=1;
+      try{fetch(u).then(r=>r.arrayBuffer()).catch(()=>{delete P[u];});}catch(e){delete P[u];}
+    }
+  }
   parkFile(f){ /* stop a faded-out file: settle any crossfade in progress and pause (position is kept) */
     const c=this.ctx;
     if(f.xf){f.xf=false;const o=f.cur==='a'?f.b:f.a;o.el.pause();if(o.g){o.g.gain.cancelScheduledValues(c.currentTime);o.g.gain.value=0;}const cu=f[f.cur];if(cu.g){cu.g.gain.cancelScheduledValues(c.currentTime);cu.g.gain.value=1;}}

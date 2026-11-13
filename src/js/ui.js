@@ -235,7 +235,7 @@ class UI{
       const s=STAGES[i],locked=!this.stageOpen(i),b=d.best[String(i)];
       return h('button',{class:'card stage'+(i===sel.stage?' sel':'')+(locked?' locked':''),'data-fid':'st'+i,disabled:locked,
         style:'--sky:'+THEMES[s.theme].sky+';--hi:'+THEMES[s.theme].hi,
-        onclick:()=>{this.sfx();sel.stage=i;this.push('chars');}},
+        onclick:()=>{this.sfx();sel.stage=i;this.app.audio.preloadStage(STAGES[i].id);this.push('chars');}},
         h('canvas',{class:'stprev',width:240,height:96,'data-theme':s.theme,'data-seed':String(i)}),
         h('div',{class:'stnum'},'STAGE '+s.no),h('div',{class:'cn'},this.tr(s.n)),
         h('div',{class:'cd'},this.t('duration')+': '+fmtT(DIFF[sel.diff].dur/(sel.x2?2:1))+(sel.x2?' (x2)':'')+' · '+this.t('bosses')+': '+bossPlan(s,DIFF[sel.diff].dur,sel.diff).length),
