@@ -127,7 +127,7 @@ class Game{
     this.stageIdx=o.stage;this.stage=STAGES[o.stage];this.sdR=this.stage.dif!==undefined?this.stage.dif:o.stage;this.sd=CURVE_SD;this.spdK=stageSpd(this.sd);this.hardK=1+Math.min(STAGE_HARD_MAX,STAGE_HARD*(this.stage.pos||0));{const N=stageNorm(this.stage);this.norm=N;}   /* v134: sdR = the stage's step (rewards), sd = the shared curve; norm = this stage's enemies brought to the first stage's strength */MAP.roll();World.setTheme(this.stage.theme);if(typeof Sprites!=='undefined'&&Sprites.need){const L=[['isles',this.stage.theme==='snake'],['tama',!!this.stage.sup]];for(const [k,on] of L)on?Sprites.need(k):Sprites.drop(k);Sprites.drop('dragons');}   /* v114: the big sheets of this stage only (sheets.js SPRITE_LAZY) */this.C=CHARS.find(c=>c.id===o.char);
     this.diffId='normal';this.D=DIFF.normal;
     this.week=o.week||null;this.pacts=o.sandbox||o.week?[]:(o.pacts||[]).filter(id=>PACTS.some(p=>p.id===id));this.pk=pactFx(this.pacts);
-    {const ml=Mastery.lv(this.save,o.char),mr=(this.save.mastery||{})[o.char]||{};this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(o.char):null;this.skin=Mastery.skinOf(this.save,o.char);}
+    {const ml=Mastery.lv(this.save,o.char),mr=(this.save.mastery||{})[o.char]||{};this.mastLv=ml;this.mastP=ml>=MAST_PASS_LV?Mastery.passive(o.char):null;}
     this.spdK*=this.pk.espd;   /* v115: Pacts */
     if(this.pacts.length)this.D=Object.assign({},this.D,{hp:this.D.hp*this.pk.hp,dmg:this.D.dmg*this.pk.dmg,spawn:this.D.spawn*this.pk.spawn});
     {const m=o.week||o.sandbox?null:PROGX.forStage(o.stage);this.dmut=m?m.fx:{};this.dmutN=m?m.n:null;if(this.dmut.ehp)this.D=Object.assign({},this.D,{hp:this.D.hp*this.dmut.ehp});}   /* v116: today's mutator */
@@ -765,6 +765,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
       case'rewind':{
         const old=this.hpHist.length?this.hpHist[0].hp:p.hp,gain=Math.min(p.maxHp*(f2?.6:.4),Math.max(p.maxHp*.05,old-p.hp));
         this.heal(gain);this.flash=.3;this.flashC='#cfe8ff';this.ring(p.x,p.y,200,c,.7);this.ring(p.x,p.y,120,'#ffffff',.5);
+        for(let i=0;i<32;i++){const an=i*TAU/32,r0=190+rnd(0,40);this.fx.push({x:p.x+Math.cos(an)*r0,y:p.y-14+Math.sin(an)*r0*.7,vx:-Math.cos(an)*300,vy:-Math.sin(an)*210,l:.6,m:.6,c:i%2?c:'#ffffff',s:rnd(2,4)});}   /* time flowing back: motes converge on the hero */
         if(f2){this.eb=[];for(const e of this.en){if(e.dead)continue;if(Math.hypot(e.x-p.x,e.y-p.y)<this.viewR)e.stun=Math.max(e.stun,e.boss?.6:1.5);}this.ring(p.x,p.y,this.viewR,c,.8);}   /* final form: wipes enemy bullets and stuns */
         this.audio.sfx('abTime');break;}
       case'jackpot':
@@ -785,6 +786,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     if(this.senzuCd>0)this.senzuCd-=dt;
     /* hp history for Rewind: one sample every half second, last 6 seconds */
     this.histT-=dt;if(this.histT<=0){this.histT=.5;this.hpHist.push({hp:p.hp});if(this.hpHist.length>12)this.hpHist.shift();}
+    if((this.critT>0||this.abBuf)&&this.fx.length<420&&Math.random()<dt*(this.abTier>=2?26:16)){const cc=this.abil.c;this.fx.push({x:this.p.x+rnd(-16,16),y:this.p.y-rnd(0,30),vx:rnd(-30,30),vy:-rnd(60,140),l:.5,m:.5,c:Math.random()<.35?'#ffffff':cc,s:rnd(2,4)});}   /* power-up sparks while a crit / stat buff lasts */
     if(this.regenT>0){this.regenT-=dt;this.heal(this.regenRate*dt);if(this.fx.length<420&&Math.random()<dt*20)this.fx.push({x:p.x+rnd(-14,14),y:p.y-rnd(0,26),vx:rnd(-10,10),vy:-rnd(30,80),l:.6,m:.6,c,s:rnd(2,4)});}
     if(this.critT>0){this.critT-=dt;if(this.critT<=0)this.recalc();}
     if(this.abBuf){this.abBuf.t-=dt;if(this.fx.length<420&&Math.random()<dt*24)this.fx.push({x:p.x+rnd(-14,14),y:p.y-rnd(0,30),vx:rnd(-16,16),vy:-rnd(60,150),l:.5,m:.5,c,s:rnd(2,4)});if(this.abBuf.t<=0){this.abBuf=null;this.recalc();}}

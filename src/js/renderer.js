@@ -721,7 +721,7 @@ this.W=1;this.H=1;this.Z=1;
     ctx.scale(fd*k,k);
     if(!g.dying&&p.inv>0&&p.inv<.45)ctx.globalAlpha=.55;
     ctx.imageSmoothingEnabled=!sp.px;
-    ctx.drawImage(flash&&!xf?Sprites.player(pk2,pc2,fm,true,ex).c:Mastery.skinned(sp.c,g.skin),-sp.ox,-sp.oy);
+    ctx.drawImage(flash&&!xf?Sprites.player(pk2,pc2,fm,true,ex).c:sp.c,-sp.ox,-sp.oy);
     ctx.restore();ctx.imageSmoothingEnabled=false;
     MOBJ.drawRide(this,g,t,true);   /* the Nimbus itself is in front of the body: it hides the legs */
     if(g.dying&&g.dying.t>.45){   /* the soul leaves the body: a golden halo rises and fades */
@@ -2273,4 +2273,11 @@ Renderer.prototype.drawKiFizz=function(f){
         ctx.strokeStyle=fr<.25&&((t*8)|0)%2?'#ffffff':c;ctx.beginPath();ctx.arc(x,y,R+4.5,-Math.PI/2,-Math.PI/2+6.2832*fr);ctx.stroke();
         ctx.restore();}
     }
+    if(g.tsT>0&&!g.dying){   /* time stop: a clock face around the hero, the hand sweeping once per second */
+      const ctx=this.ctx,p=g.p,x=p.x,y=p.y-20,k=clamp(g.tsT*2,0,1),R=64+8*Math.sin(t*3);
+      ctx.save();ctx.globalAlpha=.75*k;ctx.lineWidth=2;ctx.strokeStyle='#dbe6ff';ctx.fillStyle='#ffffff';
+      ctx.beginPath();ctx.arc(x,y,R,0,6.2832);ctx.stroke();
+      for(let i=0;i<12;i++){const an=i*Math.PI/6-Math.PI/2,l=i%3?5:9;ctx.beginPath();ctx.moveTo(x+Math.cos(an)*(R-l),y+Math.sin(an)*(R-l));ctx.lineTo(x+Math.cos(an)*R,y+Math.sin(an)*R);ctx.stroke();}
+      const an=t*6.2832-Math.PI/2;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(an)*(R-8),y+Math.sin(an)*(R-8));ctx.stroke();
+      ctx.restore();}
     return r;};}
