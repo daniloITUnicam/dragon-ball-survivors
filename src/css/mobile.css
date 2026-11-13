@@ -137,3 +137,5 @@ html.mphone .rrm .rrbig{font-size:54px;-webkit-text-stroke-width:3px}html.mphone
 html.mob .mb .mg.mgi{display:block;width:calc(var(--s)*.84);height:calc(var(--s)*.84);border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px var(--c,#fff)}
 html.mob .mb .mg.mgi img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none}
 html.mob .mb .mg.mgi.dim img{filter:grayscale(.85) brightness(.55)}
+/* tablet portrait: main menu centred vertically instead of glued to the top */
+html.mtab.mport .screen.main{padding-top:max(8px,calc(50vh - 340px / var(--mz)))}

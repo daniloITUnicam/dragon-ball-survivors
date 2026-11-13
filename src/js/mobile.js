@@ -36,11 +36,12 @@ if(MOBILE.on)(()=>{
   const MOB_GUI_K=.88,MOB_HUD_K=.74,MOB_BTN_K=.84;   /* menus, canvas HUD and touch buttons on a phone, against the old size */
   const fit=()=>{
     const w=innerWidth,h=innerHeight;
-    M.z=M.phone?clamp(Math.min(h/540,w/860)*MOB_GUI_K,.5,1):1;   /* v141: the whole GUI smaller on a phone (MOB_GUI_K), more of the game visible */
+    /* tablet: the PC layout needs about 1000 px of height and 1500 of width in landscape (800 in portrait): below that the GUI is zoomed out, never up */
+    M.z=M.phone?clamp(Math.min(h/540,w/860)*MOB_GUI_K,.5,1):clamp(w>h?Math.min(h/1000,w/1500):Math.min(h/1000,w/800),.6,1);   /* v141: the whole GUI smaller on a phone (MOB_GUI_K), more of the game visible */
     root.style.setProperty('--mz',M.z);
-    {const mc=document.getElementById('mobctl');if(mc)mc.style.zoom=M.phone?String(MOB_BTN_K):'';}
+    {const mc=document.getElementById('mobctl');if(mc)mc.style.zoom=M.phone?String(MOB_BTN_K):'1.15';}
     for(const id of['ui','toasts','sandbox']){const el=document.getElementById(id);if(el)el.style.zoom=M.z===1?'':String(M.z);}
-    root.classList.toggle('mport',h>w);root.classList.toggle('mwide',M.phone&&w/M.z>900);root.classList.toggle('mw11',M.phone&&w/M.z>=1100);
+    root.classList.toggle('mport',h>w);root.classList.toggle('mwide',(M.phone||M.z<1)&&w/M.z>900);root.classList.toggle('mw11',(M.phone||M.z<1)&&w/M.z>=1100);
     rotCheck();
   };
 
