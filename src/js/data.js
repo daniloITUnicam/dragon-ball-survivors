@@ -695,6 +695,9 @@ const TLAB={might:['danno','damage'],spd:['velocità','speed'],xp:['esperienza',
    The ranges of two neighbouring rarities never overlap (the best Common is still below the worst Rare, ... the worst Mythic is above the best Legendary), so a higher rarity is always stronger.
    At 100% the trinket gives off the Ultra Instinct aura. Trinkets that only have an effect (no stats) have no perfection. */
 const PF_SPREAD=[.88,1.12],PF_NOM=50;
+/* v141: a locked stat of a bag trinket keeps its own perfection (b.ls = {stat key: perfection}); PFS wraps the trinket's perfection in a Number object that carries it
+   (.ls), so every place that computes stats from "the perfection" (cards, run, bag, fusion) honours the locked ones without changing; JSON stores it as a plain number */
+function PFS(p,ls){if(!ls||!Object.keys(ls).length)return p;const n=new Number(p==null?PF_NOM:+p);n.ls=ls;return n;}   /* a function declaration: esbuild 0.24.2 dropped the former arrow-with-for-in version from the minified page */
 const pfK=pf=>PF_SPREAD[0]+(PF_SPREAD[1]-PF_SPREAD[0])*(pf==null?PF_NOM:pf)/100;
 /* Perfection roll (0-100). PF_CURVE = [perfection X, chance of rolling X or more]: the typical roll is about 25, 50 or more is 1 in 30, 80 or more 1 in 330, 90 or more 1 in 600
    and a perfect 100 is 1 in 1000. Between two points the chance falls in a straight line on a log scale. Luck multiplies the roll by 1 + 0.25 Luck (at the maximum Luck a perfect 100 is about 1 in 340). */
@@ -740,8 +743,8 @@ const hasPfE=(t,fu)=>hasPf(t)||isFused(fu);   /* perfection matters: a trinket w
 function trinMods0(t,r,pf){
   if(!t||!t.m)return{};
   if(r==null)r=t.r;
-  const k=RS[r]/RS[t.r],o={},f=pfK(pf);
-  for(const key in t.m){if(key==='proj'){o.proj=trinProj(r,pf);continue;}const cap=(TCAP[key]||1e9)*RS[r];o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
+  const k=RS[r]/RS[t.r],o={},ls=pf&&pf.ls;
+  for(const key in t.m){if(key==='proj'){o.proj=trinProj(r,pf);continue;}const cap=(TCAP[key]||1e9)*RS[r],f=pfK(ls&&ls[key]!=null?ls[key]:pf);o[key]=Math.round(Math.min(t.m[key]*k,cap)*f*1000)/1000;}
   return o;
 }
 function trinStats(t,r,pf,fu){

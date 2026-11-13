@@ -29,7 +29,7 @@ jobs:
           node-version: '20'
       - name: Build tools (esbuild minifies the page, Pillow turns the PNG sheets into lossless WebP)
         run: |
-          npm i --no-save --no-package-lock esbuild@0.24.2
+          npm i --no-save --no-package-lock esbuild@0.28.2
           pip install pillow
       - uses: actions/cache@v4   # the WebP conversions, by content (only new or changed sheets are converted again)
         with:
