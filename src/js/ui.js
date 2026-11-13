@@ -220,7 +220,7 @@ class UI{
         pic('prog',[302,216,421,326],[
           [340,R1,166,SH,'b_unl',L('unl'),()=>this.push('unl')],[520,R1,166,SH,'b_ach',L('ach'),()=>this.push('ach')],
           [340,R2,166,SH,'career',this.tr(CT.career),()=>this.push('career')],[520,R2,166,SH,'boards',this.tr(OT.boards),()=>this.push('boards',{tab:'weekly'})]]),
-        pic(test?'opts':'opts1',[735,216,261,325],[[773,R1,186,SH,'b_settings',L('settings'),()=>this.push('settings',{tab:'general'})],
+        pic(test?'opts':'opts1',[735,216,261,test?325:245],[[773,R1,186,SH,'b_settings',L('settings'),()=>this.push('settings',{tab:'general'})],
           ...(test?[[773,R2,186,SH,'b_sandbox',L('sandbox'),()=>this.push('sandboxCfg')]]:[])])));
   }
   testAll(){return !!this.save.settings.sandbox&&this.app.cloud.canTest;}   /* Test mode: switched on in Settings, and only for the owner's account and the whitelist */
