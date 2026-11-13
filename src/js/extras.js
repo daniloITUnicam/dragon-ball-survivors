@@ -35,9 +35,8 @@ const EXTRAS={
   draw(R,g,ctx,t){const e=g.gold;if(!e||e.dead)return;GLOW.at(ctx,e.x,e.y-12,34,'#ffd23f',.55+.2*Math.sin(t*10));
     ctx.save();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('💰',e.x+e.face*-10,e.y-30);ctx.font='bold 10px sans-serif';ctx.fillStyle='#ffd23f';ctx.strokeStyle='#000';ctx.lineWidth=3;const s=Math.ceil(e.glife)+'s';ctx.strokeText(s,e.x,e.y-44);ctx.fillText(s,e.x,e.y-44);ctx.restore();}
 };
-/* ====== v117: weather with a light effect, the enemy album rewards, victory poses ====== */
-const WX_ELEC=1.1,WX_GEM=1.2,WX_MIN=.35,ALBUM_STEPS=[{n:10,z:500},{n:25,tk:'t10'},{n:50,tk:'l10'}],VPOSE_LV=[3,6,9];
-const VPOSES=[{id:'jump',n:T6('Salto di gioia','Jump for joy','Salto de alegría','Saut de joie','Freudensprung','Pulo de alegria')},{id:'power',n:T6('Esplosione d\'aura','Aura burst','Estallido de aura','Explosion d\'aura','Aura-Ausbruch','Explosão de aura')},{id:'spin',n:T6('Giravolta','Spin','Giro','Pirouette','Drehung','Giro')}];
+/* ====== v117: weather with a light effect, the enemy album rewards ====== */
+const WX_ELEC=1.1,WX_GEM=1.2,WX_MIN=.35,ALBUM_STEPS=[{n:10,z:500},{n:25,tk:'t10'},{n:50,tk:'l10'}];
 Object.assign(EXTRAS,{
   /* the weather the renderer is showing (Ambient): rain / storm make electric attacks stronger, a sandstorm makes gems richer */
   wx(g){if(g.trial||g.tun||typeof Ambient==='undefined'||!Ambient.wxOn)return null;const k=Ambient.evK,I=Ambient.evI||0;return I>=WX_MIN&&k?{k,I}:null;},
@@ -50,13 +49,4 @@ Object.assign(EXTRAS,{
   albumN(save){const s=save.seen||{};return Object.keys(ENEMIES).filter(k=>s[k]).length;},
   albumClaim(app,i){const d=app.save.d,st=ALBUM_STEPS[i],A=d.album||(d.album={});if(A[st.n]||this.albumN(d)<st.n)return false;A[st.n]=1;if(st.z)d.zenny+=st.z;if(st.tk)d.tickets[st.tk]=(d.tickets[st.tk]||0)+1;app.save.write();return true;},
   albumLabel(st){return st.z?st.z+' Z':st.tk==='t10'?T6('Ticket 10×','10× Ticket','Ticket 10×','Ticket 10×','10×-Ticket','Ticket 10×'):T6('Ticket 10× Fortunato','Lucky Ticket 10×','Ticket 10× de la Suerte','Ticket 10× Chanceux','Glücksticket 10×','Ticket 10× da Sorte');},
-  /* ---- victory poses: Lv 3 / 6 / 9 of mastery open them; the chosen one plays after VICTORY! ---- */
-  posesOpen(save,id){const l=Mastery.lv(save,id);return VPOSES.filter((p,i)=>l>=VPOSE_LV[i]);},
-  poseOf(save,id){const r=(save.mastery||{})[id]||{},L=this.posesOpen(save,id);return L.find(p=>p.id===r.pose)||L[0]||null;},
-  /* extra transform for the hero during the pose: {oy: lift, sx/sy: scale, flip} */
-  pose(g,t){const v=g.vic;if(!v||!v.boom||!g.vpose)return null;const u=v.t-(VIC_T-2.6);if(u<0)return null;
-    if(g.vpose==='jump'){const ph=(u*2.2)%1,h=Math.sin(ph*Math.PI);return{oy:h*26,sx:1-.08*h,sy:1+.1*h};}
-    if(g.vpose==='power'){const k=Math.min(1,u/.4);if(g.fx.length<430&&Math.random()<.6){const a=rnd(0,TAU);g.fx.push({x:g.p.x+Math.cos(a)*30,y:g.p.y-20+Math.sin(a)*20,vx:Math.cos(a)*60,vy:-120,l:.5,m:.5,c:g.formColor||'#ffd23f',s:4});}return{oy:0,sx:1+.06*k,sy:1+.1*k+.03*Math.sin(t*30)};}
-    if(g.vpose==='spin'){const c=Math.cos(Math.min(1,u/1.2)*TAU*2);return{oy:Math.sin(Math.min(1,u/1.2)*Math.PI)*14,sx:c,sy:1};}
-    return null;}
 });

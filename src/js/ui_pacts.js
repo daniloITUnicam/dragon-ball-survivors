@@ -33,8 +33,6 @@ Object.assign(UI.prototype,{
       h('div',{class:'mbar'},h('div',{style:'width:'+(L.need?Math.round(100*L.into/L.need):100)+'%'})),
       h('div',{class:'msub'},L.need?L.into+' / '+L.need+' XP':T_(T6('Livello massimo','Max level','Nivel máximo','Niveau max','Maximales Level','Nível máximo'))),
       h('div',{class:'mrws'},rw(MAST_PASS_LV,T_(T6('Passiva: ','Passive: ','Pasiva: ','Passif : ','Passiv: ','Passiva: '))+T_(Mastery.passiveText(C.id)))),
-      h('div',{class:'row mskins'},h('span',{class:'lbl'},T_(T6('Posa di vittoria','Victory pose','Pose de victoria','Pose de victoire','Siegespose','Pose de vitória'))),VPOSES.map((v,i)=>{const open=L.lv>=VPOSE_LV[i],on=open&&(EXTRAS.poseOf(d,C.id)||{}).id===v.id;   /* v117 */
-        return h('button',{class:'btn small'+(on?'':' alt'),disabled:!open,'data-fid':'vp'+v.id,title:open?'':this.t('lv')+' '+VPOSE_LV[i],onclick:()=>{this.sfx();Mastery.rec(d,C.id).pose=v.id;this.app.save.write();this.rebuild(true);}},open?T_(v.n):'🔒 '+this.t('lv')+' '+VPOSE_LV[i]);})),
       this.fusionRows(C));
   },
   /* v116: the fusions this character is a parent of */

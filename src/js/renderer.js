@@ -1495,7 +1495,6 @@ this.W=1;this.H=1;this.Z=1;
     else{const b=Math.sin(t*2.6);sy=1+LIFE_BREATH*b;sx=1-LIFE_BREATH*.5*b;}
     if(p.hurtAt!=null){const q=clamp(1-(g.t-p.hurtAt)/.2,0,1);sx*=1+.14*q;sy*=1-.12*q;}
     if(g.dashT>0){sx*=1.16;sy*=.9;}
-    const vp=EXTRAS.pose(g,t);if(vp){sx*=vp.sx;sy*=vp.sy;return{sx,sy,oy:vp.oy};}   /* v117: victory pose */
     return{sx,sy};
   }
   /* v116: the ally who dropped in (its base sprite, the attack frame while it strikes, a glow in its weapon's colour) */

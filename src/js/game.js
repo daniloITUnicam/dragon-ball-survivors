@@ -165,7 +165,7 @@ this.x2=!!o.x2;this.sandbox=!!o.sandbox;
     this.luckT=0;this.petLuckT=0;this.initPet(o.pet||this.save.pet||'dende');
     /* the trinket equipped from the bag starts the run in the trinket slot (it does not count as a pick, and it is never sold) */
     this.loadBagTrinkets(this.save,this.save.trin);   /* v57: up to 3 equipped trinkets (one per unlocked slot) */
-    this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);MOBJ.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);{const vp=EXTRAS.poseOf(this.save,this.C.id);this.vpose=vp?vp.id:null;}   /* v117: victory pose */   /* v116: map moments, surprise boss */
+    this.recalc();this.p.hp=this.p.maxHp;MAPX.init(this);MOBJ.init(this);BOSSX.init(this);PROGX.initRec(this);EXTRAS.init(this);   /* v117: victory pose */   /* v116: map moments, surprise boss */
   }
   /* how many different weapons this run may hold (setting under the character screen, 1-5) */
   get maxW(){return this.sandbox?MAX_WEAPONS:clamp(Math.round(this.save.settings.weapons)||MAX_WEAPONS,1,MAX_WEAPONS);}

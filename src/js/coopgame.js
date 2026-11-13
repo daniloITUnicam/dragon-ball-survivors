@@ -56,7 +56,7 @@ Object.assign(Game.prototype,{
     this.fz=null;for(const id of C.start.slice(0,this.maxW))this.addWeapon(id);
     this.revives=this.shopLv('revive');this.luckT=0;this.petLuckT=0;this.initPet(save.pet||'dende');
     this.loadBagTrinkets(save,null);
-    this.recalc();this.p.hp=this.p.maxHp;{const vp=EXTRAS.poseOf(save,C.id);this.vpose=vp?vp.id:null;}
+    this.recalc();this.p.hp=this.p.maxHp;
   },
   coopMate(nick){return this.coop&&this.coop.mates.find(m=>m.nick===nick);},
   coopMateOfP(p){return this.coop&&this.coop.mates.find(m=>(m.in?this.p:m.h.p)===p);},
