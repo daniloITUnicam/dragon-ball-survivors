@@ -84,12 +84,12 @@ Object.assign(Progress.prototype,{
   ,freeStats(b){const t=trinDef(b.id);return trinStats(t,b.r,PF_NOM,b.f).map(x=>x.k).filter(k=>!(b.ls&&b.ls[k]!=null));}
   ,payKeep(r){const f=this.keepFee(r);if(this.d.zenny<f)return false;this.d.zenny-=f;this.save.write();return true;}
   /* spends the zenny and returns the candidate {id,r,p,f} (nothing changes in the bag until rerollApply), or null */
-  ,rerollRoll(kind,k){
+  ,rerollRoll(kind,k,quiet){
     const d=this.d,b=this.bagGet(k);if(!this.canWork(b))return null;const c=this.rerollCost(kind,b.r);if(d.zenny<c)return null;
     let o=null;
     if(kind==='pf'&&hasPfE(trinDef(b.id),b.f)&&this.freeStats(b).length)o={id:b.id,r:b.r,p:rollPf(0),f:b.f};
     if(!o)return null;
-    d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;this.save.write();return o;
+    d.zenny-=c;d.gacha.rerolls=(d.gacha.rerolls||0)+1;if(!quiet)this.save.write();return o;
   }
   ,rerollApply(k,o){
     const d=this.d,b=this.bagGet(k);if(!b||!o||(o.id!==b.id&&this.bagHas(o.id,b.r)))return null;

@@ -115,8 +115,9 @@ Object.assign(UI.prototype,{
     const P=this.app.progress,d=this.save,st=this.rrF||(this.rrF={q:'',rar:[1,1,1,1,1],sort:'rar'}),test=!!d.settings.sandbox;
     if(!this.rrSel||!P.bagGet(this.rrSel)){this.rrSel=d.bag[0]?trinketKey(d.bag[0].id,d.bag[0].r):null;this.rrPend=null;}
     const items=d.bag.map(b=>({k:trinketKey(b.id,b.r),id:b.id,r:b.r,p:b.p,f:b.f,at:b.at}));
-    const L=this.tlist(st,items,{onclick:it=>{if(this.rrAutoOn)return this.sfx('uiErr');if(this.rrPend){if(!(this.modalEl&&this.modalEl.isConnected&&this.modalEl.classList.contains('rrm'))){this.rrOpen=true;this.rrModal();}return this.sfx('uiErr');}this.sfx('uiMove');this.rrSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.rrSel,eq:(d.equips||[]).some(e=>e&&trinketKey(e.id,e.r)===it.k)})});
+    const L=this.tlist(st,items,{onclick:it=>{if(this.rrAutoOn&&Date.now()-(this.rrBeat||0)>4000)this.rrAutoOn=false;if(this.rrAutoOn)return this.sfx('uiErr');if(this.rrPend){if(!(this.modalEl&&this.modalEl.isConnected&&this.modalEl.classList.contains('rrm'))){this.rrOpen=true;this.rrModal();}return this.sfx('uiErr');}this.sfx('uiMove');this.rrSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.rrSel,eq:(d.equips||[]).some(e=>e&&trinketKey(e.id,e.r)===it.k)})});
     const b=this.rrSel&&P.bagGet(this.rrSel),side=h('div',{class:'bagside'});
+    if(this.rrAutoOn&&Date.now()-(this.rrBeat||0)>4000)this.rrAutoOn=false;   /* a loop that died without cleaning up */
     if(this.rrPend&&!this.rrOpen)this.rrPend=null;   /* a roll left without a choice keeps the old trinket */
     if(b){
       const run=!!this.rrAutoOn;
@@ -169,26 +170,36 @@ Object.assign(UI.prototype,{
     if(nd.bad||!P.freeStats(b).length){this.sfx('uiErr');return;}
     if((b.p!=null?b.p:PF_NOM)>=tg){this.sfx('uiErr');this.toast({type:'info',msg:this.tr(T('Questo cimelio ha già '+tg+'% di perfezione o più.','This trinket already has '+tg+'% perfection or more.'))});return;}
     if(!skipWarn&&!await this.rrWarn(b))return;
-    this.sfx('rrAutoGo');this.rrAutoOn=true;this.rebuild(true);
-    let n=0,hit=null,why='',best=null;
+    this.sfx('rrAutoGo');this.rrAutoOn=true;this.rrBeat=Date.now();
+    let n=0,hit=null,why='',best=null,fail=null;
     try{
+      this.rebuild(true);
       while(this.rrAutoOn&&n<2000){
-        if(this.top.name!=='reroll'){this.rrAutoOn=false;return;}   /* left the screen: stop paying */
-        const o=P.rerollRoll('pf',k);if(!o){why=this.tr(T('Zenny finiti.','Out of zenny.'));break;}
-        n++;if(!best||o.p>best.p)best=o;
-        this.sfx('rrTickAuto');
+        if(!this.top||this.top.name!=='reroll')break;   /* left the screen: stop paying */
+        const o=P.rerollRoll('pf',k,true);if(!o){why=this.tr(T('Zenny finiti.','Out of zenny.'));break;}
+        n++;this.rrBeat=Date.now();if(!best||o.p>best.p)best=o;
+        if(n%20===0)this.app.save.write();   /* one write per 20 rolls: a write per roll (JSON + checksum + cloud sync) slows the loop down */
+        try{this.sfx('rrTickAuto');}catch(e){}
         if(this.rrAutoEl&&this.rrAutoEl.isConnected)this.rrAutoEl.textContent=this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('ultimo ','last '))+o.p+'%';
         if(o.p>=tg){hit=o;break;}
         await new Promise(r=>setTimeout(r,35));
       }
-    }catch(e){why=why||this.tr(T('Errore durante l\'auto reroll.','Error during the auto reroll.'));}
-    const stopped=!hit&&!why&&this.rrAutoOn===false;this.rrAutoOn=false;
+    }catch(e){fail=e;}
+    this.app.save.write();
+    const stopped=!hit&&!why&&!fail&&this.rrAutoOn===false;this.rrAutoOn=false;
     if(!this.top||this.top.name!=='reroll')return;   /* the player left the screen */
-    /* it ends with the window: the roll that reached the goal, or (stopped / out of zenny / too many rolls) the best one found if it beats the current perfection */
+    const lab=fail?this.tr(T('Errore durante l\'auto reroll: ','Error during the auto reroll: '))+(fail.message||fail):why||(stopped?this.tr(T('Fermato.','Stopped.')):this.tr(T('Troppi tiri senza risultato.','Too many rolls without a result.')));
+    /* it ends with the window: the roll that reached the goal, or (stopped / out of zenny / error / too many rolls) the best one found if it beats the current perfection */
     const res=hit||(best&&best.p>(b.p!=null?b.p:PF_NOM)?best:null);   /* a best roll that is not better than the trinket would only force a paid "keep the old one" */
-    if(res){this.rrPend=res;this.rrKind='pf';this.rrOpen=true;this.rrReveal=true;this.rebuild(true);this.rrModal();
-      if(!hit)this.toast({type:'info',msg:(why||(stopped?this.tr(T('Fermato.','Stopped.')):this.tr(T('Troppi tiri senza risultato.','Too many rolls without a result.'))))+' '+this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('il migliore è nella finestra.','the best one is in the window.'))});}
-    else{this.rebuild(true);this.toast({type:'info',msg:(why||(stopped?this.tr(T('Fermato.','Stopped.')):this.tr(T('Troppi tiri senza risultato.','Too many rolls without a result.'))))+' '+this.tr(T('Tiri: ','Rolls: '))+n});}
+    try{
+      if(res){this.rrPend=res;this.rrKind='pf';this.rrOpen=true;this.rrReveal=true;this.rebuild(true);this.rrModal();
+        if(!hit)this.toast({type:'info',msg:lab+' '+this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('il migliore è nella finestra.','the best one is in the window.'))});}
+      else{this.rebuild(true);this.toast({type:'info',msg:lab+' '+this.tr(T('Tiri: ','Rolls: '))+n});}
+    }catch(e){   /* the window failed: never leave the screen stuck */
+      this.rrPend=null;this.rrOpen=false;this.rrReveal=false;document.querySelectorAll('.uask.rrm').forEach(x=>x.remove());
+      try{this.rebuild(true);}catch(e2){}
+      this.toast({type:'info',msg:this.tr(T('Errore nella finestra del reroll: ','Reroll window error: '))+(e.message||e)});
+    }
   },
 
   /* v136b: a reroll opens its own window: before and after, every stat with a green ▲ (better) or red ▼ (worse), and the choice */
