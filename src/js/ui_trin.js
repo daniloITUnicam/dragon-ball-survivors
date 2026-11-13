@@ -115,16 +115,16 @@ Object.assign(UI.prototype,{
     const P=this.app.progress,d=this.save,st=this.rrF||(this.rrF={q:'',rar:[1,1,1,1,1],sort:'rar'}),test=!!d.settings.sandbox;
     if(!this.rrSel||!P.bagGet(this.rrSel)){this.rrSel=d.bag[0]?trinketKey(d.bag[0].id,d.bag[0].r):null;this.rrPend=null;}
     const items=d.bag.map(b=>({k:trinketKey(b.id,b.r),id:b.id,r:b.r,p:b.p,f:b.f,at:b.at}));
-    const L=this.tlist(st,items,{onclick:it=>{if(this.rrPend||this.rrAutoOn)return this.sfx('uiErr');this.rrSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.rrSel,eq:(d.equips||[]).some(e=>e&&trinketKey(e.id,e.r)===it.k)})});
+    const L=this.tlist(st,items,{onclick:it=>{if(this.rrAutoOn)return this.sfx('uiErr');if(this.rrPend){if(!(this.modalEl&&this.modalEl.isConnected&&this.modalEl.classList.contains('rrm'))){this.rrOpen=true;this.rrModal();}return this.sfx('uiErr');}this.sfx('uiMove');this.rrSel=it.k;this.rebuild(true);},card:it=>({sel:it.k===this.rrSel,eq:(d.equips||[]).some(e=>e&&trinketKey(e.id,e.r)===it.k)})});
     const b=this.rrSel&&P.bagGet(this.rrSel),side=h('div',{class:'bagside'});
     if(this.rrPend&&!this.rrOpen)this.rrPend=null;   /* a roll left without a choice keeps the old trinket */
     if(b){
       const run=!!this.rrAutoOn;
       this.rrAutoEl=h('small',{class:'rrautost'});
       side.append(this.tdet(b.id,b.r,b.p,b.f,[
-        run?h('button',{class:'btn','data-fid':'rrstop',onclick:()=>{this.rrAutoOn=false;}},'⏹ '+this.tr(T('Ferma l\'auto reroll','Stop auto reroll')))
+        run?h('button',{class:'btn','data-fid':'rrstop',onclick:()=>{this.sfx('rrStop');this.rrAutoOn=false;}},'⏹ '+this.tr(T('Ferma l\'auto reroll','Stop auto reroll')))
           :h('button',{class:'btn primary','data-fid':'rrpf',title:this.tr(T('Apre il menù: blocca le statistiche, imposta l\'auto reroll e gli obiettivi, poi rerolla la perfezione.','Opens the menu: lock stats, set the auto reroll and the goals, then reroll the perfection.')),
-            onclick:()=>{this.sfx();this.rrOpen=true;this.rrModal();}},'🎲 '+this.tr(T('Menù rerolling','Rerolling menu'))),
+            onclick:()=>{this.sfx('rrOpen');this.rrOpen=true;this.rrModal();}},'🎲 '+this.tr(T('Menù rerolling','Rerolling menu'))),
         this.rrAutoEl,
         ]));
     }else side.append(h('p',{class:'sub'},this.t('bagEmpty')));
@@ -149,7 +149,7 @@ Object.assign(UI.prototype,{
     const P=this.app.progress,b=P.bagGet(this.rrSel),on=!!(b&&b.ls&&b.ls[key]!=null),fee=b?P.keepFee(b.r):0;
     return h('button',{class:'rrlk'+(on?' on':''),'data-fid':'rrlk_'+key,title:on?this.tr(T('Bloccata: i reroll non la cambiano. Clicca per sbloccarla (gratis).','Locked: rerolls do not change it. Click to unlock (free).'))
         :this.tr(T('Blocca: i reroll non la cambieranno. Costo: ','Lock: rerolls will not change it. Cost: '))+(fee?fee+' Z':this.tr(T('gratis','free'))),
-      onclick:()=>{if(on){P.unlockStat(this.rrSel,key);this.sfx('uiBack');}else if(!P.lockStat(this.rrSel,key)){this.sfx('uiErr');return;}else this.sfx('buy');
+      onclick:()=>{if(on){P.unlockStat(this.rrSel,key);this.sfx('rrUnlock');}else if(!P.lockStat(this.rrSel,key)){this.sfx('uiErr');return;}else this.sfx('rrLock');
         const z=document.querySelector('.hdr .zen');if(z)z.replaceChildren(zAmt(this.save.zenny));if(after)after();}},on?'🔒':'🔓');
   },
   rrTargetV(){const v=this.save.settings.rrTarget;return v==null?80:v;},
@@ -169,26 +169,32 @@ Object.assign(UI.prototype,{
     if(nd.bad||!P.freeStats(b).length){this.sfx('uiErr');return;}
     if((b.p!=null?b.p:PF_NOM)>=tg){this.sfx('uiErr');this.toast({type:'info',msg:this.tr(T('Questo cimelio ha già '+tg+'% di perfezione o più.','This trinket already has '+tg+'% perfection or more.'))});return;}
     if(!skipWarn&&!await this.rrWarn(b))return;
-    this.rrAutoOn=true;this.rebuild(true);
-    let n=0,hit=null,why='';
-    while(this.rrAutoOn&&n<2000){
-      if(this.top.name!=='reroll'){this.rrAutoOn=false;return;}   /* left the screen: stop paying */
-      const o=P.rerollRoll('pf',k);if(!o){why=this.tr(T('Zenny finiti.','Out of zenny.'));break;}
-      n++;this.sfx('uiTab');
-      if(this.rrAutoEl&&this.rrAutoEl.isConnected)this.rrAutoEl.textContent=this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('ultimo ','last '))+o.p+'%';
-      if(o.p>=tg){hit=o;break;}
-      await new Promise(r=>setTimeout(r,35));
-    }
+    this.sfx('rrAutoGo');this.rrAutoOn=true;this.rebuild(true);
+    let n=0,hit=null,why='',best=null;
+    try{
+      while(this.rrAutoOn&&n<2000){
+        if(this.top.name!=='reroll'){this.rrAutoOn=false;return;}   /* left the screen: stop paying */
+        const o=P.rerollRoll('pf',k);if(!o){why=this.tr(T('Zenny finiti.','Out of zenny.'));break;}
+        n++;if(!best||o.p>best.p)best=o;
+        this.sfx('rrTickAuto');
+        if(this.rrAutoEl&&this.rrAutoEl.isConnected)this.rrAutoEl.textContent=this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('ultimo ','last '))+o.p+'%';
+        if(o.p>=tg){hit=o;break;}
+        await new Promise(r=>setTimeout(r,35));
+      }
+    }catch(e){why=why||this.tr(T('Errore durante l\'auto reroll.','Error during the auto reroll.'));}
     const stopped=!hit&&!why&&this.rrAutoOn===false;this.rrAutoOn=false;
-    if(this.stack[this.stack.length-1].name!=='reroll')return;   /* the player left the screen */
-    if(hit){this.sfx('gStop'+Math.min(3,hit.r));this.rrPend=hit;this.rrKind='pf';this.rrOpen=true;this.rebuild(true);this.rrModal();}
+    if(!this.top||this.top.name!=='reroll')return;   /* the player left the screen */
+    /* it ends with the window: the roll that reached the goal, or (stopped / out of zenny / too many rolls) the best one found if it beats the current perfection */
+    const res=hit||(best&&best.p>(b.p!=null?b.p:PF_NOM)?best:null);   /* a best roll that is not better than the trinket would only force a paid "keep the old one" */
+    if(res){this.rrPend=res;this.rrKind='pf';this.rrOpen=true;this.rrReveal=true;this.rebuild(true);this.rrModal();
+      if(!hit)this.toast({type:'info',msg:(why||(stopped?this.tr(T('Fermato.','Stopped.')):this.tr(T('Troppi tiri senza risultato.','Too many rolls without a result.'))))+' '+this.tr(T('Tiri: ','Rolls: '))+n+' · '+this.tr(T('il migliore è nella finestra.','the best one is in the window.'))});}
     else{this.rebuild(true);this.toast({type:'info',msg:(why||(stopped?this.tr(T('Fermato.','Stopped.')):this.tr(T('Troppi tiri senza risultato.','Too many rolls without a result.'))))+' '+this.tr(T('Tiri: ','Rolls: '))+n});}
   },
 
   /* v136b: a reroll opens its own window: before and after, every stat with a green ▲ (better) or red ▼ (worse), and the choice */
   rrRoll(kind){
     const P=this.app.progress,o=P.rerollRoll('pf',this.rrSel);if(!o){this.sfx('uiErr');return;}
-    this.sfx('gStop'+Math.min(3,o.r));this.rrPend=o;this.rrKind=kind;this.rrOpen=true;this.rebuild(true);this.rrModal();
+    this.sfx('rrRoll');setTimeout(()=>this.sfx('gStop'+Math.min(3,o.r)),240);this.rrPend=o;this.rrKind=kind;this.rrOpen=true;this.rebuild(true);this.rrModal();
   },
   rrModal(){
     const P=this.app.progress,d=this.save,b=P.bagGet(this.rrSel),o=this.rrPend,idle=!o;if(!b){this.rrOpen=false;return;}   /* idle: the menu opened before any roll (locks, auto reroll, goals) */
@@ -256,6 +262,71 @@ Object.assign(UI.prototype,{
           h('button',{class:'btn primary','data-fid':'rrauto',onclick:()=>{const n=this.rrNeed(b);if(n.bad||(b.p!=null?b.p:PF_NOM)>=n.need){this.sfx('uiErr');return;}close();this.rrPend=null;this.rrAuto(true);}},'⏩ '+this.tr(T('Avvia','Start')))),
         goalBtn,goalPanel)));
     this.root.append(ov);this.modalEl=ov;updNeed();const f=ov.querySelector('[data-fid="rrnew"]');if(f)f.focus({preventScroll:true});
+    const reveal=!idle&&this.rrReveal&&pA!=null&&pB!=null;this.rrReveal=false;
+    if(reveal)this.rrRevealFx(ov,pA,+(oP!=null?oP:pB));
+  },
+  /* the result of an auto reroll, slowly: the perfection zooms up towards the player, counts from the old number to the new one (a tick per step, flashes on the way), a big flash,
+     then it slams down into its place in the table, the ground cracks and the window shakes. A click anywhere skips it; whatever happens, the window ends up usable. */
+  rrRevealFx(ov,pA,pB){
+    const A=this.app.audio,tr=x=>this.tr(x),up=pB>pA,eq=pB===pA,d=Math.abs(pB-pA);
+    const beep=(f,dur,type,vol,sl,dl)=>{try{if(A&&A.ctx&&A.s.sfx>0)A.toneAt(f,dur,type||'square',vol||.06,sl||0,dl||0);}catch(e){}};
+    const mp=ov.querySelector('.rrmp'),cell=ov.querySelector('.rrrow .rrb'),root=this.root;
+    const big=h('div',{class:'rrbig'+(up?'':' dn')},Math.round(pA)+'%'),lab=h('div',{class:'rrbiglab'},tr(T('Perfezione','Perfection'))),dl=h('div',{class:'rrdelta'}),fl=h('div',{class:'rrflash'}),
+      fx=h('div',{class:'rrfx'},fl,lab,big,dl);
+    ov.append(fx);ov.classList.add('rrhidefx','rrbusy');
+    let skip=false;fx.addEventListener('pointerdown',()=>{skip=true;});
+    const alive=()=>ov.isConnected;
+    const wait=ms=>new Promise(r=>{const t0=performance.now(),f=()=>{if(skip||!alive()||performance.now()-t0>=ms)r();else requestAnimationFrame(f);};f();});
+    const tween=(ms,fn)=>new Promise(r=>{const t0=performance.now(),f=()=>{if(!alive()){r();return;}const t=skip?1:Math.min(1,(performance.now()-t0)/ms);fn(t);if(t>=1)r();else requestAnimationFrame(f);};f();});
+    const place=(x,y,s)=>{big.style.transform='translate(-50%,-50%) translate('+x+'px,'+y+'px) scale('+s+')';};
+    const finish=()=>{if(!alive())return;fx.remove();ov.classList.remove('rrhidefx','rrbusy');};
+    (async()=>{
+      try{
+        if(eq){finish();return;}
+        const S=2.7;place(0,0,.15);big.style.opacity='0';
+        this.sfx('rrZoom');
+        await tween(520,t=>{const e=1-Math.pow(1-t,3),o=Math.min(1,t*3);big.style.opacity=String(o);place(0,0,.15+(S-.15)*(e+Math.sin(e*Math.PI)*.12));});
+        place(0,0,S);await wait(180);
+        /* the count: slow, and slower still towards the end; a tick per step, rising in pitch; a flash every few steps */
+        const D=Math.min(5200,2600+d*45);let last=Math.round(pA),bump=0;
+        await tween(D,t=>{const e=1-Math.pow(1-t,2.4),v=Math.round(pA+(pB-pA)*e);
+          if(v!==last){const stepUp=v>last;last=v;bump=1;big.textContent=v+'%';dl.textContent=(v>=pA?'+':'−')+Math.abs(Math.round(v-pA));
+            beep(stepUp?300+e*1300:1500-e*1100,.035,'square',.05);if(Math.abs(v-pA)%5===0)fl.animate([{opacity:0},{opacity:up?.32:.16},{opacity:0}],{duration:240});}
+          bump=Math.max(0,bump-.07);const sh=up?bump*.7:0;
+          place((Math.random()-.5)*6*bump,(Math.random()-.5)*6*bump,S*(1+.08*bump)+sh*0);
+          big.style.setProperty('--g',String(Math.round(40+e*60)));});
+        big.textContent=Math.round(pB)+'%';place(0,0,S);
+        if(!alive())return;
+        /* final flash */
+        this.sfx(up?'rrFlash':'rrLose');
+        if(up)await new Promise(r=>{fl.animate([{opacity:0},{opacity:.95,offset:.25},{opacity:0}],{duration:420}).onfinish=r;setTimeout(r,500);});
+        else await wait(350);
+        if(!alive())return;
+        /* the slam into the place of the number in the table */
+        const fr=fx.getBoundingClientRect(),k=(fr.width/Math.max(1,fx.offsetWidth))||1,br=big.getBoundingClientRect(),cr=cell?cell.getBoundingClientRect():null;
+        const tx=cr?((cr.left+cr.width/2)-(br.left+br.width/2))/k:0,ty=cr?((cr.top+cr.height/2)-(br.top+br.height/2))/k:0;
+        if(!skip)await tween(230,t=>{const e=t*t*t;place(tx*e,ty*e,S+(1-S)*e);});
+        /* impact */
+        const ix=cr?(cr.left+cr.width/2-fr.left)/k:fx.offsetWidth/2,iy=cr?(cr.top+cr.height/2-fr.top)/k:fx.offsetHeight/2;
+        big.remove();lab.remove();dl.remove();ov.classList.remove('rrhidefx');if(cell)cell.classList.add('rrimpact');
+        this.sfx(up?'rrSlam':'uiBack');
+        const amp=up?1:.25;
+        for(const el of [mp,root])try{el.animate([{transform:'translate(0,0)'},{transform:`translate(${-9*amp}px,${6*amp}px)`},{transform:`translate(${8*amp}px,${-7*amp}px)`},{transform:`translate(${-6*amp}px,${4*amp}px)`},{transform:`translate(${4*amp}px,${-3*amp}px)`},{transform:`translate(${-2*amp}px,${1*amp}px)`},{transform:'translate(0,0)'}],{duration:520,easing:'ease-out'});}catch(e){}
+        if(up&&!skip){
+          setTimeout(()=>this.sfx('rrCrack'),60);
+          const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','rrcrack');svg.setAttribute('width',fx.offsetWidth);svg.setAttribute('height',fx.offsetHeight);
+          for(let i=0;i<11;i++){const a=i/11*Math.PI*2+Math.random()*.4;let x=ix,y=iy,pts=[x+','+y];const L=90+Math.random()*Math.max(160,fx.offsetWidth*.28);
+            for(let r=0;r<L;r+=14+Math.random()*18){x+=Math.cos(a+(Math.random()-.5)*.9)*(14+Math.random()*18);y+=Math.sin(a+(Math.random()-.5)*.9)*(14+Math.random()*18);pts.push(x.toFixed(1)+','+y.toFixed(1));}
+            const pl=document.createElementNS(NS,'polyline');pl.setAttribute('points',pts.join(' '));pl.setAttribute('pathLength','1');svg.append(pl);}
+          fx.append(svg);
+          for(let i=0;i<16;i++){const dust=h('i',{class:'rrdust'});dust.style.left=ix+'px';dust.style.top=iy+'px';dust.style.setProperty('--dx',((Math.random()-.5)*340).toFixed(0)+'px');dust.style.setProperty('--dy',(-40-Math.random()*130).toFixed(0)+'px');dust.style.animationDelay=(Math.random()*.08)+'s';fx.append(dust);}
+          fl.animate([{opacity:.5},{opacity:0}],{duration:260});
+          await wait(1100);
+        }else await wait(300);
+        if(up)this.sfx('rrWin');
+      }catch(e){}
+      finally{finish();}
+    })();
   },
 
   /* ---------- Fusion (from the Gacha shop or the bag) ----------

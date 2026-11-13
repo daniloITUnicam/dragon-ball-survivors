@@ -587,6 +587,20 @@ class AudioSys{
         this.toneAt(2637,.32,'square',.1,0,.18);this.toneAt(1319,.32,'triangle',.08,0,.18);this.noise(.12,.05,12000,4000,.16);break;
       case'uiErr':
         this.toneAt(196,.11,'square',.14,0,0);this.toneAt(147,.22,'square',.14,-20,.11);this.toneAt(98,.3,'sawtooth',.07,0,.05);break;
+      /* ---- trinket rerolling menu: chip-tune blips for every step (open, lock, roll, auto, the count-up, the flash and the slam) ---- */
+      case'rrOpen':[659,880,1319].forEach((f,i)=>this.toneAt(f,.07,'square',.09,0,i*.05));this.toneAt(330,.18,'triangle',.07,0,0);break;
+      case'rrLock':this.toneAt(330,.05,'square',.12,0,0);this.toneAt(110,.12,'square',.13,-30,.04);this.noise(.04,.07,5000,900,.03);break;
+      case'rrUnlock':this.toneAt(880,.05,'square',.1,0,0);this.toneAt(1319,.09,'square',.09,0,.05);break;
+      case'rrRoll':[523,784,659,988,740,1175].forEach((f,i)=>this.toneAt(f,.04,'square',.07,0,i*.04));this.noise(.2,.04,7000,1500,0);break;
+      case'rrAutoGo':[392,523,659,784,1046,1319].forEach((f,i)=>this.toneAt(f,.06,'square',.08,0,i*.045));this.noise(.3,.05,9000,1500,.05);break;
+      case'rrStop':this.toneAt(700,.07,'square',.1,-250,0);this.toneAt(260,.14,'square',.1,-60,.07);break;
+      case'rrTickAuto':this.toneAt(520+Math.random()*520,.022,'square',.035,0,0);break;
+      case'rrZoom':this.zap(160,1900,.5,.08);this.toneAt(80,.5,'triangle',.09,420,0);break;
+      case'rrFlash':this.noise(.4,.12,12000,2200,0);this.toneAt(2093,.22,'square',.08,1000,0);this.toneAt(1046,.3,'triangle',.07,0,0);break;
+      case'rrSlam':this.thump(.3,105,.55);this.noise(.5,.17,3200,70,0);this.toneAt(62,.45,'square',.1,-28,0);break;
+      case'rrCrack':this.noise(.55,.13,9000,350,0);[2700,1800,2300,950,1500].forEach((f,i)=>this.toneAt(f,.05,'square',.055,-f*.55,.035*i));break;
+      case'rrWin':[523,659,784,1046,1318,1568,2093].forEach((f,i)=>{this.toneAt(f,.12,'square',.09,0,i*.07);this.toneAt(f/2,.12,'triangle',.06,0,i*.07);});this.toneAt(2093,.5,'square',.08,0,.52);this.toneAt(1046,.5,'triangle',.07,0,.52);break;
+      case'rrLose':[440,370,311,247].forEach((f,i)=>this.toneAt(f,.14,'square',.1,-f*.1,i*.1));this.toneAt(110,.4,'triangle',.08,-30,.35);break;
       case'uiTab':this.toneAt(988,.05,'square',.11,0,0);this.toneAt(1480,.12,'square',.1,0,.045);this.toneAt(494,.08,'triangle',.07,0,0);break;
       case'ach':[659,784,988,1318].forEach((f,i)=>setTimeout(()=>T(f,.18,'triangle',.05),i*90));break;
       /* ---- gacha: the reel ticks, a ball lands (the higher the rarity, the bigger the sound), the card pops in, and the Mythic jackpot ---- */

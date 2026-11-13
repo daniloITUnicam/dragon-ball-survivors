@@ -131,3 +131,4 @@ html.mphone .coop .chowc{padding:5px 9px 6px}html.mphone .coop .chowc b{font-siz
 html.mphone .bagside{max-height:calc(100vh / var(--mz) - 40px)}
 html.mphone .uaskp{max-height:calc(94vh / var(--mz))}
 html.mphone .gov .gtiles{max-height:calc(100vh / var(--mz) - 230px)}
+html.mphone .rrm .rrbig{font-size:54px;-webkit-text-stroke-width:3px}html.mphone .rrm .rrbiglab{top:calc(40% - 110px);font-size:15px}html.mphone .rrm .rrdelta{top:calc(40% + 90px);font-size:26px}
