@@ -22,7 +22,8 @@ if(MOBILE.on)(()=>{
     rotT:TS('Ruota il dispositivo','Rotate your device','Gira el dispositivo','Tourne ton appareil','Dreh dein Gerät','Gire o dispositivo'),
     rotS:TS('Dragon Ball Survivors si gioca in orizzontale','Dragon Ball Survivors is played in landscape','Dragon Ball Survivors se juega en horizontal','Dragon Ball Survivors se joue à l\'horizontale','Dragon Ball Survivors wird im Querformat gespielt','Dragon Ball Survivors é jogado na horizontal'),
     full:TS('Schermo intero','Fullscreen','Pantalla completa','Plein écran','Vollbild','Tela cheia'),
-    any:TS('Gioca comunque','Play anyway','Jugar igualmente','Jouer quand même','Trotzdem spielen','Jogar assim mesmo'),
+    fsT:TS('Gioca a schermo intero','Play in fullscreen','Juega en pantalla completa','Joue en plein écran','Im Vollbild spielen','Jogue em tela cheia'),
+    fsS:TS('Tocca per entrare a schermo intero, in orizzontale','Tap to go fullscreen, in landscape','Toca para pasar a pantalla completa, en horizontal','Touche pour passer en plein écran, à l\'horizontale','Tippe für Vollbild im Querformat','Toque para tela cheia, na horizontal'),
     tap:TS('Tocca','Tap','Toca','Touche','Tippen','Toque'),
     pause:TS('Pausa','Pause','Pausa','Pause','Pause','Pausa'),
     use:TS('Interagisci','Interact','Interactuar','Interagir','Interagieren','Interagir')
@@ -168,6 +169,7 @@ if(MOBILE.on)(()=>{
 
   /* ---------- portrait: rotate your device ---------- */
   const fsOk=!!(root.requestFullscreen||root.webkitRequestFullscreen);
+  const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
   const goFull=()=>{try{const r=root.requestFullscreen?root.requestFullscreen({navigationUI:'hide'}):root.webkitRequestFullscreen();
     Promise.resolve(r).then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});}catch(e){}};
   const mkRot=()=>{
@@ -178,22 +180,19 @@ if(MOBILE.on)(()=>{
       '<h2></h2><p></p><div class="rbtns"></div></div>';
     const bs=el.querySelector('.rbtns');
     if(fsOk){const f=document.createElement('button');f.className='btn primary rfull';f.onclick=()=>{goFull();};bs.append(f);}
-    const g=document.createElement('button');g.className='btn alt rany';g.onclick=()=>{M.rotOk=true;try{sessionStorage.setItem('dbsRotOk','1');}catch(e){}rotCheck();};bs.append(g);
+    el.addEventListener('pointerup',()=>{if(fsOk&&!isFull())goFull();});   /* any tap on the screen counts as the user gesture the browser wants */
     document.body.append(el);return el;
   };
-  const rotText=()=>{const r=M.rot;if(!r)return;r.querySelector('h2').textContent=tr(STR.rotT);r.querySelector('p').textContent=tr(STR.rotS);
-    const f=r.querySelector('.rfull');if(f)f.textContent='⛶ '+tr(STR.full);r.querySelector('.rany').textContent=tr(STR.any);};
-  function rotCheck(){const r=M.rot;if(!r)return;const show=M.phone&&innerHeight>innerWidth&&!M.rotOk;
-    if(show&&!r.classList.contains('on')){rotText();if(M.app&&M.app.state==='play')M.app.pause();}
+  const rotText=()=>{const r=M.rot;if(!r)return;const land=innerWidth>=innerHeight;r.classList.toggle('land',land);
+    r.querySelector('h2').textContent=tr(land?STR.fsT:STR.rotT);r.querySelector('p').textContent=tr(land?STR.fsS:STR.rotS);
+    const f=r.querySelector('.rfull');if(f)f.textContent='⛶ '+tr(STR.full);};
+  /* a phone plays fullscreen and in landscape, no way around it: this screen covers the game while the phone is upright or not fullscreen
+     (iPhone Safari has no fullscreen API: there only the landscape part applies) */
+  function rotCheck(){const r=M.rot;if(!r)return;const show=M.phone&&(innerHeight>innerWidth||(fsOk&&!isFull()));
+    if(show){rotText();if(!r.classList.contains('on')&&M.app&&M.app.state==='play')M.app.pause();}
     r.classList.toggle('on',show);}
+  document.addEventListener('fullscreenchange',()=>setTimeout(rotCheck,0));document.addEventListener('webkitfullscreenchange',()=>setTimeout(rotCheck,0));
 
-  /* a phone goes fullscreen (and locks landscape where it can) when the first run of the session starts: the view is steadier and bigger.
-     Only once: if the player leaves fullscreen it is not forced again (Settings > Fullscreen still works) */
-  const sg0=App.prototype.startGame;
-  App.prototype.startGame=function(o){
-    if(M.phone&&fsOk&&!M.fsTried&&!document.fullscreenElement&&!document.webkitFullscreenElement){M.fsTried=true;goFull();}
-    return sg0.call(this,o);
-  };
   /* ---------- pause screen helpers measured in the zoomed space ---------- */
   UI.prototype.fitPause=function(root0){
     const run=(n)=>{
@@ -222,7 +221,6 @@ if(MOBILE.on)(()=>{
   /* ---------- start ---------- */
   document.addEventListener('DOMContentLoaded',()=>{
     M.app=APP_REF;if(!M.app)return;
-    try{M.rotOk=sessionStorage.getItem('dbsRotOk')==='1';}catch(e){}
     M.ctl=mkCtl();M.rot=mkRot();try{Sprites.need('mobile');}catch(e){}
     M.app.input.mode=M.app.input.getPad()?'pad':'touch';
     const cv=M.app.canvas;cv.addEventListener('pointerdown',tapZone,true);
@@ -232,7 +230,7 @@ if(MOBILE.on)(()=>{
       const k=a.renderer.W/innerWidth,m=48*a.renderer.U;let dx=e.clientX*k-j.ox,dy=e.clientY*k-j.oy;const d=Math.hypot(dx,dy);
       if(d>m){dx=dx/d*m;dy=dy/d*m;}j.x=dx/m;j.y=dy/m;},true);
     addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,120));
-    fit();M.app.renderer.resize();
+    fit();M.app.renderer.resize();rotCheck();
     /* the button states follow the game every frame */
     const loop=()=>{try{update();}catch(e){}requestAnimationFrame(loop);};requestAnimationFrame(loop);
   });

@@ -119,7 +119,7 @@ class App{
     this.renderer.resize();this.renderer.tt=(k,v)=>this.t(k,v);this.renderer.tr=o=>this.i18n.t(o);
     try{
       if(s.fullscreen&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{s.fullscreen=false;});
-      else if(!s.fullscreen&&document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen();
+      else if(!s.fullscreen&&document.fullscreenElement&&document.exitFullscreen&&!(typeof MOBILE!=='undefined'&&MOBILE.phone))document.exitFullscreen();   /* a phone stays fullscreen */
     }catch(e){}
     this.save.write();
     if(this.ui.active&&this.ui.top&&['main'].includes(this.ui.top.name)){}

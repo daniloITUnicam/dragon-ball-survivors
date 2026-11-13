@@ -46,6 +46,7 @@ html.mob.mport .mb{--s:50px}html.mob.mport .mb.big{--s:64px}
 
 /* --- portrait on a phone: rotate your device --- */
 #mobrot{display:none}
+html.mob #mobrot.land .rph{display:none}
 html.mob #mobrot.on{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;
   background:repeating-linear-gradient(135deg,#1a1440 0 26px,#231a55 26px 52px);color:#fff;-webkit-user-select:none;user-select:none}
 html.mob #mobrot .rbox{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:340px}
