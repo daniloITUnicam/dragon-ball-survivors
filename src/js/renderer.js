@@ -84,6 +84,10 @@ const TCH=8,TCH_MAX=64;
 const RB={on:false,m:new Map(),
   add(col,x,y,w,h){let L=this.m.get(col);if(!L){L=[];this.m.set(col,L);}L.push(x,y,w,h);},
   flush(ctx){for(const [col,L] of this.m){if(!L.length)continue;ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<L.length;i+=4)ctx.rect(L[i],L[i+1],L[i+2],L[i+3]);ctx.fill();L.length=0;}this.on=false;}};
+/* plain sparks (the bulk of g.fx): batched per colour and 8 opacity steps - one fill per batch instead of three state changes per particle */
+const SPK={m:new Map(),
+  add(col,a,x,y,sz){let B=this.m.get(col);if(!B){B=[[],[],[],[],[],[],[],[]];this.m.set(col,B);}B[Math.max(0,Math.ceil(a*8)-1)].push(x-sz/2,y-sz/2,sz);},
+  flush(ctx){for(const [col,B] of this.m){ctx.fillStyle=col;for(let k=0;k<8;k++){const L=B[k];if(!L.length)continue;ctx.globalAlpha=(k+1)/8;ctx.beginPath();for(let i=0;i<L.length;i+=3)ctx.rect(L[i],L[i+1],L[i+2],L[i+2]);ctx.fill();L.length=0;}}ctx.globalAlpha=1;}};
 const AURA_K=1.5;   /* size of every painted hero aura (forms, Kaioken) relative to the sprite height the callers ask for */
 /* v141 (frame pacing). HUD_HZ: 0 = the HUD is drawn straight on the frame, every frame (as always). A value like 30 paints it on its own layer that many times a
    second and lays that picture over every frame: fewer texts to draw, but one more full-screen copy per frame - measured slower where the canvas is not
@@ -105,7 +109,7 @@ this.W=1;this.H=1;this.Z=1;
     this.shopImgC=undefined;this.statC=undefined;this.stoneC=undefined;this.szBtn=null;this.tImgC=undefined;this.tc=undefined;this.tcKey=undefined;this.tcTheme=undefined;
     this.tgtAt=0;this.tgtG=undefined;this.tgtMode=undefined;this.wImgC=undefined;this.zenoCoins=undefined;this.zenoPl=undefined;this.zones=undefined;
     this._hl=null;this._el=[];this._ew=[];this._eln=0;this._ewn=0;this._ky=new Float64Array(1024);this._ix=new Uint16Array(1024);this.menuRes=false;this.mobBtns=undefined;this.zlabT=0;
-    this.tiles={};this.decor={};this.vign=null;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
+    this.tiles={};this.decor={};this.vign=null;this._fast=false;this._cx=0;this._cy=0;this.menuT=0;this.fps=60;this.fa=0;this.fn=0;
     try{if(document.fonts)document.fonts.load('12px "Anton"','0123456789');}catch(e){}   /* the damage-number lettering */
     this.hint=null;this.joy=null;this.keyHints={};this.tr=(x)=>typeof x==='string'?x:x.it;this.tt=(k)=>k;
   }
@@ -314,10 +318,19 @@ this.W=1;this.H=1;this.Z=1;
   tTrim(){const L=[...this.tc.entries()].sort((a,b)=>a[1].u-b[1].u);for(let i=0;i<L.length-TCH_MAX*.6;i++)this.tc.delete(L[i][0]);}
   /* ---------- menu background ---------- */
   drawMenuBg(dt){if(!this.menuBg)this.menuBg=new MenuBg(this);this.menuBg.draw(dt);}
+  /* camera matrix, and camera * (translate, rotate, scale) in a single setTransform: what save/translate/rotate/scale/restore did per enemy (see drawEnemy, _fast) */
+  camTf(){const Z=this.Z;this.ctx.setTransform(Z,0,0,Z,-this._cx*Z,-this._cy*Z);}
+  tf(x,y,r,fx,fy){const Z=this.Z,c=r?Math.cos(r):1,s=r?Math.sin(r):0;this.ctx.setTransform(Z*fx*c,Z*fx*s,-Z*fy*s,Z*fy*c,(x-this._cx)*Z,(y-this._cy)*Z);}
+  /* the vignette is painted once into a quarter-size canvas (rebuilt only when its strength or the screen size changes) and stretched over the frame: no per-pixel gradient work every frame */
   vignette(a){
-    const ctx=this.ctx;
-    if(!this.vign||this.vign.a!==a){const r=Math.hypot(this.W,this.H)/2,g=ctx.createRadialGradient(this.W/2,this.H/2,r*.45,this.W/2,this.H/2,r);g.addColorStop(0,'rgba(4,12,24,0)');g.addColorStop(1,'rgba(4,12,24,'+a+')');this.vign={g,a};}
-    ctx.fillStyle=this.vign.g;ctx.fillRect(0,0,this.W,this.H);
+    const ctx=this.ctx,W=this.W,H=this.H,q=Math.round(a*50)/50;let v=this.vign;
+    if(!v||v.a!==q||v.w!==W||v.h!==H){
+      const w=Math.max(2,W>>2),h=Math.max(2,H>>2),cv=v&&v.cv||document.createElement('canvas');cv.width=w;cv.height=h;
+      const c=cv.getContext('2d'),r=Math.hypot(w,h)/2,gr=c.createRadialGradient(w/2,h/2,r*.45,w/2,h/2,r);
+      gr.addColorStop(0,'rgba(4,12,24,0)');gr.addColorStop(1,'rgba(4,12,24,'+q+')');c.fillStyle=gr;c.fillRect(0,0,w,h);
+      v=this.vign={cv,a:q,w:W,h:H};
+    }
+    const sm=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=true;ctx.drawImage(v.cv,0,0,W,H);ctx.imageSmoothingEnabled=sm;
   }
 
   /* ---------- game ---------- */
@@ -353,6 +366,7 @@ this.W=1;this.H=1;this.Z=1;
     g.vw=this.W/this.Z;g.vh=this.H/this.Z;
     let sx=0,sy=0;if(g.shake>0&&s.shake){sx=rnd(-1,1)*g.shake*(FXL.on?5:14);sy=rnd(-1,1)*g.shake*(FXL.on?5:14);}
     const co=this.camOff,cx=p.x-g.vw/2+sx+(co?co.x:0),cy=p.y-14-g.vh/2+sy+(co?co.y:0);
+    this._cx=cx;this._cy=cy;this._fast=false;
     ctx.setTransform(this.Z,0,0,this.Z,-cx*this.Z,-cy*this.Z);
     const theme=g.stage.theme;
     Ambient.setCfg(s);if(g.trial||g.tun){Ambient.on=false;Ambient.wxOn=false;Ambient.dnOn=false;Ambient.nt=0;Ambient.evI=0;}else Ambient.update(g,dt,t,cx,cy,g.vw,g.vh,theme,p);
@@ -416,8 +430,9 @@ this.W=1;this.H=1;this.Z=1;
       }
       if(f.kfz){this.drawKiFizz(f);continue;}
       if(f.ring){const k=1-f.l/f.m;ctx.strokeStyle=f.c;ctx.globalAlpha=1-k;ctx.lineWidth=5*(1-k)+1;ctx.beginPath();ctx.arc(f.x,f.y,f.r*k,0,TAU);ctx.stroke();ctx.globalAlpha=1;}
-      else{ctx.fillStyle=f.c;ctx.globalAlpha=clamp(f.l/f.m*1.4,0,1);ctx.fillRect(f.x-f.s/2,f.y-f.s/2,f.s,f.s);ctx.globalAlpha=1;}
+      else SPK.add(f.c,clamp(f.l/f.m*1.4,0,1),f.x,f.y,f.s);
     }
+    SPK.flush(ctx);
     this.fxEnd();
     };
     /* the weapons are in the background: everything they draw (orbiting / persistent effects, projectiles, painted blasts and beams) goes under every gem, chest, altar, object and enemy, so they all stay readable */
@@ -482,7 +497,7 @@ this.W=1;this.H=1;this.Z=1;
       if(e.o.v!==undefined){this.drawRock(e.o,theme,t);continue;}
       {const b=e.o,sp=e.spr,k=3.1/Sprites.S*(sp.sc||1),sh=sp.sh;ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();if(sh)ctx.ellipse(b.x+b.f*sh.cx*k,b.y+2+sh.cy*k,sh.rx*k,sh.ry*k,0,0,TAU);else ctx.ellipse(b.x,b.y,b.r*1.1,b.r*.5,0,0,TAU);ctx.fill();if(sp.sm)ctx.imageSmoothingEnabled=true;if(!Ambient.prop(ctx,b,sp,k,theme,t)){ctx.save();ctx.translate(b.x,b.y+2);ctx.scale(b.f*k,k);ctx.drawImage(sp.c,-sp.ox,-sp.oy);ctx.restore();}if(sp.sm)ctx.imageSmoothingEnabled=false;if(Ambient.on&&sp.kind)ObjLife.draw(ctx,b,sp,t,theme,Ambient);continue;}
       }
-      if(tm){const t0=performance.now();this.drawEnemy(e,ta);Tm.e+=performance.now()-t0;}else this.drawEnemy(e,ta);
+      this._fast=true;if(tm){const t0=performance.now();this.drawEnemy(e,ta);Tm.e+=performance.now()-t0;}else this.drawEnemy(e,ta);this._fast=false;
     }
     if(tm){Tm.co=(Tm.co||0)*.92+Tm.c*.08;Tm.en=(Tm.en||0)*.92+Tm.e*.08;}
     lap('ent');
@@ -971,15 +986,18 @@ this.W=1;this.H=1;this.Z=1;
       else if(e.atk>0){const q=Math.min(1,e.atk/.4);sx*=1-.06*q;sy*=1+.1*q;rot+=e.face*.1*q;}
       if(e.fl>0){sx*=1.12;sy*=.9;}
       if(e.age<.4){const q=e.age/.4,bk=1+2.2*Math.pow(q-1,3)+1.2*Math.pow(q-1,2);sx*=bk;sy*=bk;al=Math.min(1,q*3);}
-      ctx.save();ctx.translate(e.x+ox,e.y+bob-zo+oy);ctx.rotate(rot);ctx.scale(e.face*k*sqx*sx,k*sqy*sy);
-      ctx.globalAlpha=al*((e.def&&e.def.alpha)||1);
+      const px=e.x+ox,py=e.y+bob-zo+oy,fxs=e.face*k*sqx*sx,fys=k*sqy*sy,A=al*((e.def&&e.def.alpha)||1),F=this._fast;
+      if(F)this.tf(px,py,rot,fxs,fys);else{ctx.save();ctx.translate(px,py);ctx.rotate(rot);ctx.scale(fxs,fys);}
+      ctx.globalAlpha=A;
       if(e.enr||e.shield>0||e.tel){      /* rage / evolution aura, guard bubble, wind-up glow */
-        ctx.restore();
+        if(F){this.camTf();ctx.globalAlpha=1;}else ctx.restore();
         if(e.enr)GLOW.at(ctx,e.x,e.y-e.r*1.1,e.r*(2.3+.3*Math.sin(t*9+e.ph)),e.rc||'#ff3b2a',.45);
         if(e.tel)GLOW.at(ctx,e.x,e.y-e.r*1.1,e.r*(1.8+1.2*(e.telK||0)),e.tel,.35+.4*(e.telK||0));
-        ctx.save();ctx.translate(e.x+ox,e.y+bob-zo+oy);ctx.rotate(rot);ctx.scale(e.face*k*sqx*sx,k*sqy*sy);ctx.globalAlpha=al*((e.def&&e.def.alpha)||1);
+        if(F)this.tf(px,py,rot,fxs,fys);else{ctx.save();ctx.translate(px,py);ctx.rotate(rot);ctx.scale(fxs,fys);}
+        ctx.globalAlpha=A;
       }
-      ctx.imageSmoothingEnabled=true;ctx.drawImage(e.tier&&!flash?tierTint(sp.c,e.tier):sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;ctx.restore();
+      ctx.imageSmoothingEnabled=true;ctx.drawImage(e.tier&&!flash?tierTint(sp.c,e.tier):sp.c,-sp.ox,-sp.oy);ctx.imageSmoothingEnabled=false;
+      if(F){this.camTf();if(A!==1)ctx.globalAlpha=1;}else ctx.restore();
       if(e.enr&&((t*10+e.ph)|0)%2===0){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=e.rc||'#ff3b2a';ctx.globalAlpha=.55;for(let i=0;i<3;i++){const fx=e.x+(i-1)*e.r*.55,fh=e.r*(.9+.5*Math.sin(t*12+i*2+e.ph));ctx.beginPath();ctx.moveTo(fx-3,e.y-e.r*.4);ctx.lineTo(fx+Math.sin(t*8+i)*2,e.y-e.r*.4-fh);ctx.lineTo(fx+3,e.y-e.r*.4);ctx.fill();}ctx.restore();}
       if(e.shield>0){ctx.save();ctx.strokeStyle=e.sk&&e.sk.cur?'#fff':'rgba(160,230,255,.9)';ctx.lineWidth=2.5;ctx.globalAlpha=.6+.3*Math.sin(t*12);ctx.fillStyle='rgba(140,220,255,.16)';ctx.beginPath();ctx.ellipse(e.x,e.y-e.r*.9,e.r*1.45,e.r*1.6,0,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}
       if(e.tel){ctx.fillStyle=e.tel;ctx.globalAlpha=.8+.2*Math.sin(t*30);ctx.font='bold '+(12+(e.telK||0)*6|0)+'px sans-serif';ctx.textAlign='center';ctx.fillText('!',e.x,e.y-e.r*2.5-Math.abs(Math.sin(t*14))*3);ctx.globalAlpha=1;}
